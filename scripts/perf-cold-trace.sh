@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Cold-restart trace for artwork and resume (PERF_HANDOFF.md section 7). Measurement only: drives
+# Cold-restart trace for artwork and resume. Measurement only: drives
 # the debug app through intents, taps and media keys, and reads its caches with run-as.
 #
 #   scripts/perf-cold-trace.sh seed         play the seed song long enough to cache audio, pause
@@ -12,7 +12,8 @@
 # Find the mini player's play button with `adb shell uiautomator dump`: the bar above the tab bar
 # holding exactly two clickable children; play/pause is the left one.
 export MSYS_NO_PATHCONV=1
-ADB="${ADB:-${ANDROID_HOME:-/c/Users/Lenovo/AppData/Local/Android/Sdk}/platform-tools/adb.exe}"
+# adb from $ADB, else from $ANDROID_HOME, else from PATH.
+ADB="${ADB:-${ANDROID_HOME:+$ANDROID_HOME/platform-tools/}adb}"
 P="${PKG:-com.shiny.music.debug}"
 A=$P/com.shiny.music.MainActivity
 OUT="${OUT:-$(dirname "$0")/../baselineprofile/build/perf-cold-trace}"

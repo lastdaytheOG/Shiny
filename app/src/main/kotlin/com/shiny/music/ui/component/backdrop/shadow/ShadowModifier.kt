@@ -83,7 +83,7 @@ internal class ShadowNode(
         // layer. The shape is clipped out rather than erased with a Clear-blended draw, and the
         // layer's alpha and blend mode go on the paint. It is one draw either way, so the pixels
         // are the same; what goes is a framebuffer per glass control per frame, which was the
-        // player's main GPU cost (PERF_PASS_HANDOFF.md §11, §13).
+        // player's main GPU cost.
         val outline = shapeProvider.shape.createOutline(size, layoutDirection, this)
         val path = if (outline is Outline.Rounded) clipPath ?: Path().also { clipPath = it } else null
         paint.color = shadow.color.copy(alpha = shadow.color.alpha * shadow.alpha)

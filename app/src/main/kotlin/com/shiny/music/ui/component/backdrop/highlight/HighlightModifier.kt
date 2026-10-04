@@ -111,7 +111,7 @@ internal class HighlightNode(
         // Shiny change: stroked straight onto the canvas; the library drew it into an offscreen
         // layer composited with the blend mode. It is a single draw, so blending the stroke
         // itself (with the layer's alpha on the paint) looks the same without a framebuffer per
-        // glass control per frame (PERF_PASS_HANDOFF.md §13).
+        // glass control per frame.
         paint.color = highlight.style.color.copy(alpha = highlight.style.color.alpha * highlight.alpha)
         paint.blendMode = highlight.style.blendMode
         val canvas = drawContext.canvas

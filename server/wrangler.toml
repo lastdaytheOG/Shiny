@@ -1,4 +1,4 @@
-# Shiny social server. Deploy steps are in SOCIAL_HANDOFF.md at the repository root.
+# Shiny social server. Deploy with `npm run deploy` from server/ after `npx wrangler login`.
 name = "shiny-social"
 main = "src/index.js"
 compatibility_date = "2024-09-23"

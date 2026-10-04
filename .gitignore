@@ -1,46 +1,63 @@
-*.iml
-.gradle
-/local.properties
-/.idea/
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
-local.properties
-.kotlin/
-
-# Mac
-.DS_Store
-
-# build folders
-build/
-app/build/
-androidApp/build/
-composeApp/build/
-cast/build/
-cast-empty/build/
-crashlytics/build/
-crashlytics-empty/build/
-lastfm/build/
-lastfm-empty/build/
-*/build/
+# Shiny: files that never belong in the repository.
 
 # Gradle
 .gradle/
+build/
+*/build/
+.kotlin/
 
-# Kotlin Multiplatform
-/.kotlin
+# Android Studio / IntelliJ
+*.iml
+.idea/
+captures/
+.externalNativeBuild/
+.cxx/
+.navigation/
+*.hprof
 
-# Logs
-*.log
+# Machine-specific configuration
+local.properties
+keystore.properties
 
 # Signing keys stay outside the repository
 *.jks
 *.keystore
 *.p12
 *.pepk
+*.pem
+
+# Firebase / Google services configuration is per project: supply your own (see SETUP.md).
+# CI restores it from the GOOGLE_SERVICES_JSON_BASE64 secret.
+google-services.json
 
 # Built APKs and bundles go to CI artifacts or releases, not git
 *.apk
 *.aab
+*.ap_
+*.dex
+
+# Logs and profiling output
+*.log
+*.trace
+*.perfetto-trace
+
+# Environment and secrets
+.env
+.env.*
+.dev.vars
+
+# Node / Cloudflare Workers (server/)
+node_modules/
+.wrangler/
+
+# Python (scripts/)
+__pycache__/
+*.pyc
+
+# Editors, assistants and operating systems
+.vscode/
+.claude/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini

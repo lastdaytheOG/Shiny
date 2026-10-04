@@ -301,7 +301,7 @@ private class DrawBackdropNode(
         clip = true
         shape = shapeProvider.shape
         // Not isolated: at full opacity the layer is a plain RenderNode with a rounded clip,
-        // not a framebuffer of its own (PERF_PASS_HANDOFF.md §11).
+        // not a framebuffer of its own.
         compositingStrategy =
             if (isolated) androidx.compose.ui.graphics.CompositingStrategy.Offscreen
             else androidx.compose.ui.graphics.CompositingStrategy.Auto

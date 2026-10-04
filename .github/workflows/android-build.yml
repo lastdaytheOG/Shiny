@@ -14,6 +14,7 @@ jobs:
     env:
       # Job-level so step conditions can read it; false wherever secrets aren't passed (fork PRs).
       HAS_RELEASE_KEY: ${{ secrets.SHINY_KEYSTORE_BASE64 != '' }}
+      HAS_FIREBASE_CONFIG: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 != '' }}
       # Private-repo runners have 8 GB; gradle.properties asks for 6 GB plus an 8 GB Kotlin daemon.
       GRADLE_CI_ARGS: -Dorg.gradle.jvmargs=-Xmx5g -Pkotlin.compiler.execution.strategy=in-process
 
@@ -27,6 +28,14 @@ jobs:
         java-version: '21'
         distribution: 'temurin'
         cache: gradle
+
+    # google-services.json is not in the repository. Without the secret the build simply has no
+    # Firebase and no Google sign-in configuration.
+    - name: Restore Firebase config
+      if: env.HAS_FIREBASE_CONFIG == 'true'
+      env:
+        GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
+      run: echo "$GOOGLE_SERVICES_JSON_BASE64" | base64 -d > app/google-services.json
 
     - name: Decode release keystore
       if: env.HAS_RELEASE_KEY == 'true'

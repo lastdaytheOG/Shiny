@@ -50,7 +50,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
 
-        // SHINY's own Discord application: public client, PKCE, no secret (see SOCIAL_HANDOFF.md).
+        // SHINY's own Discord application: public client, PKCE, no secret.
         val discordApplicationId = "1549351860807270513"
         val discordApplicationIdLong = 1549351860807270513L
         val discordRedirectScheme = "discord-$discordApplicationId"

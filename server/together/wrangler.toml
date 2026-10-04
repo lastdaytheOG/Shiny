@@ -1,5 +1,5 @@
 # Shiny Together: the room server for group listening. One Durable Object per session code.
-# Deploy with `npm run together:deploy` from server/ (see TOGETHER_HANDOFF.md at the repository root).
+# Deploy with `npm run together:deploy` from server/.
 name = "shiny-together"
 main = "src/index.js"
 compatibility_date = "2024-09-23"
