@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      On Android 12+ ShinyTheme takes the dynamic scheme (dynamicLightColorScheme) when
+      the user has not picked a custom theme colour, which is the default. Pointing the
+      launch background at the same wallpaper-derived neutral the scheme resolves
+      `surface` from makes the splash-to-content hand-over exact rather than merely
+      close, and it follows the wallpaper as the app does.
+    -->
+    <color name="shiny_launch_background">@android:color/system_neutral1_10</color>
+</resources>

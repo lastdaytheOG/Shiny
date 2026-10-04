@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    GoogleSignIn looks default_web_client_id up by name, so it builds without a
+    google-services.json. The resource shrinker can't see a lookup by name, and release
+    builds were stripping the ID: Friends and Profile then said Google sign-in "needs a
+    google-services.json" even though the file was there.
+-->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@string/default_web_client_id" />

@@ -1,0 +1,107 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+      The theme the activity runs under once the splash has handed over. The window
+      background is the same token the splash is painted with, so the surface behind
+      Compose never changes colour during launch. Overridden in values-night with a dark
+      parent; the colour token itself already follows the night qualifier.
+    -->
+    <style name="Theme.shinymusic" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:windowMinWidthMinor">100%</item>
+        <item name="android:windowMinWidthMajor">100%</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowBackground">@color/shiny_launch_background</item>
+        <item name="android:enforceNavigationBarContrast" tools:ignore="NewApi">false</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+
+    <!--
+      The launch theme, applied to MainActivity and every launcher alias.
+
+      Theme.SplashScreen maps these three attributes onto the platform
+      android:windowSplashScreen* attributes on API 31+, and onto a plain window
+      background plus a centred icon below that, so one declaration covers both paths.
+
+      The splash is deliberately empty: only the colour of the launch artwork's sky, and
+      no icon. Android 12+ always shows a system splash before the app can draw, and with
+      the logo on it the launch showed two screens (logo, then artwork); empty, it blends
+      into the artwork as one.
+
+      The animation duration is zero because there is nothing to animate. The library
+      default is ten seconds, which only makes sense for an animated vector.
+    -->
+    <style name="Theme.Shiny.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/shiny_splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon_none</item>
+        <item name="windowSplashScreenAnimationDuration">0</item>
+        <item name="postSplashScreenTheme">@style/Theme.shinymusic</item>
+    </style>
+
+    <!-- Widget Theme with Material 3 colors fallback for API < 31 -->
+    <style name="Theme.Widget.shinymusic" parent="@android:style/Theme.DeviceDefault.DayNight">
+        <item name="android:colorBackground">#E6E1E5</item>
+    </style>
+
+    <!-- Transparent theme for Music Recognizer Tile Service -->
+    <style name="Theme.Shiny.Transparent" parent="@android:style/Theme.Translucent.NoTitleBar">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowDisablePreview">true</item>
+        <item name="android:windowAnimationStyle">@null</item>
+    </style>
+
+    <style name="ShinyPlaylistWidgetCard">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:gravity">center_horizontal</item>
+    </style>
+
+    <style name="ShinyPlaylistWidgetArtworkFrame">
+        <item name="android:layout_width">64dp</item>
+        <item name="android:layout_height">64dp</item>
+    </style>
+
+    <style name="ShinyPlaylistWidgetArtwork">
+        <item name="android:layout_width">64dp</item>
+        <item name="android:layout_height">64dp</item>
+        <item name="android:scaleType">centerCrop</item>
+        <item name="android:src">@mipmap/ic_launcher</item>
+        <item name="android:contentDescription">@string/widget_playlists</item>
+    </style>
+
+    <style name="ShinyPlaylistWidgetCardPlayButton">
+        <item name="android:layout_width">26dp</item>
+        <item name="android:layout_height">26dp</item>
+        <item name="android:layout_gravity">bottom|end</item>
+        <item name="android:layout_marginEnd">3dp</item>
+        <item name="android:layout_marginBottom">3dp</item>
+        <item name="android:background">@drawable/widget_play_button_circular</item>
+    </style>
+
+    <style name="ShinyPlaylistWidgetCardPlayIcon">
+        <item name="android:layout_width">15dp</item>
+        <item name="android:layout_height">15dp</item>
+        <item name="android:layout_gravity">center</item>
+        <item name="android:src">@drawable/ic_widget_play_low</item>
+        <item name="android:contentDescription">@string/play</item>
+    </style>
+
+    <style name="ShinyPlaylistWidgetCardTitle">
+        <item name="android:layout_width">68dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">5dp</item>
+        <item name="android:textSize">10sp</item>
+        <item name="android:textColor">@color/widget_text_primary</item>
+        <item name="android:maxLines">2</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:gravity">center</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+</resources>

@@ -1,0 +1,39 @@
+# Shiny social server. Deploy steps are in SOCIAL_HANDOFF.md at the repository root.
+name = "shiny-social"
+main = "src/index.js"
+compatibility_date = "2024-09-23"
+
+# Shiny's own domain (Cloudflare zone shinymusic.in, active 2026-09-27). Routes, not custom domains: the
+# zone still holds the proxied records imported from GoDaddy, and a route answers before they are ever used.
+routes = [
+  { pattern = "shinymusic.in/*", zone_name = "shinymusic.in" },
+  { pattern = "www.shinymusic.in/*", zone_name = "shinymusic.in" },
+]
+
+# The website (site/index.html and its images). A request that matches a file here is answered with it;
+# everything else (/download, /watch, /u/NAME, /v1/..., /.well-known/...) falls through to the Worker.
+[assets]
+directory = "./site"
+
+[vars]
+# Public web address. Pages, badges, listen-along links and invites are built on it.
+WEB_BASE = "https://shinymusic.in"
+# Google OAuth *Web* client IDs accepted as the ID token audience, comma-separated.
+GOOGLE_CLIENT_IDS = "971028658395-vk5qhva85bct39tpk5b5ipdbdv5e7dcg.apps.googleusercontent.com"
+# For /.well-known/assetlinks.json: app packages and their signing certificate SHA-256 fingerprints.
+ANDROID_PACKAGES = "com.shiny.music,com.shiny.music.debug"
+ANDROID_CERT_SHA256 = "F3:70:1C:9C:1C:87:54:F4:79:A9:D2:20:D6:E6:56:B1:12:1C:CA:43:B6:1C:7B:BE:FD:15:D8:32:A8:2B:19:46,79:C7:EE:06:6D:80:31:C2:AA:E5:9F:59:26:31:F5:B4:7D:6C:36:9F:6E:AF:F7:5F:AE:92:B8:21:B4:33:DA:05"
+APP_DOWNLOAD_URL = "https://github.com/lastdaytheOG/Shiny/releases/latest"
+# Listen Together's session server (server/together); /j/CODE invite pages come from it.
+TOGETHER_BASE = "https://shiny-together.shinymusic.workers.dev"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "shiny-social"
+# Created 2026-09-27 on the shinymusic Cloudflare account.
+database_id = "748422ae-51bf-4fb9-a0f5-caeffeac3ef2"
+
+# Listen Together's session server, called directly for /j/CODE invite pages.
+[[services]]
+binding = "TOGETHER"
+service = "shiny-together"

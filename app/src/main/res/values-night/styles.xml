@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+      The dark counterpart of Theme.shinymusic.
+
+      Only the parent differs from the light definition. The light theme was the sole
+      definition until now, which is what produced a white window under a dark app: the
+      window background resolved to white and was briefly visible before Compose drew
+      over it. Switching the parent as well as the background keeps anything that reads
+      a platform theme attribute — the crash activity, WebView defaults, ?colorBackground
+      — dark alongside it, rather than dark content on light platform chrome.
+
+      Every other item is copied verbatim from values/styles.xml so the two variants stay
+      identical apart from lightness.
+    -->
+    <style name="Theme.shinymusic" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:windowMinWidthMinor">100%</item>
+        <item name="android:windowMinWidthMajor">100%</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowBackground">@color/shiny_launch_background</item>
+        <item name="android:enforceNavigationBarContrast" tools:ignore="NewApi">false</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+</resources>

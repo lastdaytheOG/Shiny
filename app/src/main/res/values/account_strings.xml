@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Account, sign-in pages and connected services. -->
+<resources>
+    <!-- Account page -->
+    <string name="account_signed_out_title">Not signed in</string>
+    <string name="account_signed_out_text">Sign in with Google to bring your YouTube Music library, likes and playlists into Shiny.</string>
+    <string name="account_sign_in">Sign In with Google</string>
+    <string name="account_youtube_section">YouTube Music</string>
+    <string name="account_accounts_section">Accounts on this phone</string>
+    <string name="account_add_another">Add Another Account</string>
+    <string name="account_switch_title">Switch to %1$s?</string>
+    <string name="account_switch_message">Shiny restarts to load their library.</string>
+    <string name="account_switch_confirm">Switch</string>
+    <string name="account_remove">Remove from This Phone</string>
+    <string name="account_current">Signed in</string>
+    <string name="account_services_section">Other services</string>
+    <string name="account_spotify">Spotify</string>
+    <string name="account_spotify_connected">Connected · import playlists and liked songs</string>
+    <string name="account_spotify_off">Import playlists and liked songs</string>
+    <string name="account_amazon">Amazon Music</string>
+    <string name="account_amazon_desc">Bring songs and albums over</string>
+    <string name="account_listenbrainz_toggle">Scrobble to ListenBrainz</string>
+    <string name="account_listenbrainz_desc">Send what you play to your ListenBrainz profile.</string>
+    <string name="account_listenbrainz_token">User token</string>
+    <string name="account_listenbrainz_token_none">Not set</string>
+    <string name="account_listenbrainz_footer">Your token is at listenbrainz.org → Settings.</string>
+    <string name="account_sign_out">Sign Out</string>
+
+    <!-- Amazon Music -->
+    <string name="amazon_title">Bring music from Amazon</string>
+    <string name="amazon_text">Amazon Music doesn\'t let other apps read your library. To bring a song or album over, open it in Amazon Music, tap Share and choose Shiny — or type its name here.</string>
+    <string name="amazon_hint">Song or album name</string>
+    <string name="amazon_find">Find in Shiny</string>
+    <string name="amazon_link_hint">Amazon doesn\'t show what\'s behind its links to other apps. Share it from the Amazon Music app to Shiny instead, or type the song\'s name.</string>
+
+    <!-- YouTube Music sign-in -->
+    <string name="login_youtube_title">YouTube Music</string>
+    <string name="login_youtube_subtitle">Sign in with Google</string>
+    <string name="login_youtube_intro">Sign in to sync your YouTube Music library, likes and playlists. Your sign-in stays on this phone.</string>
+    <string name="login_finishing">Signing you in…</string>
+    <string name="login_youtube_failed">Couldn\'t finish signing in. Check your connection and try again.</string>
+    <string name="login_retry">Try Again</string>
+
+    <!-- Spotify -->
+    <string name="spotify_page_intro">Bring your Spotify playlists and liked songs into Shiny. Each song is matched on YouTube Music.</string>
+    <string name="spotify_login_header">Log in to Spotify</string>
+    <string name="spotify_login_tip">Signed up with Google or Facebook? Type that email address and ask Spotify for a login code.</string>
+    <string name="spotify_blocked_title">%1$s doesn\'t sign in inside apps</string>
+    <string name="spotify_blocked_text">%1$s blocks its sign-in page inside other apps (“This browser or app may not be secure”), so it can\'t work here. Your Spotify account still can: on Spotify\'s login page, enter the email address you use with %1$s and choose to get a 6-digit login code.</string>
+    <string name="spotify_blocked_code">Log In with an Email Code</string>
+    <string name="spotify_blocked_password">Set a Spotify Password</string>
+    <string name="spotify_blocked_cookie">Use a Browser Cookie (Advanced)</string>
+    <string name="spotify_cookie_title">Connect with a cookie</string>
+    <string name="spotify_cookie_text">On a computer where you\'re logged in to open.spotify.com, copy the value of the sp_dc cookie (browser DevTools → Application → Cookies) and paste it here. It stays on this phone.</string>
+    <string name="spotify_cookie_connect">Connect</string>
+</resources>

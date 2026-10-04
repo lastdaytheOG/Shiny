@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The system splash's "icon": nothing. On a launch from the launcher the first screen is the
+  launch artwork, and a logo on the splash before it read as a second, different screen.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@android:color/transparent" />
+</shape>

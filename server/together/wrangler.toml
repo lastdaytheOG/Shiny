@@ -1,0 +1,18 @@
+# Shiny Together: the room server for group listening. One Durable Object per session code.
+# Deploy with `npm run together:deploy` from server/ (see TOGETHER_HANDOFF.md at the repository root).
+name = "shiny-together"
+main = "src/index.js"
+compatibility_date = "2024-09-23"
+
+[vars]
+# Where the invite page sends people who don't have Shiny yet.
+APP_DOWNLOAD_URL = "https://github.com/lastdaytheOG/Shiny/releases/latest"
+
+[[durable_objects.bindings]]
+name = "ROOMS"
+class_name = "TogetherRoom"
+
+# SQLite-backed Durable Objects are the kind the Workers Free plan includes.
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["TogetherRoom"]

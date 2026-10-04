@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="eq_preset_deep_bass">Deep Bass</string>
+    <string name="eq_preset_hip_hop">Hip-Hop</string>
+    <string name="eq_preset_classical">Classical</string>
+    <string name="eq_preset_night">Night</string>
+    <string name="eq_label_more">More</string>
+    <string name="eq_preamp">Preamp</string>
+</resources>

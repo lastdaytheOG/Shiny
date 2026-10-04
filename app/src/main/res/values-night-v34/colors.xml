@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The dark counterpart of the surface role. See values-v34/colors.xml. -->
+    <color name="shiny_launch_background">@android:color/system_surface_dark</color>
+</resources>

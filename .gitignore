@@ -1,0 +1,46 @@
+*.iml
+.gradle
+/local.properties
+/.idea/
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+.kotlin/
+
+# Mac
+.DS_Store
+
+# build folders
+build/
+app/build/
+androidApp/build/
+composeApp/build/
+cast/build/
+cast-empty/build/
+crashlytics/build/
+crashlytics-empty/build/
+lastfm/build/
+lastfm-empty/build/
+*/build/
+
+# Gradle
+.gradle/
+
+# Kotlin Multiplatform
+/.kotlin
+
+# Logs
+*.log
+
+# Signing keys stay outside the repository
+*.jks
+*.keystore
+*.p12
+*.pepk
+
+# Built APKs and bundles go to CI artifacts or releases, not git
+*.apk
+*.aab

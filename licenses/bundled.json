@@ -1,0 +1,164 @@
+{
+ "_comment": "Hand-maintained: everything the APK contains that does not come through Gradle, plus the projects Shiny's own GPL code derives from. Each fact was checked against the cited source on 2026-10-01; see LICENSE_COMPLIANCE.md. Paths in noticeFiles are relative to the repository root.",
+ "groups": [
+  {
+   "title": "Shiny",
+   "components": [
+    {
+     "id": "shiny",
+     "name": "Shiny",
+     "spdx": ["GPL-3.0"],
+     "copyright": ["Copyright (C) 2026 Shiny Project", "Portions copyright their respective authors (see NOTICE)"],
+     "description": "This app. Its NOTICE, below, records the copyright and the open-source work Shiny builds upon.",
+     "noticeFiles": ["NOTICE"]
+    }
+   ]
+  },
+  {
+   "title": "Upstream projects",
+   "footer": "Shiny's source code incorporates code from these GPL-3.0 projects, which stays under their licence.",
+   "components": [
+    {
+     "id": "innertune",
+     "name": "InnerTune",
+     "url": "https://github.com/z-huang/InnerTune",
+     "spdx": ["GPL-3.0"],
+     "copyright": ["InnerTune contributors, created by Zion Huang (see the project's git history)"],
+     "description": "The original project Metrolist was forked from (2024): database, InnerTube client, menus and much of the player."
+    },
+    {
+     "id": "metrolist",
+     "name": "Metrolist",
+     "url": "https://github.com/MetrolistGroup/Metrolist",
+     "spdx": ["GPL-3.0"],
+     "copyright": ["Metrolist Project (C) 2026"],
+     "description": "Major upstream code and components: player, widgets, recognition, lyrics providers, stream resolution. Fix403.kt and most of YTPlayerUtils.kt are a Metrolist-based patch by Francesco Grazioso (August 2026)."
+    },
+    {
+     "id": "vivi-music",
+     "name": "vivi-music",
+     "url": "https://github.com/vivizzz007/vivi-music",
+     "spdx": ["GPL-3.0"],
+     "copyright": ["vivimusic Project (C) 2026"],
+     "description": "Upstream modifications and components: the canvas and artist-video modules, YouLyPlus lyrics and the audio-device sheet."
+    },
+    {
+     "id": "archivetune",
+     "name": "ArchiveTune",
+     "url": "https://github.com/koiverse/ArchiveTune",
+     "spdx": ["GPL-3.0"],
+     "copyright": ["© Chartreux Westia — github.com/koiverse"],
+     "description": "Spotify client and Spotify import code (app/…/spotify and app/…/spotifyimport, 18 files), which carry ArchiveTune's notice. Also code in the Discord presence and sign-in, the local-file scanner, the ListenBrainz client and the Unison lyrics module."
+    },
+    {
+     "id": "convx",
+     "name": "Convx",
+     "url": "https://github.com/cosmictaserdev-creator/Convx",
+     "spdx": ["GPL-3.0"],
+     "copyright": ["Convx contributors (see the project's git history)"],
+     "description": "A vivi-music fork. ui/component/GlassEffect.kt and the liquid-glass settings come from Convx commit 1cecfbb (July 2026), which also vendored Kyant0/backdrop and compose-floating-tab-bar. GlassEffect.kt keeps the vivimusic notice Convx's files carried."
+    },
+    {
+     "id": "musicrecognizer",
+     "name": "MusicRecognizer",
+     "url": "https://github.com/aleksey-saenko/MusicRecognizer",
+     "spdx": ["GPL-3.0"],
+     "copyright": ["Aleksey Saenko and contributors"],
+     "description": "Metrolist's music recognition (the shazamkit module and the recognition code Shiny inherits) is credited by Metrolist as based on MusicRecognizer (Metrolist commit 80a019e1, February 2026, and its README)."
+    },
+    {
+     "id": "vibra",
+     "name": "vibra",
+     "url": "https://github.com/BayernMuller/vibra",
+     "spdx": ["GPL-3.0"],
+     "copyright": ["BayernMuller and contributors"],
+     "description": "recognition/ShazamSignatureGenerator.kt is Metrolist's Kotlin port of vibra's audio fingerprinting algorithm (Metrolist commit ac8b2b53, February 2026)."
+    }
+   ]
+  },
+  {
+   "title": "Bundled source code",
+   "components": [
+    {
+     "id": "kyant0-backdrop",
+     "name": "Backdrop (Kyant0/AndroidLiquidGlass)",
+     "version": "2.0.0",
+     "url": "https://github.com/Kyant0/AndroidLiquidGlass",
+     "spdx": ["Apache-2.0"],
+     "copyright": ["Copyright 2025 Kyant"],
+     "description": "30 source files in ui/component/backdrop, vendored from io.github.kyant0:backdrop 2.0.0. Modified by Convx (package rename, single source set, backdrop resolution scale) and by the Shiny Project (four files, each marked).",
+     "noticeFiles": ["licenses/notices/kyant0-AndroidLiquidGlass-LICENSE.txt"]
+    },
+    {
+     "id": "compose-floating-tab-bar",
+     "name": "compose-floating-tab-bar",
+     "version": "1.0.1",
+     "url": "https://github.com/elyesmansour/compose-floating-tab-bar",
+     "spdx": ["Apache-2.0"],
+     "copyright": ["FloatingTabBar v1.0.1 by Elyes Mansour (the upstream LICENSE leaves its copyright line unfilled)"],
+     "description": "ui/component/floatingtabbar/FloatingTabBar.kt, vendored from the v1.0.1 tag with the local modifications listed in its header.",
+     "noticeFiles": ["licenses/notices/compose-floating-tab-bar-v1.0.1-LICENSE.txt"]
+    },
+    {
+     "id": "meriyah",
+     "name": "meriyah",
+     "version": "6.1.4",
+     "url": "https://github.com/meriyah/meriyah",
+     "spdx": ["ISC"],
+     "copyright": ["Copyright (c) 2019 and later, KFlash and others."],
+     "description": "assets/solver/meriyah.js: the unmodified dist/meriyah.umd.js of meriyah 6.1.4.",
+     "noticeFiles": ["licenses/notices/meriyah-6.1.4-LICENSE.md"]
+    },
+    {
+     "id": "astring",
+     "name": "astring",
+     "version": "1.9.0",
+     "url": "https://github.com/davidbonnet/astring",
+     "spdx": ["MIT"],
+     "copyright": ["Copyright (c) 2015, David Bonnet <david@bonnet.cc>"],
+     "description": "assets/solver/astring.js: the unmodified dist/astring.min.js of astring 1.9.0.",
+     "noticeFiles": ["licenses/notices/astring-1.9.0-LICENSE.txt"]
+    },
+    {
+     "id": "yt-dlp-ejs",
+     "name": "yt-dlp/ejs",
+     "version": "0.4.0",
+     "url": "https://github.com/yt-dlp/ejs",
+     "spdx": ["Unlicense"],
+     "copyright": ["Public-domain dedication (The Unlicense)"],
+     "description": "assets/solver/yt.solver.core.js: the unmodified yt.solver.core.js release asset of ejs 0.4.0.",
+     "noticeFiles": ["licenses/notices/yt-dlp-ejs-LICENSE.txt"]
+    }
+   ]
+  },
+  {
+   "title": "Fonts",
+   "components": [
+    {
+     "id": "inter",
+     "name": "Inter",
+     "version": "4.1 (font version 4.001)",
+     "url": "https://github.com/rsms/inter",
+     "spdx": ["OFL-1.1"],
+     "copyright": ["Copyright (c) 2016 The Inter Project Authors (https://github.com/rsms/inter)"],
+     "description": "res/font/inter_variable.ttf: the unmodified InterVariable.ttf of the Inter 4.1 release. No Reserved Font Name.",
+     "noticeFiles": ["licenses/notices/inter-LICENSE.txt"]
+    }
+   ]
+  },
+  {
+   "title": "Native libraries",
+   "components": [
+    {
+     "id": "llvm-libcxx",
+     "name": "LLVM libc++ (libc++_shared.so)",
+     "url": "https://llvm.org",
+     "spdx": ["Apache-2.0 WITH LLVM-exception"],
+     "copyright": ["The LLVM Project contributors"],
+     "description": "The C++ runtime packaged inside ffmpeg-kit-audio. The licence text shown is the LLVM section of the Android NDK 27 toolchain NOTICE.",
+     "noticeFiles": ["licenses/notices/llvm-ndk27-NOTICE-excerpt.txt"]
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,21 @@
+{
+  "name": "shiny-social",
+  "private": true,
+  "type": "module",
+  "description": "Shiny's social server: Google sign-in, friends, live now playing, profile pages, badges and listen-along links.",
+  "scripts": {
+    "dev": "wrangler dev",
+    "db:local": "wrangler d1 execute shiny-social --local --file=schema.sql",
+    "db:remote": "wrangler d1 execute shiny-social --remote --file=schema.sql",
+    "deploy": "wrangler deploy",
+    "together:dev": "wrangler dev -c together/wrangler.toml --port 8788 --ip 0.0.0.0",
+    "together:deploy": "wrangler deploy -c together/wrangler.toml",
+    "together:test": "node together/test/smoke.mjs"
+  },
+  "dependencies": {
+    "jose": "^5.9.6"
+  },
+  "devDependencies": {
+    "wrangler": "^3.114.17"
+  }
+}

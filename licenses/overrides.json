@@ -1,0 +1,51 @@
+{
+ "_comment": "Licence facts for modules whose POM is missing or silent, and extra verified notice files. Every entry cites its evidence (checked 2026-10-01). Paths in noticeFiles are relative to the repository root.",
+ "modules": {
+  "com.github.TeamNewPipe:nanojson": {
+   "spdx": ["Apache-2.0"],
+   "declared": ["Apache License, Version 2.0 (source file headers: \"Copyright 2011 The nanojson Authors\")"],
+   "url": "https://github.com/TeamNewPipe/nanojson",
+   "evidence": "No POM licence. Source headers at commit c7a6c1c08d16b6d5ecded34758e6415e07be2166 (e.g. src/main/java/com/grack/nanojson/JsonParser.java) say Apache-2.0; the upstream README (mmastrac/nanojson) says MIT and Apache dual licence."
+  },
+  "com.github.maxrave-dev:PipePipeExtractor": {
+   "spdx": ["GPL-3.0"],
+   "url": "https://github.com/maxrave-dev/PipePipeExtractor",
+   "evidence": "No POM licence. LICENSE at commit f8982ca9e7 is the GNU GPL v3 text; GitHub reports GPL-3.0 (fork of InfinityLoop1308/PipePipeExtractor, also GPL-3.0)."
+  },
+  "com.github.maxrave-dev.PipePipeExtractor:PipePipeExtractor": {
+   "spdx": ["GPL-3.0"],
+   "url": "https://github.com/maxrave-dev/PipePipeExtractor",
+   "evidence": "Same repository and commit (f8982ca9e7) as com.github.maxrave-dev:PipePipeExtractor; LICENSE is GNU GPL v3."
+  },
+  "com.github.maxrave-dev.PipePipeExtractor:extractor": {
+   "spdx": ["GPL-3.0"],
+   "url": "https://github.com/maxrave-dev/PipePipeExtractor",
+   "evidence": "Submodule of the same repository and commit (f8982ca9e7); LICENSE is GNU GPL v3."
+  },
+  "com.github.maxrave-dev.PipePipeExtractor:timeago-parser": {
+   "spdx": ["GPL-3.0"],
+   "url": "https://github.com/maxrave-dev/PipePipeExtractor",
+   "evidence": "Submodule of the same repository and commit (f8982ca9e7); LICENSE is GNU GPL v3."
+  },
+  "com.github.promeG:tinypinyin": {
+   "spdx": ["Apache-2.0"],
+   "url": "https://github.com/promeG/TinyPinyin",
+   "evidence": "No POM licence. The repository LICENSE (promeG/TinyPinyin) is the Apache License 2.0 text; GitHub reports Apache-2.0."
+  },
+  "com.github.promeg:tinypinyin": {
+   "spdx": ["Apache-2.0"],
+   "url": "https://github.com/promeG/TinyPinyin",
+   "evidence": "Same library as com.github.promeG:tinypinyin under a lower-case group id; repository LICENSE is Apache-2.0."
+  },
+  "org.chromium.net:cronet-api": {
+   "spdx": ["BSD-3-Clause"],
+   "declared": ["Chromium and built-in dependencies"],
+   "evidence": "The POM points to https://storage.cloud.google.com/chromium-cronet/android/72.0.3626.96/Release/cronet/LICENSE; that file (copied verbatim to notices/) is Chromium's BSD-3-Clause licence followed by the licences of its built-in dependencies.",
+   "noticeFiles": ["licenses/notices/chromium-cronet-72.0.3626.96-LICENSE.txt"]
+  },
+  "com.arthenica:ffmpeg-kit-audio": {
+   "evidence": "POM says LGPL v3. The native libraries' configure string and the FFmpegKit licence page give the bundled libraries' licences.",
+   "noticeFiles": ["licenses/notices/ffmpeg-kit-audio.md"]
+  }
+ }
+}

@@ -1,0 +1,46 @@
+
+
+package com.shiny.music.models
+
+import java.io.Serializable
+
+data class PersistQueue(
+    val title: String?,
+    val items: List<MediaMetadata>,
+    val mediaItemIndex: Int,
+    val position: Long,
+    val queueType: QueueType = QueueType.LIST,
+    val queueData: QueueData? = null,
+) : Serializable
+
+sealed class QueueType : Serializable {
+    object LIST : QueueType()
+    object YOUTUBE : QueueType()
+    object YOUTUBE_ALBUM_RADIO : QueueType()
+    object LOCAL_ALBUM_RADIO : QueueType()
+}
+
+sealed class QueueData : Serializable {
+    data class YouTubeData(
+        val endpoint: String,
+        val continuation: String? = null
+    ) : QueueData()
+    
+    data class YouTubeAlbumRadioData(
+        val playlistId: String,
+        val albumSongCount: Int = 0,
+        val continuation: String? = null,
+        val firstTimeLoaded: Boolean = false
+    ) : QueueData()
+    
+    data class LocalAlbumRadioData(
+        val albumId: String,
+        val startIndex: Int = 0,
+        val playlistId: String? = null,
+        val continuation: String? = null,
+        val firstTimeLoaded: Boolean = false
+    ) : QueueData()
+
+    /** A list already in a shuffle order of its own (Smart Shuffle), which shuffle mode keeps. */
+    data object PreShuffled : QueueData()
+}

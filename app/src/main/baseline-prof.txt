@@ -1,0 +1,17 @@
+# Hand-written rules merged with the generated profile (src/main/generated/baselineProfiles).
+#
+# The generated profile was recorded on 2026-09-15, before the Liquid player and lyrics existed:
+# it held 5 player entries and none for the lyrics, so on a sideloaded install that code ran
+# interpreted until ART had profiled it itself, and the lyrics stuttered (measured on the phone,
+# 2026-09-30). These rules compile the Liquid UI ahead of time until the profile is regenerated.
+
+HSPLcom/shiny/music/ui/liquid/player/**;->**(**)**
+Lcom/shiny/music/ui/liquid/player/**;
+HSPLcom/shiny/music/ui/liquid/*;->**(**)**
+Lcom/shiny/music/ui/liquid/*;
+HSPLcom/shiny/music/ui/liquid/home/**;->**(**)**
+Lcom/shiny/music/ui/liquid/home/**;
+HSPLcom/shiny/music/ui/liquid/screens/**;->**(**)**
+Lcom/shiny/music/ui/liquid/screens/**;
+HSPLcom/shiny/music/ui/component/backdrop/**;->**(**)**
+Lcom/shiny/music/ui/component/backdrop/**;

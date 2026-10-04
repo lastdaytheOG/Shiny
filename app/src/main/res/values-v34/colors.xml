@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      From API 34 the platform publishes the Material 3 roles themselves, and Compose
+      Material 3 resolves `colorScheme.surface` from `system_surface_*` rather than from
+      the tonal palette. The v31 value below stays correct for 31-33, where the palette
+      is all the platform exposes, but on 34+ it lands on the container tone instead of
+      the surface tone — close enough to look deliberate, far enough that the hand-over
+      crosses a visible step. Pointing at the role the scheme actually reads makes the
+      launch background and the first Compose frame the same colour.
+    -->
+    <color name="shiny_launch_background">@android:color/system_surface_light</color>
+</resources>

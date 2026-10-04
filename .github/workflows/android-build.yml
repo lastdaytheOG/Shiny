@@ -1,0 +1,75 @@
+name: Android CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build APK
+    runs-on: ubuntu-latest
+    env:
+      # Job-level so step conditions can read it; false wherever secrets aren't passed (fork PRs).
+      HAS_RELEASE_KEY: ${{ secrets.SHINY_KEYSTORE_BASE64 != '' }}
+      # Private-repo runners have 8 GB; gradle.properties asks for 6 GB plus an 8 GB Kotlin daemon.
+      GRADLE_CI_ARGS: -Dorg.gradle.jvmargs=-Xmx5g -Pkotlin.compiler.execution.strategy=in-process
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: gradle
+
+    - name: Decode release keystore
+      if: env.HAS_RELEASE_KEY == 'true'
+      env:
+        SHINY_KEYSTORE_BASE64: ${{ secrets.SHINY_KEYSTORE_BASE64 }}
+      run: echo "$SHINY_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/shiny-release.jks"
+
+    - name: Build signed release APK
+      if: env.HAS_RELEASE_KEY == 'true'
+      env:
+        SHINY_KEYSTORE_PATH: ${{ runner.temp }}/shiny-release.jks
+        SHINY_KEYSTORE_PASSWORD: ${{ secrets.SHINY_KEYSTORE_PASSWORD }}
+      run: |
+        chmod +x gradlew
+        ./gradlew assembleUniversalGmsRelease $GRADLE_CI_ARGS
+
+    - name: Check the APK carries Shiny's release certificate
+      if: env.HAS_RELEASE_KEY == 'true'
+      env:
+        # Public fingerprint of the shiny-release key (SHA-256, lowercase, no colons).
+        EXPECTED_SHA256: f3701c9c1c8754f479a9d220d6e656b1121cca43b61c7bbefd15d832a82b1946
+      run: |
+        APKSIGNER="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)/apksigner"
+        "$APKSIGNER" verify --print-certs app/build/outputs/apk/universalGms/release/*.apk | tee signer.txt
+        grep -q "certificate SHA-256 digest: $EXPECTED_SHA256" signer.txt
+
+    - name: Build debug APK (no release key available)
+      if: env.HAS_RELEASE_KEY != 'true'
+      run: |
+        mkdir -p "$HOME/.android"
+        keytool -genkeypair \
+          -keystore "$HOME/.android/debug.keystore" \
+          -storepass android \
+          -alias androiddebugkey \
+          -keypass android \
+          -dname "CN=Android Debug,O=Android,C=US" \
+          -keyalg RSA \
+          -validity 10000
+        chmod +x gradlew
+        ./gradlew assembleUniversalFossDebug $GRADLE_CI_ARGS
+
+    - name: Upload Universal APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: Shiny-Music-Universal-APK
+        path: app/build/outputs/apk/**/*.apk

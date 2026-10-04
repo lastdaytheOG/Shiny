@@ -1,0 +1,92 @@
+Shiny
+Copyright (C) 2026 Shiny Project
+Portions copyright their respective authors, including those listed below.
+
+Shiny is free software: you can redistribute it and/or modify it under the terms of
+the GNU General Public License version 3 as published by the Free Software
+Foundation (see the LICENSE file).
+
+Shiny is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+PURPOSE. See the GNU General Public License for more details.
+
+
+ORIGIN AND MODIFICATIONS
+
+Shiny builds upon open-source work from InnerTune, Metrolist, vivi-music and the other
+projects credited below, together with substantial modifications and original
+contributions by the Shiny Project.
+
+Shiny is a modified work. The Shiny Project has modified the code base since
+7 September 2026.
+
+
+UPSTREAM PROJECTS
+
+Shiny includes code that its authors wrote in these GPL-3.0 projects. Copyright and
+licence notices they placed in individual files are kept in those files, and each
+project's git history lists its contributors.
+
+InnerTune
+https://github.com/z-huang/InnerTune
+InnerTune contributors (created by Zion Huang).
+
+Metrolist
+https://github.com/MetrolistGroup/Metrolist
+Metrolist Project (C) 2026 and its contributors, including Francesco Grazioso
+(Fix403.kt, and the stream-client changes in YTPlayerUtils.kt and
+PlayerConfigStore.kt).
+
+MusicRecognizer
+https://github.com/aleksey-saenko/MusicRecognizer
+Aleksey Saenko. Metrolist's music recognition is based on it.
+
+vibra
+https://github.com/BayernMuller/vibra
+Its fingerprinting algorithm, ported to Kotlin by Metrolist
+(ShazamSignatureGenerator.kt).
+
+ArchiveTune
+https://github.com/koiverse/ArchiveTune
+(C) Chartreux Westia (github.com/koiverse) and contributors: the Spotify client and
+Spotify import code, and code in the Discord presence and sign-in, the local-file
+scanner, the ListenBrainz client and the Unison lyrics module.
+
+vivi-music
+https://github.com/vivizzz007/vivi-music
+vivimusic Project (C) 2026 and its contributors.
+
+Convx
+https://github.com/cosmictaserdev-creator/Convx
+Convx contributors (a vivi-music fork): GlassEffect.kt, the liquid-glass settings, and
+the vendoring of Kyant0/backdrop and compose-floating-tab-bar with the modifications
+described in those files' headers. GlassEffect.kt carries the vivimusic notice that
+Convx's files used.
+
+
+THIRD-PARTY COMPONENTS
+
+Shiny also bundles code under other licences. Each keeps its own licence.
+
+Kyant0/backdrop 2.0.0 (source, modified)
+Apache-2.0. Copyright 2025 Kyant.
+
+compose-floating-tab-bar 1.0.1 (source, modified)
+Apache-2.0. Elyes Mansour.
+
+meriyah 6.1.4
+ISC. Copyright (c) 2019 and later, KFlash and others.
+
+astring 1.9.0
+MIT. Copyright (c) 2015, David Bonnet.
+
+yt-dlp/ejs 0.4.0 (yt.solver.core.js)
+The Unlicense.
+
+Inter 4.1 font
+OFL-1.1. Copyright (c) 2016 The Inter Project Authors.
+
+The libraries the Android app is built with are listed, with their licences and the
+notices packed inside them, in licenses/dependencies.json; the components above are
+listed in licenses/bundled.json, and their licence texts are in licenses/. The app
+shows all of them under Settings > About > Open Source Licenses.

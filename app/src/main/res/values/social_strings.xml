@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shiny social: Friends & Profile -->
+    <string name="social_title">Friends &amp; Profile</string>
+    <string name="social_sign_in_title">Share what you listen to</string>
+    <string name="social_sign_in_desc">Sign in to see what friends are playing, get a live profile page, and let friends listen along.</string>
+    <string name="social_sign_in_google">Sign in with Google</string>
+    <string name="social_signing_in">Signing in…</string>
+    <string name="social_google_unavailable">Sign in with Google isn\'t available in this version of Shiny.</string>
+    <string name="social_account">Account</string>
+    <string name="social_sign_out">Sign out</string>
+    <string name="social_sign_out_confirm">Sign out of Friends &amp; Profile?</string>
+    <string name="social_delete_account">Delete account</string>
+    <string name="social_delete_account_title">Delete your Shiny profile?</string>
+    <string name="social_delete_account_message">Your profile, friends and listening status are removed from the server. Your music and library on this phone stay.</string>
+    <string name="social_username">Username</string>
+    <string name="social_username_hint">Pick a username</string>
+    <string name="social_username_rules">3–20 characters: letters, numbers, _ and .</string>
+    <string name="social_username_needed">Pick a username so friends can find you.</string>
+    <string name="social_username_saved">Username saved</string>
+    <string name="social_save">Save</string>
+    <string name="social_sharing">Who sees what you\'re playing</string>
+    <string name="social_share_off">Nobody</string>
+    <string name="social_share_friends">Friends</string>
+    <string name="social_share_public">Everyone</string>
+    <string name="social_share_public_desc">Friends, and anyone with your profile link or badge</string>
+    <string name="social_private_session">Private session</string>
+    <string name="social_private_session_desc">Pause sharing for now, without changing who can see it</string>
+    <string name="social_profile">Profile</string>
+    <string name="social_profile_page">Profile page</string>
+    <string name="social_share_profile">Share profile</string>
+    <string name="social_badge">Copy badge for a README or website</string>
+    <string name="social_badge_copied">Badge code copied</string>
+    <string name="social_link_copied">Link copied</string>
+    <string name="social_profile_private_hint">Choose Everyone for your profile page and badge to show what you\'re playing.</string>
+    <string name="social_friends">Friends</string>
+    <string name="social_friends_desc">See what friends are playing</string>
+    <string name="social_add_friend">Add friend</string>
+    <string name="social_add_friend_hint">Friend\'s username</string>
+    <string name="social_add">Add</string>
+    <string name="social_request_sent">Request sent to @%1$s</string>
+    <string name="social_now_friends">You and @%1$s are friends</string>
+    <string name="social_requests">Friend requests</string>
+    <string name="social_sent_requests">Sent</string>
+    <string name="social_accept">Accept</string>
+    <string name="social_decline">Decline</string>
+    <string name="social_cancel_request">Cancel</string>
+    <string name="social_remove_friend">Remove friend</string>
+    <string name="social_remove_friend_confirm">Remove @%1$s from your friends?</string>
+    <string name="social_no_friends">No friends yet</string>
+    <string name="social_no_friends_desc">Add a friend by username, or share your profile link with them.</string>
+    <string name="social_listening_now">Listening now</string>
+    <string name="social_paused">Paused</string>
+    <string name="social_not_listening">Not listening</string>
+    <string name="social_listen_along">Listen along</string>
+    <string name="social_join_room">Join room</string>
+    <string name="social_sign_in_for_friends">Sign in to add friends</string>
+    <string name="social_add_from_link">Add @%1$s as a friend?</string>
+    <string name="social_error">Couldn\'t reach Shiny: %1$s</string>
+
+    <!-- Discord connection -->
+    <string name="discord_settings_title">Discord</string>
+    <string name="discord_settings_desc">Show what you\'re playing on Discord</string>
+    <string name="discord_connect">Connect Discord</string>
+    <string name="discord_connect_desc">Your Discord status shows what you\'re playing, with a Listen along button for friends.</string>
+    <string name="discord_connected_as">Connected as %1$s</string>
+    <string name="discord_disconnect">Disconnect</string>
+    <string name="discord_connect_waiting">Finish connecting in your browser…</string>
+    <string name="discord_connect_done">Discord connected</string>
+    <string name="discord_connect_failed">Couldn\'t connect Discord: %1$s</string>
+    <string name="discord_reconnect_title">Reconnect Discord</string>
+    <string name="discord_reconnect_desc">Discord needs you to connect %1$s again before your status can show what you\'re playing.</string>
+    <string name="discord_reconnect">Reconnect</string>
+    <string name="discord_show_activity">Show in Discord status</string>
+    <string name="discord_listen_along_button">Listen along button</string>
+    <string name="discord_listen_along_button_desc">Anyone who taps it opens the song where you are in it</string>
+</resources>

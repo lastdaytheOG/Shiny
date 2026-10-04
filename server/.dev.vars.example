@@ -1,0 +1,3 @@
+# Copy to .dev.vars for `npm run dev` (local only; .dev.vars is git-ignored).
+# Enables POST /v1/auth/dev so the API can be tested without a Google account. Never put this in wrangler.toml.
+ALLOW_DEV_LOGIN=true

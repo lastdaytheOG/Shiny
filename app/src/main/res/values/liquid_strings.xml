@@ -1,0 +1,342 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <string name="liquid_tab_new">New</string>
+    <string name="liquid_home">Home</string>
+    <string name="liquid_library">Library</string>
+    <string name="liquid_search">Search</string>
+    <string name="liquid_top_picks">Top Picks for You</string>
+    <string name="liquid_made_for_you">Made for You</string>
+    <string name="liquid_recently_played">Recently Played</string>
+    <string name="liquid_quick_picks">Quick Picks</string>
+    <string name="liquid_pinned">Pinned</string>
+    <string name="liquid_rediscover">Rediscover</string>
+    <string name="liquid_your_playlists">Your Playlists</string>
+    <string name="liquid_from_community">From the Community</string>
+    <string name="liquid_because_you_listened">Because you listened to %1$s</string>
+    <string name="liquid_daily_discover">Daily Discovery</string>
+    <string name="liquid_personal_mix">Your Mix</string>
+    <string name="liquid_playing_next">Playing Next</string>
+    <string name="liquid_continue_playing">Continue Playing</string>
+    <string name="liquid_history">History</string>
+    <string name="liquid_from">From %1$s</string>
+    <string name="liquid_autoplay">Autoplay</string>
+    <string name="liquid_repeat">Repeat</string>
+    <string name="liquid_shuffle">Shuffle</string>
+    <string name="liquid_smart_shuffle">Smart Shuffle</string>
+    <string name="liquid_smart_shuffle_subtitle">Mixes your favorites more often</string>
+    <string name="liquid_play">Play</string>
+    <string name="liquid_latest_release">Latest Release</string>
+    <string name="liquid_featured">Featured</string>
+    <string name="liquid_top_songs">Top Songs</string>
+    <string name="liquid_about">About</string>
+    <string name="liquid_see_all">See All</string>
+    <string name="liquid_recently_added">Recently Added</string>
+    <string name="liquid_downloaded">Downloaded</string>
+    <string name="liquid_local_files">On This Device</string>
+    <string name="liquid_liked_songs">Liked Songs</string>
+    <string name="liquid_stats">Listening Stats</string>
+    <string name="liquid_more_by">More by %1$s</string>
+    <string name="liquid_songs_minutes">%1$d songs, %2$d minutes</string>
+    <string name="liquid_songs_count">%1$d songs</string>
+    <string name="liquid_new_playlist">New Playlist…</string>
+    <string name="liquid_no_lyrics">Lyrics aren\'t available for this song</string>
+    <string name="liquid_lyrics_loading">Loading lyrics…</string>
+    <string name="liquid_lyrics_resync">Sync lyrics</string>
+    <string name="liquid_recent_searches">Recent Searches</string>
+    <string name="liquid_clear">Clear</string>
+    <string name="liquid_search_placeholder">Artists, Songs, Lyrics, and More</string>
+    <string name="liquid_top_results">Top Results</string>
+
+    <!-- Search -->
+    <string name="liquid_search_scope_all">All</string>
+    <string name="liquid_search_in_library">In Your Library</string>
+    <string name="liquid_search_in_lyrics">Found in Lyrics</string>
+    <string name="liquid_search_suggestions">Suggestions</string>
+    <string name="liquid_no_results_body">Try a different spelling, or search for something else.</string>
+    <string name="liquid_search_offline_body">Your library is still searchable while you are offline.</string>
+    <string name="liquid_browse_offline">Browse needs a connection.</string>
+    <string name="liquid_search_start_title">Search Shiny</string>
+
+    <!-- New -->
+    <string name="liquid_new_featured">Worth Hearing</string>
+    <string name="liquid_new_from_your_artists">From Artists You Play</string>
+    <string name="liquid_new_adjacent">Next to Your Taste</string>
+    <string name="liquid_new_fresh">Out Now</string>
+    <string name="liquid_new_nothing_title">Nothing New Yet</string>
+    <string name="liquid_new_nothing_body">Shiny could not reach the catalogue. Releases you have already seen stay here.</string>
+    <string name="liquid_new_because_related">Like %1$s, who you play</string>
+    <string name="liquid_new_releases">New Releases</string>
+    <string name="liquid_charts">Top Charts</string>
+    <string name="liquid_moods">Moods &amp; Genres</string>
+    <string name="liquid_nothing_playing">Not Playing</string>
+    <string name="liquid_monthly_listeners">%1$s monthly listeners</string>
+    <string name="liquid_follow">Follow</string>
+    <string name="liquid_following">Following</string>
+    <string name="liquid_edit">Edit</string>
+    <string name="liquid_done">Done</string>
+    <string name="liquid_library_empty_title">Your library is empty</string>
+    <string name="liquid_library_empty_message">Songs, albums and playlists you add will appear here.</string>
+    <string name="liquid_album">Album</string>
+    <string name="liquid_playlist">Playlist</string>
+    <string name="liquid_single">Single</string>
+    <string name="liquid_released">Released %1$s</string>
+    <string name="liquid_other_versions">Other Versions</string>
+    <string name="liquid_you_might_also_like">You Might Also Like</string>
+    <string name="liquid_minutes_listened">Minutes Listened</string>
+    <string name="liquid_top_artist">Top Artist</string>
+    <string name="liquid_stats_empty">Play some music to see your stats</string>
+    <string name="liquid_range_week">Week</string>
+    <string name="liquid_range_month">Month</string>
+    <string name="liquid_range_year">Year</string>
+    <string name="liquid_range_all">All Time</string>
+    <plurals name="liquid_plays">
+        <item quantity="one">%1$d play</item>
+        <item quantity="other">%1$d plays</item>
+    </plurals>
+    <string name="liquid_select">Select</string>
+    <string name="liquid_sort_by">Sort By</string>
+    <string name="liquid_ascending">Ascending</string>
+    <string name="liquid_descending">Descending</string>
+    <string name="liquid_search_device">Search On This Device</string>
+    <string name="liquid_local_empty_message">Scan this device to find the audio files stored on it.</string>
+    <string name="liquid_off">Off</string>
+    <string name="liquid_filters">Filters</string>
+    <string name="liquid_skip_shorter">Skip Songs Shorter Than</string>
+    <string name="liquid_scan_now">Scan Now</string>
+    <string name="liquid_tap_to_recognize">Tap to Recognize</string>
+    <string name="liquid_recognize_ready">Find out what\'s playing around you.</string>
+    <string name="liquid_recognize_hint">Make sure your device can hear the song clearly.</string>
+    <string name="liquid_recognize_no_match">Try again closer to the music, or when it\'s a little louder.</string>
+    <string name="liquid_today">Today</string>
+    <string name="liquid_yesterday">Yesterday</string>
+    <string name="liquid_this_week">This Week</string>
+    <string name="liquid_recognized">Recognized</string>
+    <string name="liquid_clear_history">Clear History</string>
+    <string name="liquid_clear_history_title">Clear Recognition History?</string>
+    <string name="liquid_clear_history_message">Every song you\'ve recognized will be removed from this list.</string>
+    <string name="liquid_search_recognized">Search Recognized Songs</string>
+    <string name="liquid_no_results">No Results</string>
+    <string name="liquid_recognized_empty">No Recognized Songs</string>
+    <string name="liquid_recognized_empty_message">Songs you identify will appear here.</string>
+    <string name="liquid_continue">Continue</string>
+    <string name="liquid_make_it_yours">Make It Yours</string>
+    <string name="liquid_make_it_yours_body">Choose how Shiny looks. You can change this any time in Settings.</string>
+    <string name="liquid_appearance_caption">Appearance</string>
+    <string name="liquid_automatic">Automatic</string>
+    <string name="liquid_light">Light</string>
+    <string name="liquid_dark">Dark</string>
+    <string name="liquid_tint_caption">Tint</string>
+    <string name="liquid_glass_title">Liquid Glass</string>
+    <string name="liquid_glass_body">Refracting glass on the tab bar, player and buttons</string>
+    <string name="liquid_get_started">Get Started</string>
+    <string name="liquid_whats_new">What’s New in Shiny</string>
+    <string name="liquid_version">Version %1$s</string>
+    <string name="liquid_new_f1_title">A New Look</string>
+    <string name="liquid_new_f1_body">Every screen rebuilt with Liquid Glass, large titles and a floating tab bar.</string>
+    <string name="liquid_new_f2_title">Now Playing, Reimagined</string>
+    <string name="liquid_new_f2_body">The artwork becomes the whole screen, with lyrics and the queue one tap away.</string>
+    <string name="liquid_new_f3_title">Word-by-Word Lyrics</string>
+    <string name="liquid_new_f3_body">Lines fill as they are sung, with pronunciation for other scripts.</string>
+    <string name="liquid_new_f4_title">Listening Stats</string>
+    <string name="liquid_new_f4_body">Your minutes, top songs, artists and albums for any week, month or year.</string>
+    <string name="liquid_new_f5_title">Recognize Music</string>
+    <string name="liquid_new_f5_body">Find out what is playing around you and play it in one tap.</string>
+
+    <!-- Music on this device -->
+    <string name="local_sources_title">Music sources</string>
+    <string name="local_sources_sheet_footer">Shiny finds music anywhere on this device, and leaves out voice notes, recordings and system sounds.</string>
+    <string name="local_sources_summary_all">Everything</string>
+    <string name="local_sources_summary_music_only">Music only</string>
+    <string name="local_sources_section_skipped">Left out</string>
+    <string name="local_sources_section_skipped_footer">Shiny recognises these by the folders their apps use and by Android\'s own labels, not by file names. A song without an artist or album is still a song.</string>
+    <string name="local_sources_messaging">Messaging apps</string>
+    <string name="local_sources_messaging_desc">WhatsApp and Telegram audio and voice notes</string>
+    <string name="local_sources_recordings">Recordings</string>
+    <string name="local_sources_recordings_desc">Voice memos, call recordings and AMR audio</string>
+    <string name="local_sources_system">Ringtones and alerts</string>
+    <string name="local_sources_system_desc">Ringtone, notification and alarm sounds, and app files</string>
+    <string name="local_sources_section_included">Always include</string>
+    <string name="local_sources_section_included_footer">Music in these folders is added even when it would be left out above.</string>
+    <string name="local_sources_section_excluded">Never include</string>
+    <string name="local_sources_section_excluded_footer">Nothing in these folders is added, whatever it is.</string>
+    <string name="local_sources_add_folder">Add folder</string>
+    <string name="local_sources_remove_folder">Remove %1$s</string>
+    <string name="local_sources_scan">Scan now</string>
+    <string name="local_sources_scanning">Scanning…</string>
+    <string name="local_sources_scan_needs_access">Allow access to music to scan</string>
+    <plurals name="local_sources_skipped_files">
+        <item quantity="one">%d file left out as not music</item>
+        <item quantity="other">%d files left out as not music</item>
+    </plurals>
+    <plurals name="local_sources_summary_folders">
+        <item quantity="one">%d folder excluded</item>
+        <item quantity="other">%d folders excluded</item>
+    </plurals>
+
+    <!-- Song details -->
+    <string name="song_detail_album">Album</string>
+    <string name="song_detail_album_artist">Album artist</string>
+    <string name="song_detail_year">Year</string>
+    <string name="song_detail_genre">Genre</string>
+    <string name="song_detail_track">Track</string>
+    <string name="song_detail_disc">Disc</string>
+    <string name="song_detail_of">%1$s of %2$s</string>
+    <string name="song_detail_format">Format</string>
+    <string name="song_detail_channels">Channels</string>
+    <string name="song_detail_size">Size</string>
+    <string name="song_detail_source">Source</string>
+    <string name="song_detail_source_local">File on this device</string>
+    <string name="song_detail_source_downloaded">Downloaded</string>
+    <string name="song_detail_source_streamed">Streamed</string>
+    <string name="song_detail_location">Location</string>
+
+    <!-- Home: a feed assembled from real listening. Every line below states something Shiny
+         actually measured, or offers a choice; none of it claims to know the listener's mood. -->
+    <string name="home_eyebrow_morning">For this morning</string>
+    <string name="home_eyebrow_afternoon">For this afternoon</string>
+    <string name="home_eyebrow_evening">For this evening</string>
+    <string name="home_eyebrow_night">For tonight</string>
+    <string name="home_eyebrow_offline">Plays without a connection</string>
+    <string name="home_mix_morning">First Light</string>
+    <string name="home_mix_afternoon">Daylight</string>
+    <string name="home_mix_evening">Golden Hour</string>
+    <string name="home_mix_night">Afterglow</string>
+    <string name="home_mix_offline">Offline Mix</string>
+    <string name="home_mix_reason_both">%1$d from your listening · %2$d new to you</string>
+    <plurals name="home_mix_reason_familiar">
+        <item quantity="one">%d song from your listening</item>
+        <item quantity="other">%d songs from your listening</item>
+    </plurals>
+    <string name="home_resume_eyebrow">Pick up where you left off</string>
+    <string name="home_resume">Resume</string>
+    <string name="home_from_queue">From %1$s</string>
+    <!-- A Home with no listening behind it. No progress meter, no "unlock": real music, now. -->
+    <string name="home_eyebrow_start">A place to start</string>
+    <string name="home_start_eyebrow">Playing everywhere</string>
+    <string name="home_start_title">Start anywhere</string>
+    <string name="home_start_chart_reason">%1$s, in full. Home learns as you listen.</string>
+    <string name="home_start_device_eyebrow">Already on this phone</string>
+    <string name="home_start_device_title">Your music</string>
+    <plurals name="home_start_device_reason">
+        <item quantity="one">%1$d song, ready with or without a connection.</item>
+        <item quantity="other">%1$d songs, ready with or without a connection.</item>
+    </plurals>
+    <string name="home_quiet_title">Nothing to play yet</string>
+    <string name="home_quiet_body">Search for something, or add music from this phone. Home fills in as you listen.</string>
+    <string name="home_quiet_offline_title">Nothing here offline</string>
+    <string name="home_quiet_offline_body">Download a few songs or add music from this phone, and Home works with no connection at all.</string>
+    <string name="home_offline_title">You are offline</string>
+    <plurals name="home_offline_body">
+        <item quantity="one">Showing the %d song that plays on this device.</item>
+        <item quantity="other">Showing the %d songs that play on this device.</item>
+    </plurals>
+    <string name="home_offline_empty">Nothing is downloaded or on this device yet.</string>
+    <string name="home_lately">Lately</string>
+    <string name="home_tile_album">Album</string>
+    <string name="home_tile_artist">Artist</string>
+    <string name="home_tile_playlist">Playlist</string>
+    <string name="home_tile_pinned">Pinned</string>
+    <string name="home_tile_liked">Liked Songs</string>
+    <string name="home_tile_downloads">Downloads</string>
+    <string name="home_tile_device">On This Device</string>
+    <plurals name="home_songs">
+        <item quantity="one">%d song</item>
+        <item quantity="other">%d songs</item>
+    </plurals>
+    <plurals name="home_songs_heard">
+        <item quantity="one">%d song heard</item>
+        <item quantity="other">%d songs heard</item>
+    </plurals>
+    <string name="home_rotation">Your Rotation</string>
+    <string name="home_rotation_subtitle">What you keep coming back to this month</string>
+    <plurals name="home_plays_month">
+        <item quantity="one">%d play this month</item>
+        <item quantity="other">%d plays this month</item>
+    </plurals>
+    <string name="home_around_morning">Your Mornings</string>
+    <string name="home_around_afternoon">Your Afternoons</string>
+    <string name="home_around_evening">Your Evenings</string>
+    <string name="home_around_night">Your Late Nights</string>
+    <plurals name="home_around_body">
+        <item quantity="one">%d song you tend to play around this time</item>
+        <item quantity="other">%d songs you tend to play around this time</item>
+    </plurals>
+    <string name="home_set_mood">Set the Mood</string>
+    <string name="home_or_set_mood">Or set a mood</string>
+    <string name="home_discover">Fresh discoveries</string>
+    <string name="home_discover_subtitle">Never played, each tied to a song you love</string>
+    <string name="home_discover_like_song">More like %1$s</string>
+    <string name="home_discover_like_artist">If you like %1$s</string>
+    <!-- Keep listening: the wording steps up only as the evidence does (AffinityTier). -->
+    <string name="home_continue_artist">More from %1$s</string>
+    <string name="home_continue_warming">Back to %1$s</string>
+    <string name="home_continue_favourite">More from %1$s, on repeat</string>
+    <string name="home_continue_related">More like %1$s</string>
+    <string name="home_continue_subtitle">Carrying on from %1$s</string>
+    <string name="home_because">Because of %1$s</string>
+    <string name="home_play_all">Play All</string>
+    <string name="home_deep_eyebrow">Go deeper</string>
+    <plurals name="home_deep_meta">
+        <item quantity="one">You have played %d of their songs</item>
+        <item quantity="other">You have played %d of their songs</item>
+    </plurals>
+    <plurals name="home_deep_meta_saved">
+        <item quantity="one">%d of their songs is in your music</item>
+        <item quantity="other">%d of their songs are in your music</item>
+    </plurals>
+    <string name="home_new_reason_saved">From your music</string>
+    <string name="home_deep_albums">Not heard yet</string>
+    <string name="home_deep_related">If you like %1$s</string>
+    <string name="home_new_releases">New Releases</string>
+    <string name="home_new_from">New from %1$s</string>
+    <plurals name="home_new_reason">
+        <item quantity="one">You have played them once</item>
+        <item quantity="other">You have played them %d times</item>
+    </plurals>
+    <string name="home_new_everyone">Out now</string>
+    <string name="home_charts">The Charts</string>
+    <string name="home_charts_source">YouTube Charts · refreshed %1$s</string>
+    <string name="home_charts_global">Global</string>
+    <string name="home_charts_full">See the full chart</string>
+    <string name="home_chart_new">New</string>
+    <string name="home_rediscover">Long Time No Hear</string>
+    <string name="home_rediscover_subtitle">Once played often, quiet for a while</string>
+    <string name="home_last_played">Last played %1$s</string>
+    <string name="home_albums_started">Albums You Started</string>
+    <string name="home_album_progress">%1$d of %2$d songs heard</string>
+    <string name="home_recently_added_subtitle">Saved, downloaded or found on this device</string>
+    <string name="home_ready_offline">Ready Offline</string>
+    <plurals name="home_ready_offline_body">
+        <item quantity="one">%d song plays without a connection</item>
+        <item quantity="other">%d songs play without a connection</item>
+    </plurals>
+    <string name="home_ready_offline_split">%1$d downloaded · %2$d on this device</string>
+    <string name="home_week">Your Week</string>
+    <plurals name="home_week_artists">
+        <item quantity="one">%d artist</item>
+        <item quantity="other">%d artists</item>
+    </plurals>
+    <string name="home_week_minutes">%1$d min</string>
+    <string name="home_week_hours">%1$d h %2$d min</string>
+    <string name="home_week_sentence">You played %1$s by %2$s this week, %3$s in all.</string>
+    <string name="home_just_now">just now</string>
+    <string name="home_week_top_artist">Most played artist</string>
+    <string name="home_week_top_song">Played most</string>
+    <plurals name="home_week_plays">
+        <item quantity="one">%d play this week</item>
+        <item quantity="other">%d plays this week</item>
+    </plurals>
+    <plurals name="home_week_new">
+        <item quantity="one">%d song was new to you</item>
+        <item quantity="other">%d songs were new to you</item>
+    </plurals>
+    <string name="home_week_stats">Listening stats</string>
+    <string name="home_surprise">Surprise Me</string>
+    <string name="home_surprise_body">One song from your own music universe: a forgotten favourite, a save you never played, or something close to what you love.</string>
+    <string name="home_surprise_button">Surprise me</string>
+    <string name="home_surprise_again">Another one</string>
+    <string name="home_surprise_forgotten">A forgotten favourite</string>
+    <string name="home_surprise_unexplored">Yours, barely played</string>
+    <string name="home_surprise_new">New to you, close to what you love</string>
+    <string name="home_surprise_device">On this device, not heard lately</string>
+</resources>
