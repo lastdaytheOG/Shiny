@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Shiny · Free music app for Android</title>
 <meta name="description" content="Shiny is a free music app for Android. Millions of songs, artwork that fills the screen, lyrics word by word, offline downloads and Listen Together. No ads, and no account needed.">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#07030d" id="theme-color">
 <meta name="color-scheme" content="dark">
 <link rel="canonical" href="https://shinymusic.in/">
 <link rel="icon" href="/favicon.png" type="image/png">
@@ -22,6 +22,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Bodoni+Moda:ital,opsz,wght@1,6..96,400..600&family=Inter:ital,opsz,wght@0,14..32,400..800;1,14..32,400..600&display=swap">
+<link rel="preload" as="image" href="/art/dove.webp" fetchpriority="high">
 <link rel="preload" as="image" href="/art/viva-la-vida.webp">
 <script>
   // "reduce-motion" honours the system setting; ?motion previews the full animation anyway.
@@ -58,7 +59,9 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; }
-html { background: #000; -webkit-text-size-adjust: 100%; overflow-x: clip; }
+html { background: #07030d; -webkit-text-size-adjust: 100%; overflow-x: clip; }
+/* While the top of the page is daylight, the bit the browser shows past the edge matches it. */
+html.sky-day { background: #f6f3fc; }
 html.lenis, html.lenis body { height: auto; }
 body {
   margin: 0; background: transparent; color: var(--label);
@@ -76,9 +79,9 @@ h1, h2, h3, p, ol, ul, figure { margin: 0; }
 .wrap { width: var(--page); margin-inline: auto; }
 [id] { scroll-margin-top: 90px; }
 
-/* ---------- The painting under everything ---------- */
+/* ---------- The sky under everything: daylight at the top of the page, night from there on ---------- */
 .liquid { position: fixed; left: 0; top: 0; width: 100%; height: 100lvh; z-index: -1; background: #07030d; }
-.no-gl .liquid { background: radial-gradient(60% 50% at 30% 30%, #3a1580, transparent 70%), radial-gradient(50% 50% at 75% 70%, #8a1840, transparent 70%), #07030d; }
+.no-gl .liquid { background: radial-gradient(60% 50% at 30% 30%, #2b1a72, transparent 70%), radial-gradient(50% 50% at 75% 70%, #4a1060, transparent 70%), #07030d; }
 .grain {
   position: fixed; inset: 0; z-index: var(--z-grain); pointer-events: none; opacity: .07;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1.4 0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)'/%3E%3C/svg%3E");
@@ -137,9 +140,10 @@ h1, h2, h3, p, ol, ul, figure { margin: 0; }
   top: calc(12px + env(safe-area-inset-top)); left: 0; right: 0; margin-inline: auto;
   width: min(760px, 100% - 24px);
   display: flex; align-items: center; gap: 4px; height: 54px; padding: 0 7px 0 12px; border-radius: 999px;
-  background: rgb(14 12 20 / .42);
+  /* Dark enough to keep its white labels readable over the daylight at the top of the page. */
+  background: rgb(16 11 30 / .74);
   -webkit-backdrop-filter: blur(22px) saturate(1.8); backdrop-filter: blur(22px) saturate(1.8);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / .16), inset 0 0 0 .5px rgb(255 255 255 / .12), 0 14px 40px -14px rgb(0 0 0 / .8);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .16), inset 0 0 0 .5px rgb(255 255 255 / .12), 0 14px 40px -14px rgb(20 8 50 / .55);
 }
 .brand { display: flex; align-items: center; gap: 9px; margin-right: auto; min-width: 0; font-family: var(--display); font-stretch: 118%; font-size: 17px; font-weight: 800; letter-spacing: -.01em; }
 .brand img { width: 30px; height: 30px; border-radius: 8px; }
@@ -150,39 +154,62 @@ h1, h2, h3, p, ol, ul, figure { margin: 0; }
 .nav-cta .icon { width: 16px; height: 16px; }
 
 /* ---------- Overture ---------- */
-.hero { position: relative; min-height: 100svh; overflow: hidden; display: flex; flex-direction: column; }
-.hero::before {
-  content: ""; position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(100deg, rgb(4 2 8 / .78) 0%, rgb(4 2 8 / .45) 38%, transparent 64%), linear-gradient(to bottom, rgb(0 0 0 / .35), transparent 22%);
-}
+/* Day and night share this screen, so anything that can sit on either is white ink blended as "difference":
+   it reads dark on the daylight and light on the night, and turns as the night passes over it.
+   Nothing between these elements and <body> may become a stacking context, or they stop seeing the sky. */
+.hero { position: relative; min-height: 100svh; display: flex; flex-direction: column; }
+.marks { mix-blend-mode: difference; }
 .marks i { position: absolute; width: 22px; height: 22px; pointer-events: none; }
 .marks i::before, .marks i::after { content: ""; position: absolute; background: rgb(255 255 255 / .55); }
 .marks i::before { left: 50%; top: 0; width: 1px; height: 100%; }
 .marks i::after { top: 50%; left: 0; height: 1px; width: 100%; }
-.marks i:nth-child(1) { left: 18px; top: 86px; }
-.marks i:nth-child(2) { right: 18px; top: 86px; }
-.marks i:nth-child(3) { left: 18px; bottom: 18px; }
-.marks i:nth-child(4) { right: 18px; bottom: 18px; }
+.marks i:nth-child(1) { left: 18px; bottom: 18px; }
+.marks i:nth-child(2) { right: 18px; bottom: 18px; }
 .hero-inner { position: relative; width: var(--page); margin: 0 auto; padding-top: calc(130px + env(safe-area-inset-top)); flex: 1; }
-.hero-copy { container-type: inline-size; width: min(760px, 100%); }
+.hero-copy { width: min(760px, 100%); }
 .statement {
-  /* "Millions of songs." is about 10em wide here: 9.4cqw keeps it on one line in its column. */
-  font-size: clamp(2.2rem, 1rem + 5vw, 5rem);
-  font-size: clamp(2.2rem, 9.4cqw, 5.4rem);
+  /* "Millions of songs." is about 10em wide here: 9.4% of the column (at most 760px) keeps it on one line. */
+  font-size: clamp(2.2rem, 9.4vw - 3.76px, 4.465rem);
   font-stretch: 100%; font-weight: 800; line-height: .95; letter-spacing: -.03em;
 }
 .statement > span { display: block; }
-.statement .rose { color: var(--rose); }
+.statement .rose { color: #f2254f; }
+/* "Difference" alone turns violet into lime. Each piece of ink therefore gets a twin laid exactly over it
+   (made in the script) that keeps the lightness underneath and repaints it violet: indigo by day, pale lilac by night. */
+.ink-stack, .statement > .ink-stack { display: grid; }
+.ink-stack > * { grid-area: 1 / 1; }
+.ink { mix-blend-mode: difference; }
+.ink.tint { mix-blend-mode: color; color: #b7a4f5; }
 .statement .w { display: inline-block; animation: word-in 1.2s var(--ease-out) both; animation-delay: calc(var(--i) * 80ms + 150ms); }
 @keyframes word-in { from { opacity: 0; filter: blur(16px); transform: translateY(.3em); } }
 @keyframes rise { from { opacity: 0; transform: translateY(22px); } }
 .cta-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 34px; animation: rise 1.1s var(--ease-out) .65s both; }
-.hero .fine { margin-top: 18px; animation: rise 1.1s var(--ease-out) .75s both; }
+.hero .fine { margin-top: 18px; color: rgb(255 255 255 / .8); mix-blend-mode: difference; animation: rise 1.1s var(--ease-out) .75s both; }
+/* The painting: Shiny's own dove, on black so that "screen" leaves only its light. It shows where the night is. */
+.dove {
+  position: absolute; right: max(-3vw, (100vw - 1760px) / 2); bottom: -3svh;
+  height: min(106svh, 58vw); width: auto; aspect-ratio: 1261 / 1245;
+  mix-blend-mode: screen; pointer-events: none; user-select: none; -webkit-user-select: none;
+  animation: dove-in 2.6s var(--ease-out) .1s both;
+}
+@keyframes dove-in { from { opacity: 0; transform: translate3d(2.5%, 3.5%, 0) scale(1.05); } }
+/* Feathers it left on the daylight side. */
+.plume {
+  position: absolute; left: var(--x); top: var(--y); width: var(--w); height: auto; pointer-events: none; user-select: none; -webkit-user-select: none;
+  rotate: var(--r, 0deg); animation: plume-in 2.2s var(--ease-out) both, sway var(--t, 11s) cubic-bezier(.45, 0, .55, 1) infinite alternate;
+  animation-delay: var(--d, .3s), calc(var(--d, .3s) - 6s);
+}
+@keyframes plume-in { from { opacity: 0; } }
+.plume.a { --x: 5%; --y: 47%; --w: clamp(96px, 11vw, 190px); --r: -8deg; --t: 12s; --d: .5s; }
+.plume.b { --x: 39%; --y: 27%; --w: clamp(120px, 15vw, 270px); --r: 6deg; --t: 15s; --d: .8s; }
+.plume.c { --x: 27%; --y: 60%; --w: clamp(40px, 4.4vw, 78px); --r: 14deg; --t: 9s; --d: 1.1s; }
+.plume.d { --x: 52%; --y: 13%; --w: clamp(34px, 3.6vw, 64px); --r: -20deg; --t: 10s; --d: 1.3s; }
+@keyframes sway { from { transform: translate3d(0, -10px, 0) rotate(-5deg); } to { transform: translate3d(14px, 12px, 0) rotate(7deg); } }
 .mega {
   position: relative; margin: 0; padding: 0 0 .02em;
   font-family: var(--display); font-stretch: 125%; font-weight: 900;
   font-size: 22.6vw; line-height: .76; letter-spacing: -.035em; text-align: center; white-space: nowrap;
-  color: #fff; mix-blend-mode: difference; pointer-events: none; user-select: none;
+  color: #fff; pointer-events: none; user-select: none;
   animation: rise 1.6s var(--ease-out) .2s both;
 }
 .mega span { display: inline-block; transform-origin: 50% 100%; animation: pump 1.034s cubic-bezier(.45, 0, .55, 1) infinite alternate; }
@@ -191,11 +218,6 @@ h1, h2, h3, p, ol, ul, figure { margin: 0; }
 .mega span:nth-child(4) { animation-duration: .905s; animation-delay: -.35s; }
 .mega span:nth-child(5) { animation-duration: 1.164s; animation-delay: -.7s; }
 @keyframes pump { from { transform: scaleY(.9); } to { transform: scaleY(1.02); } }
-.fig {
-  position: absolute; right: 20px; top: 50%; transform: translateY(-50%) rotate(180deg);
-  writing-mode: vertical-rl; font-size: 12px; letter-spacing: .02em; color: var(--tertiary);
-}
-.fig i { color: var(--secondary); }
 .pause {
   position: absolute; right: 50px; bottom: 44px; z-index: 2;
   display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border: 0; border-radius: 999px; cursor: pointer;
@@ -459,15 +481,20 @@ h1, h2, h3, p, ol, ul, figure { margin: 0; }
 .privacy { position: relative; padding: clamp(120px, 18vh, 210px) 0; overflow-x: hidden; overflow-x: clip; }
 .privacy-inner { display: grid; grid-template-columns: minmax(0, .95fr) minmax(0, 1.05fr); gap: clamp(40px, 8vw, 128px); align-items: center; }
 .privacy-copy .body { margin-top: 22px; }
-.veil { position: relative; isolation: isolate; overflow: hidden; width: min(340px, 100%); aspect-ratio: 1; margin-top: 44px; border-radius: 30px; box-shadow: 0 40px 80px -30px rgb(0 0 0 / .95), 0 0 90px -20px rgb(var(--umber) / .4); }
-.veil img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.08); }
-.pane { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; padding: 24px; background: linear-gradient(180deg, rgb(20 16 14 / .1), rgb(20 16 14 / .45)); -webkit-backdrop-filter: blur(22px) saturate(1.5); backdrop-filter: blur(22px) saturate(1.5); box-shadow: inset 0 1px 0 rgb(255 255 255 / .28), inset 0 0 0 .5px rgb(255 255 255 / .16); }
-.pane::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(105deg, transparent 35%, rgb(255 255 255 / .16) 50%, transparent 65%); transform: translateX(-120%); animation: glint 7s var(--ease-out) infinite; }
-@keyframes glint { 0%, 55% { transform: translateX(-120%); } 85%, 100% { transform: translateX(120%); } }
-.pane .eq { margin-bottom: 10px; }
-.pane p { font-size: 20px; font-weight: 700; letter-spacing: -.02em; }
-.pane .hush { font-size: 15px; font-weight: 500; letter-spacing: 0; color: rgb(255 255 255 / .75); }
-.privacy:not(.in-view) .pane::after, .privacy:not(.in-view) .eq i { animation-play-state: paused; }
+.cage { position: relative; width: min(280px, 78%); margin: 30px 0 0; }
+.cage::before { content: ""; position: absolute; inset: 20% -22% 10%; background: radial-gradient(closest-side, rgb(150 124 255 / .22), transparent); pointer-events: none; }
+.cage svg { position: relative; display: block; width: 100%; height: auto; overflow: visible; fill: none; stroke: #efe6ff; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.cage .back { opacity: .3; stroke-width: 1.1; }
+/* The door, swung out toward you: solid enough to hide the bars behind it, so it reads as open. */
+.cage .leaf { fill: rgb(6 5 11 / .92); stroke-width: 1.8; }
+/* It hangs from nothing, and the perch is still moving: whoever lived here has only just left. */
+.cage-body, .cage .swing { transform-box: fill-box; transform-origin: 50% 0; }
+.cage-body { animation: cage-sway 7s cubic-bezier(.45, 0, .55, 1) infinite alternate; }
+.cage .swing { animation: perch 2.6s cubic-bezier(.45, 0, .55, 1) infinite alternate; }
+@keyframes cage-sway { from { transform: rotate(-1.3deg); } to { transform: rotate(1.3deg); } }
+@keyframes perch { from { transform: rotate(-7deg); } to { transform: rotate(7deg); } }
+.cage figcaption { position: relative; margin-top: 14px; font-family: var(--serif); font-style: italic; font-size: 23px; line-height: 1.25; color: rgb(255 255 255 / .92); }
+.privacy:not(.in-view) .cage * { animation-play-state: paused; }
 .promises { list-style: none; padding: 0; display: grid; gap: 28px; }
 .promises li { padding-top: 20px; box-shadow: inset 0 .5px 0 var(--hairline); }
 .promises h3 { font-family: var(--display); font-stretch: 110%; font-size: 21px; line-height: 1.2; font-weight: 800; letter-spacing: -.015em; }
@@ -515,10 +542,13 @@ h1, h2, h3, p, ol, ul, figure { margin: 0; }
 @media (max-width: 1100px) { .note { display: none; } }
 @media (max-width: 880px) {
   .nav-links { display: none; }
-  .hero::before { background: linear-gradient(to bottom, rgb(4 2 8 / .72), rgb(4 2 8 / .4) 55%, transparent 80%); }
   .hero-inner { padding-top: calc(112px + env(safe-area-inset-top)); }
-  .mega { font-size: 22vw; margin-top: 40px; }
-  .fig { display: none; }
+  .hero > .ink-stack { display: none; }
+  .dove { right: -14vw; bottom: -6svh; width: auto; height: max(300px, min(126vw, (100svh - 310px) * 1.05)); }
+  .plume.a { --x: 6%; --y: 50%; --w: 84px; }
+  .plume.b { --x: 40%; --y: 39%; --w: 150px; }
+  .plume.c { --x: 26%; --y: 63%; --w: 40px; }
+  .plume.d { --x: 80%; --y: 43%; --w: 36px; }
   .pause { position: relative; right: auto; bottom: auto; align-self: flex-start; margin: 14px 20px 22px; }
   .marks { display: none; }
   .placard { left: 50%; bottom: auto; top: calc(100% + 40px); transform: translateX(-50%); width: min(300px, 80vw); padding: 12px 14px; font-size: 12px; }
@@ -546,8 +576,8 @@ h1, h2, h3, p, ol, ul, figure { margin: 0; }
   .brand { gap: 8px; font-size: 16px; }
   .brand img { width: 28px; height: 28px; }
   .nav-cta { height: 40px; padding: 0 14px; gap: 6px; font-size: 14.5px; }
-  /* "Millions of songs." is about 8.5em wide: 11.4cqw keeps it on one line down to 320px. */
-  .statement { font-size: clamp(1.75rem, 11.4cqw, 3rem); }
+  /* "Millions of songs." is about 8.5em wide: 11.4% of the column keeps it on one line down to 320px. */
+  .statement { font-size: clamp(1.75rem, 11.4vw - 3.65px, 3rem); }
   .pause { margin: 14px 16px 22px; }
   .pulse-art::before, .pulse-art::after { width: 112%; }
   .bento { grid-template-columns: 1fr; }
@@ -558,6 +588,14 @@ h1, h2, h3, p, ol, ul, figure { margin: 0; }
   .cta-row .btn { flex: 1 1 100%; }
 }
 
+@media (max-height: 500px) and (orientation: landscape) {
+  .hero-inner { padding-top: calc(84px + env(safe-area-inset-top)); }
+  .statement { font-size: clamp(1.75rem, 5.2vw, 3rem); }
+  .cta-row { margin-top: 22px; }
+  .dove { right: -4vw; bottom: -6svh; height: 118svh; }
+  .plume.a, .plume.c { display: none; }
+}
+
 @media (max-width: 360px) {
   .nav-cta { height: 38px; padding: 0 12px; font-size: 14px; }
   .nav-cta .icon { width: 15px; height: 15px; }
@@ -566,7 +604,7 @@ h1, h2, h3, p, ol, ul, figure { margin: 0; }
 /* ---------- Reduced motion (html.reduce-motion) ---------- */
 html.reduce-motion { scroll-behavior: auto; }
 .reduce-motion *, .reduce-motion *::before, .reduce-motion *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; animation-delay: 0s !important; }
-.reduce-motion .np-field, .reduce-motion .eq i, .reduce-motion .disc, .reduce-motion .label, .reduce-motion .rings i, .reduce-motion .flow .mover, .reduce-motion .live::before, .reduce-motion .pane::after, .reduce-motion .mega span, .reduce-motion .pulse-art::before, .reduce-motion .pulse-art::after { animation: none !important; }
+.reduce-motion .np-field, .reduce-motion .eq i, .reduce-motion .disc, .reduce-motion .label, .reduce-motion .rings i, .reduce-motion .flow .mover, .reduce-motion .live::before, .reduce-motion .mega span, .reduce-motion .pulse-art::before, .reduce-motion .pulse-art::after, .reduce-motion .plume, .reduce-motion .dove, .reduce-motion .cage-body, .reduce-motion .cage .swing { animation: none !important; }
 .reduce-motion .roll, .reduce-motion .line, .reduce-motion .line .w, .reduce-motion .line .dot, .reduce-motion .queue li, .reduce-motion .np-art, .reduce-motion .skyline i, .reduce-motion .record { transition: none !important; }
 .reduce-motion .skyline i { transform: none; }
 .reduce-motion .cursor { display: none; }
@@ -610,11 +648,11 @@ html.reduce-motion { scroll-behavior: auto; }
 
 <main>
   <section class="hero" data-palette="overture" aria-labelledby="hero-title">
-    <div class="marks" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    <div class="marks" aria-hidden="true"><i></i><i></i></div>
     <div class="hero-inner">
       <div class="hero-copy">
         <h1 class="display statement" id="hero-title">
-          <span><span class="w" style="--i:0">Millions</span> <span class="w" style="--i:1">of</span> <span class="w" style="--i:2">songs.</span></span>
+          <span class="ink-stack"><span class="ink"><span class="w" style="--i:0">Millions</span> <span class="w" style="--i:1">of</span> <span class="w" style="--i:2">songs.</span></span></span>
           <span class="rose"><span class="w" style="--i:3">Not</span> <span class="w" style="--i:4">one</span> <span class="w" style="--i:5">ad.</span></span>
         </h1>
         <div class="cta-row">
@@ -623,8 +661,14 @@ html.reduce-motion { scroll-behavior: auto; }
         <p class="fine">Free · Android 8.0 and up · No account needed</p>
       </div>
     </div>
-    <p class="mega" aria-hidden="true"><span>S</span><span>H</span><span>I</span><span>N</span><span>Y</span></p>
-    <p class="fig" aria-hidden="true">Fig. 1 — <i>Liquid</i>, 2026. A painting that never dries, drawn live in your browser.</p>
+    <div class="ink-stack" aria-hidden="true"><p class="mega ink"><span>S</span><span>H</span><span>I</span><span>N</span><span>Y</span></p></div>
+    <img class="dove" id="dove" src="/art/dove.webp" width="1261" height="1245" fetchpriority="high" alt="A white dove in flight, and a hand reaching up to it out of the dark, painted in violet light">
+    <div aria-hidden="true">
+      <img class="plume a" src="/art/feather-a.webp" width="280" height="280" alt="">
+      <img class="plume b" src="/art/feather-b.webp" width="410" height="310" alt="">
+      <img class="plume c" src="/art/feather-c.webp" width="130" height="170" alt="">
+      <img class="plume d" src="/art/feather-d.webp" width="120" height="110" alt="">
+    </div>
     <button class="pause" type="button" id="pause" aria-pressed="false"><svg class="icon i-pause" aria-hidden="true"><use href="#i-pause"/></svg><svg class="icon i-play" aria-hidden="true"><use href="#i-play"/></svg><span>Pause the art</span></button>
   </section>
 
@@ -851,10 +895,29 @@ html.reduce-motion { scroll-behavior: auto; }
         <div class="movement"><span class="numeral" aria-hidden="true">VI</span><span class="mv-name"><i>Silence</i> · Privacy</span></div>
         <h2 class="display h2" id="privacy-title">Your music stays yours.</h2>
         <p class="body">No ads, nothing sold, and no account to start. What you listen to is your business.</p>
-        <div class="veil" aria-hidden="true">
-          <img src="/art/viva-la-vida.webp" width="340" height="340" alt="" loading="lazy">
-          <div class="pane"><span class="eq"><i></i><i></i><i></i></span><p>Now playing</p><p class="hush">Between you and your headphones.</p></div>
-        </div>
+        <figure class="cage">
+          <svg viewBox="0 -70 300 432" aria-hidden="true" focusable="false">
+            <defs><linearGradient id="thread" x1="0" y1="-70" x2="0" y2="19" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#efe6ff" stop-opacity="0"/><stop offset="1" stop-color="#efe6ff" stop-opacity=".85"/></linearGradient></defs>
+            <g class="cage-body">
+              <path d="M150 -70V19" stroke="url(#thread)"/>
+              <circle cx="150" cy="30" r="11"/>
+              <path d="M150 41v15"/>
+              <g class="back">
+                <path d="M50 150A100 14 0 0 1 250 150M46 320a104 17 0 0 1 208 0"/>
+                <path d="M134.4 302V136Q134.4 70 150 58M165.6 302V136Q165.6 70 150 58M104.6 304V137.5Q104.6 70 150 58M195.4 304V137.5Q195.4 70 150 58M79.3 307V140Q79.3 70 150 58M220.7 307V140Q220.7 70 150 58M60.9 311V143.6Q60.9 70 150 58M239.1 311V143.6Q239.1 70 150 58"/>
+              </g>
+              <g class="swing"><path d="M141 82 135 226M159 82 165 226M127 226h46"/></g>
+              <path d="M50 320V150Q50 74 150 58Q250 74 250 150V320M54.9 325V154.3Q54.9 74 150 58Q245.1 74 245.1 154.3V325M69.1 330V158.2Q69.1 74 150 58Q230.9 74 230.9 158.2V330M91.2 334V161.3Q91.2 74 150 58Q208.8 74 208.8 161.3V334M119.1 336V163.3Q119.1 74 150 58Q180.9 74 180.9 163.3V336M150 58V196"/>
+              <path d="M50 150A100 14 0 0 0 250 150"/>
+              <path d="M46 320a104 17 0 0 0 208 0M46 320v15a104 17 0 0 0 208 0v-15"/>
+              <path d="M119.1 214Q119.1 196 150 196Q180.9 196 180.9 214"/>
+              <path class="leaf" d="M180.9 334 236 357V217Q236 190 209 193 182 196 180.9 216Z"/>
+              <path d="M199 198.5V341.5M217.5 195V349"/>
+            </g>
+          </svg>
+          <img class="plume" src="/art/feather-n1.webp" width="330" height="270" alt="" loading="lazy" style="--x:86%;--y:58%;--w:96px;--r:38deg;--t:9s;--d:0s">
+          <figcaption>The door is always open.</figcaption>
+        </figure>
       </div>
       <ul class="promises">
         <li><h3>No ads, ever</h3><p>Shiny has no ads to show you, so there's nothing to target and no reason to profile you.</p></li>
@@ -868,6 +931,7 @@ html.reduce-motion { scroll-behavior: auto; }
 
   <section class="get" id="get" data-palette="encore" aria-labelledby="get-title">
     <span class="ghost" aria-hidden="true">VII</span>
+    <img class="plume" src="/art/feather-n1.webp" width="330" height="270" alt="" loading="lazy" style="--x:max(6px,calc(50% - 640px));--y:9%;--w:clamp(90px,10vw,170px);--r:-14deg;--t:13s;--d:0s">
     <div class="wrap get-inner">
       <div class="vinyl" aria-hidden="true">
         <div class="record">
@@ -914,6 +978,14 @@ html.reduce-motion { scroll-behavior: auto; }
   const lerp = (a, b, t) => a + (b - a) * t;
   const finePointer = matchMedia("(hover: hover) and (pointer: fine)").matches;
 
+  // Every piece of two-tone ink gets its violet twin (see .ink.tint).
+  for (const ink of document.querySelectorAll(".ink-stack > .ink")) {
+    const twin = ink.cloneNode(true);
+    twin.classList.add("tint");
+    twin.setAttribute("aria-hidden", "true");
+    ink.after(twin);
+  }
+
   /** Calls back with true/false as the element enters and leaves the viewport. */
   function watch(element, callback, threshold = 0.2, rootMargin = "0px") {
     new IntersectionObserver(([entry]) => callback(entry.isIntersecting), { threshold, rootMargin }).observe(element);
@@ -941,6 +1013,11 @@ uniform vec3 uC2;
 uniform vec3 uC3;
 uniform float uDim;
 uniform float uIri;
+uniform float uNight;
+uniform vec4 uEdge;
+uniform vec4 uPlanet;
+uniform vec3 uRim;
+uniform float uStars;
 float hash(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
 float noise(vec2 p) {
   vec2 i = floor(p);
@@ -955,27 +1032,100 @@ float fbm(vec2 p) {
   for (int i = 0; i < 5; i++) { v += a * noise(p); p = r * p * 2.03 + 11.7; a *= 0.5; }
   return v;
 }
+float fbm3(vec2 p) {
+  float v = 0.0;
+  float a = 0.5;
+  mat2 r = mat2(0.8, 0.6, -0.6, 0.8);
+  for (int i = 0; i < 3; i++) { v += a * noise(p); p = r * p * 2.03 + 11.7; a *= 0.5; }
+  return v * 1.14;
+}
+float stars(vec2 p, float t) {
+  vec2 g = floor(p);
+  float h = hash(g);
+  vec2 o = vec2(hash(g + 3.1), hash(g + 7.7)) - 0.5;
+  float d = length(fract(p) - 0.5 - o * 0.7);
+  float twinkle = 0.62 + 0.38 * sin(t * (0.5 + h * 1.6) + h * 40.0);
+  return smoothstep(0.12, 0.0, d) * step(0.8, h) * twinkle * (0.35 + 0.65 * hash(g + 1.7));
+}
 void main() {
   vec2 uv = (gl_FragCoord.xy - 0.5 * uRes) / uRes.y;
+  float aspect = uRes.x / uRes.y;
   vec2 m = (uMouse - 0.5 * uRes) / uRes.y;
   float t = uTime;
+  // The pointer stirs the paint.
   vec2 d = uv - m;
   float twist = exp(-dot(d, d) * 6.0) * uMouseAmt * 1.7;
-  uv = m + mat2(cos(twist), -sin(twist), sin(twist), cos(twist)) * d;
-  vec2 p = uv * 1.3;
-  vec2 q = vec2(fbm(p + 0.07 * t), fbm(p + vec2(5.2, 1.3) - 0.06 * t));
-  vec2 r = vec2(fbm(p + 3.4 * q + vec2(1.7, 9.2) + 0.09 * t), fbm(p + 3.4 * q + vec2(8.3, 2.8) - 0.07 * t));
-  float f = fbm(p + 2.8 * r);
-  float x = clamp(f * f * 1.9 + 0.38 * length(q) - 0.16, 0.0, 1.0);
-  vec3 col = mix(uC0, uC1, smoothstep(0.0, 0.42, x));
-  col = mix(col, uC2, smoothstep(0.36, 0.78, x));
-  col = mix(col, uC3, smoothstep(0.82, 1.0, x));
-  float ridge = 1.0 - abs(sin(f * 11.0 + r.x * 5.0 - t * 0.15));
-  col += uC3 * pow(ridge, 12.0) * 0.5 * smoothstep(0.18, 0.7, x);
-  vec3 iri = 0.5 + 0.5 * cos(6.2831 * (vec3(0.0, 0.33, 0.67) + f * 1.7 + r.y * 0.9 + t * 0.02));
-  col = mix(col, col * 0.45 + iri * 0.62, uIri * pow(ridge, 3.0) * 0.55 * smoothstep(0.1, 0.6, x));
-  col *= 1.0 - uDim;
-  col *= mix(0.5, 1.0, smoothstep(1.45, 0.3, length(uv * vec2(0.72, 1.0))));
+  vec2 w = m + mat2(cos(twist), -sin(twist), sin(twist), cos(twist)) * d;
+
+  // Where night begins: a diagonal across the screen, torn like the edge of a brush stroke.
+  // uNight slides it; past 1.45 the whole sky is night and none of this is worked out.
+  float core = 1.0;
+  float haze = 1.0;
+  float n = 1.0;
+  float e2 = 0.5;
+  if (uNight < 1.45) {
+    float e1 = fbm3(w * 1.5 + vec2(0.0, 0.02 * t));
+    e2 = fbm(w * 5.0 + 3.0 * e1 - vec2(0.015 * t, 0.0));
+    n = dot(w, uEdge.xy) * uEdge.z + uNight + ((e1 - 0.5) * 0.6 + (e2 - 0.5) * 0.24) * uEdge.w;
+    core = smoothstep(-0.03, 0.05, n + (noise(w * 46.0) - 0.5) * 0.08);
+    haze = smoothstep(-0.34 * uEdge.w, 0.04, n);
+  }
+
+  vec3 col = vec3(0.0);
+  if (core < 0.999) {
+    // Daylight: a high, pale sky with washes of lilac drifting through it.
+    float w1 = fbm3(w * vec2(1.0, 1.7) + vec2(0.025 * t, 0.0));
+    float w2 = fbm3(w * vec2(2.1, 3.2) + 2.5 * w1 + vec2(-0.02 * t, 0.012 * t));
+    vec3 day = mix(vec3(0.972, 0.962, 0.992), vec3(0.878, 0.842, 0.968), smoothstep(0.36, 0.86, w2) * 0.75);
+    day = mix(day, vec3(1.0), smoothstep(0.52, 0.9, w1) * 0.6);
+    // The mist the night pushes ahead of itself.
+    vec3 mist = mix(vec3(0.82, 0.76, 0.98), vec3(0.52, 0.39, 0.87), smoothstep(-0.1, 0.03, n));
+    col = mix(day, mist, haze * (0.5 + 0.5 * e2));
+  }
+  if (core > 0.001) {
+    vec2 p = w * 1.3;
+    vec2 q = vec2(fbm(p + 0.07 * t), fbm(p + vec2(5.2, 1.3) - 0.06 * t));
+    vec2 r = vec2(fbm(p + 3.4 * q + vec2(1.7, 9.2) + 0.09 * t), fbm(p + 3.4 * q + vec2(8.3, 2.8) - 0.07 * t));
+    float f = fbm(p + 2.8 * r);
+    float x = clamp(f * f * 1.9 + 0.38 * length(q) - 0.16, 0.0, 1.0);
+    vec3 night = mix(uC0, uC1, smoothstep(0.0, 0.42, x));
+    night = mix(night, uC2, smoothstep(0.36, 0.78, x));
+    night = mix(night, uC3, smoothstep(0.82, 1.0, x));
+    float ridge = 1.0 - abs(sin(f * 11.0 + r.x * 5.0 - t * 0.15));
+    night += uC3 * pow(ridge, 12.0) * 0.32 * smoothstep(0.18, 0.7, x);
+    vec3 iri = 0.5 + 0.5 * cos(6.2831 * (vec3(0.0, 0.33, 0.67) + f * 1.7 + r.y * 0.9 + t * 0.02));
+    night = mix(night, night * 0.45 + iri * 0.62, uIri * pow(ridge, 3.0) * 0.55 * smoothstep(0.1, 0.6, x));
+    night *= 1.0 - uDim;
+    // Stars, thinned out where the paint is thick.
+    float st = stars(uv * 34.0, t) + 0.7 * stars(uv * 61.0 + 13.0, t * 1.3);
+    night += vec3(0.93, 0.89, 1.0) * st * uStars * (1.0 - 0.6 * uDim) * (1.0 - 0.8 * smoothstep(0.25, 0.75, x));
+    // The planet: a dark body, lit only along the edge that faces the light.
+    if (uPlanet.w > 0.004) {
+      vec2 dv = uv - vec2((uPlanet.x - 0.5) * aspect, uPlanet.y - 0.5);
+      float pd = length(dv);
+      float pr = uPlanet.z;
+      float body = smoothstep(pr + 1.5 / uRes.y, pr - 1.5 / uRes.y, pd);
+      float facing = dot(dv / max(pd, 0.0001), vec2(cos(uRim.x), sin(uRim.x)));
+      float lit = mix(smoothstep(-0.45, 1.0, facing), 1.0, uRim.y);
+      lit *= lit;
+      if (body > 0.0) {
+        vec2 sp = dv / pr;
+        float z = sqrt(max(0.0, 1.0 - dot(sp, sp)));
+        float mottle = fbm3(sp * 2.6 + 9.0 + vec2(0.012 * t, 0.0));
+        vec3 surface = mix(uC0 * 0.7, uC1 * 0.42 + uC0 * 0.6, mottle) * (0.3 + 0.7 * z);
+        float limb = pow(1.0 - z, 2.4);
+        surface += uC3 * limb * lit * 0.9 + uC2 * limb * 0.1;
+        night = mix(night, surface, body * uPlanet.w);
+      }
+      float line = exp(-abs(pd - pr) * uRes.y * 0.7);
+      float halo = exp(-max(pd - pr, 0.0) / (0.012 + uRim.z * 0.2)) * (1.0 - body);
+      night += (uC3 * line * 0.85 + mix(uC3, uC2, 0.35) * halo * (0.16 + 0.55 * uRim.z)) * lit * uPlanet.w;
+    }
+    night *= mix(0.5, 1.0, smoothstep(1.45, 0.3, length(uv * vec2(0.72, 1.0))));
+    // A seam of wet violet where the night meets the mist.
+    night = mix(vec3(0.24, 0.13, 0.55), night, smoothstep(-0.02, 0.26, n));
+    col = mix(col, night, core);
+  }
   gl_FragColor = vec4(col, 1.0);
 }`;
     function shader(type, source) {
@@ -1005,19 +1155,22 @@ void main() {
     gl.enableVertexAttribArray(position);
     gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
     const u = {};
-    for (const name of ["uRes", "uTime", "uMouse", "uMouseAmt", "uC0", "uC1", "uC2", "uC3", "uDim", "uIri"]) u[name] = gl.getUniformLocation(program, name);
+    for (const name of ["uRes", "uTime", "uMouse", "uMouseAmt", "uC0", "uC1", "uC2", "uC3", "uDim", "uIri", "uNight", "uEdge", "uPlanet", "uRim", "uStars"]) u[name] = gl.getUniformLocation(program, name);
 
     const hex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255);
-    const palette = (c0, c1, c2, c3, dim, iri, speed) => [...hex(c0), ...hex(c1), ...hex(c2), ...hex(c3), dim, iri, speed];
+    // Four colours, then: dim, iridescence, pace, the planet (x, y, radius, presence), where its light comes from
+    // (radians), how far the lit edge wraps into a full ring, how wide it glows, and how many stars are out.
+    const palette = (c0, c1, c2, c3, dim, iri, speed, planet, light, stars) => [...hex(c0), ...hex(c1), ...hex(c2), ...hex(c3), dim, iri, speed, ...planet, ...light, stars];
+    const wide = matchMedia("(min-width: 881px)").matches;
     const PALETTES = {
-      overture: palette("#07030f", "#3d1788", "#ff2d6f", "#ffd9b0", 0.0, 0.95, 1),
-      liberty: palette("#080504", "#4a2814", "#c2873a", "#f6e7c8", 0.08, 0.25, 0.8),
-      chorus: palette("#0a0310", "#5a0f4c", "#ff375f", "#ffc4d4", 0.4, 0.6, 0.9),
-      portraits: palette("#04040e", "#1d2470", "#7a5cff", "#d9e2ff", 0.42, 0.7, 0.8),
-      together: palette("#020a0c", "#0b4656", "#2cc8c4", "#dcfff6", 0.36, 0.5, 1),
-      interlude: palette("#050507", "#1b1b26", "#444459", "#cfd0e0", 0.5, 0.3, 0.6),
-      silence: palette("#010102", "#08080d", "#16161f", "#5c5c72", 0.4, 0.1, 0.15),
-      encore: palette("#0d0206", "#6e0f30", "#ff375f", "#ffd2a6", 0.12, 0.85, 1.1),
+      overture: palette("#070416", "#2b1a72", "#7a5ae6", "#efe4ff", 0.2, 0.2, 1, wide ? [0.905, 0.86, 0.085, 1] : [0.86, 0.5, 0.07, 1], [3.6, 0, 0.12], 1),
+      liberty: palette("#080504", "#4a2814", "#c2873a", "#f6e7c8", 0.08, 0.22, 0.8, wide ? [0.905, 0.86, 0.085, 0] : [0.86, 0.5, 0.07, 0], [3.6, 0, 0.12], 0.5),
+      chorus: palette("#0a0310", "#4a1060", "#ff375f", "#ffd0dc", 0.46, 0.4, 0.9, wide ? [1.0, 0.36, 0.42, 1] : [1.28, 0.2, 0.36, 0.85], [3.05, 0, 0.2], 0.9),
+      portraits: palette("#04040e", "#1d2470", "#7a5cff", "#d9e2ff", 0.44, 0.5, 0.8, [0.5, -0.44, 0.8, 1], [1.571, 0.15, 0.4], 0.9),
+      together: palette("#020a0c", "#0b4656", "#2cc8c4", "#dcfff6", 0.4, 0.4, 1, wide ? [0.1, 0.8, 0.06, 1] : [0.84, 0.9, 0.05, 1], [-0.7, 0, 0.14], 1),
+      interlude: palette("#050507", "#1b1b26", "#444459", "#cfd0e0", 0.5, 0.25, 0.6, [0.1, 0.8, 0.06, 0], [-0.7, 0, 0.14], 0.7),
+      silence: palette("#010102", "#08080d", "#16161f", "#5c5c72", 0.4, 0.1, 0.15, [0.5, wide ? -0.78 : -0.86, 0.9, 0], [1.571, 0.2, 0.5], 0.55),
+      encore: palette("#0b0208", "#4a0c2a", "#e0325c", "#ffd2a6", wide ? 0.36 : 0.52, 0.4, 1, [0.5, wide ? -0.78 : -0.86, 0.9, 1], [1.571, 0.2, wide ? 0.62 : 0.4], 0.7),
     };
     const current = PALETTES.overture.slice();
     let target = PALETTES.overture;
@@ -1032,6 +1185,29 @@ void main() {
     let last = 0;
     let paused = false;
     let frame = 0;
+    // Night starts as a torn diagonal in the lower right and takes the whole sky as the first screen scrolls away.
+    const hero = $(".hero");
+    const words = $(".hero .fine");
+    const headline = $("#hero-title");
+    const themeColor = $("#theme-color");
+    const dove = reduce ? null : $("#dove");
+    let heroHeight = 1;
+    let nightRest = -0.14;
+    let night = -0.14;
+    const edge = [0.7071, -0.7071, 0.9, 1];
+    let isDay = null;
+    function nightfall() {
+      const gone = clamp(scrollY / (heroHeight * 0.82));
+      night = lerp(nightRest, 1.6, gone * gone * (3 - 2 * gone));
+      const day = gone < 0.5;
+      if (day !== isDay) {
+        isDay = day;
+        root.classList.toggle("sky-day", day);
+        themeColor.content = day ? "#f6f3fc" : "#07030d";
+      }
+      // The painting falls behind a little, so the dove is the last thing to leave.
+      if (dove && gone < 1) dove.style.translate = "0 " + (scrollY * 0.16).toFixed(1) + "px";
+    }
 
     function resize() {
       const w = Math.max(2, Math.round(canvas.clientWidth * scale));
@@ -1041,6 +1217,38 @@ void main() {
       height = canvas.height = h;
       gl.viewport(0, 0, w, h);
       if (!mouse.seen) { mouse.x = mouse.tx = w * 0.7; mouse.y = mouse.ty = h * 0.45; }
+    }
+    // The edge of night runs corner to corner on a wide screen and nearly level on a tall one, and wanders less
+    // there. It rests a little right of centre (wide) or just above the middle (tall), but always clear of the
+    // headline and the small print, wherever the screen's shape has put them.
+    function settle() {
+      const w = canvas.clientWidth || 1;
+      const h = canvas.clientHeight || 1;
+      const aspect = w / h;
+      heroHeight = hero.offsetHeight || h;
+      const t = smooth(0.7, 1.4, aspect);
+      const length = Math.hypot(lerp(0.35, 1, t), 1);
+      edge[0] = lerp(0.35, 1, t) / length;
+      edge[1] = -1 / length;
+      edge[2] = 1 / (0.5 * (aspect * edge[0] - edge[1]));
+      edge[3] = lerp(0.45, 1, t);
+      // How far into the night a point of the first screen is, before the edge is slid anywhere.
+      const at = (x, y) => (((x - w / 2) / h) * edge[0] + (0.5 - y / h) * edge[1]) * edge[2];
+      nightRest = -at(w * lerp(0.5, 0.545, t), h * lerp(0.455, 0.5, t));
+      for (const [right, bottom] of copyCorners()) nightRest = Math.min(nightRest, -0.2 * edge[3] - at(right + 24, bottom));
+      nightfall();
+    }
+    // The bottom right corner of the headline and of the small print, as laid out (their entrance animations aside).
+    function copyCorners() {
+      const pageBottom = (element) => {
+        let y = element.offsetHeight;
+        for (let node = element; node; node = node.offsetParent) y += node.offsetTop;
+        return y;
+      };
+      const range = document.createRange();
+      range.selectNodeContents(words);
+      const wordRights = [...headline.querySelectorAll(".w")].map((word) => word.getBoundingClientRect().right);
+      return [[Math.max(...wordRights), pageBottom(headline)], [range.getBoundingClientRect().right, pageBottom(words)]];
     }
     function draw() {
       gl.uniform2f(u.uRes, width, height);
@@ -1053,6 +1261,11 @@ void main() {
       gl.uniform3f(u.uC3, current[9], current[10], current[11]);
       gl.uniform1f(u.uDim, clamp(current[12]));
       gl.uniform1f(u.uIri, current[13]);
+      gl.uniform1f(u.uNight, night);
+      gl.uniform4f(u.uEdge, edge[0], edge[1], edge[2], edge[3]);
+      gl.uniform4f(u.uPlanet, current[15], current[16], current[17], current[18]);
+      gl.uniform3f(u.uRim, current[19], current[20], current[21]);
+      gl.uniform1f(u.uStars, current[22]);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     }
     function step(now) {
@@ -1074,6 +1287,7 @@ void main() {
       mouse.y += (mouse.ty - mouse.y) * 0.06;
       mouse.amt += (mouse.tamt - mouse.amt) * 0.04;
       time += dt * current[14] * (reduce ? 0.18 : 1);
+      nightfall();
       draw();
       frame = requestAnimationFrame(step);
     }
@@ -1090,9 +1304,12 @@ void main() {
       mouse.tamt = 1;
     }, { passive: true });
     document.documentElement.addEventListener("mouseleave", () => { mouse.tamt = 0.3; });
-    addEventListener("resize", () => { resize(); draw(); }, { passive: true });
+    addEventListener("resize", () => { resize(); settle(); draw(); }, { passive: true });
+    if (document.fonts) document.fonts.ready.then(() => { settle(); draw(); });
+    addEventListener("scroll", () => { if (paused) { nightfall(); draw(); } }, { passive: true });
     document.addEventListener("visibilitychange", run);
     resize();
+    settle();
     draw();
     run();
 
@@ -1494,7 +1711,7 @@ void main() {
     });
   })();
 
-  // ---- VI & VII: the glint and the record move only while you can see them.
+  // ---- VI & VII: the cage and the record move only while you can see them.
   for (const id of ["#privacy", "#get"]) {
     const section = $(id);
     watch(section, (on) => section.classList.toggle("in-view", on), 0.1);
