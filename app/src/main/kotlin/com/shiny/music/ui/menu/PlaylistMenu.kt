@@ -70,6 +70,7 @@ import com.shiny.music.ui.component.NewAction
 import com.shiny.music.ui.component.NewActionGrid
 import com.shiny.music.ui.component.PlaylistListItem
 import com.shiny.music.ui.component.TextFieldDialog
+import com.shiny.music.ui.liquid.share.shareCollection
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -364,12 +365,11 @@ val editable: Boolean = playlist.playlist.isEditable == true
                         text = stringResource(R.string.share),
                         onClick = {
                             onDismiss()
-                            val intent = Intent().apply {
-                                action = Intent.ACTION_SEND
-                                type = "text/plain"
-                                putExtra(Intent.EXTRA_TEXT, "${com.shiny.music.social.ShinyLinks.WEB_BASE}/playlist?list=${dbPlaylist?.playlist?.browseId}")
-                            }
-                            context.startActivity(Intent.createChooser(intent, null))
+                            context.shareCollection(
+                                name = playlist.playlist.name,
+                                link = (dbPlaylist ?: playlist).playlist.shareLink,
+                                songs = songs,
+                            )
                         }
                     )
                 ),

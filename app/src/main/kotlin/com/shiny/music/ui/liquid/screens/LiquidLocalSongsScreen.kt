@@ -168,6 +168,16 @@ fun LiquidLocalSongsScreen(
     LaunchedEffect(hasPermission, scanConfig) {
         if (hasPermission) viewModel.refreshIfStale(scanConfig)
     }
+    // The library can list the phone's songs without access to them (it was restored, or the
+    // permission was taken back). None of them would play, and the page only asked for the
+    // permission when it was empty; so it asks once, as soon as it has songs to show.
+    var askedForAccess by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(hasPermission, songs.isNotEmpty()) {
+        if (!hasPermission && songs.isNotEmpty() && !askedForAccess) {
+            askedForAccess = true
+            permissionLauncher.launch(storagePermission)
+        }
+    }
 
     val collator = remember { Collator.getInstance(Locale.getDefault()).apply { strength = Collator.PRIMARY } }
     val visible by remember(songs, query, sort, sortDescending) {

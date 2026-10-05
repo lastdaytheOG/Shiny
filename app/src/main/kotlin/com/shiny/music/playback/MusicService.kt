@@ -51,6 +51,7 @@ import androidx.media3.datasource.cache.CacheDataSource.FLAG_IGNORE_CACHE_ON_ERR
 import androidx.media3.datasource.cache.SimpleCache
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.DefaultRenderersFactory
+import androidx.media3.exoplayer.ExoPlaybackException
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.exoplayer.analytics.PlaybackStats
@@ -1621,6 +1622,7 @@ class MusicService :
         currentQueue = queue
         queueIsPreShuffled = (queue as? ListQueue)?.preShuffled == true
         val generation = ++playQueueGeneration
+        autoplayFoundNothingFor = null
         queueTitle = null
         val persistShuffleAcrossQueues = cachedPersistShuffleAcrossQueues
         val previousShuffleEnabled = player.shuffleModeEnabled
@@ -1635,54 +1637,61 @@ class MusicService :
             player.prepare()
             player.playWhenReady = playWhenReady
         }
+        queueLoadsInFlight++
         scope.launch(SilentHandler) {
-            val initialStatus =
-                withContext(Dispatchers.IO) {
-                    queue.getInitialStatus()
-                        .filterExplicit(cachedHideExplicit)
-                        .filterVideoSongs(cachedHideVideoSongsEffective)
+            try {
+                val initialStatus =
+                    withContext(Dispatchers.IO) {
+                        queue.getInitialStatus()
+                            .filterExplicit(cachedHideExplicit)
+                            .filterVideoSongs(cachedHideVideoSongsEffective)
+                    }
+                // Another queue was started while this one loaded. Applying this one now would replace it:
+                // a deep link was overwritten by the queue restored at launch this way.
+                if (generation != playQueueGeneration) return@launch
+                if (queue.preloadItem != null && player.playbackState == STATE_IDLE) return@launch
+                if (initialStatus.title != null) {
+                    queueTitle = initialStatus.title
                 }
-            // Another queue was started while this one loaded. Applying this one now would replace it:
-            // a deep link was overwritten by the queue restored at launch this way.
-            if (generation != playQueueGeneration) return@launch
-            if (queue.preloadItem != null && player.playbackState == STATE_IDLE) return@launch
-            if (initialStatus.title != null) {
-                queueTitle = initialStatus.title
-            }
-            if (initialStatus.items.isEmpty()) return@launch
-            
-            originalQueueSize = initialStatus.items.size
-            if (queue.preloadItem != null) {
-                val safeIndex = initialStatus.mediaItemIndex.coerceIn(0, (initialStatus.items.size - 1).coerceAtLeast(0))
-                player.addMediaItems(
-                    0,
-                    initialStatus.items.subList(0, safeIndex)
-                )
-                player.addMediaItems(
-                    initialStatus.items.subList(
-                        (safeIndex + 1).coerceAtMost(initialStatus.items.size),
-                        initialStatus.items.size
-                    )
-                )
-            } else {
-                val safeIndex = initialStatus.mediaItemIndex.coerceIn(0, (initialStatus.items.size - 1).coerceAtLeast(0))
-                player.setMediaItems(
-                    initialStatus.items,
-                    safeIndex,
-                    initialStatus.position,
-                )
-                if (prepare) {
-                    player.prepare()
-                } else {
-                    restoredQueueAwaitingPrepare = true
-                }
-                player.playWhenReady = playWhenReady
-            }
+                if (initialStatus.items.isEmpty()) return@launch
 
-            
-            if (player.shuffleModeEnabled) {
-                val shufflePlaylistFirst = cachedShufflePlaylistFirst
-                applyShuffleOrder(player.currentMediaItemIndex, player.mediaItemCount, shufflePlaylistFirst)
+                originalQueueSize = initialStatus.items.size
+                if (queue.preloadItem != null) {
+                    val safeIndex = initialStatus.mediaItemIndex.coerceIn(0, (initialStatus.items.size - 1).coerceAtLeast(0))
+                    player.addMediaItems(
+                        0,
+                        initialStatus.items.subList(0, safeIndex)
+                    )
+                    player.addMediaItems(
+                        initialStatus.items.subList(
+                            (safeIndex + 1).coerceAtMost(initialStatus.items.size),
+                            initialStatus.items.size
+                        )
+                    )
+                } else {
+                    val safeIndex = initialStatus.mediaItemIndex.coerceIn(0, (initialStatus.items.size - 1).coerceAtLeast(0))
+                    player.setMediaItems(
+                        initialStatus.items,
+                        safeIndex,
+                        initialStatus.position,
+                    )
+                    if (prepare) {
+                        player.prepare()
+                    } else {
+                        restoredQueueAwaitingPrepare = true
+                    }
+                    player.playWhenReady = playWhenReady
+                }
+
+
+                if (player.shuffleModeEnabled) {
+                    val shufflePlaylistFirst = cachedShufflePlaylistFirst
+                    applyShuffleOrder(player.currentMediaItemIndex, player.mediaItemCount, shufflePlaylistFirst)
+                }
+            } finally {
+                queueLoadsInFlight--
+                // The queue is in place: one that starts on its last songs gets what follows now.
+                if (isActive && generation == playQueueGeneration) continueWhenRunningOut()
             }
         }
     }
@@ -1709,19 +1718,62 @@ class MusicService :
     @Volatile private var fillingUpNext = false
 
     /**
+     * [playQueue] calls whose songs have not arrived yet. A top-up that ran now would add its
+     * radio before the queue's own songs, and both would then be queued. Main thread only.
+     */
+    private var queueLoadsInFlight = 0
+
+    /** The song whose radio last had nothing new to add, so it is not asked for again. Main thread only. */
+    private var autoplayFoundNothingFor: String? = null
+
+    /** Songs still to play after the current one, in the order they will play (shuffle included), counted up to [limit]. */
+    private fun upcomingInPlayOrder(limit: Int): Int {
+        val timeline = player.currentTimeline
+        var index = player.currentMediaItemIndex
+        if (timeline.isEmpty || index !in 0 until timeline.windowCount) return 0
+        var count = 0
+        while (count < limit) {
+            index = timeline.getNextWindowIndex(index, REPEAT_MODE_OFF, player.shuffleModeEnabled)
+            if (index == C.INDEX_UNSET) break
+            count++
+        }
+        return count
+    }
+
+    /**
+     * Autoplay without the Queue pane. [ensureUpNext] was only ever called by that pane, so
+     * with it closed a playlist, an album or the liked songs simply stopped after the last
+     * song. This runs whenever the song or the queue changes: once the queue is down to its
+     * last few songs and has no more of its own, it lines up the current song's radio.
+     * Not while paused (the queue restored at launch asks for nothing until it is played),
+     * and not with a repeat mode on: that queue was asked to come round again.
+     */
+    private fun continueWhenRunningOut() {
+        if (!playerInitialized.value || !cachedAutoLoadMore || together.isFollowing) return
+        if (!player.playWhenReady || player.repeatMode != REPEAT_MODE_OFF) return
+        if (currentQueue.hasNextPage()) return
+        val current = player.currentMetadata?.id ?: return
+        // A file on the phone has no radio, and offline there is nothing to ask.
+        if (current.isLocalMediaId() || !isNetworkConnected.value) return
+        if (current == autoplayFoundNothingFor) return
+        if (upcomingInPlayOrder(AUTOPLAY_TOP_UP_BELOW) < AUTOPLAY_TOP_UP_BELOW) ensureUpNext()
+    }
+
+    /**
      * Keeps at least [minimum] songs queued after the current one, so Up Next always has
      * something to show. Pages the current queue first; once that has run dry — a single
      * song, the end of an album — tops up with the current song's radio, skipping
      * anything already queued. Only with Autoplay on, and never while a load is in flight.
      */
     fun ensureUpNext(minimum: Int = 15) {
-        if (!playerInitialized.value || fillingUpNext) return
+        if (!playerInitialized.value || fillingUpNext || queueLoadsInFlight > 0) return
         // Following a Listen Together host: the room decides what comes next.
         if (together.isFollowing) return
         if (!cachedAutoLoadMore) return
         if (cachedDisableLoadMoreWhenRepeatAll && player.repeatMode == REPEAT_MODE_ALL) return
         val current = player.currentMetadata ?: return
-        fun upcoming() = player.mediaItemCount - player.currentMediaItemIndex - 1
+        // In play order: with shuffle on, the song at the last index can be the first to play.
+        fun upcoming() = upcomingInPlayOrder(minimum)
         if (upcoming() >= minimum) return
         fillingUpNext = true
         scope.launch(SilentHandler) {
@@ -1742,7 +1794,10 @@ class MusicService :
                     player.addMediaItems(fresh)
                 }
 
-                if (upcoming() < minimum && player.currentMetadata?.id == current.id) {
+                // A file on the phone has no radio, and offline there is nothing to ask.
+                if (upcoming() < minimum && player.currentMetadata?.id == current.id &&
+                    !current.id.isLocalMediaId() && isNetworkConnected.value
+                ) {
                     val radio = YouTubeQueue(WatchEndpoint(videoId = current.id, playlistId = "RDAMVM${current.id}"), current)
                     val status = withContext(Dispatchers.IO) {
                         radio.getInitialStatus().filterExplicit(hideExplicit).filterVideoSongs(hideVideos)
@@ -1753,6 +1808,8 @@ class MusicService :
                         player.addMediaItems(fresh)
                         // Later top-ups continue from the radio once the original queue is spent.
                         if (!currentQueue.hasNextPage()) currentQueue = radio
+                    } else {
+                        autoplayFoundNothingFor = current.id
                     }
                 }
 
@@ -2284,8 +2341,9 @@ class MusicService :
                 }
             }
         }
+        if (reason != Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT) continueWhenRunningOut()
 
-        
+
         if (cachedPersistentQueue) {
             saveQueueToDisk()
         }
@@ -2361,7 +2419,11 @@ class MusicService :
     // The next-song preload waits for audio. Started at the play request, it resolved the next song
     // alongside the one just tapped, and on a cold resume began before it.
     override fun onIsPlayingChanged(isPlaying: Boolean) {
-        if (isPlaying) preloadUpcomingItems()
+        if (isPlaying) {
+            preloadUpcomingItems()
+            // The queue restored at launch, played from its last song.
+            continueWhenRunningOut()
+        }
         socialPresencePublisher.notifyChanged()
     }
 
@@ -2603,6 +2665,17 @@ class MusicService :
         return null
     }
 
+    /** Whether a [SecurityException] is anywhere in [error]'s cause chain: the system refused Shiny the file. */
+    private fun securityCauseIn(error: PlaybackException): Boolean {
+        var cause: Throwable? = error
+        var depth = 0
+        while (cause != null && depth++ < 12) {
+            if (cause is SecurityException) return true
+            cause = cause.cause
+        }
+        return false
+    }
+
     private fun isNetworkRelatedError(error: PlaybackException): Boolean {
 
         if (isExpiredUrlError(error) || isRangeNotSatisfiableError(error) || isPageReloadError(error)) {
@@ -2645,6 +2718,35 @@ class MusicService :
             reportException(error)
         }
         retryBudgetJob?.cancel()
+
+        // A file on the phone that could not be opened. There is no stream to resolve again and
+        // no cache to clear, so the recoveries below only failed the same way three more times,
+        // song after song, until the queue gave up; offline, they waited for a connection the
+        // file never needed.
+        if (mediaId != null && mediaId.isLocalMediaId() &&
+            (error as? ExoPlaybackException)?.type == ExoPlaybackException.TYPE_SOURCE
+        ) {
+            if (error.errorCode == PlaybackException.ERROR_CODE_IO_NO_PERMISSION || securityCauseIn(error)) {
+                // Shiny may not read the phone's audio, so every file would fail the same way.
+                // Nothing is skipped: playback rests on this song while the activity asks.
+                Timber.tag(TAG).w("No access to the phone's audio for $mediaId, asking for it")
+                player.pause()
+                PlaybackHealth.record(PlaybackHealth.Event.GaveUp(error.errorCodeName, "noAudioAccess", "stopped"))
+                PlaybackHealth.notify(
+                    PlaybackHealth.Notice(
+                        title = player.currentMediaItem?.mediaMetadata?.title?.toString(),
+                        skipped = false,
+                        unavailable = false,
+                        needsAudioAccess = true,
+                    )
+                )
+                return
+            }
+            Timber.tag(TAG).w("Local file $mediaId can't be read, not retrying")
+            markSongAsFailed(mediaId)
+            handleFinalFailure(error, why = "localFile", unavailable = true)
+            return
+        }
 
         // Offline: nothing will play until the connection is back, so wait for it rather than
         // spend this song's retries (and then the next song's) failing to resolve. A DNS failure
@@ -3157,6 +3259,9 @@ class MusicService :
                 } catch (e: java.io.FileNotFoundException) {
                     throw androidx.media3.common.PlaybackException("Local file deleted", e, androidx.media3.common.PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND)
                 }
+                // A SecurityException (the song is in the library, but this install may not read
+                // the phone's audio) is left to propagate: as an IOException the loader would
+                // retry it for three seconds first. onPlayerError finds it in the cause chain.
                 return@Factory dataSpec
             }
 
@@ -4308,6 +4413,8 @@ class MusicService :
         const val QUEUE_SAVE_DEBOUNCE_MS = 400L
         const val PERSISTENT_PLAYER_STATE_FILE = "persistent_player_state.data"
         const val MAX_CONSECUTIVE_ERR = 5
+        /** Autoplay lines up more music once fewer songs than this are left to play. */
+        const val AUTOPLAY_TOP_UP_BELOW = 5
         const val MAX_RETRY_COUNT = 10
 
         /** How long before YouTube's stated expiry a cached stream URL is dropped. */

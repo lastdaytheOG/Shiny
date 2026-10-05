@@ -144,6 +144,7 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.withResumed
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.navigation.NavHostController
@@ -262,6 +263,9 @@ class MainActivity : ComponentActivity() {
         const val ACTION_LIBRARY = "com.shiny.music.action.LIBRARY"
         const val ACTION_RECOGNITION = "com.shiny.music.action.RECOGNITION"
         const val EXTRA_AUTO_START_RECOGNITION = "auto_start_recognition"
+
+        /** What a YouTube Music id in a link can be made of: video, playlist, album and channel ids alike. */
+        private val LinkIdPattern = Regex("[A-Za-z0-9_.-]+")
 
         /**
          * Upper bound on how long the launch waits for the preference snapshot before
@@ -1184,10 +1188,59 @@ class MainActivity : ComponentActivity() {
                 }
                 val snackbarHostState = remember { SnackbarHostState() }
 
+                // A song on the phone that Shiny may not read. The library can hold such songs
+                // without the permission (it was restored, or the permission was taken back),
+                // and every one of them failed: the queue jumped a song or two, then stopped.
+                val audioPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    android.Manifest.permission.READ_MEDIA_AUDIO
+                } else {
+                    android.Manifest.permission.READ_EXTERNAL_STORAGE
+                }
+                var audioAccessRefused by remember { mutableStateOf(false) }
+                val audioAccessLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+                    androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
+                ) { granted ->
+                    if (granted) {
+                        // The song it stopped on, now that it can be opened.
+                        playerConnection?.player?.let { player ->
+                            player.prepare()
+                            player.play()
+                        }
+                        refreshLocalLibrary()
+                    } else {
+                        // Refused, or refused for good (the system then answers without asking):
+                        // only the phone's settings can change it now.
+                        audioAccessRefused = true
+                    }
+                }
+                if (audioAccessRefused) {
+                    com.shiny.music.ui.liquid.LiquidAlert(
+                        title = stringResource(R.string.audio_access_title),
+                        message = stringResource(R.string.playback_needs_audio_access),
+                        confirmLabel = stringResource(R.string.settings),
+                        onConfirm = {
+                            runCatching {
+                                startActivity(
+                                    Intent(
+                                        android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                        android.net.Uri.fromParts("package", packageName, null),
+                                    )
+                                )
+                            }
+                        },
+                        onDismiss = { audioAccessRefused = false },
+                    )
+                }
+
                 // The service gives up on a song quietly otherwise: the music just stops, or
                 // jumps to the next song with no reason given.
                 LaunchedEffect(snackbarHostState) {
                     com.shiny.music.utils.PlaybackHealth.notices.collect { notice ->
+                        if (notice.needsAudioAccess) {
+                            // Asked once Shiny is on screen: from the background the system drops it unseen.
+                            lifecycle.withResumed { audioAccessLauncher.launch(audioPermission) }
+                            return@collect
+                        }
                         val title = notice.title?.takeIf { it.isNotBlank() }
                             ?: getString(R.string.playback_failed_untitled)
                         val message = getString(
@@ -1199,8 +1252,10 @@ class MainActivity : ComponentActivity() {
                             },
                             title,
                         )
-                        snackbarHostState.currentSnackbarData?.dismiss()
-                        snackbarHostState.showSnackbar(message)
+                        // A toast, as everywhere else in Shiny. This was a snackbar, which the
+                        // scaffold lays out above its bottom bar; that bar holds the full-height
+                        // player sheet, so the snackbar landed off screen and was never seen.
+                        android.widget.Toast.makeText(this@MainActivity, message, android.widget.Toast.LENGTH_LONG).show()
                     }
                 }
 
@@ -1675,6 +1730,17 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    /** Once the audio permission has arrived: what is in the local library is checked against the phone. */
+    private fun refreshLocalLibrary() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            runCatching {
+                val scanner = localSongScanner.get()
+                val config = com.shiny.music.localmedia.currentLocalScanConfig()
+                if (scanner.needsScan(config)) scanner.scanDevice(config, automatic = true)
+            }.onFailure { Timber.tag("LocalLibrary").w(it, "Library refresh failed") }
+        }
+    }
+
     private fun handleDeepLinkIntent(intent: Intent, navController: NavHostController) {
         val sharedText = intent.extras?.getString(Intent.EXTRA_TEXT)
         var uri = intent.data
@@ -1733,39 +1799,48 @@ class MainActivity : ComponentActivity() {
             return
         }
 
+        // A link is someone else's text. An id that is missing, or the word "null" (a share
+        // built from a playlist with no YouTube id read "…/playlist?list=null"), reaches
+        // Navigation as a null argument, which it throws on: that crashed the app. Such a
+        // link now opens nothing, and a route Navigation still refuses is reported, not fatal.
+        fun String?.linkId(): String? = this?.trim()?.takeIf { LinkIdPattern.matches(it) && !it.equals("null", ignoreCase = true) }
+        fun open(route: String) {
+            runCatching { navController.navigate(route) }.onFailure { reportException(it) }
+        }
+
         when (val path = uri.pathSegments.firstOrNull()) {
-            "playlist" -> uri.getQueryParameter("list")?.let { playlistId ->
+            "playlist" -> uri.getQueryParameter("list").linkId()?.let { playlistId ->
                 if (playlistId.startsWith("OLAK5uy_")) {
                     coroutineScope.launch(Dispatchers.IO) {
                         YouTube.albumSongs(playlistId).onSuccess { songs ->
-                            songs.firstOrNull()?.album?.id?.let { browseId ->
+                            songs.firstOrNull()?.album?.id.linkId()?.let { browseId ->
                                 withContext(Dispatchers.Main) {
-                                    navController.navigate("album/$browseId")
+                                    open("album/$browseId")
                                 }
                             }
                         }.onFailure { reportException(it) }
                     }
                 } else {
-                    navController.navigate("online_playlist/$playlistId")
+                    open("online_playlist/$playlistId")
                 }
             }
 
-            "browse" -> uri.lastPathSegment?.let { browseId ->
-                navController.navigate("album/$browseId")
+            "browse" -> uri.lastPathSegment.linkId()?.let { browseId ->
+                open("album/$browseId")
             }
 
             // A Shiny profile link: offer to add them as a friend.
             "u" -> uri.pathSegments.getOrNull(1)?.let { username ->
-                navController.navigate("friends?add=${android.net.Uri.encode(username)}")
+                open("friends?add=${android.net.Uri.encode(username)}")
             }
 
-            "channel", "c" -> uri.lastPathSegment?.let { artistId ->
-                navController.navigate("artist/$artistId")
+            "channel", "c" -> uri.lastPathSegment.linkId()?.let { artistId ->
+                open("artist/$artistId")
             }
 
             "search" -> {
                 uri.getQueryParameter("q")?.let {
-                    navController.navigate("search/${URLEncoder.encode(it, "UTF-8")}")
+                    open("search/${URLEncoder.encode(it, "UTF-8")}")
                 }
             }
 
@@ -1774,9 +1849,9 @@ class MainActivity : ComponentActivity() {
                     path == "watch" -> uri.getQueryParameter("v")
                     uri.host == "youtu.be" || uri.host == "share.shinymusic.fun" -> uri.pathSegments.firstOrNull()
                     else -> null
-                }
+                }.linkId()
 
-                val playlistId = uri.getQueryParameter("list")
+                val playlistId = uri.getQueryParameter("list").linkId()
                 // Listen-along and YouTube links can carry a start time: t=83 or t=83s.
                 val startPositionMs = uri.getQueryParameter("t")?.removeSuffix("s")?.toLongOrNull()
                     ?.takeIf { it > 0L }?.times(1000L) ?: 0L

@@ -196,6 +196,8 @@
     <string name="playback_unavailable_skipped">“%1$s” isn’t available. Skipped to the next song.</string>
     <string name="playback_unavailable_stopped">“%1$s” isn’t available.</string>
     <string name="playback_failed_untitled">this song</string>
+    <string name="audio_access_title">Allow access to your music</string>
+    <string name="playback_needs_audio_access">Shiny can’t play the songs on this phone until it’s allowed to read them. Turn on Music and audio for Shiny in Settings.</string>
     <string name="recognition_finding_song">Finding song…</string>
     <string name="recognition_song_not_found">Couldn’t find this song to play. Check your connection and try again.</string>
 

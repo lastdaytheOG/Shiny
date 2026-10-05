@@ -3,7 +3,6 @@
 package com.shiny.music.ui.menu
 
 import android.annotation.SuppressLint
-import android.content.Intent
 import android.content.res.Configuration
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -83,6 +82,7 @@ import com.shiny.music.ui.component.Material3MenuItemData
 import com.shiny.music.ui.component.NewAction
 import com.shiny.music.ui.component.NewActionGrid
 import com.shiny.music.ui.component.SongListItem
+import com.shiny.music.ui.liquid.share.shareCollection
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -357,12 +357,11 @@ fun AlbumMenu(
                         text = stringResource(R.string.share),
                         onClick = {
                             onDismiss()
-                            val intent = Intent().apply {
-                                action = Intent.ACTION_SEND
-                                type = "text/plain"
-                                putExtra(Intent.EXTRA_TEXT, "${com.shiny.music.social.ShinyLinks.WEB_BASE}/playlist?list=${album.album.playlistId}")
-                            }
-                            context.startActivity(Intent.createChooser(intent, null))
+                            context.shareCollection(
+                                name = album.album.title,
+                                link = album.album.playlistId?.let(com.shiny.music.social.ShinyLinks::playlist),
+                                songs = songs,
+                            )
                         }
                     )
                 ),

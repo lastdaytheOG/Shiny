@@ -57,8 +57,18 @@ object PlaybackHealth {
         data class GaveUp(val errorCode: String, val why: String, val outcome: String) : Event
     }
 
-    /** A message for the listener, shown by the activity if it is on screen. */
-    data class Notice(val title: String?, val skipped: Boolean, val unavailable: Boolean)
+    /**
+     * A message for the listener, shown by the activity if it is on screen.
+     *
+     * [needsAudioAccess]: the song is a file on the phone that Shiny is not allowed to read.
+     * Playback has stopped on it, and the activity asks for the permission instead.
+     */
+    data class Notice(
+        val title: String?,
+        val skipped: Boolean,
+        val unavailable: Boolean,
+        val needsAudioAccess: Boolean = false,
+    )
 
     @Volatile
     var sink: ((Event) -> Unit)? = null

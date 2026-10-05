@@ -16,6 +16,7 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -69,8 +70,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.shiny.music.constants.PlayerShowRemainingTimeKey
 import com.shiny.music.ui.liquid.LiquidIcons
 import com.shiny.music.ui.liquid.LiquidTypography
+import com.shiny.music.utils.rememberPreference
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -173,8 +176,16 @@ fun LiquidScrubber(
                 )
             }
         }
+        // Tapping the times switches the right one between the time left and the song's length.
+        var showRemaining by rememberPreference(PlayerShowRemainingTimeKey, defaultValue = true)
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = { showRemaining = !showRemaining },
+                ),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             val remaining = (totalSeconds - elapsedSeconds).coerceAtLeast(0L)
@@ -185,7 +196,7 @@ fun LiquidScrubber(
                 modifier = Modifier.weight(1f),
             )
             Text(
-                text = "-" + formatTime(remaining * 1000L),
+                text = if (showRemaining) "-" + formatTime(remaining * 1000L) else formatTime(totalSeconds * 1000L),
                 style = TimeStyle,
                 color = NowPlayingInk.secondary,
                 modifier = Modifier.weight(1f),
