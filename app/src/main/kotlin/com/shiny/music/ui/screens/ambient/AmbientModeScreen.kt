@@ -117,7 +117,7 @@ fun AmbientModeScreen(navController: NavController) {
     val isPlaying by playerConnection.isPlaying.collectAsState()
     val canSkipPrevious by playerConnection.canSkipPrevious.collectAsState()
     val canSkipNext by playerConnection.canSkipNext.collectAsState()
-    val living by rememberPreference(LiquidPrefs.LivingArtwork, true)
+    val living by rememberPreference(LiquidPrefs.LivingArtwork, LiquidPrefs.LivingArtworkDefault)
     val motionCovers by rememberPreference(LiquidPrefs.MotionArtwork, true)
     val backdropMotion by rememberPreference(LiquidPrefs.PlayerMotion, true)
     val instant = LocalShinyAppearance.current.transitions == PageTransitions.Instant

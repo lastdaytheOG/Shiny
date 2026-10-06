@@ -16,10 +16,24 @@ class AppearanceModelTest {
         assertEquals(PageTransitions.Slide, defaults.transitions)
         assertEquals(false, defaults.amoled)
 
-        // An untouched install: all three motion switches default to true.
-        val motion = artworkMotionOf(backdropDrift = true, breathe = true, living = true)
+        // An untouched install: the backdrop drifts and the cover settles on pause, and the
+        // cover itself is left as it is. Motion Shiny makes up is off until it is asked for.
+        assertEquals(false, com.shiny.music.ui.liquid.LiquidPrefs.LivingArtworkDefault)
+        val motion = artworkMotionOf(backdropDrift = true, breathe = true, living = com.shiny.music.ui.liquid.LiquidPrefs.LivingArtworkDefault)
+        assertEquals(ArtworkMotion.Subtle, motion)
         val mix = ExperienceMix(defaults.atmosphere, defaults.glow, motion, defaults.transitions)
         assertEquals(Experience.Balanced, experienceOf(mix))
+    }
+
+    @Test
+    fun `the living cover is something chosen, never something a default or the balanced mix turns on`() {
+        assertEquals(false, Experience.Balanced.mix!!.motion.switches.living)
+        assertEquals(false, Experience.Minimal.mix!!.motion.switches.living)
+        // It is still there for whoever wants it: on the motion scale, and in the Immersive mix.
+        assertEquals(true, ArtworkMotion.Living.switches.living)
+        assertEquals(ArtworkMotion.Living, Experience.Immersive.mix!!.motion)
+        // And a choice already made is read back as made.
+        assertEquals(ArtworkMotion.Living, artworkMotionOf(backdropDrift = true, breathe = true, living = true))
     }
 
     @Test
@@ -131,41 +145,94 @@ class AppearanceModelTest {
     }
 
     @Test
-    fun `a full-screen cover is scrimmed more heavily than the blurred field ever was`() {
-        Atmosphere.entries.forEach { atmosphere ->
-            val field = atmosphereScrim(atmosphere, 0.26f)
-            val full = fullScreenScrim(atmosphere, 0.26f)
-            assertTrue("$atmosphere: $full should exceed $field", full > field)
-        }
-    }
-
-    @Test
-    fun `a bright cover is scrimmed more than a dark one at every atmosphere`() {
-        Atmosphere.entries.forEach { atmosphere ->
-            val dark = fullScreenScrim(atmosphere, 0.26f)
-            val bright = fullScreenScrim(atmosphere, 0.42f)
-            assertTrue("$atmosphere: $bright should exceed $dark", bright > dark)
-        }
-    }
-
-    @Test
-    fun `atmosphere still means the same thing full screen`() {
-        // Immersive lets the most of the cover through; Off the least.
-        val byAtmosphere = listOf(Atmosphere.Immersive, Atmosphere.Balanced, Atmosphere.Soft, Atmosphere.Off)
-            .map { fullScreenScrim(it, 0.26f) }
-        assertEquals(byAtmosphere.sorted(), byAtmosphere)
+    fun `the shade at the head of a poster follows the atmosphere`() {
+        // Immersive lets the most of the picture through; Off the least.
         val tops = listOf(Atmosphere.Immersive, Atmosphere.Balanced, Atmosphere.Soft, Atmosphere.Off)
-            .map { fullScreenTopScrim(it) }
+            .map { posterTopScrim(it) }
         assertEquals(tops.sorted(), tops)
+        assertTrue(tops.all { it in 0.1f..0.5f })
     }
 
     @Test
-    fun `the scrim never reaches opaque, so the cover is always still visible`() {
+    fun `there are two presentations, and a choice that no longer exists falls back to the card`() {
+        assertEquals(listOf(ArtworkPresentation.Card, ArtworkPresentation.Poster), ArtworkPresentation.entries.toList())
+        assertEquals(ArtworkPresentation.Card, runCatching { ArtworkPresentation.valueOf("FullScreen") }.getOrDefault(ArtworkPresentation.Card))
+    }
+
+    // ---- poster ------------------------------------------------------------------------
+
+    @Test
+    fun `on a tall screen the poster dissolves over the last part of the cover itself`() {
+        // 1080 wide, title far below the cover: the dissolve ends on the cover's bottom edge.
+        val melt = posterMelt(coverSide = 1080f, titleTop = 1500f, gap = 26f)
+        assertEquals(1080f, melt.end, 0f)
+        assertEquals(1080f * (1f - PosterMeltFraction), melt.start, 0.5f)
+    }
+
+    @Test
+    fun `on a short screen the dissolve is over before the title begins`() {
+        // The title sits over the cover: 1080 wide, title at 900.
+        val melt = posterMelt(coverSide = 1080f, titleTop = 900f, gap = 26f)
+        assertEquals(874f, melt.end, 0f)
+        assertTrue(melt.start < melt.end)
+        // Never more than the lower half, and a third of the picture always stays sharp.
+        val squat = posterMelt(coverSide = 1080f, titleTop = 200f, gap = 26f)
+        assertEquals(540f, squat.end, 0f)
+        assertTrue(squat.start >= 1080f * 0.34f - 0.5f)
+        assertTrue(squat.start < squat.end)
+    }
+
+    @Test
+    fun `the cover is whole above the dissolve and gone by its end`() {
+        val melt = PosterMelt(700f, 1000f)
+        assertEquals(0f, posterMeltAt(0f, melt), 0f)
+        assertEquals(0f, posterMeltAt(700f, melt), 0f)
+        assertEquals(0.5f, posterMeltAt(850f, melt), 1e-4f)
+        assertEquals(1f, posterMeltAt(1000f, melt), 0f)
+        assertEquals(1f, posterMeltAt(2400f, melt), 0f)
+        // It only ever thickens on the way down.
+        val steps = (700..1000 step 10).map { posterMeltAt(it.toFloat(), melt) }
+        assertEquals(steps.sorted(), steps)
+    }
+
+    @Test
+    fun `the ground under the title is dark enough for white type on any cover`() {
         Atmosphere.entries.forEach { atmosphere ->
-            listOf(0f, 0.26f, 0.42f, 1f).forEach { balanced ->
-                val scrim = fullScreenScrim(atmosphere, balanced)
-                assertTrue("$atmosphere/$balanced = $scrim", scrim in 0.5f..0.92f)
+            listOf(0.02f, 0.2f, 0.5f, 1f).forEach { brightness ->
+                val scrim = posterTitleScrim(atmosphere, brightness)
+                // What is left of the ground's luminance after the scrim (display gamma 2.2).
+                val shown = brightness * Math.pow((1f - scrim).toDouble(), 2.2).toFloat()
+                // 4.5:1 against white needs a ground at or under 0.183.
+                assertTrue("$atmosphere/$brightness shows $shown", shown <= 0.183f)
+                assertTrue(scrim <= 0.9f)
             }
         }
+    }
+
+    @Test
+    fun `a dark cover is barely darkened and a pale one as much as it takes`() {
+        Atmosphere.entries.forEach { atmosphere ->
+            val dark = posterTitleScrim(atmosphere, 0.03f)
+            val pale = posterTitleScrim(atmosphere, 0.9f)
+            assertTrue("$atmosphere", pale > dark)
+        }
+        // Immersive lets the most of the colour through, Off the least.
+        val byAtmosphere = listOf(Atmosphere.Immersive, Atmosphere.Balanced, Atmosphere.Soft, Atmosphere.Off)
+            .map { posterTitleScrim(it, 0.03f) }
+        assertEquals(byAtmosphere.sorted(), byAtmosphere)
+    }
+
+    @Test
+    fun `the poster's shade starts below the sharp cover and only deepens`() {
+        val title = 0.4f
+        val foot = posterFootScrim(title)
+        assertTrue(foot > title)
+        fun at(y: Float) = posterScrimAt(y, meltStart = 700f, titleTop = 1500f, bottom = 2400f, titleScrim = title, footScrim = foot)
+        assertEquals(0f, at(0f), 0f)
+        assertEquals(0f, at(700f), 0f)
+        assertEquals(title, at(1500f), 1e-4f)
+        assertEquals(foot, at(2400f), 1e-4f)
+        val down = (0..2400 step 50).map { at(it.toFloat()) }
+        assertEquals(down.sorted(), down)
     }
 }

@@ -4,6 +4,7 @@ import android.graphics.RenderEffect
 import android.graphics.RuntimeShader
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -21,21 +22,19 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
-import com.shiny.music.applecanvas.AppleMusicCanvasProvider
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalContext
+import com.shiny.music.artwork.Artworks
 import com.shiny.music.canvas.CanvasArtwork
-import com.shiny.music.canvas.TidalCanvasProvider
 import com.shiny.music.constants.DataSaverEnabledKey
 import com.shiny.music.models.MediaMetadata
 import com.shiny.music.utils.rememberPreference
 import com.shiny.music.ui.liquid.Artwork
 import com.shiny.music.ui.player.CanvasArtworkPlaybackCache
 import com.shiny.music.ui.player.CanvasArtworkPlayer
-import com.shiny.music.ui.player.normalizeCanvasArtistName
-import com.shiny.music.ui.player.normalizeCanvasSongTitle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
-import java.util.Locale
 import kotlin.math.PI
 import kotlin.math.sin
 
@@ -60,6 +59,11 @@ fun LivingArtwork(
     motionVideos: Boolean,
     videoVisible: Boolean,
     modifier: Modifier = Modifier,
+    dissolve: Boolean = false,
+    /** Play the album's portrait motion artwork, where it has one, instead of the square one. */
+    tall: Boolean = false,
+    /** The pixels the artwork covers, where the caller knows them; otherwise they are measured here. See [CanvasArtworkPlayer]. */
+    sharpPx: IntSize? = null,
 ) {
     // Motion artwork is a video download nobody asked for, so Data Saver opts out of both
     // the lookup and the playback — the animated poster costs no network at all.
@@ -72,6 +76,18 @@ fun LivingArtwork(
     // device cannot decode the clip, so a failure is indistinguishable from having no video.
     var videoRendered by remember(motion) { mutableStateOf(false) }
     var videoUnavailable by remember(motion) { mutableStateOf(false) }
+    // A clip that would not play is not written off for as long as the song lasts: it is tried
+    // again each time the player is opened, when the connection that failed it may be back.
+    LaunchedEffect(videoVisible) {
+        if (videoVisible && videoUnavailable) videoUnavailable = false
+    }
+
+    // The made-up motion is only ever for a cover that has none of its own, and only for
+    // whoever turned it on. An album with a real clip in this shape is left to that clip: the
+    // still under it is not drifted or zoomed, before the clip arrives or after.
+    val ownClip = motion != null && !videoUnavailable &&
+        (if (tall) !motion.tallAnimated.isNullOrBlank() else !motion.preferredAnimationUrl.isNullOrBlank())
+    @Suppress("NAME_SHADOWING") val living = living && !ownClip
 
     val clock = remember { mutableFloatStateOf(0f) }
     // The poster keeps breathing until the video is genuinely on screen — finding a video is
@@ -87,7 +103,12 @@ fun LivingArtwork(
         }
     }
 
-    Box(modifier) {
+    // The pixels the cover covers, where the caller has not said (the landscape player): the
+    // largest it has been, so a smaller clip is never sent for when it shrinks. A clip chosen
+    // without them started 486 pixels across in a cover nine hundred wide.
+    var ownPx by remember { mutableStateOf(IntSize.Zero) }
+
+    Box(modifier.onSizeChanged { if (it.width > ownPx.width) ownPx = it }) {
         Box(
             Modifier
                 .fillMaxSize()
@@ -97,13 +118,21 @@ fun LivingArtwork(
                 model = model,
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(0),
                 hairline = false,
+                dissolve = dissolve,
                 modifier = Modifier.fillMaxSize(),
             )
         }
-        if (motion != null && videoVisible && !videoUnavailable) {
+        // Not before the cover has been measured (a frame): the clip's size is chosen from it,
+        // and one chosen without it would be fetched and then changed.
+        val coverPx = sharpPx ?: ownPx.takeIf { it.width > 0 && it.height > 0 }
+        if (motion != null && videoVisible && !videoUnavailable && coverPx != null) {
+            val portrait = motion.tallAnimated?.takeIf { tall }
             CanvasArtworkPlayer(
-                primaryUrl = motion.animated,
-                fallbackUrl = motion.videoUrl,
+                primaryUrl = portrait ?: motion.animated,
+                // Each shape falls back to its own plain file, never to the other shape cut down
+                // to fit: a portrait clip in the square, or the square one hung as the poster.
+                fallbackUrl = if (portrait != null) motion.tallVideoUrl else motion.videoUrl,
+                sharpFor = coverPx,
                 isPlaying = animate,
                 modifier = Modifier.fillMaxSize(),
                 onFirstFrame = { videoRendered = true },
@@ -189,17 +218,34 @@ private object LiquidArtShader {
 }
 
 /**
- * The song's motion artwork, if any provider has one: looked up once per song, cached
- * for the session, and checked against the song's artist and title or album so an
- * unrelated video never plays over the wrong cover.
+ * The song's motion artwork, if it has any: found once through the artwork resolver (which
+ * remembers the answer on disk, and shares one lookup between everything asking at once) and
+ * held here by song for the session. A song with none is the ordinary case.
  */
 @Composable
 fun rememberMotionArtwork(metadata: MediaMetadata?, enabled: Boolean): CanvasArtwork? {
+    val context = LocalContext.current
     val id = metadata?.id
-    var found by remember(id) { mutableStateOf(id?.let { CanvasArtworkPlaybackCache.get(it) }) }
+    var found by remember(id) {
+        mutableStateOf(
+            id?.let { CanvasArtworkPlaybackCache.get(it) }
+                ?: metadata?.let { Artworks.resolver(context).known(Artworks.query(it))?.motion }
+        )
+    }
     LaunchedEffect(id, enabled) {
-        if (!enabled || metadata == null || found != null) return@LaunchedEffect
-        val result = withContext(Dispatchers.IO) { runCatching { lookUpMotionArtwork(metadata) }.getOrNull() }
+        if (!enabled || metadata == null) return@LaunchedEffect
+        found?.let {
+            Artworks.log("lookup    '${metadata.title}' -> already known: square=${it.preferredAnimationUrl != null} tall=${it.tallAnimated != null}")
+            return@LaunchedEffect
+        }
+        val result = withContext(Dispatchers.IO) {
+            // Opened here, off the main thread, so the player finds it ready.
+            com.shiny.music.artwork.MotionArtworkCache.open(context)
+            Artworks.resolver(context).motion(Artworks.query(metadata))
+        }
+        Artworks.log(
+            "lookup    '${metadata.title}' -> " + (result?.let { "square=${it.preferredAnimationUrl != null} tall=${it.tallAnimated != null}" } ?: "no motion artwork")
+        )
         if (result != null) {
             CanvasArtworkPlaybackCache.put(metadata.id, result)
             found = result
@@ -207,44 +253,3 @@ fun rememberMotionArtwork(metadata: MediaMetadata?, enabled: Boolean): CanvasArt
     }
     return if (enabled) found else null
 }
-
-private suspend fun lookUpMotionArtwork(metadata: MediaMetadata): CanvasArtwork? {
-    val storefront = Locale.getDefault().country.takeIf { it.length == 2 }?.lowercase(Locale.ROOT) ?: "us"
-    val album = metadata.album?.title
-    val titleRaw = metadata.title
-    val artistRaw = metadata.artists.firstOrNull()?.name.orEmpty()
-    val title = normalizeCanvasSongTitle(titleRaw)
-    val artist = normalizeCanvasArtistName(artistRaw)
-
-    val fetched = linkedSetOf(title to artist, titleRaw to artist, title to artistRaw, titleRaw to artistRaw)
-        .filter { (s, a) -> s.isNotBlank() && a.isNotBlank() }
-        .firstNotNullOfOrNull { (s, a) ->
-            if (!album.isNullOrBlank()) {
-                AppleMusicCanvasProvider.getByAlbumArtist(album = album, artist = a, storefront = storefront)
-                    ?.takeIf { !it.preferredAnimationUrl.isNullOrBlank() }
-                    ?.let { return@firstNotNullOfOrNull it }
-            }
-            TidalCanvasProvider.getBySongArtist(song = s, artist = a, album = album)?.takeIf { !it.preferredAnimationUrl.isNullOrBlank() }
-                ?: AppleMusicCanvasProvider.getBySongArtist(song = s, artist = a, album = album, storefront = storefront)
-                    ?.takeIf { !it.preferredAnimationUrl.isNullOrBlank() }
-        } ?: return null
-
-    fun loose(a: String, b: String): Boolean {
-        if (a.isBlank() || b.isBlank()) return true
-        val na = normalizeCanvasSongTitle(a)
-        val nb = normalizeCanvasSongTitle(b)
-        return a.contains(b, true) || b.contains(a, true) || na.contains(nb, true) || nb.contains(na, true)
-    }
-
-    val artistOk = fetched.artist?.let { found ->
-        val nf = normalizeCanvasArtistName(found)
-        found.contains(artistRaw, true) || artistRaw.contains(found, true) || nf.contains(artist, true) || artist.contains(nf, true)
-    } ?: true
-    val titleOk = when {
-        fetched.albumName != null && !album.isNullOrBlank() -> loose(fetched.albumName!!, album)
-        fetched.name != null -> loose(fetched.name!!, titleRaw) || (!album.isNullOrBlank() && loose(fetched.name!!, album))
-        else -> true
-    }
-    return fetched.takeIf { artistOk && titleOk }
-}
-

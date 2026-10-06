@@ -17,11 +17,21 @@ object LiquidPrefs {
     /** Lines fill word by word when the provider has word timings. */
     val WordByWord = booleanPreferencesKey("liquidWordByWord")
 
-    /** The still cover drifts, ripples and catches the light while music plays. */
+    /**
+     * The still cover drifts, ripples and catches the light while music plays. It is motion
+     * Shiny makes up, not the album's own, so it is there for whoever asks for it and off
+     * for everyone else: see [LivingArtworkDefault].
+     */
     val LivingArtwork = booleanPreferencesKey("liquidLivingArtwork")
+
+    /** What [LivingArtwork] is until it has been chosen: off. A cover is shown as it is. */
+    const val LivingArtworkDefault = false
 
     /** Songs with motion artwork (Apple Music animated covers, canvases) play it in place of the cover. */
     val MotionArtwork = booleanPreferencesKey("liquidMotionArtwork")
+
+    /** A song that only has a music video's still for artwork shows its real cover, from Apple's catalogue. */
+    val AppleCovers = booleanPreferencesKey("liquidAppleCovers")
 
     /**
      * How the cover is presented on Now Playing — `ArtworkPresentation`. Absent means Card,

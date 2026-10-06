@@ -38,36 +38,139 @@ enum class ArtworkPresentation {
     /** The cover as a square on a field of its own colour. Shiny as it ships. */
     Card,
 
-    /** The cover fills Now Playing, cropped to the screen, with the controls set over it. */
-    FullScreen,
+    /**
+     * An album's portrait artwork, edge to edge at the head of Now Playing, in its own shape:
+     * never cropped, never stretched, never enlarged. Its foot goes out of focus into a field
+     * of its own colours, which carries on down the screen under the title and the controls.
+     * An album without portrait artwork keeps the [Card]: a square sleeve is not hung this way.
+     */
+    Poster,
 }
 
 /**
- * How deep the scrim at the foot of a full-screen cover has to be.
- *
- * [balanced] is the scrim Shiny already derives from this artwork's own brightness — 0.26 for
- * a dark cover, 0.42 for a bright one. A full-bleed cover puts the title and the transport
- * directly on the image instead of on a blurred field, so the foot needs more than the field
- * ever did, and a bright sleeve needs more than a dark one at every setting.
- *
- * Atmosphere still moves it: Immersive lets the most of the cover through, Off the least,
- * which is what those words mean everywhere else in Shiny.
+ * Where a poster cover dissolves, measured down the player in whatever unit the cover's
+ * side was given in. It is sharp to [start] and gone by [end]; what shows instead is its
+ * own blurred copy lying exactly beneath it, so the picture reads as going out of focus
+ * rather than as a card ending.
  */
-fun fullScreenScrim(atmosphere: Atmosphere, balanced: Float): Float {
-    val floor = when (atmosphere) {
-        Atmosphere.Immersive -> 0.62f
-        Atmosphere.Balanced -> 0.72f
-        Atmosphere.Soft -> 0.80f
-        Atmosphere.Off -> 0.88f
+data class PosterMelt(val start: Float, val end: Float)
+
+/** How much of the cover's height the dissolve takes when the screen has room for all of it. */
+const val PosterMeltFraction = 0.26f
+
+/**
+ * The dissolve for a cover [coverSide] square, hung from the top, on a player whose title
+ * begins at [titleTop].
+ *
+ * On a tall screen the cover ends above the title and the dissolve finishes on the cover's
+ * own bottom edge. On a short one the title sits over the cover, so the dissolve has to be
+ * over [gap] before the type begins. It never takes more than the cover's lower half, and
+ * what is left above it is never less than a third of the picture.
+ */
+fun posterMelt(coverSide: Float, titleTop: Float, gap: Float): PosterMelt {
+    // [coverSide] is the picture's height: the portrait artwork's, about a third more than its width.
+    val end = minOf(coverSide, titleTop - gap).coerceAtLeast(coverSide * 0.5f)
+    val start = (end - coverSide * PosterMeltFraction).coerceAtLeast(coverSide * 0.34f)
+    return PosterMelt(start, end)
+}
+
+/**
+ * How tall a poster cover hangs on a player [width] wide and [height] tall: its own shape
+ * ([aspect], width over height; 1 for a sleeve, about 3:4 for portrait motion artwork), but
+ * never past the foot of the player.
+ */
+fun posterCoverHeight(width: Float, height: Float, aspect: Float): Float =
+    (width / aspect.coerceIn(0.5f, 1f)).coerceAtMost(height)
+
+/** How much of the cover has dissolved at [y]: nothing above the dissolve, all of it from its end. */
+fun posterMeltAt(y: Float, melt: PosterMelt): Float {
+    if (melt.end <= melt.start) return if (y >= melt.end) 1f else 0f
+    return smoothStep((y - melt.start) / (melt.end - melt.start))
+}
+
+/**
+ * How much the poster's ground is darkened where the title begins, for a ground whose bright
+ * end has relative luminance [brightness] there.
+ *
+ * Solved, not fixed. White type needs the ground under it at or below a luminance; a dark
+ * sleeve is already there and gets only the floor, while a white one gets as much as it
+ * takes. A scrim multiplies the encoded colour, and luminance follows it to the power of the
+ * display's gamma, which is why the root is taken. Atmosphere moves both the target and
+ * the floor: Immersive lets the most colour through, Off the least.
+ */
+fun posterTitleScrim(atmosphere: Atmosphere, brightness: Float): Float {
+    val target = when (atmosphere) {
+        Atmosphere.Immersive -> 0.18f
+        Atmosphere.Balanced -> 0.155f
+        Atmosphere.Soft -> 0.115f
+        Atmosphere.Off -> 0.08f
     }
-    return (floor + (balanced - 0.26f).coerceAtLeast(0f)).coerceIn(floor, 0.92f)
+    val floor = when (atmosphere) {
+        Atmosphere.Immersive -> 0.14f
+        Atmosphere.Balanced -> 0.22f
+        Atmosphere.Soft -> 0.34f
+        Atmosphere.Off -> 0.44f
+    }
+    val needed = if (brightness <= target) 0f else 1f - Math.pow((target / brightness).toDouble(), 1.0 / 2.2).toFloat()
+    return maxOf(floor, needed).coerceAtMost(0.9f)
 }
 
 /**
- * The scrim at the head of a full-screen cover, under the grabber and the status bar. Light
- * — it only has to hold two small white marks, not a block of type.
+ * How vivid the poster's ground is. A blur averages colour towards grey, so the ground is
+ * given back what the blur took and a little more: the field under the controls should read
+ * as the cover's colours poured out and lit, not as a dim copy of them.
  */
-fun fullScreenTopScrim(atmosphere: Atmosphere): Float = when (atmosphere) {
+fun posterSaturation(atmosphere: Atmosphere): Float = when (atmosphere) {
+    Atmosphere.Off -> 1f
+    Atmosphere.Soft -> 0.94f
+    Atmosphere.Balanced -> 1.24f
+    Atmosphere.Immersive -> 1.44f
+}
+
+/**
+ * How much more colour the poster's ground is given where it is shaded, per unit of shade.
+ * A colour that is only darkened turns to mud; this is what keeps the foot of the stage a
+ * rich dark instead of a grey one. Pale colours take most of it, strong ones almost none.
+ */
+fun posterDepthRichness(atmosphere: Atmosphere): Float = when (atmosphere) {
+    Atmosphere.Off -> 0f
+    Atmosphere.Soft -> 0.5f
+    Atmosphere.Balanced -> 1.1f
+    Atmosphere.Immersive -> 1.5f
+}
+
+/** The same ground at the very foot of the player, under the last row of controls. */
+fun posterFootScrim(titleScrim: Float): Float = (titleScrim + 0.18f).coerceAtMost(0.92f)
+
+/**
+ * The darkening at [y] down a poster's ground: none over the sharp cover, rising from
+ * [meltStart] to [titleScrim] where the type begins, and on to [footScrim] at [bottom].
+ * Each rise eases at both ends, so no line shows where one hands over to the next.
+ */
+fun posterScrimAt(
+    y: Float,
+    meltStart: Float,
+    titleTop: Float,
+    bottom: Float,
+    titleScrim: Float,
+    footScrim: Float,
+): Float = when {
+    y <= meltStart -> 0f
+    y < titleTop -> titleScrim * smoothStep((y - meltStart) / (titleTop - meltStart))
+    bottom <= titleTop -> footScrim
+    else -> titleScrim + (footScrim - titleScrim) * smoothStep((y - titleTop) / (bottom - titleTop))
+}
+
+private fun smoothStep(x: Float): Float {
+    val t = x.coerceIn(0f, 1f)
+    return t * t * (3f - 2f * t)
+}
+
+/**
+ * The scrim at the head of a poster, under the grabber and the status bar. Light: it only
+ * has to hold two small white marks, not a block of type.
+ */
+fun posterTopScrim(atmosphere: Atmosphere): Float = when (atmosphere) {
     Atmosphere.Immersive -> 0.22f
     Atmosphere.Balanced -> 0.30f
     Atmosphere.Soft -> 0.36f
@@ -122,10 +225,14 @@ enum class ArtworkMotion {
     /** Nothing moves. The cover is a still frame on a still ground. */
     Off,
 
-    /** The backdrop turns slowly and the cover settles when paused. */
+    /** The backdrop turns slowly and the cover settles when paused. The cover itself is still. The default. */
     Subtle,
 
-    /** The cover itself drifts, ripples and catches the light while music plays. The default. */
+    /**
+     * The cover itself drifts, ripples and catches the light while music plays. Motion Shiny
+     * adds to a still picture, so only for whoever chooses it, and never over an album's own
+     * motion artwork.
+     */
     Living,
 }
 
@@ -161,8 +268,8 @@ data class ExperienceMix(
 val Experience.mix: ExperienceMix?
     get() = when (this) {
         Experience.Minimal -> ExperienceMix(Atmosphere.Soft, ArtworkGlow.Off, ArtworkMotion.Off, PageTransitions.Fade)
-        // Balanced is the defaults, which are today's Shiny.
-        Experience.Balanced -> ExperienceMix(Atmosphere.Balanced, ArtworkGlow.Off, ArtworkMotion.Living, PageTransitions.Slide)
+        // Balanced is the defaults: an untouched Shiny reads back as it, cover left as it is.
+        Experience.Balanced -> ExperienceMix(Atmosphere.Balanced, ArtworkGlow.Off, ArtworkMotion.Subtle, PageTransitions.Slide)
         Experience.Immersive -> ExperienceMix(Atmosphere.Immersive, ArtworkGlow.Medium, ArtworkMotion.Living, PageTransitions.Slide)
         Experience.Custom -> null
     }

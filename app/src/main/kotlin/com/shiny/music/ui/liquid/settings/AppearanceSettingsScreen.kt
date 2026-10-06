@@ -125,7 +125,7 @@ fun AppearanceSettingsScreen(navController: NavController) {
     var transitions by rememberEnumPreference(LiquidPrefs.PageTransitions, PageTransitions.Slide)
     val backdropDrift by rememberPreference(LiquidPrefs.PlayerMotion, true)
     val breathe by rememberPreference(LiquidPrefs.ArtworkBreathe, true)
-    val living by rememberPreference(LiquidPrefs.LivingArtwork, true)
+    val living by rememberPreference(LiquidPrefs.LivingArtwork, LiquidPrefs.LivingArtworkDefault)
     var highRefresh by rememberPreference(EnableHighRefreshRateKey, true)
     var haptics by rememberPreference(EnableHapticsKey, false)
     var cropArtwork by rememberPreference(CropAlbumArtKey, false)
@@ -266,18 +266,19 @@ fun AppearanceSettingsScreen(navController: NavController) {
             SettingsSection(
                 title = "Now Playing",
                 footer = "Atmosphere and glow follow each song and settle over a moment when it " +
-                    "changes. Ambient Mode uses the same atmosphere. Full screen is portrait only; " +
-                    "in landscape the cover keeps its own half of the window.",
+                    "changes. Ambient Mode uses the same atmosphere. Poster shows an album's " +
+                    "portrait artwork where it has one, never enlarged; every other cover stays " +
+                    "on its card.",
             ) {
                 SettingsChoiceRow(
                     title = "Artwork",
                     options = ArtworkPresentation.entries,
                     selected = artworkPresentation,
-                    label = { if (it == ArtworkPresentation.FullScreen) "Full screen" else it.name },
+                    label = { it.name },
                     optionSubtitle = {
                         when (it) {
                             ArtworkPresentation.Card -> "The cover on a stage of its own colour"
-                            ArtworkPresentation.FullScreen -> "The cover fills Now Playing, behind the controls"
+                            ArtworkPresentation.Poster -> "Portrait artwork edge to edge, on albums that have it"
                         }
                     },
                     onSelect = { choice ->

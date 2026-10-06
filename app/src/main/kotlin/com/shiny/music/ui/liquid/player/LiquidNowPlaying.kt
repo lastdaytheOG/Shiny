@@ -68,6 +68,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -83,6 +85,7 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.rememberUpdatedState
@@ -106,6 +109,7 @@ import com.shiny.music.ui.liquid.together.TogetherPlayerBadge
 import com.shiny.music.ui.liquid.together.TogetherReactionsLayer
 import com.shiny.music.LocalPlayerConnection
 import com.shiny.music.constants.PlayerBackgroundStyle
+import com.shiny.music.extensions.metadata
 import com.shiny.music.shinymusic.AudioDeviceBottomSheet
 import com.shiny.music.ui.component.BottomSheetState
 import com.shiny.music.ui.component.LocalMenuState
@@ -126,13 +130,18 @@ import com.shiny.music.ui.liquid.appearance.Atmosphere
 import com.shiny.music.ui.liquid.appearance.LocalShinyAppearance
 import com.shiny.music.ui.liquid.appearance.atmosphereSaturation
 import com.shiny.music.ui.liquid.appearance.atmosphereScrim
-import com.shiny.music.ui.liquid.appearance.fullScreenScrim
-import com.shiny.music.ui.liquid.appearance.fullScreenTopScrim
+import com.shiny.music.ui.liquid.appearance.posterTopScrim
 import com.shiny.music.ui.liquid.appearance.glowPauseFactor
+import com.shiny.music.ui.liquid.appearance.posterMelt
 import com.shiny.music.ui.liquid.appearance.strength
 import com.shiny.music.ui.liquid.LiquidPrefs
 import com.shiny.music.utils.rememberPreference
 import com.shiny.music.constants.KeepScreenOn
+import androidx.compose.ui.unit.IntSize
+import com.shiny.music.constants.DataSaverEnabledKey
+import com.shiny.music.artwork.ArtworkMatcher
+import com.shiny.music.ui.liquid.appearance.posterCoverHeight
+import androidx.compose.ui.platform.LocalConfiguration
 import com.shiny.music.ui.utils.resize
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -280,7 +289,7 @@ private fun NowPlaying(
     var showOutputSheet by remember { mutableStateOf(false) }
     val motionPref by rememberPreference(LiquidPrefs.PlayerMotion, true)
     val breathePref by rememberPreference(LiquidPrefs.ArtworkBreathe, true)
-    val livingPref by rememberPreference(LiquidPrefs.LivingArtwork, true)
+    val livingPref by rememberPreference(LiquidPrefs.LivingArtwork, LiquidPrefs.LivingArtworkDefault)
     val motionVideoPref by rememberPreference(LiquidPrefs.MotionArtwork, true)
     val showVolume by rememberPreference(LiquidPrefs.ShowVolume, true)
     val keepScreenOn by rememberPreference(KeepScreenOn, false)
@@ -296,21 +305,91 @@ private fun NowPlaying(
     val liked = currentSong?.song?.liked == true
     val haptic = LocalHapticFeedback.current
     val artUrl = metadata?.thumbnailUrl
-    val hiRes = remember(artUrl) { artUrl?.resize(1080, 1080) }
+    val appearance = LocalShinyAppearance.current
+
+    val posterChosen = appearance.artwork == ArtworkPresentation.Poster
+    val screenPx = remember(context) {
+        context.resources.displayMetrics.let { minOf(it.widthPixels, it.heightPixels) }
+    }
+    // A cover is asked for at about the number of pixels it covers: fewer would be drawn
+    // enlarged, and more cannot be shown.
+    val coverPx = remember(screenPx) { ArtworkMatcher.sizeFor(screenPx) }
+
+    // ---- Apple's artwork (see the artwork package) -----------------------------------------
+    // The song's own artwork is what shows first, always. A song that only has a music
+    // video's still gets its real cover once that has been found and is ready to draw.
+    val appleCoversPref by rememberPreference(LiquidPrefs.AppleCovers, true)
+    val dataSaver by rememberPreference(DataSaverEnabledKey, false)
+    val appleCover = rememberAppleCover(
+        metadata = metadata,
+        next = {
+            val player = playerConnection.player
+            val index = player.nextMediaItemIndex
+            if (index in 0 until player.mediaItemCount) player.getMediaItemAt(index).metadata else null
+        },
+        enabled = appleCoversPref,
+        sizePx = coverPx,
+    )
+    // The Poster hangs an album's portrait artwork edge to edge: the picture Apple made for
+    // the head of a phone, in its own shape, at the screen's own pixels, with its clip playing
+    // over its still. Only that. A square sleeve was never made to stand there (hung that way
+    // its foot has to be dissolved, and a cover is drawn to its edges), so a song whose album
+    // has no portrait artwork keeps the card, exactly as with the Poster off. Until the
+    // portrait artwork is ready the stage is the card too, and the change from one to the
+    // other is a short dip of the whole stage rather than a jump.
+    val portrait = LocalConfiguration.current.let { it.screenWidthDp <= it.screenHeightDp }
+    val stageMotion = rememberMotionArtwork(
+        metadata,
+        enabled = posterChosen && portrait && !dataSaver && (motionVideoPref || appleCoversPref),
+    )
+    val tallReady = rememberTallPoster(stageMotion, enabled = posterChosen && portrait, widthPx = screenPx)
+    var tallPoster by remember(metadata?.id) { mutableStateOf(tallReady) }
+    val stageDip = remember { Animatable(1f) }
+    LaunchedEffect(tallReady, metadata?.id) {
+        if (tallReady != tallPoster) {
+            stageDip.animateTo(0f, tween(200))
+            tallPoster = tallReady
+        }
+        // Always back up, whatever interrupted the way down.
+        if (stageDip.value < 1f) stageDip.animateTo(1f, tween(340))
+    }
+    // The portrait artwork is known of but its picture has not arrived yet. Not waited for for
+    // ever: a picture that will not load leaves the card, and the card its own clip.
+    var posterPatience by remember(metadata?.id) { mutableStateOf(true) }
+    LaunchedEffect(metadata?.id) {
+        delay(4_000)
+        posterPatience = false
+    }
+    val awaitingPoster = posterChosen && portrait && posterPatience && tallPoster == null && stageMotion?.tallAnimated != null
+    val stageCover = tallPoster ?: appleCover
+    val hiRes = remember(artUrl, stageCover) { stageCover?.large ?: artUrl?.resize(1080, 1080) }
+    // What the stage's colours are read from: the cover that is actually on it.
+    val stageArtUrl = stageCover?.small ?: artUrl
 
     // Glass buttons in the player refract the player's own background, never the app.
     val playerBackdrop = rememberLayerBackdrop()
 
     // One extraction per artwork feeds both the background and the glow behind the cover.
-    val appearance = LocalShinyAppearance.current
-    val artworkBackdrop = rememberNowPlayingBackdrop(artUrl)
+    val artworkBackdrop = rememberNowPlayingBackdrop(stageArtUrl)
     val glowColor = rememberArtworkGlowColor(artworkBackdrop, appearance.glow)
 
-    // A cover with no artwork keeps the square stage: a full-screen placeholder is a
-    // full-screen grey box, which is worse than the card it replaced.
-    val wantsFullScreen = appearance.artwork == ArtworkPresentation.FullScreen && artUrl != null
+    // The poster is the album's portrait artwork; without it the stage is the card.
+    val wantsPoster = posterChosen && tallPoster != null
     // Light spilling past the cover's edge only means anything while the cover has an edge.
-    val glowStrength = if (wantsFullScreen) 0f else appearance.glow.strength
+    val glowStrength = if (wantsPoster) 0f else appearance.glow.strength
+
+    // What still picture the stage is given, and where it came from (adb logcat -s Artwork).
+    LaunchedEffect(metadata?.id, hiRes, wantsPoster) {
+        val title = metadata?.title ?: return@LaunchedEffect
+        val from = when {
+            tallPoster != null -> "Apple's portrait still, ${"%.3f".format(tallPoster?.aspect)} wide:high"
+            appleCover != null -> "Apple's cover"
+            else -> "the song's own artwork"
+        }
+        com.shiny.music.artwork.Artworks.log(
+            "stage     '$title' shows ${hiRes ?: artUrl} ($from) as ${if (wantsPoster) "POSTER" else "CARD"}"
+        )
+    }
 
     val containerCoords = remember { arrayOfNulls<LayoutCoordinates>(1) }
     BoxWithConstraints(Modifier.fillMaxSize().onGloballyPositioned { containerCoords[0] = it }) {
@@ -320,31 +399,96 @@ private fun NowPlaying(
         val height = maxHeight
         val stageSize = minOf(width - 56.dp, height * 0.43f)
 
-        // Full screen is portrait only: landscape already gives the cover a whole half of
-        // the window, and rebuilding that split is not what this setting is for.
-        val fullScreen = wantsFullScreen && width <= height
-
         var stageRect by remember { mutableStateOf<Rect?>(null) }
-        // The whole player, as the cover's resting place. `FlyingArtwork` measures its child
-        // to whatever rect it is given, so this is the entire change of shape: no second
-        // artwork, no second flight, no change to the transition into lyrics or the queue.
-        val fullRect = remember(width, height, density) {
-            with(density) { Rect(0f, 0f, width.toPx(), height.toPx()) }
-        }
         var compactRect by remember { mutableStateOf<Rect?>(null) }
         var controlsTop by remember { mutableFloatStateOf(0f) }
 
-        // ---- Background -------------------------------------------------------------
-        NowPlayingBackground(
-            backdrop = artworkBackdrop,
-            // Still while the lyrics are up: under lyrics that move every frame, the field's slow
-            // turn made every frame redraw the backdrop each glass button refracts. The turn is
-            // imperceptible behind the words; the cost was dropped frames (phone, 2026-09-30).
-            playing = isPlaying && sheet.isExpanded && motionPref && mode != NowPlayingMode.Lyrics,
-            modifier = Modifier
-                .fillMaxSize()
-                .layerBackdrop(playerBackdrop),
+        // ---- Poster: portrait artwork at the head of the player, its foot going out of focus
+        // into its own colours. Portrait only: landscape already gives the cover a whole half
+        // of the window. The picture hangs without a card: no shadow, no rounding, and no
+        // settling back on pause. `FlyingArtwork` measures its child to whatever rect it is
+        // given, so the rect is the entire change of shape: no second artwork, no second
+        // flight, no change to the transition into lyrics or the queue.
+        val poster = wantsPoster && width <= height
+        val posterAspect = tallPoster?.aspect ?: 1f
+        val posterRect = remember(width, height, posterAspect, density) {
+            with(density) { Rect(0f, 0f, width.toPx(), posterCoverHeight(width.toPx(), height.toPx(), posterAspect)) }
+        }
+        var posterTitleTop by remember { mutableFloatStateOf(0f) }
+        val posterGeometry = if (poster) {
+            val widthPx = constraints.maxWidth
+            val heightPx = constraints.maxHeight
+            // Measured once the title has been laid out; until then, where it is about to be.
+            val titleTop = if (posterTitleTop > 0f) {
+                posterTitleTop
+            } else {
+                with(density) {
+                    val controls = if (controlsTop > 0f) controlsTop else heightPx - (ControlsBlockHeight + bottomInset + 14.dp).toPx()
+                    controls - (6.dp + PosterTitleHeight).toPx()
+                }
+            }
+            remember(widthPx, heightPx, titleTop, posterRect, density) {
+                val melt = posterMelt(coverSide = posterRect.height, titleTop = titleTop, gap = with(density) { 10.dp.toPx() })
+                PosterGeometry(widthPx, heightPx, posterRect.height, melt.start, melt.end, titleTop)
+            }
+        } else {
+            null
+        }
+        val posterStage = rememberPosterStage(
+            artworkUrl = stageArtUrl,
+            geometry = posterGeometry,
+            atmosphere = appearance.atmosphere,
+            amoled = appearance.amoled,
+            enabled = posterChosen,
         )
+        // Both read in the draw phase only. The ground is there as soon as it has been made,
+        // and leaves with the stage when the lyrics or the queue take over. The veil waits
+        // for the cover to land: while the sheet is still rising, the copy of the cover that
+        // flies up from the mini player is drawn over all of this, and a foot already melted
+        // would snap soft the moment the real cover took its place.
+        val posterPresence = animateFloatAsState(if (poster && posterStage.ready) 1f else 0f, tween(380), label = "posterPresence")
+        val posterSettle = animateFloatAsState(if (sheet.isExpanded) 1f else 0f, tween(420), label = "posterSettle")
+        val posterGroundAlpha = remember(posterPresence) {
+            { posterPresence.value * stageDip.value * (1f - modeProgress.value * 2.4f).coerceIn(0f, 1f) }
+        }
+        val posterVeilAlpha = remember(posterGroundAlpha, posterSettle) {
+            { posterGroundAlpha() * posterSettle.value }
+        }
+
+        // ---- Background -------------------------------------------------------------
+        // Still while the lyrics are up: under lyrics that move every frame, the field's slow
+        // turn made every frame redraw the backdrop each glass button refracts. The turn is
+        // imperceptible behind the words; the cost was dropped frames (phone, 2026-09-30).
+        val fieldPlaying = isPlaying && sheet.isExpanded && motionPref && mode != NowPlayingMode.Lyrics
+        if (posterChosen) {
+            // The poster's ground is part of the background the glass refracts, so a glass
+            // button over the cover shows the cover's own blur and not some other picture.
+            Box(Modifier.fillMaxSize().layerBackdrop(playerBackdrop)) {
+                NowPlayingBackground(
+                    backdrop = artworkBackdrop,
+                    // Under the ground the field cannot be seen: there it neither turns nor draws.
+                    playing = fieldPlaying && !(poster && mode == NowPlayingMode.Stage),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer { alpha = if (posterGroundAlpha() >= 0.999f) 0f else 1f },
+                )
+                if (poster) {
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .drawBehind { with(posterStage) { drawPosterGround(posterGroundAlpha()) } }
+                    )
+                }
+            }
+        } else {
+            NowPlayingBackground(
+                backdrop = artworkBackdrop,
+                playing = fieldPlaying,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .layerBackdrop(playerBackdrop),
+            )
+        }
 
         if (width > height) {
             // iOS 27 landscape: the artwork on one side, the controls — or the lyrics
@@ -409,13 +553,10 @@ private fun NowPlaying(
         }
 
         CompositionLocalProvider(LocalLiquidBackdrop provides playerBackdrop) {
-            // ---- Stage layer: grabber, the artwork's resting place, title row ---------
-            Column(
-                Modifier
-                    .fillMaxSize()
-                    .padding(top = topInset),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
+            // The grabber and the Listen Together badge, at the head of the player. A cover
+            // that reaches the top of the screen would lie over them where they have always
+            // been drawn, so for those presentations they are drawn after it instead.
+            val stageHead: @Composable () -> Unit = {
                 Box(Modifier.height(26.dp), contentAlignment = Alignment.Center) { Grabber() }
                 if (togetherState.isLive && together != null) {
                     TogetherPlayerBadge(
@@ -427,7 +568,17 @@ private fun NowPlaying(
                             .graphicsLayer { alpha = (1f - modeProgress.value * 2.2f).coerceIn(0f, 1f) },
                     )
                 }
-                if (!fullScreen) {
+            }
+
+            // ---- Stage layer: grabber, the artwork's resting place, title row ---------
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .padding(top = topInset),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                if (!poster) {
+                    stageHead()
                     Spacer(Modifier.weight(0.4f))
                     Box(
                         Modifier
@@ -461,7 +612,7 @@ private fun NowPlaying(
                             .padding(horizontal = 28.dp)
                             .graphicsLayer {
                                 val p = modeProgress.value
-                                alpha = (1f - p * 2.2f).coerceIn(0f, 1f)
+                                alpha = (1f - p * 2.2f).coerceIn(0f, 1f) * stageDip.value
                                 translationY = -24.dp.toPx() * p
                             },
                     )
@@ -557,19 +708,34 @@ private fun NowPlaying(
             // ---- The artwork, flying between its two resting places --------------------
             FlyingArtwork(
                 model = hiRes ?: artUrl,
-                thumbModel = artUrl,
-                stageRect = if (fullScreen) fullRect else stageRect,
+                // The copy that flies up from the mini player lands on this same picture.
+                thumbModel = stageCover?.large ?: artUrl,
+                stageRect = if (poster) posterRect else stageRect,
                 compactRect = compactRect,
                 progress = { modeProgress.value },
                 playing = isPlaying || !breathePref,
                 metadata = metadata,
                 animate = isPlaying && sheet.isExpanded && mode == NowPlayingMode.Stage,
-                living = livingPref,
+                // The Poster is hung at its own pixels and promises never to be enlarged, so the
+                // drift and zoom of a living cover are not put on it.
+                living = livingPref && !poster,
                 motionVideos = motionVideoPref,
-                videoVisible = sheet.isExpanded,
+                // While the Poster's own picture is on its way, the square clip is not started
+                // in its place only to be dropped a moment later for the portrait one.
+                videoVisible = sheet.isExpanded && !awaitingPoster,
                 glowColor = glowColor,
                 glowStrength = glowStrength,
-                fullScreen = fullScreen,
+                bleed = poster,
+                tall = poster,
+                // A clip plays at the pixels it covers: the poster's, or the card's on the stage.
+                sharpPx = if (poster) {
+                    IntSize(posterRect.width.roundToInt(), posterRect.height.roundToInt())
+                } else {
+                    stageRect?.let { IntSize(it.width.roundToInt(), it.height.roundToInt()) }
+                },
+                // The picture changing to Apple's sharper cover eases from the one it replaces.
+                dissolve = poster || appleCover != null,
+                coverAlpha = { stageDip.value },
                 onTap = { if (mode != NowPlayingMode.Stage) mode = NowPlayingMode.Stage },
                 // On the stage only: in the lyrics and queue the cover is a small header
                 // whose tap must stay immediate, and whose row sits over scrolling content.
@@ -586,43 +752,63 @@ private fun NowPlaying(
                 }) else null,
             )
 
-            // ---- Full screen: the legibility layer, then the title over the cover -------
+            // ---- Poster: the veil over the picture's foot, then the title -----------------
             //
-            // Drawn after the cover and before the controls, so the type reads on any sleeve
-            // without the cover being buried. Both fade out as the cover leaves for the
-            // lyrics or the queue, where the blurred field takes the stage back.
-            if (fullScreen) {
-                val base = artworkBackdrop.value.gradient.firstOrNull() ?: NeutralStage
-                val scrim = remember(appearance.atmosphere, base) {
-                    fullScreenScrim(appearance.atmosphere, balancedScrimFor(base))
-                }
-                val topScrim = remember(appearance.atmosphere) { fullScreenTopScrim(appearance.atmosphere) }
+            // Drawn after the picture and before the controls. Both fade out as the picture
+            // leaves for the lyrics or the queue, where the blurred field takes the stage back.
+            if (poster) {
+                val topScrim = remember(appearance.atmosphere) { posterTopScrim(appearance.atmosphere) }
                 val stageAlpha = { (1f - modeProgress.value * 2.4f).coerceIn(0f, 1f) }
+                // The poster darkens nothing over the cover: its ground carries its own
+                // shade, under the type only. What is drawn here is the veil that takes
+                // the cover's foot out of focus, and a little shade at the very head for
+                // the grabber and the status bar. Two draws, no layer.
+                val headPx = with(density) { (topInset + 46.dp).toPx() }
                 Box(
                     Modifier
                         .fillMaxSize()
-                        .graphicsLayer { alpha = stageAlpha() }
-                        // The ramp has to cover the whole controls block, not just its
-                        // foot: the title sits around two thirds down, and a gradient that
-                        // is still clear there leaves white type on whatever the cover
-                        // happens to be — skin, snow, a white sleeve.
-                        .background(
-                            Brush.verticalGradient(
+                        .drawWithCache {
+                            val head = Brush.verticalGradient(
                                 0f to Color.Black.copy(alpha = topScrim),
-                                0.12f to Color.Transparent,
-                                0.34f to Color.Transparent,
-                                0.55f to Color.Black.copy(alpha = scrim * 0.42f),
-                                0.72f to Color.Black.copy(alpha = scrim * 0.78f),
-                                1f to Color.Black.copy(alpha = scrim),
+                                1f to Color.Transparent,
+                                endY = headPx,
                             )
-                        )
+                            onDrawBehind {
+                                with(posterStage) { drawPosterVeil(posterVeilAlpha()) }
+                                drawRect(head, size = Size(size.width, headPx), alpha = stageAlpha())
+                            }
+                        }
                 )
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = topInset),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) { stageHead() }
                 val controlsHeight = if (controlsTop > 0f) {
                     (height - with(density) { controlsTop.toDp() }).coerceAtLeast(0.dp)
                 } else {
                     ControlsBlockHeight + bottomInset + 14.dp
                 }
-                Box(Modifier.fillMaxSize()) {
+                // The poster's dissolve is laid out against where the title actually begins,
+                // so this box reports it. The fade and the lift on the way to the lyrics are
+                // on the row inside, where they cannot move what is measured here.
+                Box(
+                    Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(bottom = controlsHeight + 6.dp)
+                        .padding(horizontal = 28.dp)
+                        .then(
+                            if (poster) {
+                                Modifier.onGloballyPositioned { c ->
+                                    val top = c.rectIn(containerCoords[0]).top
+                                    if (kotlin.math.abs(top - posterTitleTop) > 0.5f) posterTitleTop = top
+                                }
+                            } else {
+                                Modifier
+                            }
+                        )
+                ) {
                     StageTitleRow(
                         title = metadata?.title.orEmpty(),
                         artist = metadata?.artists?.joinToString { it.name }.orEmpty(),
@@ -646,11 +832,9 @@ private fun NowPlaying(
                             }
                         },
                         modifier = Modifier
-                            .align(Alignment.BottomStart)
-                            .padding(bottom = controlsHeight + 6.dp)
-                            .padding(horizontal = 28.dp)
                             .graphicsLayer {
-                                alpha = stageAlpha()
+                                // With the cover, through the change between card and poster.
+                                alpha = stageAlpha() * stageDip.value
                                 translationY = -24.dp.toPx() * modeProgress.value
                             },
                     )
@@ -709,6 +893,9 @@ private const val PausedArtworkScale = 0.82f
 
 /** The height the controls block occupies, used to reserve room for it on the stage. */
 private val ControlsBlockHeight: Dp = 30.dp + 18.dp + 14.dp + 104.dp + 12.dp + 30.dp + 16.dp + 48.dp
+
+/** About how tall the title row is, for laying out the poster before the row has been measured. */
+private val PosterTitleHeight: Dp = 56.dp
 
 /** Fades the top of the lyrics / queue page into the header instead of cutting it. */
 private fun Modifier.fadingTopEdge(): Modifier = this
@@ -881,15 +1068,20 @@ private fun FlyingArtwork(
     videoVisible: Boolean,
     glowColor: State<Color>,
     glowStrength: Float,
-    fullScreen: Boolean,
+    /** Hung edge to edge, without a card: the Poster. */
+    bleed: Boolean,
+    tall: Boolean = false,
+    sharpPx: IntSize? = null,
+    dissolve: Boolean = false,
+    coverAlpha: () -> Float = { 1f },
     onSwipeRight: (() -> Unit)? = null,
     onDoubleTap: (() -> Unit)? = null,
 ) {
     val density = LocalDensity.current
-    // A full-bleed cover does not settle back on pause: there is nothing behind it to reveal,
+    // A full-poster cover does not settle back on pause: there is nothing behind it to reveal,
     // so the breathe would only show a band of background around the edges.
     val restScale by animateFloatAsState(
-        targetValue = if (fullScreen || playing) 1f else PausedArtworkScale,
+        targetValue = if (bleed || playing) 1f else PausedArtworkScale,
         animationSpec = spring(dampingRatio = 0.62f, stiffness = 210f),
         label = "artRest",
     )
@@ -921,20 +1113,21 @@ private fun FlyingArtwork(
                         val s = lerp(restScale, 1f, p)
                         scaleX = s
                         scaleY = s
+                        alpha = coverAlpha()
                         // The mode spring is underdamped, so it settles *through* its
                         // target: the flight is allowed that overshoot, but anything read
-                        // off it that has a floor is not. A full-screen cover rests at
+                        // off it that has a floor is not. An edge-to-edge picture rests at
                         // corner 0, and a corner a fraction of a pixel below it throws.
                         val t = p.coerceIn(0f, 1f)
-                        // Full screen has no card to raise: the shadow and the rounding
-                        // arrive as the cover shrinks into the lyrics header, not before.
+                        // Hung edge to edge there is no card to raise: the shadow and the
+                        // rounding arrive as the cover shrinks into the lyrics header, not before.
                         val restElevation = when {
-                            fullScreen -> 0f
+                            bleed -> 0f
                             playing -> 30.dp.toPx()
                             else -> 14.dp.toPx()
                         }
                         shadowElevation = with(density) { lerp(restElevation, 6.dp.toPx(), t) }
-                        val restCorner = if (fullScreen) 0f else 12.dp.toPx()
+                        val restCorner = if (bleed) 0f else 12.dp.toPx()
                         val corner = with(density) { lerp(restCorner, 8.dp.toPx(), t) }
                         shape = RoundedCornerShape(corner)
                         clip = true
@@ -944,7 +1137,7 @@ private fun FlyingArtwork(
                     .playerArtworkAnchor(
                         anchor = ArtworkAnchor.Full,
                         model = thumbModel,
-                        cornerRadius = if (fullScreen) 0.dp else 12.dp,
+                        cornerRadius = if (bleed) 0.dp else 12.dp,
                         followsSheet = true,
                     )
                     .then(if (onSwipeRight != null) Modifier.swipeRightToSkip(onSwipeRight) else Modifier)
@@ -965,6 +1158,9 @@ private fun FlyingArtwork(
                     motionVideos = motionVideos,
                     videoVisible = videoVisible,
                     modifier = Modifier.fillMaxSize(),
+                    dissolve = dissolve,
+                    tall = tall,
+                    sharpPx = sharpPx,
                 )
             }
         },
@@ -1130,9 +1326,7 @@ internal fun NowPlayingBackground(
 private val NeutralStage = Color(0xFF2A2A30)
 
 /**
- * The scrim Shiny draws over this artwork's own colour, from how bright that colour is. Both
- * presentations start here; the full-screen one deepens it (`fullScreenScrim`) because its
- * type sits on the cover itself rather than on the blurred field.
+ * The scrim Shiny draws over this artwork's own colour, from how bright that colour is.
  */
 internal fun balancedScrimFor(base: Color): Float = if (base.luminance() > 0.45f) 0.42f else 0.26f
 

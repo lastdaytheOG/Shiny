@@ -256,14 +256,88 @@ One screen, three modes, one gesture each (the mode-driven design):
 
 ### Living artwork (`player/LiquidLivingArtwork.kt`)
 
-The cover is never a still poster while a song plays. If the track has motion artwork
-(Apple Music, Tidal, or the Shiny canvas providers — validated and cached) it loops there
-silently; otherwise the cover itself drifts and zooms under an AGSL **liquid ripple** and a
-band of light passing over it like a reflection on glass (API 33+; below that, the drift
-and a gradient sheen). It is driven from a frame clock read in the layer and draw phases,
-so it animates **without recomposing**, and it runs only while playing, expanded, and in
-Stage — a paused or hidden player costs nothing. Both halves are switchable in
-Appearance → Now Playing (`LiquidPrefs.LivingArtwork`, `LiquidPrefs.MotionArtwork`).
+If the track has motion artwork (Apple Music, Tidal, or the Shiny canvas providers —
+validated and cached) it loops in the cover's place, silently. A track without it shows its
+cover as it is: a still picture, never moved to look like one that has it.
+
+The living cover is the exception, and it is **off unless chosen** (Appearance → Motion →
+Artwork motion → Living, or the Immersive experience): the cover itself drifts and zooms
+under an AGSL **liquid ripple** and a band of light passing over it like a reflection on
+glass (API 33+; below that, the drift and a gradient sheen). It is never put over an album's
+own clip, nor on the Poster. It is driven from a frame clock read in the layer and draw
+phases, so it animates **without recomposing**, and it runs only while playing, expanded,
+and in Stage — a paused or hidden player costs nothing. Both halves are switchable
+(`LiquidPrefs.LivingArtwork`, default off; `LiquidPrefs.MotionArtwork`, default on).
+
+### Artwork presentations (Appearance → Now Playing → Artwork)
+
+- **Card** (default) — the square cover on a stage of its own colour.
+- **Poster** (`player/LiquidPosterStage.kt`) — an album's **portrait artwork** (Apple's 3:4
+  motion artwork: its still, with its clip playing over it), edge to edge at the head of the
+  player, in its own shape. Its foot goes out of focus into a field of its own colours, which
+  carries on under the title and the controls. Portrait only.
+
+**Artwork is never enlarged, stretched or cropped to fill.** A picture is asked for at the
+pixels it covers and drawn at that size. That is why the Poster is only for portrait artwork:
+a square sleeve hung that way has to have its foot dissolved, and a cover is drawn to its
+edges. An album without portrait artwork keeps the Card, exactly as with the Poster off, and
+so does every song until its portrait artwork has loaded; the change from card to poster is a
+short dip of the whole stage (cover and title together), never a jump. (A "Full screen"
+presentation that enlarged the square cover to the screen's height was removed on 2026-10-05
+for the same reason: a 720-pixel video still drawn three times its size.)
+
+The Poster is three still pictures and no effects: the **ground** (the picture blurred,
+standing on its own blurred mirror image, shaded towards the foot), the **picture**, and the
+**veil** (a strip of the same ground with an alpha ramp baked in, laid over the picture's
+foot). The ground and veil are baked once per song at ~96 pixels across and drawn as two
+textured quads; nothing blurs, masks or composites at draw time, and the picture's own layer
+is never masked. The ground is part of the recorded player backdrop, so glass over it
+refracts the right picture, and while it covers the stage the rotating field underneath
+neither turns nor draws. A change of song mixes the two songs' pixels for 650 ms (an exact
+crossfade, no second layer). The shade under the type is solved per picture
+(`posterTitleScrim`: the 90th-percentile luminance there is brought to a target), and shaded
+colour is given its saturation back (`posterDepthRichness`) so the foot is a rich dark and
+not a grey one.
+
+Sharpness, measured (SZA *SOS*, 1080-pixel screen): the portrait still is asked for at
+exactly the screen's width with the image server's `-100` quality (48 dB against the
+uncompressed picture; the ordinary file is 35 dB), and the clip plays the size that covers
+those pixels (1078×1438 of the thirty Apple makes, 310 to 2048 across) at that size's best
+bitrate, not adaptively. A clip is ~14 MB at that size, fetched once and kept.
+
+### Artwork sources (`artwork/`)
+
+```
+                 Apple catalogue
+          ┌────────────┴────────────┐
+    static artwork            editorial video
+    (master: 3000²)        ┌───────┴───────┐
+          │              square           tall
+          └────────────────┴───────────────┘
+                   AppleArtworkResult → Now Playing
+```
+
+`ArtworkResolver` is the one place that knows where a song's artwork comes from:
+
+1. **The song's own artwork** — a file's embedded cover, or what YouTube / Spotify gave. Shown
+   first and at once; nothing waits on anything below.
+2. **Apple's cover** — for a song whose own picture is a music video's still (720 px at best)
+   or missing. Public iTunes Search API, matched on artist + title (+ album, length), never the
+   first result on trust; a song that already has a real cover keeps it, and a file on the
+   phone is never looked up. Toggle: Now Playing → *Official covers*.
+3. **Apple's motion artwork** — the album's `editorialVideo`, square and tall, asked for by
+   the album id the match gave. HLS, with the plain MP4 behind one size of each as the
+   fallback. Everything that needs the web-player token is behind
+   `AppleMotionArtworkProvider`. Toggle: *Animated covers*.
+
+One catalogue lookup feeds all three parts of an `AppleArtworkResult` (cover at any size up
+to the 3000-pixel master, square motion, tall motion). Results (hits and misses) are kept in
+memory and in `files/artwork/index.json` under a key that identifies the recording (ISRC,
+else artist|album|track), simultaneous askers share one request, and "could not ask" is
+never recorded as "has none". Pictures go through Coil (its memory and disk caches); clips
+through `MotionArtworkCache` (160 MB, least recently used first). A picture is only shown
+once it has loaded into memory, so a change is one picture giving way to another and never a
+blank. Nothing is fetched under Data Saver.
 
 ### Karaoke lyrics (`player/LiquidLyrics.kt`)
 
