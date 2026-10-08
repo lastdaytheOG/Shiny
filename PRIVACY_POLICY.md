@@ -1,145 +1,85 @@
-# Privacy Policy for Shiny Music App
+# Privacy
 
-## Introduction
+*Last updated: 8 October 2026*
 
-Shiny Music ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our mobile application (the "App").
+Shiny is a music player, not an advertising business. It has no ads and nothing to sell, so it has no reason to collect much. This page says what leaves your phone, when, and where it goes.
 
-## Information We Collect
+## The short version
 
-### 1. Personal Information
-- **Account Information**: When you log in to Spotify or YouTube, we may collect your username and basic profile information
-- **Usage Data**: We collect information about how you use the App, including:
-  - Songs played, paused, and skipped
-  - Playlists created and modified
-  - Search queries
-  - App settings and preferences
-  - Screen views and user interactions
+- You don't need an account to use Shiny.
+- Your library, history, downloads and settings live on your phone.
+- Nothing is sold or shared for advertising.
+- Anything that talks to a server beyond playing music is something you switch on.
 
-### 2. Device Information
-- **Device Details**: Device model, operating system version, and unique device identifiers
-- **App Performance**: Crash reports and performance metrics to improve app stability
-- **Network Information**: IP address and network type for analytics purposes
+## What stays on your phone
 
-### 3. Music Data
-- **Local Music Library**: Access to your device's music files for playback
-- **Streaming Data**: Information about songs streamed from YouTube Music and Spotify
-- **Playlist Data**: Your created playlists and song collections
+Playlists, liked songs, listening history and stats, downloads, lyrics, search history and every setting are stored in Shiny's own storage on your device. Uninstalling Shiny, or clearing its data in Android's settings, removes all of it. A backup is a file you create and keep yourself.
 
-## How We Use Your Information
+## What Shiny sends, and to whom
 
-### 1. App Functionality
-- Provide music streaming and playback services
-- Manage your playlists and music library
-- Sync your preferences across devices
-- Enable search and discovery features
+### To play music
 
-### 2. Analytics and Improvement
-- **Google Analytics Firebase**: We use Firebase Analytics to understand app usage patterns and improve user experience
-- **Crash Reporting**: We collect crash reports to identify and fix bugs
-- **Performance Monitoring**: We monitor app performance to ensure smooth operation
+Shiny is a client for YouTube Music. Searching, browsing and playing send requests from your phone straight to YouTube, as a browser would, and YouTube sees your IP address. If you sign in to your YouTube Music account, those requests carry your account, and [Google's privacy policy](https://policies.google.com/privacy) applies to what Google keeps.
 
-### 3. Personalization
-- Recommend music based on your listening habits
-- Customize the app interface according to your preferences
-- Remember your settings and preferences
+### To show lyrics and artwork
 
-## Data Sharing and Disclosure
+To find lyrics, animated covers and artist images, Shiny sends the song's title, artist and sometimes its length to the service that provides them. These lookups carry no account and no identifier of yours.
 
-### 1. Third-Party Services
-- **YouTube Music**: We integrate with YouTube Music for streaming content
-- **Spotify**: We integrate with Spotify for music streaming and lyrics
-- **Google Analytics**: We share anonymized usage data with Google Analytics Firebase
+### To recognise a song
 
-### 2. No Sale of Personal Data
-We do not sell, trade, or rent your personal information to third parties for marketing purposes.
+When you ask Shiny to recognise what's playing, it records a few seconds from the microphone, turns them into an audio fingerprint on your phone, and sends only the fingerprint to the recognition service. The recording itself isn't uploaded or kept. The microphone is used only while you've asked for recognition.
 
-### 3. Legal Requirements
-We may disclose your information if required by law or to protect our rights and safety.
+### To check for updates
 
-## Data Storage and Security
+Shiny asks GitHub whether a newer release exists. You can turn this off in *Settings → About*.
 
-### 1. Local Storage
-- Your music playlists and preferences are stored locally on your device
-- We use secure local storage to protect your data
+### Crash and playback reports (the `gms` build only)
 
-### 2. Cloud Storage
-- Some data may be synced to cloud services (Spotify, YouTube) as per their privacy policies
-- We use industry-standard security measures to protect your data
+The `gms` build uses Google's Firebase to send:
 
-### 3. Data Retention
-- We retain analytics data for up to 2 years
-- Local app data is retained until you uninstall the app or clear app data
+- **Crash reports:** what the app was doing when it crashed, with your phone model and Android version.
+- **Playback-health events:** that a song failed to start, and how — a timeout, or a refused request. Never which song.
 
-## Your Rights and Choices
+The `foss` build contains no Firebase code and sends neither.
 
-### 1. Data Access
-- You can view your data through the app settings
-- You can export your playlists and preferences
+## Things you can switch on
 
-### 2. Data Deletion
-- Uninstalling the app will remove all local data
-- You can clear app data through device settings
-- Contact us to request deletion of any stored data
+Each of these is off until you choose it, and stops when you disconnect it.
 
-### 3. Privacy Controls
-- You can disable analytics in app settings
-- You can control which services you connect to
-- You can manage permissions through your device settings
+| Feature | What is shared | With |
+| :-- | :-- | :-- |
+| **Shiny Social** | Your Google sign-in identifies your account. Your profile, your friends list and the song you're playing are stored so friends can see them. | Shiny's servers |
+| **Listen Together** | The name you pick, the shared queue, votes, reactions and chat, so everyone in the session stays in step. | Shiny's servers |
+| **Shared playlist links** | The playlist's name and songs, so the link can open it. | Shiny's servers |
+| **Spotify** | Shiny reads your playlists, Liked Songs and mixes from your account. | Spotify |
+| **Discord** | The song you're playing appears as your status. | Discord |
+| **ListenBrainz** | The songs you play are scrobbled to your account. | ListenBrainz |
 
-## Third-Party Services
+Shiny's servers run on Cloudflare. They hold what the features above need and nothing else: no listening history, no library, no contacts.
 
-### 1. YouTube Music
-- **Privacy Policy**: [YouTube Privacy Policy](https://policies.google.com/privacy)
-- **Data Collection**: YouTube may collect data about your music preferences and usage
+## Permissions
 
-### 2. Spotify
-- **Privacy Policy**: [Spotify Privacy Policy](https://www.spotify.com/legal/privacy-policy/)
-- **Data Collection**: Spotify may collect data about your listening habits
+| Permission | Why |
+| :-- | :-- |
+| Music and audio | To play the audio files on your phone |
+| Microphone | Song recognition, only while you use it |
+| Notifications | Playback controls and download progress |
+| Network / SIM country | To pick which country's charts to show. The country never leaves your phone except as part of the chart request to YouTube |
 
-### 3. Google Analytics Firebase
-- **Privacy Policy**: [Google Privacy Policy](https://policies.google.com/privacy)
-- **Data Collection**: Google collects anonymized usage analytics
+## Children
 
-## Children's Privacy
+Shiny isn't directed at children under 13 and doesn't knowingly hold information about them.
 
-Our App is not intended for children under 13 years of age. We do not knowingly collect personal information from children under 13.
+## Deleting your data
 
-## International Users
+- **On your phone:** uninstall Shiny or clear its data.
+- **On Shiny's servers:** write to the address below from the account you signed in with, and your Social profile and anything attached to it will be deleted.
+- **With other services:** disconnect them in Shiny, then use that service's own settings.
 
-If you are using our App from outside the United States, please note that your information may be transferred to, stored, and processed in the United States where our servers are located.
+## Changes
 
-## Changes to This Privacy Policy
+When this page changes, the date at the top changes with it, and the history is public in this repository.
 
-We may update this Privacy Policy from time to time. We will notify you of any changes by:
-- Posting the new Privacy Policy in the project's repository
-- Updating the "Last Updated" date
-- Sending you a notification if significant changes are made
+## Contact
 
-## Contact Us
-
-If you have any questions about this Privacy Policy or our data practices, please contact us:
-
-- **GitHub**: [https://github.com/lastdaytheOG/Shiny](https://github.com/lastdaytheOG/Shiny)
-- **Issues**: [https://github.com/lastdaytheOG/Shiny/issues](https://github.com/lastdaytheOG/Shiny/issues)
-- **Discussions**: [https://github.com/lastdaytheOG/Shiny/discussions](https://github.com/lastdaytheOG/Shiny/discussions)
-
-## Data Protection Compliance
-
-This Privacy Policy complies with:
-- **GDPR** (General Data Protection Regulation) for EU users
-- **CCPA** (California Consumer Privacy Act) for California users
-- **PIPEDA** (Personal Information Protection and Electronic Documents Act) for Canadian users
-
-## Summary
-
-- We collect minimal personal information necessary for app functionality
-- We use Google Analytics Firebase for app improvement
-- We integrate with YouTube Music and Spotify for music streaming
-- We do not sell your personal data
-- You have control over your data and privacy settings
-- We are committed to protecting your privacy and being transparent about our practices
-
----
-
-**By using Shiny Music, you agree to the collection and use of information in accordance with this Privacy Policy.**
-
+[hello@shinymusic.in](mailto:hello@shinymusic.in), or an [issue on GitHub](https://github.com/lastdaytheOG/Shiny/issues).

@@ -250,6 +250,17 @@ fun NavGraphBuilder.navigationBuilder(
     }
 
     screen(
+        route = "shared_playlist/{shareId}",
+        arguments = listOf(
+            navArgument("shareId") {
+                type = NavType.StringType
+            },
+        ),
+    ) {
+        com.shiny.music.ui.liquid.screens.LiquidSharedPlaylistScreen(navController)
+    }
+
+    screen(
         route = "local_playlist/{playlistId}",
         arguments = listOf(
             navArgument("playlistId") {

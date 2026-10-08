@@ -1,124 +1,87 @@
-# Setup Instructions
+# Building Shiny
 
-This document provides instructions for setting up the Shiny Music project for development.
+Everything needed to get from a fresh clone to an APK on your phone.
 
-## Prerequisites
+## You need
 
-- Android Studio (latest version recommended)
-- Android SDK (API level as specified in `build.gradle.kts`)
-- JDK 21
-- Git
+- **JDK 21**
+- **Android SDK** with platform 36. Android Studio installs it for you.
+- **Git**
 
-## Initial Setup
-
-### 1. Clone the Repository
+## 1. Get the code
 
 ```bash
 git clone https://github.com/lastdaytheOG/Shiny.git
 cd Shiny
 ```
 
-### 2. Configure Local Properties
-
-Create a `local.properties` file from the template:
+## 2. Point Gradle at the SDK
 
 ```bash
 cp local.properties.template local.properties
 ```
 
-Edit `local.properties` and set your Android SDK path:
+Open `local.properties` and set `sdk.dir`:
 
-```properties
-sdk.dir=/path/to/your/android/sdk
-```
+| System | Usual location |
+| :-- | :-- |
+| Windows | `C\:\\Users\\<you>\\AppData\\Local\\Android\\Sdk` |
+| macOS | `/Users/<you>/Library/Android/sdk` |
+| Linux | `/home/<you>/Android/Sdk` |
 
-**Example paths:**
+Android Studio writes this file by itself when you open the project.
 
-- macOS: `/Users/username/Library/Android/sdk`
-- Linux: `/home/username/Android/sdk`
-- Windows: `C:\\Users\\username\\AppData\\Local\\Android\\sdk`
+## 3. Pick a build
 
-### 3. Configure Firebase (Optional)
+A build is named `assemble` + ABI + variant + type.
 
-Firebase is used for analytics and crash reporting. If you want to use these features:
+| Part | Choices |
+| :-- | :-- |
+| ABI | `Universal` (every phone), `Arm64`, `Armeabi`, `X86`, `X86_64` |
+| Variant | `Foss` (no Google services) or `Gms` (Google sign-in, Firebase) |
+| Type | `Debug` or `Release` |
 
-1. Create a Firebase project at [Firebase Console](https://console.firebase.google.com/)
-2. Add an Android app to your Firebase project
-3. Download the `google-services.json` file
-4. Place it in the `app/` directory
-
-**Note:** If you skip Firebase setup, the app will still build and run, but analytics and crash reporting will be disabled.
-
-### 4. Configure Release Signing (Optional)
-
-Release builds are signed with Shiny's own key (PKCS12, alias `shiny-release`). CI decodes it from the `SHINY_KEYSTORE_BASE64` and `SHINY_KEYSTORE_PASSWORD` repository secrets. To sign a release locally, point these environment variables at your copy of the keystore, kept outside the repository:
+To start, build the one that needs nothing else:
 
 ```bash
-export SHINY_KEYSTORE_PATH=/path/outside/the/repo/shiny-release.jks
-export SHINY_KEYSTORE_PASSWORD=your_keystore_password
+./gradlew assembleUniversalFossDebug
 ```
 
-Without them, release builds stop at signing. Debug builds don't need them. Never commit the keystore or its password.
+The APK lands in `app/build/outputs/apk/`. On Windows use `gradlew.bat`. For the emulator, `X86_64` builds are smaller and faster to install.
 
-### 5. Build the Project
+## 4. Optional: the `gms` variant
 
-Open the project in Android Studio or build from the command line.
+`gms` builds add Google sign-in for Shiny Social, crash reports and playback-health events. Without a `google-services.json` a `gms` build still compiles, but those features have nothing to talk to. To make them work, use your own Firebase project:
 
-Shiny Music supports FOSS and GMS build variants.
+1. Create a project in the [Firebase console](https://console.firebase.google.com/).
+2. Add two Android apps: `com.shiny.music` and `com.shiny.music.debug`.
+3. Add the SHA-1 of the key you sign with to each, or Google sign-in will fail.
+4. Download `google-services.json` into `app/`.
+
+## 5. Optional: release builds
+
+Release builds are signed, and stop at the signing step without a key. Create your own keystore, keep it outside the repository, and tell Gradle where it is:
 
 ```bash
-# Debug build
-./gradlew assembleUniversalGmsDebug
-
-# Release build (requires signing configuration)
+export SHINY_KEYSTORE_PATH=/somewhere/outside/the/repo/my-release.jks
+export SHINY_KEYSTORE_PASSWORD=...
 ./gradlew assembleUniversalGmsRelease
 ```
 
-*(On Windows, use `.\gradlew.bat` instead of `./gradlew`)*
+A build signed with your key can't be installed over an official Shiny release; Android treats it as a different app's update. Uninstall the official one first, or use a debug build, which installs alongside it.
 
-## Important Files
+## Files that never go in a commit
 
-### Confidential Files (Never commit these)
+`local.properties`, `app/google-services.json`, any `*.jks` or `*.keystore`, and their passwords. `.gitignore` already covers them.
 
-- `local.properties` - Contains your local SDK path
-- `app/google-services.json` - Contains Firebase credentials
-- `*.keystore` - Contains signing keys for release builds
-- `gradle.properties` - May contain signing credentials
+## When it doesn't build
 
-These files are already listed in `.gitignore` and should never be committed to version control.
+| Message | Fix |
+| :-- | :-- |
+| `SDK location not found` | `local.properties` is missing, or `sdk.dir` is wrong |
+| Google sign-in fails in your build | The SHA-1 of your signing key isn't registered in your Firebase project (step 4) |
+| Unsupported class file version, or a toolchain error | Gradle is running on the wrong Java. Set `JAVA_HOME` to a JDK 21 |
+| Out of memory | Close other apps, or lower `org.gradle.jvmargs` in `gradle.properties` |
+| Something stale after switching branches | `./gradlew clean`, then build again |
 
-### Template Files (Safe to commit)
-
-- `local.properties.template` - Template for local properties
-- `app/google-services.json` - Optional Firebase configuration
-
-## Troubleshooting
-
-### Build Fails with "SDK location not found"
-
-Make sure you've created `local.properties` with the correct SDK path.
-
-### Firebase-related Build Errors
-
-If you're not using Firebase, you can still build the standard debug variant without `app/google-services.json` — Firebase features will simply be disabled:
-
-```bash
-./gradlew assembleUniversalGmsDebug
-```
-
-### Gradle Sync Issues
-
-Try cleaning and rebuilding:
-
-```bash
-./gradlew clean
-./gradlew build
-```
-
-## Contributing
-
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
-
-## License
-
-This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
+Next: [CONTRIBUTING.md](CONTRIBUTING.md) if you plan to send a change.

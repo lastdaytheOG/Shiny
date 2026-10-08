@@ -161,6 +161,64 @@ object LiquidIcons {
         }.build()
     }
 
+    /** "square.and.arrow.up" — share, on the tiles at the head of a menu. */
+    val Share: ImageVector by lazy {
+        ImageVector.Builder("LiquidShare", 24.dp, 24.dp, 24f, 24f).apply {
+            path(
+                stroke = SolidColor(Color.Black),
+                strokeLineWidth = 2.0f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            ) {
+                // the arrow
+                moveTo(12f, 14.4f)
+                lineTo(12f, 3.2f)
+                moveTo(8.4f, 6.8f)
+                lineTo(12f, 3.2f)
+                lineTo(15.6f, 6.8f)
+                // the tray, open where the arrow leaves it
+                moveTo(8.6f, 10.0f)
+                lineTo(7.4f, 10.0f)
+                arcTo(2.6f, 2.6f, 0f, false, false, 4.8f, 12.6f)
+                lineTo(4.8f, 18.2f)
+                arcTo(2.6f, 2.6f, 0f, false, false, 7.4f, 20.8f)
+                lineTo(16.6f, 20.8f)
+                arcTo(2.6f, 2.6f, 0f, false, false, 19.2f, 18.2f)
+                lineTo(19.2f, 12.6f)
+                arcTo(2.6f, 2.6f, 0f, false, false, 16.6f, 10.0f)
+                lineTo(15.4f, 10.0f)
+            }
+        }.build()
+    }
+
+    /** "pin" — a playlist that is not pinned yet; the filled pin is the one that is. */
+    val Pin: ImageVector by lazy {
+        ImageVector.Builder("LiquidPin", 24.dp, 24.dp, 24f, 24f).apply {
+            path(
+                stroke = SolidColor(Color.Black),
+                strokeLineWidth = 2.0f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            ) {
+                // the head
+                moveTo(8.2f, 3.4f)
+                lineTo(15.8f, 3.4f)
+                // the body, flaring to its foot
+                moveTo(9.6f, 3.4f)
+                lineTo(9.6f, 9.0f)
+                lineTo(7.0f, 12.2f)
+                lineTo(7.0f, 13.6f)
+                lineTo(17.0f, 13.6f)
+                lineTo(17.0f, 12.2f)
+                lineTo(14.4f, 9.0f)
+                lineTo(14.4f, 3.4f)
+                // the needle
+                moveTo(12f, 13.6f)
+                lineTo(12f, 20.8f)
+            }
+        }.build()
+    }
+
     /** "list.bullet" — queue. */
     val Queue: ImageVector by lazy {
         ImageVector.Builder("LiquidQueue", 24.dp, 24.dp, 24f, 24f).apply {

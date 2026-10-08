@@ -183,6 +183,7 @@ fun Artwork(
     placeholder: ImageVector = Icons.Rounded.MusicNote,
     contentDescription: String? = null,
     hairline: Boolean = true,
+    dissolve: Boolean = false,
 ) {
     val colors = Liquid.colors
     val context = LocalContext.current
@@ -193,8 +194,18 @@ fun Artwork(
     // same image is re-requested at the largest size that always exists. Held in state
     // keyed on `model` so a track change starts again from the sharp variant.
     var resolved by remember(model) { mutableStateOf(model) }
+    // With [dissolve], a change of picture in this same place eases from the picture it
+    // replaces rather than from nothing: the one just shown is still in memory, and stands in
+    // as the placeholder the new one fades up over. Off everywhere a slot is reused for a
+    // different thing (a list row), where the old picture would be the wrong one to show.
+    val shown = remember { arrayOfNulls<coil3.memory.MemoryCache.Key>(1) }
     val request = remember(resolved) {
-        ImageRequest.Builder(context).data(resolved).crossfade(220).build()
+        val previous = if (dissolve) shown[0] else null
+        if (previous != null) {
+            ImageRequest.Builder(context).data(resolved).placeholderMemoryCacheKey(previous).crossfade(420).build()
+        } else {
+            ImageRequest.Builder(context).data(resolved).crossfade(220).build()
+        }
     }
     // Covers on the first screen of a process are noted for the next cold start (see CoverWarmup).
     val warmupNote = remember(resolved) {
@@ -229,6 +240,7 @@ fun Artwork(
                         }
                     ),
                 onSuccess = {
+                    shown[0] = it.result.memoryCacheKey
                     warmupNote?.loaded = true
                     warmupNote?.offer()
                 },

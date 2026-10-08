@@ -160,6 +160,16 @@ class SocialApi(private val baseUrl: () -> String) {
     suspend fun removeFriend(token: String, username: String): StatusResponse =
         call("DELETE", "/v1/friends/${encode(username)}", token)
 
+    /** Stores a playlist on the server and answers with its link. Needs no account. */
+    suspend fun sharePlaylist(name: String, songs: List<SharedSong>): SharedPlaylistLink =
+        call(
+            "POST",
+            "/v1/playlists",
+            body = json.encodeToJsonElement(SharedPlaylistUpload.serializer(), SharedPlaylistUpload(name, songs)),
+        )
+
+    suspend fun sharedPlaylist(id: String): SharedPlaylist = call("GET", "/v1/playlists/${encode(id)}")
+
     private suspend inline fun <reified T> call(
         method: String,
         path: String,

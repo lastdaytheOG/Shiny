@@ -1,47 +1,62 @@
-name: Bug Report
-description: Submit a bug report to help improve Shiny Music
-title: "[Bug]: "
+name: Something is broken
+description: A crash, a song that won't play, or anything that behaves wrongly
+title: "[Bug] "
 labels: ["bug"]
 body:
-  - type: markdown
-    attributes:
-      value: "Please provide detailed information about the issue you are experiencing."
   - type: textarea
-    id: description
+    id: what
     attributes:
-      label: Description
-      description: A clear and concise description of the bug.
-      placeholder: Describe the issue...
+      label: What went wrong?
+      description: Say what you saw, and what you expected to see instead.
     validations:
       required: true
   - type: textarea
-    id: reproduce
+    id: steps
     attributes:
-      label: Steps to Reproduce
-      description: Steps to consistently reproduce the behavior.
+      label: How to make it happen
+      description: The shortest list of taps that leads to the problem. Name the song or playlist if it only happens with one.
       placeholder: |
-        1. Go to '...'
-        2. Click on '...'
-        3. See error
+        1. Open Library → Downloaded
+        2. Tap Smart Shuffle
+        3. The second song never starts
     validations:
       required: true
-  - type: textarea
-    id: expected
+  - type: dropdown
+    id: frequency
     attributes:
-      label: Expected Behavior
-      description: What you expected to happen.
+      label: How often?
+      options:
+        - Every time
+        - Sometimes
+        - It happened once
     validations:
       required: true
   - type: input
-    id: device
+    id: version
     attributes:
-      label: Device Information
-      description: Device model and Android version.
-      placeholder: Pixel 7, Android 14
+      label: Shiny version
+      description: Settings → About. Add whether it's the gms or foss build if you know.
+      placeholder: 1.2.4 (gms)
     validations:
       required: true
-  - type: textarea
-    id: logs
+  - type: input
+    id: phone
     attributes:
-      label: Crash Logs (Optional)
-      description: Relevant stack traces or logcat output.
+      label: Phone and Android version
+      placeholder: Galaxy S23, Android 15
+    validations:
+      required: true
+  - type: dropdown
+    id: network
+    attributes:
+      label: Connection when it happened
+      options:
+        - Wi-Fi
+        - Mobile data
+        - Offline
+        - Not sure
+  - type: textarea
+    id: extra
+    attributes:
+      label: Screenshots, recordings or logs
+      description: Optional. Drag files in here. Check that logs hold nothing private before attaching them.

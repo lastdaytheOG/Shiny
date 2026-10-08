@@ -1,27 +1,37 @@
-name: Feature Request
-description: Propose a new feature or enhancement for Shiny Music
-title: "[Feature]: "
+name: Idea
+description: Something Shiny should do, or do better
+title: "[Idea] "
 labels: ["enhancement"]
 body:
-  - type: markdown
-    attributes:
-      value: "Please detail the feature you would like to see implemented."
   - type: textarea
-    id: description
+    id: problem
     attributes:
-      label: Feature Description
-      description: A clear and concise description of the feature or enhancement.
+      label: What are you trying to do?
+      description: Start with the moment you wished Shiny worked differently. That helps more than the solution.
     validations:
       required: true
   - type: textarea
-    id: use_case
+    id: idea
     attributes:
-      label: Use Case / Rationale
-      description: Explain why this feature is beneficial and how it improves the application.
+      label: What would you like to happen?
+      description: A sketch or a screenshot from another app is welcome.
     validations:
       required: true
-  - type: textarea
-    id: alternatives
+  - type: dropdown
+    id: area
     attributes:
-      label: Proposed Implementation / Alternatives
-      description: Any ideas on how to implement this, or alternative solutions you have considered.
+      label: Where in the app?
+      options:
+        - Home / New
+        - Search
+        - Library and downloads
+        - Now Playing and lyrics
+        - Listen Together and friends
+        - Settings and appearance
+        - Widgets, Android Auto or notifications
+        - Somewhere else
+  - type: textarea
+    id: today
+    attributes:
+      label: How do you manage today?
+      description: Optional. A workaround, or another app that already does this.

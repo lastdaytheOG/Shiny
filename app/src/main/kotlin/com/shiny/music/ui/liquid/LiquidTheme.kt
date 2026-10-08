@@ -69,6 +69,17 @@ data class LiquidColors(
     val clearGlassTint: Color,
     /** Hairline drawn on glass when the RenderEffect pipeline is unavailable. */
     val glassRim: Color,
+    /** Ground of a modal sheet: deeper than a grouped cell, so panels can be raised off it. */
+    val sheetBackground: Color,
+    /**
+     * A grouped panel (menu sections, Settings groups). Translucent in the dark themes, so
+     * whatever colour the ground carries shows through it; opaque white in Light.
+     */
+    val panel: Color,
+    /** The light a panel's upper edge catches. Fades out down the panel's sides. */
+    val panelRim: Color,
+    /** Hairline between rows inside a panel: quieter than [separator], which sits on a ground. */
+    val panelSeparator: Color,
 )
 
 /** Shiny Rose — the single interactive tint. iOS systemPink family, not Apple Music red. */
@@ -106,6 +117,10 @@ fun liquidLightColors(accent: Color = ShinyRoseLight) = LiquidColors(
     glassTint = Color(0xFFFFFFFF).copy(alpha = 0.7f),
     clearGlassTint = Color(0xFFFFFFFF).copy(alpha = 0.16f),
     glassRim = Color(0x33000000),
+    sheetBackground = Color(0xFFF2F2F7),
+    panel = Color(0xFFFFFFFF),
+    panelRim = Color(0x00000000),
+    panelSeparator = Color(0x333C3C43),
 )
 
 fun liquidDarkColors(accent: Color = ShinyRoseDark) = LiquidColors(
@@ -139,6 +154,10 @@ fun liquidDarkColors(accent: Color = ShinyRoseDark) = LiquidColors(
     glassTint = Color(0xFF1C1C1E).copy(alpha = 0.6f),
     clearGlassTint = Color(0xFFFFFFFF).copy(alpha = 0.10f),
     glassRim = Color(0x33FFFFFF),
+    sheetBackground = Color(0xFF131315),
+    panel = Color(0xFFFFFFFF).copy(alpha = 0.075f),
+    panelRim = Color(0xFFFFFFFF).copy(alpha = 0.13f),
+    panelSeparator = Color(0xFFFFFFFF).copy(alpha = 0.09f),
 )
 
 /**
@@ -155,6 +174,7 @@ fun liquidAmoledColors(accent: Color = ShinyRoseDark) = liquidDarkColors(accent)
     secondaryGroupedBackground = Color(0xFF111113),
     tertiaryGroupedBackground = Color(0xFF1C1C1E),
     glassTint = Color(0xFF0E0E10).copy(alpha = 0.62f),
+    sheetBackground = Color(0xFF0A0A0B),
 )
 
 val LocalLiquidColors = staticCompositionLocalOf { liquidDarkColors() }

@@ -80,6 +80,9 @@ import kotlin.math.roundToInt
  *
  * The hierarchy carries the design, so the page reads the same in light, dark and AMOLED,
  * and an added row never needs a colour chosen for it.
+ *
+ * The index (`SettingsHomeScreen`) is the one exception: a list of places to go rather than
+ * of things to change, it is set in panels with a plate behind each glyph.
  */
 
 /** Left/right page gutter for every settings row. */
@@ -96,12 +99,13 @@ fun SettingsPage(
     title: String,
     navController: NavController,
     state: LazyListState = rememberLazyListState(),
+    background: Color = Liquid.colors.background,
     content: LazyListScope.() -> Unit,
 ) {
     LargeTitlePage(
         title = title,
         state = state,
-        background = Liquid.colors.background,
+        background = background,
         navigationButton = { LiquidBackButton(onClick = { navController.navigateUp() }) },
         content = content,
     )
@@ -122,11 +126,8 @@ fun SettingsSection(
 ) {
     Column(modifier.fillMaxWidth()) {
         if (title != null) {
-            Text(
-                text = title.uppercase(),
-                style = LiquidTypography.caption1.copy(fontWeight = FontWeight.SemiBold),
-                letterSpacing = 0.9.sp,
-                color = Liquid.colors.secondaryLabel,
+            SettingsSectionLabel(
+                title = title,
                 modifier = Modifier.padding(start = SettingsGutter, end = SettingsGutter, top = 30.dp, bottom = 9.dp),
             )
         } else {
@@ -142,6 +143,18 @@ fun SettingsSection(
             )
         }
     }
+}
+
+/** The label over a block of rows: small, tracked, secondary. */
+@Composable
+fun SettingsSectionLabel(title: String, modifier: Modifier = Modifier) {
+    Text(
+        text = title.uppercase(),
+        style = LiquidTypography.caption1.copy(fontWeight = FontWeight.SemiBold),
+        letterSpacing = 0.9.sp,
+        color = Liquid.colors.secondaryLabel,
+        modifier = modifier,
+    )
 }
 
 /**

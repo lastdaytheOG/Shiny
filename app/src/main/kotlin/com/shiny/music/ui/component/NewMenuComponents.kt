@@ -8,8 +8,6 @@ import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.background
-import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -47,6 +45,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material3.ToggleButton
 import androidx.compose.material3.ToggleButtonDefaults
+import com.shiny.music.ui.liquid.PanelGlyph
+import com.shiny.music.ui.liquid.TileShape
+import com.shiny.music.ui.liquid.liquidPanel
+import com.shiny.music.ui.theme.pressScale
 
 
 @Composable
@@ -162,7 +164,7 @@ fun NewMenuSectionHeader(
 
 /**
  * The quick actions at the top of a menu, as iOS lays them out: equal tiles side by
- * side, glyph over a short label, on the same grouped panel colour as the rows below.
+ * side, glyph over a short label, each one a panel like the groups of rows below.
  */
 @Composable
 fun NewActionGrid(
@@ -171,15 +173,14 @@ fun NewActionGrid(
     columns: Int = 3
 ) {
     val colors = com.shiny.music.ui.liquid.Liquid.colors
-    val panel = if (colors.isDark) colors.tertiaryBackground else colors.secondaryGroupedBackground
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        verticalArrangement = Arrangement.spacedBy(ActionTileGap)
     ) {
         actions.chunked(columns).forEach { row ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.spacedBy(ActionTileGap)
             ) {
                 row.forEach { action ->
                     var performAction by remember { mutableStateOf(false) }
@@ -192,9 +193,9 @@ fun NewActionGrid(
                     Column(
                         modifier = Modifier
                             .weight(1f)
-                            .height(66.dp)
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(if (action.backgroundColor != Color.Unspecified) action.backgroundColor else panel)
+                            .height(ActionTileHeight)
+                            .pressScale(interaction, 0.97f)
+                            .liquidPanel(TileShape, fill = action.backgroundColor)
                             .clickable(
                                 interactionSource = interaction,
                                 indication = com.shiny.music.ui.liquid.rememberRowHighlight(),
@@ -208,12 +209,12 @@ fun NewActionGrid(
                         androidx.compose.runtime.CompositionLocalProvider(
                             androidx.compose.material3.LocalContentColor provides if (action.enabled) tint else tint.copy(alpha = 0.35f)
                         ) {
-                            Box(Modifier.size(24.dp), contentAlignment = Alignment.Center) { action.icon() }
+                            Box(Modifier.size(PanelGlyph), contentAlignment = Alignment.Center) { action.icon() }
                         }
-                        Spacer(Modifier.height(5.dp))
+                        Spacer(Modifier.height(6.dp))
                         Text(
                             text = action.text,
-                            style = com.shiny.music.ui.liquid.LiquidTypography.caption1.copy(fontWeight = FontWeight.Medium),
+                            style = com.shiny.music.ui.liquid.LiquidTypography.footnote.copy(fontWeight = FontWeight.Medium),
                             color = if (action.enabled) tint else tint.copy(alpha = 0.35f),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -223,6 +224,85 @@ fun NewActionGrid(
                 repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
             }
         }
+    }
+}
+
+private val ActionTileHeight = 72.dp
+private val ActionTileGap = 10.dp
+
+/** Between the panels of a menu, and between its tiles and its first panel. */
+val MenuGroupGap = 12.dp
+
+/** Edge of the artwork at the head of a menu. */
+val MenuHeaderArtwork = 88.dp
+
+/**
+ * The head of a menu: what the sheet is about. Its artwork, its name, and up to two quieter
+ * lines under it (the artist and album of a song, the length of a playlist).
+ *
+ * [atmosphere] names the artwork the sheet takes its colour from; leave it null for a sheet
+ * that should stay neutral. [artwork] is drawn in a [MenuHeaderArtwork] square.
+ */
+@Composable
+fun MenuHeader(
+    title: String,
+    modifier: Modifier = Modifier,
+    subtitle: String? = null,
+    detail: String? = null,
+    explicit: Boolean = false,
+    atmosphere: String? = null,
+    trailing: (@Composable () -> Unit)? = null,
+    artwork: @Composable () -> Unit,
+) {
+    val colors = com.shiny.music.ui.liquid.Liquid.colors
+    com.shiny.music.ui.liquid.SheetAtmosphereEffect(atmosphere)
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(top = 4.dp, bottom = 20.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.size(MenuHeaderArtwork), contentAlignment = Alignment.Center) { artwork() }
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 16.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = title,
+                    style = com.shiny.music.ui.liquid.LiquidTypography.title3,
+                    color = colors.label,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                if (explicit) {
+                    com.shiny.music.ui.liquid.ExplicitBadge(Modifier.padding(start = 6.dp))
+                }
+            }
+            if (!subtitle.isNullOrBlank()) {
+                Text(
+                    text = subtitle,
+                    style = com.shiny.music.ui.liquid.LiquidTypography.callout,
+                    color = colors.secondaryLabel,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+            if (!detail.isNullOrBlank()) {
+                Text(
+                    text = detail,
+                    style = com.shiny.music.ui.liquid.LiquidTypography.footnote,
+                    color = colors.secondaryLabel,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 3.dp),
+                )
+            }
+        }
+        trailing?.invoke()
     }
 }
 

@@ -1,39 +1,46 @@
-# Shiny Music Releases
+# Shiny release notes
 
-This document tracks all available releases for Shiny Music. 
+The same notes appear in the app under *Settings → About → What's New*. APKs are on the [Releases](https://github.com/lastdaytheOG/Shiny/releases) page.
 
-## [v1.2.2] - 2026-08-28 (Latest)
-[Download on GitHub](https://github.com/lastdaytheOG/Shiny/releases/tag/v1.2.2)
+## 1.2.4
 
-**Bug Fixes**
-- Fixed a crash that occurred when adding a song to a playlist, album, or artist before it was fully loaded.
-- Fixed a crash caused by outdated saved settings after an app update; the app now falls back to a safe default instead of crashing.
-- Fixed Spotify login issues where signing in with Google, Apple, or Facebook could show a black screen or fail to complete.
-- Fixed the "Update Available" dialog not matching the app's overall theme and styling.
+A rebuilt Shiny: a new design on every screen, friends and Discord, and an appearance you can make your own.
 
-**Design Improvements**
-- Updated input fields and dialog buttons (including in Spotify Import) to use a more rounded, modern look consistent with Material You design.
+**Highlights**
+- **A new look, everywhere.** Home, Library, Search, Now Playing and Settings were rebuilt with one design, from the type to the way pages move.
+- **Listen with friends.** Add friends, see what they're playing, share a profile page, and let people listen along from your Discord status.
+- **Appearance, your way.** Atmosphere, artwork glow, accent colour, material, page transitions and interface size, with a live preview as you change them.
 
-**Other Changes**
-- Updated select app components to their latest stable versions for improved reliability.
+**New**
+- Home learns from your very first play.
+- Charts follow your country. Pick another country or the global chart in *Settings → Library & Home*.
+- Smart Shuffle.
+- Music sources: choose which folders count as music. Voice notes, recordings and system sounds are left out.
+- Choose a download folder, so downloads stop taking up Shiny's own storage.
+- Export songs as MP3, then share them with any app.
 
-## [v1.2.1] - 2026-08-28
-[Download on GitHub](https://github.com/lastdaytheOG/Shiny/releases/tag/v1.2.1)
+**Improved**
+- Shiny opens faster, and songs start playing sooner.
+- Crossfade waits until the next song is ready, so a transition never stalls part-way.
+- Song details only show what a song actually has.
+- Privacy, Downloads & Storage and About are simpler and clearer.
 
-I am pleased to announce the initial release of the updated Shiny Music repository.
+**Fixed**
+- Lyrics stay in time after you seek.
+- Songs you'd already played no longer download again every time Shiny restarts.
+- Opening a song from another app no longer gets replaced by your previous queue.
+- The first song of a new queue now gets the next one ready in time.
 
-Recently, the project was subjected to a legal takedown notice. Since then, I have taken all necessary actions and made the required adjustments to the codebase and documentation to ensure full legal compliance. 
+## 1.2.2
 
-With these changes complete, I am excited to restore access to the project. I would like to extend my deepest gratitude to all of you for your unwavering support and patience during this period. Thank you for standing by me.
+*28 August 2026*
 
----
+**Improved**
+- Input fields and dialog buttons, including in Spotify Import, have a more rounded look.
+- Some app components were updated to their latest stable versions.
 
-## 📋 Pull Request & Release Note Guidelines
-
-**ATTENTION CONTRIBUTORS:** To maintain a clean and standardized changelog, all community contributions added to this file MUST strictly follow this format:
-
-`- \`<type>(<scope>): <summary>\` ([#PR_NUMBER](URL)) by @username`
-
-- **PR Titles** must follow [Conventional Commits](https://www.conventionalcommits.org/).
-- **Descriptions** must be clear, concise, and professional.
-- PRs that do not follow this strict formatting will **not** be merged.
+**Fixed**
+- A crash when adding a song to a playlist, album or artist before it had fully loaded.
+- A crash caused by outdated saved settings after an update. Shiny now falls back to a safe default.
+- Spotify sign-in with Google, Apple or Facebook could show a black screen or fail to finish.
+- The Update Available dialog didn't match the rest of the app.

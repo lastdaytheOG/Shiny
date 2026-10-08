@@ -1,9 +1,0 @@
-{
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "https://shiny-social.REPLACE-WITH-YOUR-WORKERS-SUBDOMAIN.workers.dev/$1"
-    }
-  ]
-}

@@ -11,7 +11,7 @@ import {
   sha256Hex,
   randomToken,
 } from "./http.js";
-import { watchPage, roomPage, profilePage, notFoundPage, badgeSvg, linkPage } from "./pages.js";
+import { watchPage, roomPage, profilePage, notFoundPage, badgeSvg, linkPage, sharedPlaylistPage } from "./pages.js";
 
 const YOUTUBE_ID_RE = /^[A-Za-z0-9_-]{10,64}$/;
 
@@ -61,6 +61,8 @@ async function route(request, env, ctx) {
       if (!YOUTUBE_ID_RE.test(list)) return html(notFoundPage(env), 404);
       return html(linkPage({ kind: "Playlist", appPath: `playlist?list=${list}`, webUrl: `https://music.youtube.com/playlist?list=${list}` }, env));
     }
+    // A playlist shared as a link: its songs are kept here (see sharePlaylist).
+    if ((match = path.match(/^\/p\/([A-Za-z0-9]{8,16})$/))) return sharedPlaylistRoute(match[1], env, ctx);
     if ((match = path.match(/^\/channel\/([A-Za-z0-9_-]{10,64})$/))) {
       return html(linkPage({ kind: "Artist", appPath: `channel/${match[1]}`, webUrl: `https://music.youtube.com/channel/${match[1]}` }, env));
     }
@@ -90,6 +92,8 @@ async function route(request, env, ctx) {
     return removeFriend(request, env, decodeURIComponent(match[1]));
   }
   if ((match = path.match(/^\/v1\/users\/([^/]+)$/)) && method === "GET") return publicUser(decodeURIComponent(match[1]), env);
+  if (path === "/v1/playlists" && method === "POST") return sharePlaylist(request, env);
+  if ((match = path.match(/^\/v1\/playlists\/([A-Za-z0-9]{8,16})$/)) && method === "GET") return getSharedPlaylist(match[1], env, ctx);
 
   if (path.startsWith("/v1/")) throw notFound();
   return html(notFoundPage(env), 404);
@@ -414,6 +418,122 @@ async function findUser(env, value) {
   const user = await env.DB.prepare("SELECT id, username FROM users WHERE username = ?").bind(username).first();
   if (!user) throw notFound("No one has that username");
   return user;
+}
+
+// ---- Shared playlists ----------------------------------------------------------------------
+
+// An artist's YouTube channel. Artists the app made up for itself have other ids, which mean nothing here.
+const CHANNEL_ID_RE = /^UC[A-Za-z0-9_-]{22}$/;
+const SHARE_ID_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+const SHARED_SONGS_MAX = 2000;
+// A D1 row holds about a megabyte: the song list stays under it, and a longer playlist is cut short.
+const SHARED_SONGS_MAX_BYTES = 900_000;
+const SHARE_BODY_MAX_LENGTH = 3_000_000;
+const SHARES_PER_HOUR = 60;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Stores a playlist and answers with its link. It needs no account: sharing a playlist is no reason to
+ * make one. What keeps it from being a free notepad: only YouTube song ids, short text and Google-hosted
+ * artwork are kept, the list is capped, and one address can make only so many new links an hour.
+ */
+async function sharePlaylist(request, env) {
+  const body = await readJson(request, SHARE_BODY_MAX_LENGTH);
+  const name = text(body.name, 200);
+  if (!name) throw badRequest("name is required");
+  if (!Array.isArray(body.songs)) throw badRequest("songs is required");
+
+  const encoder = new TextEncoder();
+  const songs = [];
+  let bytes = 0;
+  for (const raw of body.songs) {
+    const song = sharedSong(raw);
+    if (!song) continue;
+    bytes += encoder.encode(JSON.stringify(song)).length + 1;
+    if (bytes > SHARED_SONGS_MAX_BYTES) break;
+    songs.push(song);
+    if (songs.length === SHARED_SONGS_MAX) break;
+  }
+  if (songs.length === 0) throw badRequest("There are no songs to share");
+
+  // The same name and songs are the same link, however often it is shared.
+  const hash = await sha256Hex(JSON.stringify([name, songs]));
+  const findByHash = () => env.DB.prepare("SELECT id, song_count FROM shared_playlists WHERE content_hash = ?").bind(hash).first();
+  const existing = await findByHash();
+  if (existing) return json(shareLinkView(existing, env));
+
+  const now = Date.now();
+  const hour = Math.floor(now / 3_600_000);
+  const address = await sha256Hex(`share:${request.headers.get("CF-Connecting-IP") ?? ""}`);
+  const [counted] = await env.DB.batch([
+    env.DB.prepare(
+      `INSERT INTO share_limits (address_hash, hour, count) VALUES (?1, ?2, 1)
+       ON CONFLICT(address_hash, hour) DO UPDATE SET count = count + 1 RETURNING count`,
+    ).bind(address, hour),
+    env.DB.prepare("DELETE FROM share_limits WHERE hour < ?").bind(hour - 1),
+  ]);
+  if ((counted.results[0]?.count ?? 0) > SHARES_PER_HOUR) {
+    throw new HttpError(429, "too_many", "That's a lot of links. Try again in an hour.");
+  }
+
+  // OR IGNORE: the same playlist shared twice at once is one row, and both get its link.
+  await env.DB.prepare(
+    "INSERT OR IGNORE INTO shared_playlists (id, content_hash, name, song_count, songs, created_at, opened_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+  )
+    .bind(randomShareId(), hash, name, songs.length, JSON.stringify(songs), now, now)
+    .run();
+  const stored = await findByHash();
+  if (!stored) throw new Error("A shared playlist was not stored");
+  return json(shareLinkView(stored, env), 201);
+}
+
+/** One song as it is kept: anything that isn't a YouTube song with a title is left out. */
+function sharedSong(raw) {
+  if (raw === null || typeof raw !== "object") return null;
+  const title = text(raw.title, 200);
+  if (typeof raw.id !== "string" || !VIDEO_ID_RE.test(raw.id) || !title) return null;
+  const artists = (Array.isArray(raw.artists) ? raw.artists : [])
+    .slice(0, 10)
+    .map((artist) => {
+      const artistName = text(artist?.name, 100);
+      if (!artistName) return null;
+      return typeof artist.id === "string" && CHANNEL_ID_RE.test(artist.id) ? { name: artistName, id: artist.id } : { name: artistName };
+    })
+    .filter(Boolean);
+  const song = { id: raw.id, title, artists };
+  const duration = nonNegativeInt(raw.duration);
+  if (duration) song.duration = duration;
+  if (typeof raw.thumbnail === "string" && raw.thumbnail.length <= 500 && IMAGE_HOST_RE.test(raw.thumbnail)) song.thumbnail = raw.thumbnail;
+  if (raw.explicit === true) song.explicit = true;
+  return song;
+}
+
+function randomShareId() {
+  return [...crypto.getRandomValues(new Uint8Array(10))].map((byte) => SHARE_ID_ALPHABET[byte % SHARE_ID_ALPHABET.length]).join("");
+}
+
+const shareLinkView = (row, env) => ({ id: row.id, url: `${env.WEB_BASE}/p/${row.id}`, songCount: row.song_count });
+
+async function loadSharedPlaylist(id, env, ctx) {
+  const row = await env.DB.prepare("SELECT id, name, song_count, songs, opened_at FROM shared_playlists WHERE id = ?").bind(id).first();
+  if (!row) return null;
+  const now = Date.now();
+  if (now - row.opened_at > DAY_MS) {
+    ctx.waitUntil(env.DB.prepare("UPDATE shared_playlists SET opened_at = ? WHERE id = ?").bind(now, id).run());
+  }
+  return { ...shareLinkView(row, env), name: row.name, songs: JSON.parse(row.songs) };
+}
+
+async function getSharedPlaylist(id, env, ctx) {
+  const playlist = await loadSharedPlaylist(id, env, ctx);
+  if (!playlist) throw notFound("That playlist isn't here");
+  return json(playlist);
+}
+
+async function sharedPlaylistRoute(id, env, ctx) {
+  const playlist = await loadSharedPlaylist(id, env, ctx);
+  if (!playlist) return html(notFoundPage(env), 404);
+  return html(sharedPlaylistPage(playlist, env));
 }
 
 // ---- Public profiles, pages and badges -----------------------------------------------------

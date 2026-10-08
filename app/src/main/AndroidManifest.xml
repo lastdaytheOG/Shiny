@@ -112,6 +112,7 @@
                 <!-- Opened from Shiny's web pages: listen along, shared playlists and artists, profiles -->
                 <data android:host="watch" />
                 <data android:host="playlist" />
+                <data android:host="p" />
                 <data android:host="channel" />
                 <data android:host="u" />
             </intent-filter>
@@ -130,6 +131,7 @@
                 <data android:host="www.shinymusic.in" />
                 <data android:pathPrefix="/watch" />
                 <data android:pathPrefix="/playlist" />
+                <data android:pathPrefix="/p/" />
                 <data android:pathPrefix="/channel/" />
                 <data android:pathPrefix="/u/" />
                 <data android:pathPrefix="/j/" />
@@ -145,7 +147,7 @@
 
                 <data android:scheme="http" />
                 <data android:scheme="https" />
-                <data android:host="share.shinymusic.fun" />
+                <data android:host="share.shinymusic.in" />
                 <data android:host="shinymusic.vercel.app" />
                 <data android:pathPrefix="/" />
             </intent-filter>

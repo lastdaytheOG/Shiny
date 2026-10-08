@@ -998,6 +998,7 @@ class MainActivity : ComponentActivity() {
                         currentRoute!!.startsWith("search/") ||
                         currentRoute!!.startsWith("album/") ||
                         currentRoute!!.startsWith("online_playlist/") ||
+                        currentRoute!!.startsWith("shared_playlist/") ||
                         currentRoute!!.startsWith("local_playlist/") ||
                         currentRoute!!.startsWith("artist/")
                 }
@@ -1825,6 +1826,11 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
+            // A playlist that isn't on YouTube Music, shared as …/p/ID: Shiny's server keeps its songs.
+            "p" -> uri.pathSegments.getOrNull(1).linkId()?.let { shareId ->
+                open("shared_playlist/$shareId")
+            }
+
             "browse" -> uri.lastPathSegment.linkId()?.let { browseId ->
                 open("album/$browseId")
             }
@@ -1847,7 +1853,7 @@ class MainActivity : ComponentActivity() {
             else -> {
                 val videoId = when {
                     path == "watch" -> uri.getQueryParameter("v")
-                    uri.host == "youtu.be" || uri.host == "share.shinymusic.fun" -> uri.pathSegments.firstOrNull()
+                    uri.host == "youtu.be" || uri.host == "share.shinymusic.in" -> uri.pathSegments.firstOrNull()
                     else -> null
                 }.linkId()
 

@@ -13,8 +13,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
@@ -33,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
@@ -68,9 +69,15 @@ import com.shiny.music.ui.component.Material3MenuGroup
 import com.shiny.music.ui.component.Material3MenuItemData
 import com.shiny.music.ui.component.NewAction
 import com.shiny.music.ui.component.NewActionGrid
-import com.shiny.music.ui.component.PlaylistListItem
+import com.shiny.music.ui.component.MenuGroupGap
+import com.shiny.music.ui.component.MenuHeader
+import com.shiny.music.ui.component.MenuHeaderArtwork
+import com.shiny.music.ui.component.PlaylistThumbnail
 import com.shiny.music.ui.component.TextFieldDialog
+import com.shiny.music.ui.liquid.LiquidIcons
+import com.shiny.music.ui.liquid.artworkRadius
 import com.shiny.music.ui.liquid.share.shareCollection
+import com.shiny.music.ui.utils.resize
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -268,33 +275,6 @@ val editable: Boolean = playlist.playlist.isEditable == true
         )
     }
 
-    PlaylistListItem(
-        playlist = playlist,
-        shape = MaterialTheme.shapes.large,
-        color = androidx.compose.ui.graphics.Color.Transparent,
-        trailingContent = {
-            if (playlist.playlist.isEditable != true) {
-                IconButton(
-                    onClick = {
-                        database.query {
-                            dbPlaylist?.playlist?.toggleLike()?.let { update(it) }
-                        }
-                    }
-                ) {
-                    Icon(
-                        painter = painterResource(if (dbPlaylist?.playlist?.bookmarkedAt != null) R.drawable.favorite else R.drawable.favorite_border),
-                        tint = if (dbPlaylist?.playlist?.bookmarkedAt != null) MaterialTheme.colorScheme.error else LocalContentColor.current,
-                        contentDescription = null
-                    )
-                }
-            }
-        },
-    )
-
-    HorizontalDivider()
-
-    Spacer(modifier = Modifier.height(12.dp))
-
     val configuration = LocalConfiguration.current
     val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
 
@@ -307,6 +287,58 @@ val editable: Boolean = playlist.playlist.isEditable == true
         ),
     ) {
         item {
+            val remoteCount = playlist.playlist.remoteSongCount
+            val count = if (playlist.songCount == 0 && remoteCount != null) remoteCount else playlist.songCount
+            MenuHeader(
+                title = playlist.playlist.name,
+                subtitle = pluralStringResource(R.plurals.n_song, count, count),
+                // The cover as the thumbnail below asks for it, so its colour is read from
+                // the picture already on screen.
+                atmosphere = playlist.thumbnails.firstOrNull()?.resize(544, 544),
+                trailing = if (playlist.playlist.isEditable != true) {
+                    {
+                        IconButton(
+                            onClick = {
+                                database.query {
+                                    dbPlaylist?.playlist?.toggleLike()?.let { update(it) }
+                                }
+                            }
+                        ) {
+                            Icon(
+                                painter = painterResource(if (dbPlaylist?.playlist?.bookmarkedAt != null) R.drawable.favorite else R.drawable.favorite_border),
+                                tint = if (dbPlaylist?.playlist?.bookmarkedAt != null) MaterialTheme.colorScheme.error else LocalContentColor.current,
+                                contentDescription = null
+                            )
+                        }
+                    }
+                } else {
+                    null
+                },
+            ) {
+                PlaylistThumbnail(
+                    thumbnails = playlist.thumbnails,
+                    size = MenuHeaderArtwork,
+                    placeHolder = {
+                        val painter = when (playlist.playlist.name) {
+                            stringResource(R.string.liked) -> R.drawable.favorite_border
+                            stringResource(R.string.offline) -> R.drawable.offline
+                            stringResource(R.string.cached_playlist) -> R.drawable.cached
+                            stringResource(R.string.uploaded_playlist) -> R.drawable.backup
+                            else -> R.drawable.ic_launcher_nobg
+                        }
+                        Icon(
+                            painter = painterResource(painter),
+                            contentDescription = null,
+                            tint = LocalContentColor.current.copy(alpha = 0.8f),
+                            modifier = Modifier.size(MenuHeaderArtwork / 2)
+                        )
+                    },
+                    shape = RoundedCornerShape(artworkRadius(MenuHeaderArtwork)),
+                )
+            }
+        }
+
+        item {
             NewActionGrid(
                 actions = listOfNotNull(
                     NewAction(
@@ -314,8 +346,7 @@ val editable: Boolean = playlist.playlist.isEditable == true
                             Icon(
                                 painter = painterResource(R.drawable.play),
                                 contentDescription = null,
-                                modifier = Modifier.size(28.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                modifier = Modifier.size(24.dp),
                             )
                         },
                         text = stringResource(R.string.play),
@@ -336,8 +367,7 @@ val editable: Boolean = playlist.playlist.isEditable == true
                             Icon(
                                 painter = painterResource(R.drawable.shuffle),
                                 contentDescription = null,
-                                modifier = Modifier.size(28.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                modifier = Modifier.size(24.dp),
                             )
                         },
                         text = stringResource(R.string.shuffle),
@@ -356,10 +386,9 @@ val editable: Boolean = playlist.playlist.isEditable == true
                     NewAction(
                         icon = {
                             Icon(
-                                painter = painterResource(R.drawable.share),
+                                imageVector = LiquidIcons.Share,
                                 contentDescription = null,
-                                modifier = Modifier.size(28.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                modifier = Modifier.size(24.dp),
                             )
                         },
                         text = stringResource(R.string.share),
@@ -373,12 +402,13 @@ val editable: Boolean = playlist.playlist.isEditable == true
                         }
                     )
                 ),
-                modifier = Modifier.padding(horizontal = 4.dp, vertical = 16.dp),
                 columns = 3
             )
         }
 
+        // Into the queue.
         item {
+            Spacer(modifier = Modifier.height(MenuGroupGap))
             Material3MenuGroup(
                 items = buildList {
                     playlist.playlist.browseId?.let { browseId ->
@@ -407,7 +437,7 @@ val editable: Boolean = playlist.playlist.isEditable == true
                             )
                         )
                     }
-                
+
                     add(
                         Material3MenuItemData(
                             title = { Text(text = stringResource(R.string.play_next)) },
@@ -426,7 +456,7 @@ val editable: Boolean = playlist.playlist.isEditable == true
                             }
                         )
                     )
-                
+
                     add(
                         Material3MenuItemData(
                             title = { Text(text = stringResource(R.string.add_to_queue)) },
@@ -443,14 +473,14 @@ val editable: Boolean = playlist.playlist.isEditable == true
                             }
                         )
                     )
-                
+
                 }
             )
         }
 
-        item { Spacer(modifier = Modifier.height(12.dp)) }
-
+        // Looking after the playlist itself.
         item {
+            Spacer(modifier = Modifier.height(MenuGroupGap))
             Material3MenuGroup(
                 items = buildList {
                     if (editable && autoPlaylist != true) {
@@ -480,11 +510,19 @@ val editable: Boolean = playlist.playlist.isEditable == true
                                     text = if (livePlaylist.isPinned) stringResource(R.string.unpin_playlist) else stringResource(R.string.pin_playlist)
                                 )
                             },
+                            // An outline while there is a pin to give, the solid one once given.
                             icon = {
-                                Icon(
-                                    painter = painterResource(R.drawable.ic_push_pin),
-                                    contentDescription = null,
-                                )
+                                if (livePlaylist.isPinned) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.ic_push_pin),
+                                        contentDescription = null,
+                                    )
+                                } else {
+                                    Icon(
+                                        imageVector = LiquidIcons.Pin,
+                                        contentDescription = null,
+                                    )
+                                }
                             },
                             onClick = {
                                 database.query {
@@ -496,10 +534,10 @@ val editable: Boolean = playlist.playlist.isEditable == true
                     )
                     add(
                         Material3MenuItemData(
-                            title = { 
+                            title = {
                                 Text(
-                                    text = if (isPinned) "Unpin from Speed dial" else "Pin to Speed dial" 
-                                ) 
+                                    text = if (isPinned) "Unpin from Speed dial" else "Pin to Speed dial"
+                                )
                             },
                             icon = {
                                 Icon(
@@ -527,192 +565,209 @@ val editable: Boolean = playlist.playlist.isEditable == true
                             }
                         )
                     )
-                    if (downloadPlaylist != true) {
-                        add(
-                            when (downloadState) {
-                                Download.STATE_COMPLETED -> {
-                                    Material3MenuItemData(
-                                        title = {
-                                            Text(
-                                                text = stringResource(R.string.remove_download)
-                                            )
-                                        },
-                                        icon = {
-                                            Icon(
-                                                painter = painterResource(R.drawable.offline),
-                                                contentDescription = null
-                                            )
-                                        },
-                                        onClick = {
-                                            showRemoveDownloadDialog = true
-                                        }
-                                    )
-                                }
-                                Download.STATE_QUEUED, Download.STATE_DOWNLOADING -> {
-                                    Material3MenuItemData(
-                                        title = { Text(text = stringResource(R.string.downloading)) },
-                                        icon = {
-                                            CircularProgressIndicator(
-                                                modifier = Modifier.size(24.dp),
-                                                strokeWidth = 2.dp
-                                            )
-                                        },
-                                        onClick = {
-                                            showRemoveDownloadDialog = true
-                                        }
-                                    )
-                                }
-                                else -> {
-                                    Material3MenuItemData(
-                                        title = { Text(text = stringResource(R.string.action_download)) },
-                                        description = { Text(text = stringResource(R.string.download_desc)) },
-                                        icon = {
-                                            Icon(
-                                                painter = painterResource(R.drawable.download),
-                                                contentDescription = null,
-                                            )
-                                        },
-                                        onClick = {
-                                            songs.forEach { song ->
-                                                val downloadRequest =
-                                                    DownloadRequest
-                                                        .Builder(song.id, song.id.toUri())
-                                                        .setCustomCacheKey(song.id)
-                                                        .setData(song.song.title.toByteArray())
-                                                        .build()
-                                                DownloadService.sendAddDownload(
-                                                    context,
-                                                    ExoDownloadService::class.java,
-                                                    downloadRequest,
-                                                    false,
-                                                )
-                                            }
-                                        }
-                                    )
-                                }
-                            }
-                        )
-                    }
-                    if (autoPlaylist != true) {
-                        add(
-                            Material3MenuItemData(
-                                title = { Text(text = stringResource(R.string.delete)) },
-                                description = { Text(text = stringResource(R.string.delete_desc)) },
-                                icon = {
-                                    Icon(
-                                        painter = painterResource(R.drawable.delete),
-                                        contentDescription = null,
-                                    )
-                                },
-                                onClick = {
-                                    showDeletePlaylistDialog = true
-                                }
-                            )
-                        )
-                    }
-                    val currentBrowseId = dbPlaylist?.playlist?.browseId ?: playlist.playlist.browseId
-                    if (currentBrowseId == null && isSignedIn) {
-                        add(
-                            Material3MenuItemData(
-                                title = { Text(text = stringResource(R.string.sync_playlist)) },
-                                description = { Text(text = stringResource(R.string.sync_playlist_desc)) },
-                                icon = {
-                                    Icon(
-                                        painter = painterResource(R.drawable.sync),
-                                        contentDescription = null,
-                                    )
-                                },
-                                onClick = {
-                                    isSyncing = true
-                                    syncedCount = 0
-                                    isSyncComplete = false
-                                    coroutineScope.launch(Dispatchers.IO) {
-                                        try {
-                                            var browseId: String? = null
-                                            var attempt = 0
-                                            val maxAttempts = 3
-                                            while (attempt < maxAttempts) {
-                                                try {
-                                                    browseId = YouTube.createPlaylist(playlist.playlist.name)
-                                                    if (browseId != null) break
-                                                } catch (e: Exception) {
-                                                    attempt++
-                                                    if (attempt >= maxAttempts) throw e
-                                                    kotlinx.coroutines.delay(1000)
-                                                }
-                                            }
-                                            if (browseId != null) {
-                                                database.query {
-                                                    update(playlist.playlist.copy(browseId = browseId))
-                                                }
-                                                var successCount = 0
-                                                songs.forEachIndexed { index, song ->
-                                                    val result = YouTube.addToPlaylist(browseId, song.id)
-                                                    if (result.isSuccess) {
-                                                        successCount++
-                                                    } else {
-                                                        result.exceptionOrNull()?.printStackTrace()
-                                                    }
-                                                    withContext(Dispatchers.Main) {
-                                                        syncedCount = index + 1
-                                                    }
-                                                    kotlinx.coroutines.delay(200)
-                                                }
-                                                kotlinx.coroutines.withContext(Dispatchers.Main) {
-                                                    if (successCount == songs.size) {
-                                                        Toast.makeText(
-                                                            context,
-                                                            context.getString(R.string.sync_completed_success, songs.size),
-                                                            Toast.LENGTH_SHORT
-                                                        ).show()
-                                                    } else {
-                                                        Toast.makeText(
-                                                            context,
-                                                            context.getString(R.string.sync_completed_partial, successCount, songs.size),
-                                                            Toast.LENGTH_LONG
-                                                        ).show()
-                                                    }
-                                                    isSyncComplete = true
-                                                }
-                                            }
-                                        } catch (e: Exception) {
-                                            kotlinx.coroutines.withContext(Dispatchers.Main) {
-                                                Toast.makeText(context, e.message ?: "Failed to sync", Toast.LENGTH_SHORT).show()
-                                                isSyncing = false
-                                            }
-                                        }
-                                    }
-                                }
-                            )
-                        )
-                    }
-                    playlist.playlist.shareLink?.let { shareLink ->
-                        add(
-                            Material3MenuItemData(
-                                title = { Text(text = stringResource(R.string.share)) },
-                                description = { Text(text = stringResource(R.string.share_desc)) },
-                                icon = {
-                                    Icon(
-                                        painter = painterResource(R.drawable.share),
-                                        contentDescription = null,
-                                    )
-                                },
-                                onClick = {
-                                    val intent = Intent().apply {
-                                        action = Intent.ACTION_SEND
-                                        type = "text/plain"
-                                        putExtra(Intent.EXTRA_TEXT, shareLink)
-                                    }
-                                    context.startActivity(Intent.createChooser(intent, null))
-                                    onDismiss()
-                                }
-                            )
-                        )
-                    }
                 }
             )
         }
+
+        // Where its songs are kept: on this phone, and in the account.
+        item {
+            val rows = buildList {
+                if (downloadPlaylist != true) {
+                    add(
+                        when (downloadState) {
+                            Download.STATE_COMPLETED -> {
+                                Material3MenuItemData(
+                                    title = {
+                                        Text(
+                                            text = stringResource(R.string.remove_download)
+                                        )
+                                    },
+                                    icon = {
+                                        Icon(
+                                            painter = painterResource(R.drawable.offline),
+                                            contentDescription = null
+                                        )
+                                    },
+                                    onClick = {
+                                        showRemoveDownloadDialog = true
+                                    }
+                                )
+                            }
+                            Download.STATE_QUEUED, Download.STATE_DOWNLOADING -> {
+                                Material3MenuItemData(
+                                    title = { Text(text = stringResource(R.string.downloading)) },
+                                    icon = {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(24.dp),
+                                            strokeWidth = 2.dp
+                                        )
+                                    },
+                                    onClick = {
+                                        showRemoveDownloadDialog = true
+                                    }
+                                )
+                            }
+                            else -> {
+                                Material3MenuItemData(
+                                    title = { Text(text = stringResource(R.string.action_download)) },
+                                    description = { Text(text = stringResource(R.string.download_desc)) },
+                                    icon = {
+                                        Icon(
+                                            painter = painterResource(R.drawable.download),
+                                            contentDescription = null,
+                                        )
+                                    },
+                                    onClick = {
+                                        songs.forEach { song ->
+                                            val downloadRequest =
+                                                DownloadRequest
+                                                    .Builder(song.id, song.id.toUri())
+                                                    .setCustomCacheKey(song.id)
+                                                    .setData(song.song.title.toByteArray())
+                                                    .build()
+                                            DownloadService.sendAddDownload(
+                                                context,
+                                                ExoDownloadService::class.java,
+                                                downloadRequest,
+                                                false,
+                                            )
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    )
+                }
+                val currentBrowseId = dbPlaylist?.playlist?.browseId ?: playlist.playlist.browseId
+                if (currentBrowseId == null && isSignedIn) {
+                    add(
+                        Material3MenuItemData(
+                            title = { Text(text = stringResource(R.string.sync_playlist)) },
+                            description = { Text(text = stringResource(R.string.sync_playlist_desc)) },
+                            icon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.sync),
+                                    contentDescription = null,
+                                )
+                            },
+                            onClick = {
+                                isSyncing = true
+                                syncedCount = 0
+                                isSyncComplete = false
+                                coroutineScope.launch(Dispatchers.IO) {
+                                    try {
+                                        var browseId: String? = null
+                                        var attempt = 0
+                                        val maxAttempts = 3
+                                        while (attempt < maxAttempts) {
+                                            try {
+                                                browseId = YouTube.createPlaylist(playlist.playlist.name)
+                                                if (browseId != null) break
+                                            } catch (e: Exception) {
+                                                attempt++
+                                                if (attempt >= maxAttempts) throw e
+                                                kotlinx.coroutines.delay(1000)
+                                            }
+                                        }
+                                        if (browseId != null) {
+                                            database.query {
+                                                update(playlist.playlist.copy(browseId = browseId))
+                                            }
+                                            var successCount = 0
+                                            songs.forEachIndexed { index, song ->
+                                                val result = YouTube.addToPlaylist(browseId, song.id)
+                                                if (result.isSuccess) {
+                                                    successCount++
+                                                } else {
+                                                    result.exceptionOrNull()?.printStackTrace()
+                                                }
+                                                withContext(Dispatchers.Main) {
+                                                    syncedCount = index + 1
+                                                }
+                                                kotlinx.coroutines.delay(200)
+                                            }
+                                            kotlinx.coroutines.withContext(Dispatchers.Main) {
+                                                if (successCount == songs.size) {
+                                                    Toast.makeText(
+                                                        context,
+                                                        context.getString(R.string.sync_completed_success, songs.size),
+                                                        Toast.LENGTH_SHORT
+                                                    ).show()
+                                                } else {
+                                                    Toast.makeText(
+                                                        context,
+                                                        context.getString(R.string.sync_completed_partial, successCount, songs.size),
+                                                        Toast.LENGTH_LONG
+                                                    ).show()
+                                                }
+                                                isSyncComplete = true
+                                            }
+                                        }
+                                    } catch (e: Exception) {
+                                        kotlinx.coroutines.withContext(Dispatchers.Main) {
+                                            Toast.makeText(context, e.message ?: "Failed to sync", Toast.LENGTH_SHORT).show()
+                                            isSyncing = false
+                                        }
+                                    }
+                                }
+                            }
+                        )
+                    )
+                }
+                playlist.playlist.shareLink?.let { shareLink ->
+                    add(
+                        Material3MenuItemData(
+                            title = { Text(text = stringResource(R.string.share)) },
+                            description = { Text(text = stringResource(R.string.share_desc)) },
+                            icon = {
+                                Icon(
+                                    imageVector = LiquidIcons.Share,
+                                    contentDescription = null,
+                                )
+                            },
+                            onClick = {
+                                val intent = Intent().apply {
+                                    action = Intent.ACTION_SEND
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_TEXT, shareLink)
+                                }
+                                context.startActivity(Intent.createChooser(intent, null))
+                                onDismiss()
+                            }
+                        )
+                    )
+                }
+            }
+            if (rows.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(MenuGroupGap))
+                Material3MenuGroup(items = rows)
+            }
+        }
+
+        // On its own, in the warning colour: the one row here that cannot be taken back.
+        if (autoPlaylist != true) item {
+            Spacer(modifier = Modifier.height(MenuGroupGap))
+            Material3MenuGroup(
+                items = listOf(
+                    Material3MenuItemData(
+                        destructive = true,
+                        title = { Text(text = stringResource(R.string.delete)) },
+                        description = { Text(text = stringResource(R.string.delete_desc)) },
+                        icon = {
+                            Icon(
+                                painter = painterResource(R.drawable.delete),
+                                contentDescription = null,
+                            )
+                        },
+                        onClick = {
+                            showDeletePlaylistDialog = true
+                        }
+                    )
+                )
+            )
+        }
     }
+
 
     if (isSyncing) {
         DefaultDialog(

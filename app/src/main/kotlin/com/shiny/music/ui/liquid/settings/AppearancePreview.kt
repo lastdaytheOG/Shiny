@@ -24,9 +24,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.shiny.music.LocalPlayerConnection
@@ -38,14 +35,11 @@ import com.shiny.music.ui.liquid.GlassIconButton
 import com.shiny.music.ui.liquid.GlassKind
 import com.shiny.music.ui.liquid.Liquid
 import com.shiny.music.ui.liquid.LiquidTypography
-import com.shiny.music.ui.liquid.appearance.ArtworkPresentation
 import com.shiny.music.ui.liquid.appearance.LocalShinyAppearance
-import com.shiny.music.ui.liquid.appearance.fullScreenScrim
 import com.shiny.music.ui.liquid.appearance.strength
 import com.shiny.music.ui.liquid.player.NowPlayingBackground
 import com.shiny.music.ui.liquid.player.NowPlayingInk
 import com.shiny.music.ui.liquid.player.artworkGlow
-import com.shiny.music.ui.liquid.player.balancedScrimFor
 import com.shiny.music.ui.liquid.player.rememberArtworkGlowColor
 import com.shiny.music.ui.liquid.player.rememberNowPlayingBackdrop
 import com.shiny.music.ui.utils.resize
@@ -73,11 +67,6 @@ internal fun AppearancePreview(modifier: Modifier = Modifier) {
     val glowStrength = appearance.glow.strength
     val stage = rememberLayerBackdrop()
     val artShape = RoundedCornerShape(10.dp)
-    // The specimen shows the presentation that is actually chosen, so the row below it is
-    // never a promise the preview contradicts. Without a cover there is nothing to fill
-    // the stage with, which is exactly what the real player does too.
-    val fullScreen = appearance.artwork == ArtworkPresentation.FullScreen && url != null
-
     Box(
         modifier
             .fillMaxWidth()
@@ -93,52 +82,26 @@ internal fun AppearancePreview(modifier: Modifier = Modifier) {
                 .fillMaxSize()
                 .layerBackdrop(stage),
         )
-        if (fullScreen) {
-            Artwork(
-                model = url?.resize(600, 600),
-                shape = RectangleShape,
-                hairline = false,
-                modifier = Modifier.fillMaxSize(),
-            )
-            val base = backdrop.value.gradient.firstOrNull()
-            val scrim = remember(appearance.atmosphere, base) {
-                fullScreenScrim(appearance.atmosphere, base?.let(::balancedScrimFor) ?: 0.26f)
-            }
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .background(
-                        Brush.verticalGradient(
-                            0.2f to Color.Transparent,
-                            0.7f to Color.Black.copy(alpha = scrim * 0.52f),
-                            1f to Color.Black.copy(alpha = scrim),
-                        )
-                    )
-            )
-        }
         Row(
             Modifier
                 .fillMaxSize()
-                .padding(horizontal = if (fullScreen) 20.dp else 28.dp)
-                .padding(bottom = if (fullScreen) 16.dp else 0.dp),
-            verticalAlignment = if (fullScreen) Alignment.Bottom else Alignment.CenterVertically,
+                .padding(horizontal = 28.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (!fullScreen) {
-                Box(
-                    Modifier
-                        .size(104.dp)
-                        .artworkGlow(color = glowColor, strength = { glowStrength })
-                        .clip(artShape),
-                ) {
-                    Artwork(
-                        model = url?.resize(300, 300),
-                        shape = artShape,
-                        hairline = false,
-                        modifier = Modifier.fillMaxSize(),
-                    )
-                }
-                Spacer(Modifier.width(22.dp))
+            Box(
+                Modifier
+                    .size(104.dp)
+                    .artworkGlow(color = glowColor, strength = { glowStrength })
+                    .clip(artShape),
+            ) {
+                Artwork(
+                    model = url?.resize(300, 300),
+                    shape = artShape,
+                    hairline = false,
+                    modifier = Modifier.fillMaxSize(),
+                )
             }
+            Spacer(Modifier.width(22.dp))
             Column(Modifier.weight(1f)) {
                 Text(
                     text = metadata?.title ?: "Nothing playing",

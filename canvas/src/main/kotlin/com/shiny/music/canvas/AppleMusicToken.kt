@@ -39,6 +39,14 @@ object AppleMusicToken {
         }
     }
 
+    /**
+     * Where the token is kept between runs of the app, once the app has said. Finding it means
+     * fetching the web player's page and script, about a megabyte, and it is good for some
+     * two months: kept here, that megabyte is spent once and not at every start.
+     */
+    @Volatile
+    var file: java.io.File? = null
+
     private val source = AppleMusicTokenSource(
         page = PAGE,
         origin = ORIGIN,
@@ -46,10 +54,22 @@ object AppleMusicToken {
             val response = client.get(url) { header("User-Agent", USER_AGENT) }
             if (response.status.isSuccess()) response.bodyAsText() else null
         },
+        kept = object : AppleMusicTokenSource.Kept {
+            override fun read(): String? = runCatching { file?.takeIf { it.exists() }?.readText()?.trim() }.getOrNull()
+            override fun write(token: String?) {
+                runCatching {
+                    val target = file ?: return
+                    if (token == null) target.delete() else target.apply { parentFile?.mkdirs() }.writeText(token)
+                }
+            }
+        },
     )
 
     /** The current token, or null if it could not be obtained. */
     suspend fun get(): String? = source.token()
+
+    /** Says that Apple would not accept [token]; the next [get] looks for the one the web player has now. */
+    suspend fun refused(token: String) = source.refused(token)
 }
 
 /**
@@ -61,15 +81,32 @@ class AppleMusicTokenSource(
     private val page: String,
     private val origin: String,
     private val fetch: suspend (url: String) -> String?,
+    private val kept: Kept? = null,
     private val now: () -> Long = System::currentTimeMillis,
 ) {
+    /** Somewhere a token outlives the process. Reading and writing may fail quietly; neither may throw. */
+    interface Kept {
+        fun read(): String?
+        fun write(token: String?)
+    }
+
     private class Held(val token: String, val staleAt: Long)
 
     private val mutex = Mutex()
     private var held: Held? = null
     private var retryAt = 0L
+    private var refused: String? = null
+    private var refusedUntil = 0L
+    private var recalled = false
 
     suspend fun token(): String? = mutex.withLock {
+        if (!recalled) {
+            // The one found on an earlier run, if it says when it expires and has not yet.
+            recalled = true
+            kept?.read()?.let { saved ->
+                expiryMillis(saved)?.let { expiry -> held = Held(saved, expiry - EXPIRY_MARGIN_MS) }
+            }
+        }
         held?.takeIf { now() < it.staleAt }?.let { return@withLock it.token }
         // A failed look-up is not repeated for every song that asks.
         if (now() < retryAt) return@withLock null
@@ -78,9 +115,31 @@ class AppleMusicTokenSource(
             retryAt = now() + RETRY_PAUSE_MS
             return@withLock null
         }
+        if (fresh == refused && now() < refusedUntil) {
+            // The web player still carries the token Apple just turned down. Asking again and
+            // again would fetch its whole script each time, so it is left alone for a while,
+            // and after that given another chance: the refusal may not have been about the token.
+            retryAt = refusedUntil
+            return@withLock null
+        }
         val expiry = expiryMillis(fresh)
         held = Held(fresh, if (expiry != null) expiry - EXPIRY_MARGIN_MS else now() + UNDATED_LIFETIME_MS)
+        // Only one that says when it expires is worth keeping for another run.
+        if (expiry != null) kept?.write(fresh)
         fresh
+    }
+
+    /**
+     * Apple would not accept [token], though by its own date it had not expired (they are
+     * replaced in the web player from time to time). It is let go of, so the next [token]
+     * reads the one the web player has now.
+     */
+    suspend fun refused(token: String) = mutex.withLock {
+        if (held?.token != token) return@withLock
+        held = null
+        kept?.write(null)
+        refused = token
+        refusedUntil = now() + REFUSED_PAUSE_MS
     }
 
     private suspend fun load(): String? {
@@ -96,6 +155,7 @@ class AppleMusicTokenSource(
         private const val EXPIRY_MARGIN_MS = 5 * 60_000L
         private const val UNDATED_LIFETIME_MS = 60 * 60_000L
         private const val RETRY_PAUSE_MS = 60_000L
+        private const val REFUSED_PAUSE_MS = 30 * 60_000L
         private const val MAX_SCRIPTS = 4
 
         private val scriptSrc = Regex("""<script\b[^>]*\bsrc\s*=\s*["']([^"']+\.js)["']""", RegexOption.IGNORE_CASE)
@@ -116,8 +176,17 @@ class AppleMusicTokenSource(
                 }
             }
 
-        /** The first signed token in [text]; the web player lists the catalogue token first. */
-        fun tokenIn(text: String): String? = jwt.findAll(text).map { it.value }.firstOrNull { payload(it) != null }
+        /**
+         * The catalogue token in [text]: the signed token issued to the web player
+         * (`"iss":"AMPWebPlay"`). Failing one that says so, the first signed token, which is
+         * where the web player has always listed it.
+         */
+        fun tokenIn(text: String): String? {
+            val tokens = jwt.findAll(text).map { it.value }.filter { payload(it) != null }.toList()
+            return tokens.firstOrNull { webPlayIssuer.containsMatchIn(payload(it).orEmpty()) } ?: tokens.firstOrNull()
+        }
+
+        private val webPlayIssuer = Regex(""""iss"\s*:\s*"AMPWebPlay"""")
 
         /** When [token] expires, in epoch milliseconds, or null if it does not say. */
         fun expiryMillis(token: String): Long? =

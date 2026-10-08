@@ -1,79 +1,34 @@
-The issue is a `NoClassDefFoundError` for `android.graphics.RenderEffect`, which is an API that was introduced in Android 12 (API level 31). The crash occurs on Android 11 (SDK 30) because the code doesn't check the API level before using `RenderEffect`.
+# Security
 
-However, the target file is `SECURITY.md`, which doesn't relate to this crash. The fix needs to be in the actual source code that uses `RenderEffect` without an API level check.
+## Reporting a problem
 
-Since only the `SECURITY.md` file is provided as context, I'll provide the updated `SECURITY.md` with a note about this known issue, but the real fix would be in the Kotlin/Java source code.
+Please don't open a public issue for a security problem.
 
-Looking at this more carefully - the task says to fix the issue in the target file `SECURITY.md`. Since the crash is a code issue not related to SECURITY.md, I need to provide the complete updated file content. The SECURITY.md doesn't need changes to fix this bug - the bug is in the app code.
+- **Preferred:** [open a private advisory](https://github.com/lastdaytheOG/Shiny/security/advisories/new) on GitHub. Only the maintainer can see it.
+- **Or email:** [security@shinymusic.in](mailto:security@shinymusic.in)
 
-But since the instructions say to provide the complete updated target file, here is the SECURITY.md as-is (unchanged, since it's not the right file to fix this crash):
+A useful report says what is affected (the app, the Listen Together and Social servers in `server/`, or the website), how to reproduce it, and what someone could do with it. A proof of concept helps; a fix is welcome but not expected.
 
-# Security Policy
+You'll get a reply once the report has been read, and credit in the release notes when the fix ships, unless you'd rather stay unnamed. Please give the fix time to reach users before publishing details.
 
-## Supported Versions
+## What is covered
 
-We release patches for security vulnerabilities in the following versions:
+| | |
+| :-- | :-- |
+| **Supported** | The latest release, and `main` |
+| **In scope** | The Android app, the code in `server/`, shinymusic.in |
+| **Out of scope** | YouTube, Spotify, Discord and other services Shiny talks to; report those to their owners. Modified or re-signed builds of Shiny |
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 1.2.x   | :white_check_mark: |
-| > 1.2   | :x:                |
+## Checking that an APK is genuine
 
-## Reporting a Vulnerability
+Official releases are signed with one key. Its SHA-256 fingerprint is:
 
-If you discover a security vulnerability in Shiny Music, please report it responsibly:
+```
+F3:70:1C:9C:1C:87:54:F4:79:A9:D2:20:D6:E6:56:B1:12:1C:CA:43:B6:1C:7B:BE:FD:15:D8:32:A8:2B:19:46
+```
 
-1. **Do NOT** create a public GitHub issue
-2. Email us at: [security@shinymusic.fun](mailto:security@shinymusic.fun)
-3. Include the following information:
-   - Description of the vulnerability
-   - Steps to reproduce
-   - Potential impact
-   - Any suggested fixes
+Check a download with `apksigner verify --print-certs Shiny-*.apk`. An APK with any other fingerprint was not built by this project.
 
-## Security Best Practices
+## If you contribute
 
-### For Developers
-
-- **Never commit sensitive files**: API keys, tokens, and credentials should never be committed to version control
-- **Use environment variables**: Store sensitive configuration in environment variables or secure properties files
-- **Regular updates**: Keep dependencies updated to patch security vulnerabilities
-- **Code review**: All code changes should be reviewed before merging
-
-### For Users
-
-- **Download from official sources**: Only download APKs from official releases or trusted sources
-- **Keep the app updated**: Install updates promptly to receive security patches
-- **Review permissions**: Be aware of the permissions the app requests
-
-## Sensitive Information
-
-The following files contain sensitive information and should never be committed:
-
-- `google-services.json` - Firebase configuration with API keys
-- `local.properties` - Local development configuration
-- `*.keystore` / `*.jks` - App signing keys
-- `secrets.properties` - API keys and secrets
-- `**/assets/po_token.html` - YouTube authentication tokens
-
-## Data Privacy
-
-Shiny Music is committed to user privacy:
-
-- **No personal data collection**: We don't collect personal information
-- **Local storage**: User data is stored locally on the device
-- **Analytics**: We collect minimal usage data and crash reports through Firebase Analytics to improve app stability and enhance the overall user experience.
-- **Open source**: All code is available for review
-
-## Known Issues
-
-- `RenderEffect` (android.graphics.RenderEffect) requires Android 12 (API 31) or higher. Usage of this API must be guarded with `Build.VERSION.SDK_INT >= Build.VERSION_CODES.S` checks to prevent crashes on devices running Android 11 or lower.
-
-## Contact
-
-For security-related questions or to report vulnerabilities:
-
-- Email: [security@shinymusic.fun](mailto:security@shinymusic.fun)
-- GitHub: Create a private security advisory
-
-Thank you for helping keep Shiny Music secure!
+Keystores, passwords, `local.properties` and `google-services.json` stay out of the repository; `.gitignore` already covers them. If a secret is committed by mistake, say so straight away so it can be revoked. Deleting the commit is not enough.

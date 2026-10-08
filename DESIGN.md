@@ -26,6 +26,10 @@ it; do not add new screens on the old `ui/component` look.
 | `fill` … `quaternaryFill` | system fills | system fills | controls, highlights |
 | `accent` | Shiny Rose | Shiny Rose | **only** things you can tap |
 | `green` | `#34C759` | `#30D158` | switches |
+| `sheetBackground` | `#F2F2F7` | `#131315` (AMOLED `#0A0A0B`) | ground of an option sheet |
+| `panel` | `#FFFFFF` | white 7.5% | grouped panels: menu sections, Settings index groups |
+| `panelRim` | none | white 13% | the light a panel's upper edge catches |
+| `panelSeparator` | `rgba(60,60,67,.2)` | white 9% | hairlines between rows inside a panel |
 
 `ShinyTheme` (`ui/theme/Theme.kt`) provides these and projects them onto the Material
 `ColorScheme` via `liquidMaterialColorScheme`, so any screen still using `MaterialTheme`
@@ -64,6 +68,11 @@ Inter lacks fall back to the system family (`rememberLiquidTypography`).
 ### Geometry
 Page margin **20dp**; shelf gap **12dp**; artwork corner ≈5.5% of its edge (`artworkRadius`,
 4–14dp); grouped sections 22dp; sheets 36dp top corners; capsules everywhere else.
+
+Panels (`LiquidPanel.kt`): corner **22dp** (`PanelShape`), quick-action tiles **18dp**
+(`TileShape`), **16dp** from the screen or sheet edge to a panel and again from its edge to
+its rows' content, every row glyph in a **24dp** box, **12dp** between panels. A row is at
+least 56dp tall in a menu and 60dp on the Settings index.
 
 ### Motion
 Springs only (`AppMotion` still applies). Navigation uses the UIKit push in
@@ -175,8 +184,10 @@ lens; *Frosted* blurs harder with a calmer lens and no dispersion. The finish co
   never flooded chips.
 - **New**, **Library** (category rows → pushed category pages, Recently Added grid),
   **Search** (field + Cancel, scope switch, history/suggestions, Browse Categories grid,
-  results with scope capsules and a Top Result card), **History**, **Settings** (iOS
-  inset-grouped, coloured glyph plates).
+  results with scope capsules and a Top Result card), **History**, **Settings** (the index
+  is set in panels with a muted colour plate behind each glyph, a rimmed "Search settings"
+  field and the account in a panel of its own; the pages it opens are plain type on the
+  ground, with no panels and no glyphs).
 - **Listening Stats** (`LiquidStatsScreen.kt`) — Replay: a coloured hero counting the
   year's minutes, period switch, top artists and songs as ranked rows.
 - **On This Device** (`LiquidLocalSongsScreen.kt`) — the local library: a scan sheet,
@@ -231,6 +242,42 @@ cell highlight (`LiquidHighlight`) or a spring scale — **never a ripple**.
 
 Both live in a popup window, so they **cannot sample the page** — their surfaces are
 opaque. (A 0.97-alpha surface plus a shadow bled the page through visibly.)
+
+### Panels and option sheets (`LiquidPanel.kt`, `ui/component/Menu.kt` · `NewMenuComponents.kt` · `BottomSheetMenu.kt`)
+
+The sheet a ⋯ or a long press opens, and the Settings index, are built from one raised
+surface: the **panel**. `Modifier.liquidPanel()` is a fill and a rim and nothing else. In
+the dark themes the fill is translucent, so the ground's colour shows through it, and the rim
+is a hairline that is brightest along the top edge; in Light it is the plain white grouped
+cell. No blur, no backdrop, no shadow: a sheet is its own window and has nothing to sample.
+
+- **The sheet** (`BottomSheetMenu`) stops 8dp below the status bar when fully open, so the
+  page shows above it. Its grabber is a 36×5 capsule in a 24dp band.
+- **Atmosphere** (`SheetAtmosphere`). A sheet about a piece of artwork takes its colour from
+  it: light falling from the cover in the header, in the cover's own tones, dying away
+  towards the foot. It is **one radial gradient**, built when the artwork changes and
+  cached; the tones come from the 112-pixel decode and cache the collection pages already
+  use. The header names the artwork (`MenuHeader(atmosphere = …)`), the sheet draws it, and
+  a sheet with no header stays neutral. In the dark themes the tones are held to a luminance
+  of 0.05 under the rows (0.065 behind the header), which is what keeps secondary text at
+  4.5:1 on a panel; a cover with no colour gives half as much, so it does not turn the sheet
+  a lighter grey.
+- **Header** (`MenuHeader`). An 88dp cover, the name in `title3`, then up to two quieter
+  lines (artist and album; a playlist's length). No divider under it.
+- **Tiles** (`NewActionGrid`). Up to three per row, 72dp, glyph over a 13sp label. A tile
+  that is on (Repeat) is filled with the accent at 32% and keeps white type.
+- **Rows** (`Material3MenuGroup`). Label and one optional line; hairlines start under the
+  text and stop short of the trailing edge. By default the glyph sits at the trailing edge,
+  the arrangement of a context menu. `MenuGlyphs.Leading` moves it to the front for a sheet
+  that is mostly places to go (the Now Playing song sheet), where a row that opens a page
+  ends in a chevron (`chevron = true`) and a row that acts on the spot ends in nothing.
+  `destructive = true` draws a row's label and glyph in the warning colour; Delete gets a
+  panel of its own.
+- **Glyphs.** Outline, 24dp, in `label`. Share is `LiquidIcons.Share` on these sheets; a pin
+  is the outline `LiquidIcons.Pin` until the thing is pinned, then the filled one.
+
+The colour is the artwork's and belongs to the surface that is about that artwork. **Page
+grounds stay neutral**: the Settings index is panels on black, with no atmosphere.
 
 Older screens get the look through swaps rather than rewrites: `LiquidTopAppBar` and
 `LiquidSwitch` replace Material's via import alias, `Material3SettingsGroup` and the menu
@@ -404,5 +451,9 @@ animation styles) belong to the old player and do not affect this one.
   `secondaryLabel`.
 - **Do** give glass something to refract, and give it its own backdrop.
 - **Don't** put glass inside the content it would sample.
+- **Do** build grouped surfaces with `liquidPanel()` and the panel tokens; don't pick a
+  radius, inset or fill per screen.
+- **Don't** put an atmosphere on a page ground. Colour comes from artwork, on the surface
+  that is about that artwork.
 - **Don't** use ripples, Material FABs, filled cards with drop shadows, or gradient badges.
 - **Don't** animate anything idle except the playing Now Playing backdrop.

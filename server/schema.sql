@@ -50,3 +50,26 @@ CREATE TABLE IF NOT EXISTS friend_requests (
   PRIMARY KEY (from_id, to_id)
 );
 CREATE INDEX IF NOT EXISTS friend_requests_to ON friend_requests(to_id);
+
+-- A playlist shared from the app as a link, shinymusic.in/p/ID. A playlist that only lives on a phone
+-- (a Spotify import, one made in Shiny) has no page anywhere else, so its songs are kept here.
+CREATE TABLE IF NOT EXISTS shared_playlists (
+  id           TEXT PRIMARY KEY,
+  -- SHA-256 of the name and songs: sharing the same playlist again gives the same link.
+  content_hash TEXT NOT NULL UNIQUE,
+  name         TEXT NOT NULL,
+  song_count   INTEGER NOT NULL,
+  -- JSON array of { id, title, artists: [{ name, id }], duration, thumbnail, explicit }.
+  songs        TEXT NOT NULL,
+  created_at   INTEGER NOT NULL,
+  -- Last day the link was opened, so links nobody uses can be told apart later.
+  opened_at    INTEGER NOT NULL
+);
+
+-- New shared playlists per network address per hour. The address is stored hashed.
+CREATE TABLE IF NOT EXISTS share_limits (
+  address_hash TEXT NOT NULL,
+  hour         INTEGER NOT NULL,
+  count        INTEGER NOT NULL,
+  PRIMARY KEY (address_hash, hour)
+);

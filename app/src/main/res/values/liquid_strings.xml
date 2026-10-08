@@ -339,4 +339,13 @@
     <string name="home_surprise_unexplored">Yours, barely played</string>
     <string name="home_surprise_new">New to you, close to what you love</string>
     <string name="home_surprise_device">On this device, not heard lately</string>
+
+    <!-- Sharing a playlist that isn't on YouTube Music as a link -->
+    <string name="share_making_link">Making a link…</string>
+    <string name="share_link_failed">Couldn\'t make a link. Check your connection and try again.</string>
+    <string name="share_link_partial">The link has %1$d of the %2$d songs</string>
+    <string name="shared_playlist_gone">This playlist isn\'t here</string>
+    <string name="shared_playlist_gone_body">The link may be mistyped or incomplete.</string>
+    <string name="shared_playlist_unreachable">Couldn\'t open this playlist</string>
+    <string name="shared_playlist_unreachable_body">Check your connection and try again.</string>
 </resources>

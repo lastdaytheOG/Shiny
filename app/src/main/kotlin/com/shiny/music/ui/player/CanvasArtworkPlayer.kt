@@ -23,6 +23,7 @@ import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
+import androidx.compose.ui.unit.IntSize
 import androidx.media3.ui.AspectRatioFrameLayout
 import com.music.innertube.YouTube
 import com.music.innertube.models.YouTubeClient
@@ -31,6 +32,40 @@ import java.util.Locale
 import android.view.ViewGroup
 import android.view.TextureView
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
+
+/**
+ * Which size of a motion clip plays. Apple makes each in some thirty sizes and bitrates, from
+ * 310 pixels across to 2048.
+ *
+ * No preferred codec is set on purpose: the track selector already ranks by what this
+ * device's decoders report, so HEVC is chosen where it decodes in hardware and H.264 where it
+ * does not.
+ *
+ * A clip plays at the size the screen shows it ([sharpFor], the pixels it covers): of the
+ * sizes there are, the smallest that covers those pixels, at that size's best bitrate. Not
+ * adaptive, because an adaptive start is a soft first loop and a second download of the same
+ * clip (measured on the cover's square: it began 486 pixels across in a square 933 wide, and
+ * stayed there); and not the largest, because pixels the screen does not have cost decoding
+ * and megabytes and show nothing. The clip is fetched once and kept (see MotionArtworkCache).
+ *
+ * Only where the pixels are not known does it adapt to the connection, under a cap.
+ */
+private fun ExoPlayer.chooseClipSize(context: android.content.Context, sharpFor: IntSize?) {
+    val wanted = trackSelectionParameters.buildUpon().setMaxVideoFrameRate(30)
+    if (sharpFor != null && sharpFor.width > 0 && sharpFor.height > 0) {
+        wanted
+            .setViewportSize(sharpFor.width, sharpFor.height, false)
+            .setMaxVideoSize(Int.MAX_VALUE, Int.MAX_VALUE)
+            .setForceHighestSupportedBitrate(true)
+    } else {
+        wanted
+            .setViewportSizeToPhysicalDisplaySize(context, true)
+            .setMaxVideoSize(1280, 1280)
+            .setForceHighestSupportedBitrate(false)
+    }
+    val parameters = wanted.build()
+    if (parameters != trackSelectionParameters) trackSelectionParameters = parameters
+}
 
 @Composable
 fun CanvasArtworkPlayer(
@@ -46,6 +81,10 @@ fun CanvasArtworkPlayer(
      */
     onUnavailable: () -> Unit = {},
     readinessTimeoutMs: Long = 6_000L,
+    /** How long a clip that is still being fetched is waited for, at the most. */
+    slowConnectionPatienceMs: Long = 25_000L,
+    /** The pixels the clip covers: it plays at the size that matches them. Null where they are not known. */
+    sharpFor: IntSize? = null,
 ) {
     val context = LocalContext.current
     val primary = primaryUrl?.takeIf { it.isNotBlank() }
@@ -105,12 +144,17 @@ fun CanvasArtworkPlayer(
         }
     val mediaSourceFactory =
         remember(okHttpClient) {
-            DefaultMediaSourceFactory(
-                DefaultDataSource.Factory(
-                    context,
-                    OkHttpDataSource.Factory(okHttpClient),
-                ),
-            )
+            val network = OkHttpDataSource.Factory(okHttpClient)
+            // Through the motion artwork cache where it is open: a clip fetched once is read
+            // from disk every time after, and plays offline. A read that fails there falls
+            // through to the network rather than failing the clip.
+            val cached = com.shiny.music.artwork.MotionArtworkCache.peek()?.let { cache ->
+                androidx.media3.datasource.cache.CacheDataSource.Factory()
+                    .setCache(cache)
+                    .setUpstreamDataSourceFactory(network)
+                    .setFlags(androidx.media3.datasource.cache.CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
+            }
+            DefaultMediaSourceFactory(DefaultDataSource.Factory(context, cached ?: network))
         }
     val exoPlayer =
         remember {
@@ -118,19 +162,7 @@ fun CanvasArtworkPlayer(
                 .setMediaSourceFactory(mediaSourceFactory)
                 .build()
                 .apply {
-                // No preferred codec is set on purpose: the track selector already ranks by
-                // what this device's decoders report, so HEVC is chosen where it decodes and
-                // H.264 where it does not. Forcing the highest bitrate used to override that
-                // toward the heaviest variant — the one least likely to decode and the most
-                // expensive to run for a decorative loop. A cap is enough: this plays inside
-                // the artwork square, so anything beyond 720p is battery spent on pixels
-                // nobody can see.
-                trackSelectionParameters = trackSelectionParameters
-                    .buildUpon()
-                    .setMaxVideoSize(1280, 1280)
-                    .setMaxVideoFrameRate(30)
-                    .setForceHighestSupportedBitrate(false)
-                    .build()
+                chooseClipSize(context, sharpFor)
                 setAudioAttributes(
                     AudioAttributes
                         .Builder()
@@ -146,11 +178,17 @@ fun CanvasArtworkPlayer(
             }
         }
 
+    // The same player goes on to play the next clip, which may cover a different box.
+    LaunchedEffect(exoPlayer, sharpFor) { exoPlayer.chooseClipSize(context, sharpFor) }
+
     LaunchedEffect(isPlaying) {
         if (exoPlayer.playWhenReady != isPlaying) {
             exoPlayer.playWhenReady = isPlaying
         }
     }
+
+    // When the clip now loading was asked for, to say how long its first frame took.
+    val askedAt = remember { longArrayOf(0L) }
 
     DisposableEffect(exoPlayer, primary, fallback) {
         val listener =
@@ -161,9 +199,13 @@ fun CanvasArtworkPlayer(
                             primary -> fallback
                             else -> null
                         }
+                    com.shiny.music.artwork.Artworks.log(
+                        "clip      FAILED ${error.errorCodeName} (${error.cause?.message}) on $currentUrl -> " +
+                            if (next.isNullOrBlank()) "nothing left to try, the still artwork stays" else "trying the plain file $next"
+                    )
                     if (!next.isNullOrBlank()) {
                         currentUrl = next
-                        isVideoReady = false 
+                        isVideoReady = false
                     } else {
                         // Nothing left to try: tell the caller so it can keep its own artwork
                         // instead of leaving an invisible player buffering behind it.
@@ -172,6 +214,16 @@ fun CanvasArtworkPlayer(
                 }
 
                 override fun onRenderedFirstFrame() {
+                    if (!isVideoReady) {
+                        val format = exoPlayer.videoFormat
+                        val size = exoPlayer.videoSize
+                        com.shiny.music.artwork.Artworks.log(
+                            "clip      ON SCREEN after ${android.os.SystemClock.elapsedRealtime() - askedAt[0]} ms: " +
+                                "${size.width}x${size.height} ${if (size.height > size.width) "tall" else "square"} " +
+                                "${format?.codecs} ${(format?.bitrate ?: 0) / 1000} kbps ${format?.frameRate} fps " +
+                                "(drawn in ${sharpFor?.let { "${it.width}x${it.height}" } ?: "a box of unknown size"} px) from $currentUrl"
+                        )
+                    }
                     isVideoReady = true
                 }
 
@@ -213,6 +265,11 @@ fun CanvasArtworkPlayer(
 
         exoPlayer.stop()
         isVideoReady = false
+        askedAt[0] = android.os.SystemClock.elapsedRealtime()
+        com.shiny.music.artwork.Artworks.log(
+            "clip      asked for $normalized as ${if (mimeType == MimeTypes.APPLICATION_M3U8) "HLS" else "MP4"}" +
+                (if (com.shiny.music.artwork.MotionArtworkCache.peek() != null) ", through the clip cache" else ", cache not open")
+        )
         exoPlayer.setMediaItem(mediaItem)
         exoPlayer.prepare()
         exoPlayer.playWhenReady = isPlaying
@@ -230,10 +287,23 @@ fun CanvasArtworkPlayer(
 
     // A clip that never decodes produces no error and no frame — it just buffers forever,
     // invisible at alpha 0 while the decoder and the socket stay open. Give it a deadline.
+    // A clip that is still arriving is another thing: on a slow connection its first piece
+    // can take longer than that, and giving up then would leave the still for the whole song.
+    // That one is waited for, for as long as the player is still fetching it, up to a limit.
     LaunchedEffect(initial, currentUrl) {
         if (isVideoReady || gaveUp) return@LaunchedEffect
         kotlinx.coroutines.delay(readinessTimeoutMs)
-        if (!isVideoReady) gaveUp = true
+        var waited = readinessTimeoutMs
+        while (!isVideoReady && exoPlayer.isLoading && waited < slowConnectionPatienceMs) {
+            kotlinx.coroutines.delay(500)
+            waited += 500
+        }
+        if (!isVideoReady) {
+            com.shiny.music.artwork.Artworks.log(
+                "clip      GAVE UP after $waited ms with no frame (${if (exoPlayer.isLoading) "still fetching" else "nothing arriving"}) on $currentUrl"
+            )
+            gaveUp = true
+        }
     }
 
     LaunchedEffect(gaveUp) {

@@ -126,6 +126,102 @@ class AppleMusicTokenTest {
     }
 
     @Test
+    fun `a token apple refuses before its time is replaced by the one the web player has now`() = runBlocking {
+        var clock = 1_000_000L
+        val withdrawn = token(expSeconds = 2_000_000_000, id = "a")
+        val script = "$origin/assets/index~9d8c7b.js"
+        val site = Site(mutableMapOf(page to html, script to bundle(withdrawn)))
+        val source = AppleMusicTokenSource(page, origin, site::fetch) { clock }
+        assertEquals(withdrawn, source.token())
+
+        // Refused, and the web player has a new one: that is what the next ask gets.
+        val current = token(expSeconds = 2_000_000_000, id = "b")
+        site.pages[script] = bundle(current)
+        source.refused(withdrawn)
+        assertEquals(current, source.token())
+        assertEquals(current, source.token())
+        assertEquals(4, site.hits.size)
+        // Being told again about a token no longer held changes nothing.
+        source.refused(withdrawn)
+        assertEquals(current, source.token())
+        assertEquals(4, site.hits.size)
+    }
+
+    @Test
+    fun `a refused token the web player still carries is not fetched over and over`() = runBlocking {
+        var clock = 1_000_000L
+        val jwt = token(expSeconds = 2_000_000_000)
+        val site = Site(mutableMapOf(page to html, "$origin/assets/index~9d8c7b.js" to bundle(jwt)))
+        val source = AppleMusicTokenSource(page, origin, site::fetch) { clock }
+        assertEquals(jwt, source.token())
+        source.refused(jwt)
+        // Looked for once more, found to be the same one, and then left alone for a while.
+        assertNull(source.token())
+        assertNull(source.token())
+        clock += 10 * 60_000L
+        assertNull(source.token())
+        assertEquals(4, site.hits.size)
+        // Half an hour on it is given another chance: the refusal may not have been about the token.
+        clock += 21 * 60_000L
+        assertEquals(jwt, source.token())
+        assertEquals(6, site.hits.size)
+    }
+
+    private class Shelf(var token: String? = null) : AppleMusicTokenSource.Kept {
+        override fun read(): String? = token
+        override fun write(token: String?) {
+            this.token = token
+        }
+    }
+
+    @Test
+    fun `a token found on one run is used on the next without fetching, until it expires`() = runBlocking {
+        var clock = 1_000_000L
+        val jwt = token(expSeconds = 5_000) // expires at 5,000,000 ms
+        val script = "$origin/assets/index~9d8c7b.js"
+        val site = Site(mutableMapOf(page to html, script to bundle(jwt)))
+        val shelf = Shelf()
+        assertEquals(jwt, AppleMusicTokenSource(page, origin, site::fetch, shelf) { clock }.token())
+        assertEquals(jwt, shelf.token)
+        assertEquals(2, site.hits.size)
+
+        // The next run of the app: nothing is fetched.
+        val next = AppleMusicTokenSource(page, origin, site::fetch, shelf) { clock }
+        assertEquals(jwt, next.token())
+        assertEquals(2, site.hits.size)
+
+        // A run after it has expired fetches the one the web player has by then.
+        val later = token(expSeconds = 9_000, id = "b")
+        site.pages[script] = bundle(later)
+        clock = 5_000_000L
+        assertEquals(later, AppleMusicTokenSource(page, origin, site::fetch, shelf) { clock }.token())
+        assertEquals(later, shelf.token)
+        assertEquals(4, site.hits.size)
+    }
+
+    @Test
+    fun `a kept token apple refuses is thrown away, and one that says no expiry is never kept`() = runBlocking {
+        val jwt = token(expSeconds = 2_000_000_000)
+        val script = "$origin/assets/index~9d8c7b.js"
+        val site = Site(mutableMapOf(page to html, script to bundle(token(expSeconds = 2_000_000_000, id = "b"))))
+        val shelf = Shelf(jwt)
+        val source = AppleMusicTokenSource(page, origin, site::fetch, shelf) { 1_000_000L }
+        assertEquals(jwt, source.token())
+        source.refused(jwt)
+        assertNull(shelf.token)
+        assertEquals(token(expSeconds = 2_000_000_000, id = "b"), source.token())
+
+        val undated = Shelf()
+        site.pages[script] = bundle(token(expSeconds = null))
+        AppleMusicTokenSource(page, origin, site::fetch, undated) { 1_000_000L }.token()
+        assertNull(undated.token)
+        // And something on the shelf that is not a token at all is simply not used.
+        val junk = Shelf("not a token")
+        site.pages[script] = bundle(jwt)
+        assertEquals(jwt, AppleMusicTokenSource(page, origin, site::fetch, junk) { 1_000_000L }.token())
+    }
+
+    @Test
     fun `callers that ask together share one fetch`() = runBlocking {
         val jwt = token(expSeconds = 2_000_000_000)
         val site = Site(mutableMapOf(page to html, "$origin/assets/index~9d8c7b.js" to bundle(jwt)))
@@ -133,5 +229,16 @@ class AppleMusicTokenTest {
         val results = List(8) { async { source.token() } }.awaitAll()
         assertEquals(List(8) { jwt }, results)
         assertEquals(2, site.hits.size)
+    }
+
+    @Test
+    fun `of several signed tokens the one issued to the web player is the catalogue token`() {
+        fun signed(issuer: String) =
+            b64("""{"alg":"ES256","typ":"JWT","kid":"KEY"}""") + "." + b64("""{"iss":"$issuer","exp":4102444800}""") + "." + "s".repeat(40)
+        val other = signed("SomethingElse")
+        val webPlay = signed("AMPWebPlay")
+        assertEquals(webPlay, AppleMusicTokenSource.tokenIn("""var a="$other",b="$webPlay";"""))
+        // With none that says so, the first signed token, as before.
+        assertEquals(other, AppleMusicTokenSource.tokenIn("""var a="$other";"""))
     }
 }

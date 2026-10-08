@@ -19,6 +19,7 @@ import com.shiny.music.utils.rememberPreference
 @Composable
 fun NowPlayingSettingsScreen(navController: NavController) {
     var motionCovers by rememberPreference(LiquidPrefs.MotionArtwork, true)
+    var appleCovers by rememberPreference(LiquidPrefs.AppleCovers, true)
     var showVolume by rememberPreference(LiquidPrefs.ShowVolume, true)
     var keepScreenOn by rememberPreference(KeepScreenOn, false)
 
@@ -26,11 +27,19 @@ fun NowPlayingSettingsScreen(navController: NavController) {
         item(key = "motion") {
             SettingsSection(
                 title = "Artwork",
-                footer = "Motion artwork is a short video some songs ship with. It is downloaded the " +
-                    "first time a song plays and never fetched while Data Saver is on.",
+                footer = "A song that arrives as a music video only has a frame of the video for " +
+                    "artwork; its real cover is looked up in Apple's catalogue by the song's name and " +
+                    "artist. Motion artwork is a short video some albums ship with. Both are kept " +
+                    "on this phone after the first time, and neither is fetched while Data Saver is on.",
             ) {
                 // "Artwork, atmosphere and motion" is not repeated here: it all lives in
                 // Appearance (with the live preview), and the listener found the duplicate row confusing.
+                SettingsToggleRow(
+                    title = "Official covers",
+                    subtitle = "Show the real cover, in full quality, for songs that only have a video still",
+                    checked = appleCovers,
+                    onCheckedChange = { appleCovers = it },
+                )
                 SettingsToggleRow(
                     title = "Animated covers",
                     subtitle = "Play a song's motion artwork in place of the cover when it has one",

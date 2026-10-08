@@ -1,8 +1,10 @@
 package com.shiny.music.ui.liquid.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -12,8 +14,10 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.ChevronLeft
 import androidx.compose.material.icons.rounded.DragHandle
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.LinkOff
 import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
@@ -52,8 +56,10 @@ import com.shiny.music.playback.queues.ListQueue
 import com.shiny.music.playback.queues.YouTubePlaylistQueue
 import com.shiny.music.ui.component.LocalMenuState
 import com.shiny.music.ui.liquid.ActivityIndicator
+import com.shiny.music.ui.liquid.EmptyState
 import com.shiny.music.ui.liquid.GlassIconButton
 import com.shiny.music.ui.liquid.GlassKind
+import com.shiny.music.ui.liquid.Liquid
 import com.shiny.music.ui.liquid.LiquidSegmentedControl
 import com.shiny.music.ui.liquid.MediaTile
 import com.shiny.music.ui.liquid.PageMargin
@@ -61,6 +67,7 @@ import com.shiny.music.ui.liquid.SectionHeader
 import com.shiny.music.ui.liquid.Shelf
 import com.shiny.music.ui.liquid.SongRow
 import com.shiny.music.ui.liquid.rememberLiquidActions
+import com.shiny.music.ui.liquid.statusBarHeight
 import com.shiny.music.ui.liquid.subtitleText
 import com.shiny.music.ui.menu.PlaylistMenu
 import com.shiny.music.ui.menu.SongMenu
@@ -71,6 +78,8 @@ import com.shiny.music.viewmodels.AutoPlaylistViewModel
 import com.shiny.music.viewmodels.CachePlaylistViewModel
 import com.shiny.music.viewmodels.LocalPlaylistViewModel
 import com.shiny.music.viewmodels.OnlinePlaylistViewModel
+import com.shiny.music.viewmodels.SharedPlaylistState
+import com.shiny.music.viewmodels.SharedPlaylistViewModel
 import com.shiny.music.viewmodels.TopPlaylistViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -243,6 +252,124 @@ fun LiquidOnlinePlaylistScreen(
                 }
             }
         }
+    }
+}
+
+// ---------------------------------------------------------------------------------------
+// Playlist opened from a shared link
+// ---------------------------------------------------------------------------------------
+
+@Composable
+fun LiquidSharedPlaylistScreen(
+    navController: NavController,
+    viewModel: SharedPlaylistViewModel = hiltViewModel(),
+) {
+    val actions = rememberLiquidActions(navController) ?: return
+    val playerConnection = actions.playerConnection
+    val isPlaying by playerConnection.isPlaying.collectAsState()
+    val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
+    val state by viewModel.state.collectAsState()
+    val inLibrary by viewModel.inLibrary.collectAsState()
+
+    val current = when (val loaded = state) {
+        SharedPlaylistState.Loading -> {
+            LiquidLoadingPage(onBack = { navController.navigateUp() })
+            return
+        }
+        is SharedPlaylistState.Failed -> {
+            SharedPlaylistUnavailable(gone = loaded.gone, onRetry = viewModel::load, onBack = { navController.navigateUp() })
+            return
+        }
+        is SharedPlaylistState.Ready -> loaded
+    }
+    val songs = current.songs
+    val covers = remember(songs) { songs.map { it.thumbnail }.distinct().take(4) }
+    val footerText = stringResource(R.string.liquid_songs_count, songs.size)
+
+    LiquidCollectionPage(
+        title = current.name,
+        subtitle = null,
+        meta = stringResource(R.string.liquid_playlist) + " · " + footerText,
+        artwork = null,
+        collage = covers,
+        toneSource = covers.firstOrNull(),
+        playEnabled = songs.isNotEmpty(),
+        onBack = { navController.navigateUp() },
+        onPlay = { actions.playSongItems(current.name, songs) },
+        onShuffle = { actions.playSongItems(current.name, songs, shuffle = true) },
+        onSmartShuffle = rememberSmartShuffle(
+            items = songs,
+            id = { it.id },
+            artist = { it.artists.firstOrNull()?.name },
+            play = { ordered -> actions.playPreShuffledItems(current.name, ordered) },
+        ),
+        topActions = { ink ->
+            // Added once, it is a playlist of the library like any other: the tick goes to it.
+            GlassIconButton(
+                icon = if (inLibrary) Icons.Rounded.Check else Icons.Rounded.Add,
+                onClick = {
+                    if (inLibrary) navController.navigate("local_playlist/${viewModel.libraryPlaylistId}")
+                    else viewModel.addToLibrary()
+                },
+                tint = ink.primary,
+                kind = GlassKind.Clear,
+            )
+        },
+    ) { ink ->
+        itemsIndexed(songs, key = { index, s -> "sp_${index}_${s.id}" }) { index, song ->
+            SongRow(
+                songId = song.id,
+                title = song.title,
+                subtitle = song.artists.joinToString { it.name },
+                artwork = song.thumbnail,
+                isActive = song.id == mediaMetadata?.id,
+                isPlaying = isPlaying,
+                explicit = song.explicit,
+                onClick = {
+                    if (song.id == mediaMetadata?.id) playerConnection.togglePlayPause()
+                    else actions.playSongItems(current.name, songs, startIndex = index)
+                },
+                onLongClick = { actions.menu(song) },
+                onMore = { actions.menu(song) },
+                titleColor = ink.primary,
+                subtitleColor = ink.secondary,
+                separatorColor = ink.separator,
+                accent = ink.primary,
+                showSeparator = index != songs.lastIndex,
+            )
+        }
+
+        collectionFooter(listOf(footerText), ink)
+    }
+}
+
+/** The link's playlist didn't load: it leads nowhere ([gone]), or the server wasn't reached. */
+@Composable
+private fun SharedPlaylistUnavailable(gone: Boolean, onRetry: () -> Unit, onBack: () -> Unit) {
+    val colors = Liquid.colors
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(colors.background)
+    ) {
+        EmptyState(
+            icon = Icons.Rounded.LinkOff,
+            title = stringResource(if (gone) R.string.shared_playlist_gone else R.string.shared_playlist_unreachable),
+            message = stringResource(if (gone) R.string.shared_playlist_gone_body else R.string.shared_playlist_unreachable_body),
+            modifier = Modifier.align(Alignment.Center),
+            actionLabel = if (gone) null else stringResource(R.string.retry),
+            onAction = if (gone) null else onRetry,
+        )
+        GlassIconButton(
+            icon = Icons.Rounded.ChevronLeft,
+            onClick = onBack,
+            iconSize = 28.dp,
+            tint = colors.label,
+            kind = GlassKind.Clear,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(top = statusBarHeight() + 4.dp, start = 14.dp),
+        )
     }
 }
 

@@ -9,6 +9,7 @@ export class HttpError extends Error {
 export const badRequest = (message) => new HttpError(400, "bad_request", message);
 export const unauthorized = () => new HttpError(401, "unauthorized", "Sign in first");
 export const notFound = (message = "Not found") => new HttpError(404, "not_found", message);
+export const tooLarge = () => new HttpError(413, "too_large", "That's too much to send");
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -34,11 +35,15 @@ export function preflight() {
   return new Response(null, { status: 204, headers: { ...CORS, "Access-Control-Max-Age": "86400" } });
 }
 
-export async function readJson(request) {
+/** [maxLength] is in characters; a body over it is refused before it is parsed. */
+export async function readJson(request, maxLength = Infinity) {
   const type = request.headers.get("Content-Type") || "";
   if (!type.includes("application/json")) throw badRequest("Expected a JSON body");
+  if (Number(request.headers.get("Content-Length")) > maxLength) throw tooLarge();
+  const raw = await request.text();
+  if (raw.length > maxLength) throw tooLarge();
   try {
-    const body = await request.json();
+    const body = JSON.parse(raw);
     if (body === null || typeof body !== "object" || Array.isArray(body)) throw new Error("not an object");
     return body;
   } catch {

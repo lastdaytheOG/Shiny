@@ -86,9 +86,17 @@ import com.shiny.music.ui.component.BottomSheetState
 import com.shiny.music.ui.component.ListDialog
 import com.shiny.music.ui.component.Material3MenuGroup
 import com.shiny.music.ui.component.Material3MenuItemData
+import com.shiny.music.ui.component.MenuGlyphs
+import com.shiny.music.ui.component.MenuGroupGap
+import com.shiny.music.ui.component.MenuHeader
+import com.shiny.music.ui.component.MenuHeaderArtwork
 import com.shiny.music.ui.component.NewAction
 import com.shiny.music.ui.component.NewActionGrid
 import com.shiny.music.ui.component.LocalBottomSheetPageState
+import com.shiny.music.ui.liquid.Artwork
+import com.shiny.music.ui.liquid.Liquid
+import com.shiny.music.ui.liquid.LiquidIcons
+import com.shiny.music.ui.liquid.artworkRadius
 import com.shiny.music.ui.utils.ShowMediaInfo
 import com.shiny.music.utils.rememberPreference
 import kotlinx.coroutines.Dispatchers
@@ -239,6 +247,22 @@ fun PlayerMenu(
         ),
     ) {
         item {
+            MenuHeader(
+                title = mediaMetadata.title,
+                subtitle = mediaMetadata.artists.joinToString { it.name },
+                detail = mediaMetadata.album?.title,
+                explicit = mediaMetadata.explicit,
+                atmosphere = mediaMetadata.thumbnailUrl,
+            ) {
+                Artwork(
+                    model = mediaMetadata.thumbnailUrl,
+                    modifier = Modifier.fillMaxSize(),
+                    shape = RoundedCornerShape(artworkRadius(MenuHeaderArtwork)),
+                )
+            }
+        }
+
+        item {
             NewActionGrid(
                 actions = listOf(
                     NewAction(
@@ -246,8 +270,7 @@ fun PlayerMenu(
                             Icon(
                                 painter = painterResource(R.drawable.playlist_add),
                                 contentDescription = null,
-                                modifier = Modifier.size(32.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                modifier = Modifier.size(24.dp),
                             )
                         },
                         text = stringResource(R.string.add_to_an_playlist),
@@ -260,8 +283,7 @@ fun PlayerMenu(
                             Icon(
                                 painter = painterResource(R.drawable.repeat_one),
                                 contentDescription = null,
-                                modifier = Modifier.size(32.dp),
-                                tint = if (repeatOne) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                modifier = Modifier.size(24.dp),
                             )
                         },
                         text = stringResource(R.string.repeat),
@@ -270,16 +292,17 @@ fun PlayerMenu(
                                 if (repeatOne) Player.REPEAT_MODE_OFF else Player.REPEAT_MODE_ONE
                         },
                         enabled = controlsEnabled,
-                        backgroundColor = if (repeatOne) MaterialTheme.colorScheme.primaryContainer else Color.Unspecified,
-                        contentColor = if (repeatOne) MaterialTheme.colorScheme.primary else Color.Unspecified,
+                        // Lit, the tile is the accent seen through the same glass as its neighbours,
+                        // brighter than them (a solid container read as a darker hole), and its
+                        // glyph and label stay white: accent type on an accent tile was under 3:1.
+                        backgroundColor = if (repeatOne) Liquid.colors.accent.copy(alpha = 0.32f) else Color.Unspecified,
                     ),
                     NewAction(
                         icon = {
                             Icon(
-                                painter = painterResource(R.drawable.share),
+                                imageVector = LiquidIcons.Share,
                                 contentDescription = null,
-                                modifier = Modifier.size(32.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                modifier = Modifier.size(24.dp),
                             )
                         },
                         text = stringResource(R.string.share),
@@ -290,16 +313,20 @@ fun PlayerMenu(
                     )
                 ),
                 columns = 3,
-                modifier = Modifier.padding(horizontal = 4.dp, vertical = 16.dp)
             )
         }
 
+        item { Spacer(modifier = Modifier.height(MenuGroupGap)) }
+
+        // Where the song comes from, and keeping it.
         item {
             Material3MenuGroup(
+                glyphs = MenuGlyphs.Leading,
                 items = buildList {
                     if (artists.isNotEmpty()) {
                         add(
                             Material3MenuItemData(
+                                chevron = true,
                                 title = { Text(text = stringResource(R.string.view_artist)) },
                                 description = {
                                     Text(
@@ -330,6 +357,7 @@ fun PlayerMenu(
                     if (mediaMetadata.album != null) {
                         add(
                             Material3MenuItemData(
+                                chevron = true,
                                 title = { Text(text = stringResource(R.string.view_album)) },
                                 description = {
                                     Text(
@@ -381,10 +409,20 @@ fun PlayerMenu(
                             }
                         )
                     )
+                }
+            )
+        }
 
-                    
+        item { Spacer(modifier = Modifier.height(MenuGroupGap)) }
+
+        // Other ways to hear it.
+        item {
+            Material3MenuGroup(
+                glyphs = MenuGlyphs.Leading,
+                items = buildList {
                     add(
                         Material3MenuItemData(
+                            chevron = true,
                             title = { Text(text = "Ambient Mode") },
                             icon = {
                                 Icon(
@@ -400,14 +438,89 @@ fun PlayerMenu(
                             }
                         )
                     )
+                    if (together != null) {
+                        add(
+                            Material3MenuItemData(
+                                chevron = true,
+                                title = { Text(text = stringResource(R.string.listen_together)) },
+                                description = {
+                                    Text(
+                                        text = when {
+                                            togetherState.isLive -> stringResource(
+                                                R.string.together_menu_live,
+                                                togetherState.listeners,
+                                                com.shiny.music.ui.liquid.together.spacedCode(togetherState.room?.code.orEmpty()),
+                                            )
+                                            togetherState.active -> stringResource(R.string.together_menu_connecting)
+                                            else -> stringResource(R.string.together_menu_start)
+                                        }
+                                    )
+                                },
+                                icon = {
+                                    Icon(
+                                        painter = painterResource(R.drawable.group),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                },
+                                onClick = {
+                                    if (!togetherState.active && together.serverConfigured) together.start()
+                                    onDismiss()
+                                    playerBottomSheetState.collapseSoft()
+                                    navController.navigate("together")
+                                }
+                            )
+                        )
+                        if (togetherState.isGuest && !togetherState.canControl) {
+                            add(
+                                Material3MenuItemData(
+                                    title = { Text(text = stringResource(R.string.together_vote_skip)) },
+                                    icon = {
+                                        Icon(
+                                            painter = painterResource(R.drawable.skip_next),
+                                            contentDescription = null,
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                    },
+                                    onClick = {
+                                        together.voteSkip()
+                                        onDismiss()
+                                    }
+                                )
+                            )
+                        }
+                        if (togetherState.following && togetherState.locallyPaused) {
+                            add(
+                                Material3MenuItemData(
+                                    title = { Text(text = stringResource(R.string.together_catch_up)) },
+                                    icon = {
+                                        Icon(
+                                            painter = painterResource(R.drawable.replay),
+                                            contentDescription = null,
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                    },
+                                    onClick = {
+                                        together.catchUp()
+                                        onDismiss()
+                                    }
+                                )
+                            )
+                        }
+                    }
                 }
             )
         }
 
-        item { Spacer(modifier = Modifier.height(12.dp)) }
+        item { Spacer(modifier = Modifier.height(MenuGroupGap)) }
 
+        // Keeping a copy of it.
         item {
+            // Every song exports: files on this device directly, streamed songs from their
+            // download or cache, or fetched fresh (see AudioExporter).
+            val exportable = com.shiny.music.export.AudioExporter.isEligible(mediaMetadata.id)
             Material3MenuGroup(
+                glyphs = MenuGlyphs.Leading,
                 items = listOf(
                     when (download?.state) {
                         Download.STATE_COMPLETED -> {
@@ -484,18 +597,7 @@ fun PlayerMenu(
                                 }
                             )
                         }
-                    }
-                )
-            )
-        }
-
-        item { Spacer(modifier = Modifier.height(12.dp)) }
-        item {
-            // Every song exports: files on this device directly, streamed songs from their
-            // download or cache, or fetched fresh (see AudioExporter).
-            val exportable = com.shiny.music.export.AudioExporter.isEligible(mediaMetadata.id)
-            Material3MenuGroup(
-                items = listOf(
+                    },
                     Material3MenuItemData(
                         title = { Text(text = "Export as MP3") },
                         description = { Text(text = if (exportable) "Save a copy and share it" else "Not available for this song") },
@@ -503,6 +605,7 @@ fun PlayerMenu(
                             Icon(
                                 painter = painterResource(R.drawable.file_export),
                                 contentDescription = null,
+                                modifier = Modifier.size(24.dp)
                             )
                         },
                         onClick = {
@@ -521,121 +624,44 @@ fun PlayerMenu(
                                 android.widget.Toast.makeText(context, com.shiny.music.export.AudioExporter.UNSUPPORTED_SOURCE, android.widget.Toast.LENGTH_SHORT).show()
                             }
                         },
-                    )
+                    ),
                 )
             )
         }
 
-        item { Spacer(modifier = Modifier.height(12.dp)) }
-
-        if (together != null) item {
-            Material3MenuGroup(
-                items = buildList {
-                    add(
-                        Material3MenuItemData(
-                            title = { Text(text = stringResource(R.string.listen_together)) },
-                            description = {
-                                Text(
-                                    text = when {
-                                        togetherState.isLive -> stringResource(
-                                            R.string.together_menu_live,
-                                            togetherState.listeners,
-                                            com.shiny.music.ui.liquid.together.spacedCode(togetherState.room?.code.orEmpty()),
-                                        )
-                                        togetherState.active -> stringResource(R.string.together_menu_connecting)
-                                        else -> stringResource(R.string.together_menu_start)
-                                    }
-                                )
-                            },
-                            icon = {
-                                Icon(
-                                    painter = painterResource(R.drawable.group),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            },
-                            onClick = {
-                                if (!togetherState.active && together.serverConfigured) together.start()
-                                onDismiss()
-                                playerBottomSheetState.collapseSoft()
-                                navController.navigate("together")
-                            }
-                        )
-                    )
-                    if (togetherState.isGuest && !togetherState.canControl) {
-                        add(
-                            Material3MenuItemData(
-                                title = { Text(text = stringResource(R.string.together_vote_skip)) },
-                                icon = {
-                                    Icon(
-                                        painter = painterResource(R.drawable.skip_next),
-                                        contentDescription = null,
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                },
-                                onClick = {
-                                    together.voteSkip()
-                                    onDismiss()
-                                }
-                            )
-                        )
-                    }
-                    if (togetherState.following && togetherState.locallyPaused) {
-                        add(
-                            Material3MenuItemData(
-                                title = { Text(text = stringResource(R.string.together_catch_up)) },
-                                icon = {
-                                    Icon(
-                                        painter = painterResource(R.drawable.replay),
-                                        contentDescription = null,
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                },
-                                onClick = {
-                                    together.catchUp()
-                                    onDismiss()
-                                }
-                            )
-                        )
-                    }
-                }
-            )
-        }
-
-        item { Spacer(modifier = Modifier.height(12.dp)) }
+        item { Spacer(modifier = Modifier.height(MenuGroupGap)) }
 
         item {
             Material3MenuGroup(
-                items = buildList {
-                    add(
-                        Material3MenuItemData(
-                            title = { Text(text = stringResource(R.string.details)) },
-                            description = { Text(text = stringResource(R.string.details_desc)) },
-                            icon = {
-                                Icon(
-                                    painter = painterResource(R.drawable.info),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            },
-                            onClick = {
-                                // The id is read now, from the song this menu was opened
-                                // for — not from whatever is playing when the page appears.
-                                val song = mediaMetadata
-                                onDismiss()
-                                bottomSheetPageState.show {
-                                    ShowMediaInfo(song.id, fallback = song)
-                                }
+                glyphs = MenuGlyphs.Leading,
+                items = listOf(
+                    Material3MenuItemData(
+                        chevron = true,
+                        title = { Text(text = stringResource(R.string.details)) },
+                        description = { Text(text = stringResource(R.string.details_desc)) },
+                        icon = {
+                            Icon(
+                                painter = painterResource(R.drawable.info),
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        },
+                        onClick = {
+                            // The id is read now, from the song this menu was opened
+                            // for — not from whatever is playing when the page appears.
+                            val song = mediaMetadata
+                            onDismiss()
+                            bottomSheetPageState.show {
+                                ShowMediaInfo(song.id, fallback = song)
                             }
-                        )
+                        }
                     )
-
-
-                }
+                )
             )
         }
     }
 }
+
 
 @Composable
 fun TempoPitchDialog(onDismiss: () -> Unit) {

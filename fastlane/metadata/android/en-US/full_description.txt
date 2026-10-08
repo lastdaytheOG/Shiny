@@ -1,11 +1,33 @@
-Shiny Music delivers a seamless, premium listening experience by leveraging YouTube Music's vast library — without the ads. It adds powerful extras including offline downloads, real-time synchronized lyrics, and environment-aware music recognition.
+Shiny is a free music player for Android, designed like Apple Music. It plays the YouTube Music catalogue with no ads and no account, and it is open source.
 
-Features:
-* Ad-Free — Stream without any interruptions.
-* Seamless Playback — Switch effortlessly between audio-only and video modes.
-* Background Playback — Listen while using other apps or with the screen off.
-* Offline Mode — Download tracks, albums, and playlists via a dedicated download manager.
-* Shiny Find — Identify songs playing around you using advanced audio recognition.
-* Multiple Lyric Animations — Choose from various lyric display styles with word-by-word synchronization.
-* Smart Recommendations — Personalized suggestions based on your listening history.
-* Shiny Brain — An intelligent, on-device engine that analyzes your listening momentum and auto-injects perfectly aligned tracks into your queue.
+LISTEN
+• Now Playing built around the artwork, with Lyrics and Up Next one swipe away
+• Lyrics that fill word by word, in time with the music
+• Background playback, crossfade, gapless albums and volume levelling
+• An equaliser with 8D audio, slowed, nightcore and reverb
+• Smart Shuffle on every playlist
+• Android Auto and four home-screen widgets
+
+DISCOVER
+• A Home that learns what you like, with mixes for the time of day
+• Charts for your country and the world
+• Recognise the song playing around you from Search, a widget or Quick Settings
+• Listening stats
+
+YOUR LIBRARY
+• Download songs, albums and playlists to a folder you choose
+• Play the audio files already on your phone
+• Import your Spotify playlists and Liked Songs
+• Export as MP3, back up and restore
+
+TOGETHER
+• Listen Together: friends join with a code, a link or a QR code and hear the same moment
+• One shared queue with votes, reactions and chat
+• Friends, a profile page and a Discord status that opens the song in Shiny
+
+LOOK AND FEEL
+• Liquid Glass design with light, dark and AMOLED black
+• Pick an accent colour or take it from the artwork
+• 50+ interface languages
+
+Shiny is free software under the GPL-3.0. It is not affiliated with Google, YouTube, Spotify or Discord.

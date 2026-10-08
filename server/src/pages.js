@@ -11,8 +11,8 @@ main{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:co
 .art{width:min(72vw,300px);aspect-ratio:1;border-radius:14px;object-fit:cover;background:#1c1c1e;box-shadow:0 24px 64px rgba(0,0,0,.6)}
 .art.round{border-radius:50%;width:min(40vw,140px)}
 .eyebrow{margin:0;font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--secondary)}
-h1{margin:4px 0 0;font-size:clamp(22px,5.5vw,30px);line-height:1.15;font-weight:700;letter-spacing:-.02em;max-width:24ch;overflow-wrap:anywhere}
-.sub{margin:6px 0 0;font-size:17px;color:var(--secondary);max-width:30ch;overflow-wrap:anywhere}
+h1{margin:4px auto 0;font-size:clamp(22px,5.5vw,30px);line-height:1.15;font-weight:700;letter-spacing:-.02em;max-width:24ch;overflow-wrap:anywhere}
+.sub{margin:6px auto 0;font-size:17px;color:var(--secondary);max-width:30ch;overflow-wrap:anywhere}
 .actions{display:flex;flex-direction:column;gap:10px;width:min(100%,320px)}
 .btn{display:block;padding:14px 18px;border-radius:14px;background:var(--fill);color:#fff;font-weight:600;text-decoration:none;
   -webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px)}
@@ -23,6 +23,14 @@ h1{margin:4px 0 0;font-size:clamp(22px,5.5vw,30px);line-height:1.15;font-weight:
 .times{display:flex;justify-content:space-between;margin-top:6px;font-size:12px;color:var(--secondary);font-variant-numeric:tabular-nums}
 .muted{margin:0;color:var(--secondary);font-size:14px}
 code{font:13px ui-monospace,Menlo,Consolas,monospace;background:var(--fill);padding:2px 6px;border-radius:6px}
+.art.collage{display:grid;grid-template-columns:1fr 1fr;overflow:hidden}
+.art.collage img{display:block;width:100%;aspect-ratio:1;object-fit:cover}
+.tracks{list-style:none;margin:0;padding:0;width:min(100%,560px);text-align:left}
+.tracks a{display:flex;align-items:center;gap:12px;padding:8px 0;color:inherit;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.1)}
+.tracks img,.tracks i{flex:none;width:44px;height:44px;border-radius:6px;object-fit:cover;background:#1c1c1e}
+.tracks div{flex:1;min-width:0}
+.tracks span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tracks .who{font-size:14px;color:var(--secondary)}
 footer{font-size:13px;color:var(--secondary)}
 footer a{color:inherit}
 [hidden]{display:none!important}
@@ -153,6 +161,67 @@ export function linkPage({ kind, appPath, webUrl }, env) {
     script: `${APP_LINK_SCRIPT}
 const open = document.getElementById("open");
 open.href = appLink(${safeJson(appPath)}, ${safeJson(env.APP_DOWNLOAD_URL)});
+open.hidden = !isAndroid;`,
+  });
+}
+
+// How many songs the page lists; the app shows them all.
+const SHARED_SONGS_SHOWN = 200;
+// YouTube plays a list of video ids as a playlist, up to this many.
+const YOUTUBE_LIST_MAX = 50;
+
+/** Google's image hosts size artwork by a suffix: ask for what the page shows, not what the app stored. */
+const sized = (url, px) => url.replace(/=w\d+-h\d+[^/]*$/, `=w${px}-h${px}-l90-rj`);
+
+/** A playlist shared from the app: its songs, and a way to play them with or without Shiny. */
+export function sharedPlaylistPage(playlist, env) {
+  const { songs } = playlist;
+  const count = `${songs.length} ${songs.length === 1 ? "song" : "songs"}`;
+  const covers = [...new Set(songs.map((song) => song.thumbnail).filter(Boolean))].slice(0, 4);
+  const names = [...new Set(songs.flatMap((song) => song.artists.map((artist) => artist.name)))];
+  const who = names.slice(0, 3).join(", ") + (names.length > 3 ? " and more" : "");
+  const art =
+    covers.length === 4
+      ? `<div class="art collage">${covers.map((cover) => `<img src="${escapeHtml(sized(cover, 300))}" alt="">`).join("")}</div>`
+      : covers.length > 0
+        ? `<img class="art" src="${escapeHtml(sized(covers[0], 600))}" alt="">`
+        : "";
+  const rows = songs
+    .slice(0, SHARED_SONGS_SHOWN)
+    .map((song) => {
+      const cover = song.thumbnail ? `<img src="${escapeHtml(sized(song.thumbnail, 96))}" alt="" loading="lazy">` : "<i></i>";
+      const artist = song.artists.map((each) => each.name).join(", ");
+      return `<li><a href="/watch?v=${song.id}">${cover}<div><span>${escapeHtml(song.title)}</span>${artist ? `<span class="who">${escapeHtml(artist)}</span>` : ""}</div></a></li>`;
+    })
+    .join("\n");
+  const youtube = `https://www.youtube.com/watch_videos?video_ids=${songs.slice(0, YOUTUBE_LIST_MAX).map((song) => song.id).join(",")}`;
+
+  return layout({
+    title: `${playlist.name} · Shiny`,
+    description: who ? `${count} · ${who}` : count,
+    image: covers[0] ? sized(covers[0], 600) : null,
+    body: `${covers[0] ? `<div class="backdrop" style="background-image:url('${escapeHtml(sized(covers[0], 300))}')"></div>` : ""}
+<main>
+  ${art}
+  <div>
+    <p class="eyebrow">Playlist</p>
+    <h1>${escapeHtml(playlist.name)}</h1>
+    <p class="sub">${count}</p>
+  </div>
+  <div class="actions">
+    <a class="btn primary" id="open" hidden>Open in Shiny</a>
+    <a class="btn" href="${escapeHtml(youtube)}">${songs.length > YOUTUBE_LIST_MAX ? `Play the first ${YOUTUBE_LIST_MAX} on YouTube` : "Play on YouTube"}</a>
+    <a class="btn" href="${escapeHtml(env.APP_DOWNLOAD_URL)}">Get Shiny</a>
+  </div>
+  <ol class="tracks">
+${rows}
+  </ol>
+  ${songs.length > SHARED_SONGS_SHOWN ? `<p class="muted">and ${songs.length - SHARED_SONGS_SHOWN} more in Shiny</p>` : ""}
+  ${footer(env)}
+</main>`,
+    script: `${APP_LINK_SCRIPT}
+const open = document.getElementById("open");
+open.href = appLink(${safeJson(`p/${playlist.id}`)}, ${safeJson(env.APP_DOWNLOAD_URL)});
 open.hidden = !isAndroid;`,
   });
 }

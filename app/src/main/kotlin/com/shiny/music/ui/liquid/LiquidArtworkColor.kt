@@ -1,5 +1,6 @@
 package com.shiny.music.ui.liquid
 
+import android.content.Context
 import android.util.LruCache
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
@@ -39,35 +40,45 @@ private val toneCache = LruCache<String, ArtworkTones>(160)
 @Composable
 fun rememberArtworkTones(url: String?, fallback: ArtworkTones): ArtworkTones {
     val context = LocalContext.current
-    var tones by remember(url) { mutableStateOf(url?.let { toneCache.get(it) }) }
+    var tones by remember(url) { mutableStateOf(url?.let(::cachedArtworkTones)) }
     LaunchedEffect(url) {
         if (url == null || tones != null) return@LaunchedEffect
-        val extracted = withContext(Dispatchers.IO) {
-            runCatching {
-                val request = ImageRequest.Builder(context)
-                    .data(url)
-                    .size(112, 112)
-                    .allowHardware(false)
-                    .build()
-                val bitmap = context.imageLoader.execute(request).image?.toBitmap() ?: return@runCatching null
-                val palette = Palette.from(bitmap).maximumColorCount(16).generate()
-                val deepSwatch = palette.darkVibrantSwatch ?: palette.darkMutedSwatch ?: palette.dominantSwatch
-                    ?: palette.mutedSwatch
-                val vividSwatch = palette.vibrantSwatch ?: palette.lightVibrantSwatch ?: palette.dominantSwatch
-                val deep = deepSwatch?.rgb?.let { Color(it) } ?: return@runCatching null
-                val vivid = vividSwatch?.rgb?.let { Color(it) } ?: deep
-                ArtworkTones(deep = deepen(deep), vivid = vivid)
-            }.getOrNull()
-        }
-        if (extracted != null) {
-            toneCache.put(url, extracted)
-            tones = extracted
-        }
+        loadArtworkTones(context, url)?.let { tones = it }
     }
     val target = tones ?: fallback
     val deep by animateColorAsState(target.deep, tween(450), label = "toneDeep")
     val vivid by animateColorAsState(target.vivid, tween(450), label = "toneVivid")
     return ArtworkTones(deep, vivid)
+}
+
+/** The tones already extracted for [url], if it has been read before. Never touches the image. */
+fun cachedArtworkTones(url: String): ArtworkTones? = toneCache.get(url)
+
+/**
+ * Reads the tones of [url] from a tiny decode, off the main thread, and remembers them. Null
+ * when the image cannot be read or has no colour worth taking.
+ */
+suspend fun loadArtworkTones(context: Context, url: String): ArtworkTones? {
+    cachedArtworkTones(url)?.let { return it }
+    val extracted = withContext(Dispatchers.IO) {
+        runCatching {
+            val request = ImageRequest.Builder(context)
+                .data(url)
+                .size(112, 112)
+                .allowHardware(false)
+                .build()
+            val bitmap = context.imageLoader.execute(request).image?.toBitmap() ?: return@runCatching null
+            val palette = Palette.from(bitmap).maximumColorCount(16).generate()
+            val deepSwatch = palette.darkVibrantSwatch ?: palette.darkMutedSwatch ?: palette.dominantSwatch
+                ?: palette.mutedSwatch
+            val vividSwatch = palette.vibrantSwatch ?: palette.lightVibrantSwatch ?: palette.dominantSwatch
+            val deep = deepSwatch?.rgb?.let { Color(it) } ?: return@runCatching null
+            val vivid = vividSwatch?.rgb?.let { Color(it) } ?: deep
+            ArtworkTones(deep = deepen(deep), vivid = vivid)
+        }.getOrNull()
+    }
+    if (extracted != null) toneCache.put(url, extracted)
+    return extracted
 }
 
 /** Pulls a colour down until white text on it clears a comfortable contrast. */

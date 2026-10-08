@@ -11,6 +11,7 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.parameter
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
@@ -18,6 +19,7 @@ import io.ktor.serialization.kotlinx.KotlinxSerializationConverter
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -295,15 +297,15 @@ object AppleMusicCanvasProvider {
                 // 2. Check for immediate motion in search result
                 val ev = attributes["editorialVideo"]?.jsonObject
                 if (ev != null) {
-                    val hlsUrl = extractEditorialVideoUrl(ev)
-                    if (!hlsUrl.isNullOrBlank()) {
-                        val name = attributes["name"]?.jsonPrimitive?.contentOrNull
-                        val collName = attributes["collectionName"]?.jsonPrimitive?.contentOrNull
-                        // If this is a song result, use song name as name and collection as albumName
-                        // If this is an album result, use album name as both name and albumName
-                        val resolvedAlbumName = if (type == "songs") collName else name
+                    val name = attributes["name"]?.jsonPrimitive?.contentOrNull
+                    val collName = attributes["collectionName"]?.jsonPrimitive?.contentOrNull
+                    // If this is a song result, use song name as name and collection as albumName
+                    // If this is an album result, use album name as both name and albumName
+                    val resolvedAlbumName = if (type == "songs") collName else name
+                    val found = CanvasArtwork(name, resultArtistName, targetAlbumId, albumName = resolvedAlbumName, animated = squareVideo(ev)).withTall(ev)
+                    if (found.hasMotion) {
                         AppleCanvasLogger.d("Found direct editorialVideo for $name (ID: $targetAlbumId)")
-                        return@runCatching CanvasArtwork(name, resultArtistName, targetAlbumId, albumName = resolvedAlbumName, animated = hlsUrl)
+                        return@runCatching found
                     }
                 }
 
@@ -381,10 +383,10 @@ object AppleMusicCanvasProvider {
             // Strategy 1: editorialVideo
             val ev = attributes?.get("editorialVideo")?.jsonObject
             if (ev != null) {
-                val url = extractEditorialVideoUrl(ev)
-                if (!url.isNullOrBlank()) {
+                val found = CanvasArtwork(finalTitle, finalArtist, albumId, albumName = albumName, animated = squareVideo(ev)).withTall(ev)
+                if (found.hasMotion) {
                     AppleCanvasLogger.d("found editorialVideo for $finalTitle (album: $albumName, id: $albumId)")
-                    return@runCatching CanvasArtwork(finalTitle, finalArtist, albumId, albumName = albumName, animated = url)
+                    return@runCatching found
                 }
             }
 
@@ -396,27 +398,212 @@ object AppleMusicCanvasProvider {
         }.getOrNull()
     }
 
-    private fun extractEditorialVideoUrl(ev: JsonObject): String? {
-        val assets = listOf(
-            ev["motionDetailRaw"]?.jsonObject,
-            ev["motionDetailSquare"]?.jsonObject,
-            ev["motionDetailTall"]?.jsonObject,
-            ev["motionDetailStatic"]?.jsonObject // Fallback
-        ).filterNotNull()
-        
-        for (asset in assets) {
-            // Try different possible keys for the video URL
-            val video = asset["video"]?.jsonPrimitive?.contentOrNull
-                ?: asset["videoUrl"]?.jsonPrimitive?.contentOrNull
-                ?: asset["hlsUrl"]?.jsonPrimitive?.contentOrNull
-                ?: asset["url"]?.jsonPrimitive?.contentOrNull
-            
-            if (!video.isNullOrBlank()) return video
-        }
+    /**
+     * The album's square motion artwork, under its current name and then its older one. Only
+     * the square one: a few albums have the portrait clip alone, and that is not put in the
+     * square's place, where it could only be shown cut down to a square.
+     */
+    private fun squareVideo(ev: JsonObject): String? = videoOf(ev, "motionSquareVideo1x1", "motionDetailSquare")
 
-        AppleCanvasLogger.d("editorialVideo found but no video link in assets: ${ev.keys}")
-        return null
+    /** A value's text, or null when it is not there or is not a plain value. Never throws. */
+    private fun JsonObject.text(name: String): String? = (this[name] as? JsonPrimitive)?.contentOrNull
+
+    /** The address of the video in the first of the assets named by [keys] that has one. */
+    private fun videoOf(ev: JsonObject, vararg keys: String): String? =
+        keys.firstNotNullOfOrNull { key -> (ev[key] as? JsonObject)?.text("video")?.takeIf { it.isNotBlank() } }
+
+    /**
+     * Adds the album's portrait motion artwork, if it has one: the video, a still frame of it
+     * and its shape. The catalogue names it `motionTallVideo3x4` (or, before that,
+     * `motionDetailTall`), and gives the still as an address with `{w}x{h}` in it.
+     */
+    private fun CanvasArtwork.withTall(ev: JsonObject): CanvasArtwork {
+        val key = listOf("motionTallVideo3x4", "motionDetailTall").firstOrNull { videoOf(ev, it) != null } ?: return this
+        val video = videoOf(ev, key) ?: return this
+        val frame = (ev[key] as? JsonObject)?.get("previewFrame") as? JsonObject
+        val width = frame?.text("width")?.toFloatOrNull()
+        val height = frame?.text("height")?.toFloatOrNull()
+        return copy(
+            tallAnimated = video,
+            tallStill = frame?.text("url")?.takeIf { "{w}" in it },
+            tallAspect = if (width != null && height != null && height > 0f) width / height else null,
+        )
     }
+
+    /**
+     * The motion artwork of the album with this catalogue id: the direct question, with no
+     * searching and no guessing which album was meant. Null means the album has none, which is
+     * the ordinary case. Throws when the catalogue could not be asked (no token, no
+     * connection, a refusal), so that "could not ask" is never mistaken for "has none".
+     */
+    suspend fun albumMotion(albumId: String, storefront: String): CanvasArtwork? {
+        suspend fun ask(token: String) = client.get("$AMP_BASE_URL/v1/catalog/$storefront/albums/$albumId") {
+            header("Authorization", "Bearer $token")
+            header("Origin", "https://music.apple.com")
+            header("Referer", "https://music.apple.com/")
+            parameter("extend", "editorialVideo")
+        }
+        val token = com.shiny.music.canvas.AppleMusicToken.get() ?: error("No Apple Music token")
+        var response = ask(token)
+        if (response.status == HttpStatusCode.Unauthorized) {
+            // The token was withdrawn before its own expiry: the web player's current one is
+            // fetched and the question put once more.
+            AppleCanvasLogger.w("album $albumId: token refused (401); fetching the web player's current one")
+            com.shiny.music.canvas.AppleMusicToken.refused(token)
+            response = ask(com.shiny.music.canvas.AppleMusicToken.get() ?: error("Apple Music token refused"))
+        }
+        if (response.status == HttpStatusCode.NotFound) return null
+        check(response.status == HttpStatusCode.OK) { "Album $albumId: ${response.status}" }
+        // An answer in a shape this does not know is "could not ask", not "has none": if Apple
+        // changes the reply, nothing is remembered wrongly and nothing else is affected.
+        val data = response.body<JsonObject>()["data"] as? JsonArray ?: error("Album $albumId: no data in the reply")
+        val attributes = (data.firstOrNull() as? JsonObject)?.get("attributes") as? JsonObject ?: return null
+        val ev = attributes["editorialVideo"] as? JsonObject ?: return null
+        val name = attributes.text("name")
+        val found = CanvasArtwork(
+            name = name,
+            artist = attributes.text("artistName"),
+            albumId = albumId,
+            albumName = name,
+            animated = squareVideo(ev),
+        ).withTall(ev)
+        if (!found.hasMotion) return null
+        // The plain file behind one size of each clip: what plays if the stream will not.
+        return found.copy(
+            videoUrl = found.animated?.let { runCatching { directVideo(it, sharp = false) }.getOrNull() },
+            tallVideoUrl = found.tallAnimated?.let { runCatching { directVideo(it, sharp = true) }.getOrNull() },
+        )
+    }
+
+    /**
+     * The MP4 behind one H.264 size of an HLS motion clip, or null: the size nearest a cover on
+     * a phone, or with [sharp] the size that fills a phone's width (the portrait clip is drawn
+     * that wide).
+     */
+    private suspend fun directVideo(hlsUrl: String, sharp: Boolean): String? {
+        val master = client.get(hlsUrl).takeIf { it.status == HttpStatusCode.OK }?.bodyAsText() ?: return null
+        val variants = com.shiny.music.canvas.HlsMotion.variants(hlsUrl, master)
+        val variant = (if (sharp) com.shiny.music.canvas.HlsMotion.sharp(variants) else com.shiny.music.canvas.HlsMotion.standard(variants))
+            ?: return com.shiny.music.canvas.HlsMotion.directVideoUrl(hlsUrl, master)
+        val playlist = client.get(variant.playlistUrl).takeIf { it.status == HttpStatusCode.OK }?.bodyAsText() ?: return null
+        return com.shiny.music.canvas.HlsMotion.directVideoUrl(variant.playlistUrl, playlist)
+    }
+
+    /** A song as Apple Music's own search lists it. */
+    data class SongHit(
+        val songId: String,
+        /** The album it is on: what the album's motion artwork is asked for by. */
+        val albumId: String?,
+        val name: String,
+        val artistName: String,
+        val albumName: String,
+        val durationMillis: Long,
+        /** The cover's address, with `{w}x{h}` to fill in. */
+        val artworkTemplate: String,
+        val isrc: String?,
+        val explicit: Boolean,
+        /** Who the album is by: "Various Artists" for a compilation the song was only gathered onto. */
+        val albumArtistName: String = "",
+    )
+
+    /**
+     * The songs Apple Music's own search finds for [term]: the search the web player uses,
+     * which lists every release there is. The public iTunes search does not: it leaves out
+     * every explicit song and album, so a song with swearing in it is either not found there
+     * at all or found only on the "clean" copy of its album, which is often the copy Apple
+     * gave no motion artwork to.
+     *
+     * Null when it could not be asked (no token, a refusal, no connection); never throws.
+     */
+    suspend fun searchSongs(term: String, storefront: String): List<SongHit>? = runCatching {
+        suspend fun ask(token: String) = client.get("$AMP_BASE_URL/v1/catalog/$storefront/search") {
+            header("Authorization", "Bearer $token")
+            header("Origin", "https://music.apple.com")
+            header("Referer", "https://music.apple.com/")
+            parameter("term", term)
+            parameter("types", "songs")
+            parameter("limit", "25")
+            // Each song with the album it is on: its id, and who the album is by.
+            parameter("include[songs]", "albums")
+        }
+        val token = com.shiny.music.canvas.AppleMusicToken.get() ?: return@runCatching null
+        var response = ask(token)
+        if (response.status == HttpStatusCode.Unauthorized) {
+            AppleCanvasLogger.w("search: token refused (401); fetching the web player's current one")
+            com.shiny.music.canvas.AppleMusicToken.refused(token)
+            response = ask(com.shiny.music.canvas.AppleMusicToken.get() ?: return@runCatching null)
+        }
+        if (response.status != HttpStatusCode.OK) return@runCatching null
+        val results = response.body<JsonObject>()["results"] as? JsonObject ?: return@runCatching null
+        // No `songs` at all is how the search says it found none.
+        val songs = ((results["songs"] as? JsonObject)?.get("data") as? JsonArray).orEmpty()
+        songs.mapNotNull { item ->
+            val song = item as? JsonObject ?: return@mapNotNull null
+            val attributes = song["attributes"] as? JsonObject ?: return@mapNotNull null
+            val template = (attributes["artwork"] as? JsonObject)?.text("url") ?: return@mapNotNull null
+            val album = (((song["relationships"] as? JsonObject)?.get("albums") as? JsonObject)?.get("data") as? JsonArray)
+                ?.firstOrNull() as? JsonObject
+            SongHit(
+                songId = song.text("id").orEmpty(),
+                // Failing the album itself, a song's address is `…/album/<name>/<album id>?i=<song id>`.
+                albumId = album?.text("id")?.takeIf { it.isNotBlank() }
+                    ?: attributes.text("url")?.substringAfter("/album/", "")?.substringBefore('?')?.substringAfterLast('/')
+                        ?.takeIf { it.isNotEmpty() && it.all(Char::isDigit) },
+                albumArtistName = (album?.get("attributes") as? JsonObject)?.text("artistName").orEmpty(),
+                name = attributes.text("name").orEmpty(),
+                artistName = attributes.text("artistName").orEmpty(),
+                albumName = attributes.text("albumName").orEmpty(),
+                durationMillis = attributes.text("durationInMillis")?.toLongOrNull() ?: 0,
+                artworkTemplate = template,
+                isrc = attributes.text("isrc"),
+                explicit = attributes.text("contentRating") == "explicit",
+            )
+        }
+    }.onFailure {
+        if (it is CancellationException) throw it
+    }.getOrNull()
+
+    /** A song in the catalogue, as far as its cover goes, and the album it is on. */
+    data class CatalogSong(
+        val songId: String,
+        val artworkTemplate: String,
+        val name: String,
+        val artistName: String,
+        val albumId: String? = null,
+        val albumName: String? = null,
+    )
+
+    /**
+     * The catalogue's song for a recording's [isrc]: an exact identity, with no searching or
+     * guessing. Null when there is no token, no such recording, or no connection.
+     */
+    suspend fun songByIsrc(isrc: String, storefront: String = "us"): CatalogSong? = runCatching {
+        val token = com.shiny.music.canvas.AppleMusicToken.get() ?: return@runCatching null
+        val response = client.get("$AMP_BASE_URL/v1/catalog/$storefront/songs") {
+            header("Authorization", "Bearer $token")
+            header("Origin", "https://music.apple.com")
+            header("Referer", "https://music.apple.com/")
+            parameter("filter[isrc]", isrc)
+            // With the album it is on: that id is what its motion artwork is asked for by.
+            parameter("include", "albums")
+        }
+        if (response.status != HttpStatusCode.OK) return@runCatching null
+        val song = response.body<JsonObject>()["data"]?.jsonArray?.firstOrNull()?.jsonObject ?: return@runCatching null
+        val attributes = song["attributes"]?.jsonObject ?: return@runCatching null
+        val template = attributes["artwork"]?.jsonObject?.get("url")?.jsonPrimitive?.contentOrNull ?: return@runCatching null
+        val album = (((song["relationships"] as? JsonObject)?.get("albums") as? JsonObject)?.get("data") as? JsonArray)
+            ?.firstOrNull() as? JsonObject
+        CatalogSong(
+            songId = song["id"]?.jsonPrimitive?.contentOrNull.orEmpty(),
+            artworkTemplate = template,
+            name = attributes["name"]?.jsonPrimitive?.contentOrNull.orEmpty(),
+            artistName = attributes["artistName"]?.jsonPrimitive?.contentOrNull.orEmpty(),
+            albumId = album?.text("id")?.takeIf { it.isNotBlank() },
+            albumName = attributes.text("albumName"),
+        )
+    }.onFailure {
+        if (it is CancellationException) throw it
+    }.getOrNull()
 
     private fun cacheKey(prefix: String, vararg parts: String): String {
         return "$prefix|" + parts.joinToString("|") { it.trim().lowercase(Locale.ROOT) }

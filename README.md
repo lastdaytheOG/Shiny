@@ -183,7 +183,7 @@ Built with Kotlin, Jetpack Compose, Media3 (ExoPlayer), Room, Hilt, Ktor, OkHttp
 - **Use it lawfully.** The software is provided "as is", without warranty. You are responsible for following your local laws and the terms of the services you use.
 - **Not affiliated** with or endorsed by Google, YouTube, Spotify, Discord or Shazam. All trademarks belong to their owners.
 
-Questions about the code: [hello@shinymusic.fun](mailto:hello@shinymusic.fun)
+Questions about the code: [hello@shinymusic.in](mailto:hello@shinymusic.in)
 
 ---
 

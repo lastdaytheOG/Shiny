@@ -18,6 +18,9 @@ object ShinyLinks {
 
     fun playlist(playlistId: String) = "$WEB_BASE/playlist?list=$playlistId"
 
+    /** A playlist whose songs the server keeps ([SharedPlaylist]), for one that isn't on YouTube Music. */
+    fun sharedPlaylist(id: String) = "$WEB_BASE/p/$id"
+
     fun channel(channelId: String) = "$WEB_BASE/channel/$channelId"
 
     /** A Listen Together invite: short enough to read out, and it opens the app. */

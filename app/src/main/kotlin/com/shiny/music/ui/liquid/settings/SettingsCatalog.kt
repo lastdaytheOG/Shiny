@@ -48,7 +48,7 @@ fun settingsCatalog(): List<SettingsEntry> = listOf(
     SettingsEntry("Light or dark", "Appearance", "settings/appearance", "appearance light dark automatic theme mode"),
     SettingsEntry("AMOLED black", "Appearance", "settings/appearance", "amoled oled pure true black theme"),
     SettingsEntry("Accent colour", "Appearance", "settings/appearance", "accent tint colour color theme artwork dynamic monochrome mono graphite custom"),
-    SettingsEntry("Artwork", "Appearance", "settings/appearance", "now playing cover full screen fullscreen square card immersive artwork presentation"),
+    SettingsEntry("Artwork", "Appearance", "settings/appearance", "now playing cover square card immersive artwork presentation poster portrait edge to edge"),
     SettingsEntry("Atmosphere", "Appearance", "settings/appearance", "now playing background artwork colour color depth immersive soft"),
     SettingsEntry("Artwork glow", "Appearance", "settings/appearance", "glow bloom halo light ambient cover"),
     SettingsEntry("Material", "Appearance", "settings/appearance", "glass liquid blur frosted clear solid surfaces"),

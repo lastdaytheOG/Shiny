@@ -101,7 +101,6 @@ val ShinyServices: List<ServiceEndpoint> = listOf(
     ServiceEndpoint("Apple Music catalogue", ServiceGroup.ARTWORK, "https://amp-api.music.apple.com/"),
     ServiceEndpoint("Apple Music web player", ServiceGroup.ARTWORK, "https://music.apple.com/"),
     ServiceEndpoint("Tidal", ServiceGroup.ARTWORK, "https://api.tidal.com/"),
-    ServiceEndpoint("Shiny canvas", ServiceGroup.ARTWORK, "https://canvas.shinymusic.fun/"),
     ServiceEndpoint("Artist videos", ServiceGroup.ARTWORK, "https://artwork-archivetune.koiiverse.cloud/"),
 
     ServiceEndpoint("Shazam", ServiceGroup.OTHER, "https://amp.shazam.com/"),
