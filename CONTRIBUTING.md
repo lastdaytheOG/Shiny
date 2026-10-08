@@ -31,7 +31,7 @@ Three documents describe how Shiny is put together. Read the one that matches yo
 | If you're changing | Read |
 | :-- | :-- |
 | Anything on screen | [DESIGN.md](DESIGN.md): the Liquid design system, its components and its rules |
-| Project structure, modules, tests | [AGENT.md](AGENT.md) |
+| Project structure, modules, tests | [ARCHITECTURE.md](ARCHITECTURE.md) |
 | Code taken from another project, or a dependency | [LICENSE_COMPLIANCE.md](LICENSE_COMPLIANCE.md) |
 
 A few things reviewers will always check:

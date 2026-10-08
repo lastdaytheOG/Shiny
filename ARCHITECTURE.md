@@ -1,14 +1,12 @@
-# AGENT.md
+# Architecture and conventions
 
-Working notes for AI coding agents (and people) in this repository. Read this before changing anything, and correct it in the same change when it stops being true.
+How Shiny is put together, and the rules every change follows. Read it before your first pull request, and correct it in the same change when it stops being true.
 
 ## What Shiny is
 
 A free Android music player (Kotlin, Jetpack Compose) that plays the YouTube Music catalogue, designed after Apple Music. Package `com.shiny.music`, debug builds `com.shiny.music.debug`. The interface is Shiny's own "Liquid" design system; the product goals are in [PRODUCT.md](PRODUCT.md) and the design rules in [DESIGN.md](DESIGN.md).
 
 ## Rules
-
-**Never push.** Edit and commit locally when asked. Run `git push`, or publish anything, only when the message asking for it says so.
 
 **Notices stay.** Never edit, move or rename a copyright or licence notice an upstream author put in a file. A notice leaves only together with the code it covers. When Shiny changes such a file substantially, add a separate `Modified by the Shiny Project in <year>` line under it. Search-and-replace must skip notice lines; `UpstreamNoticesTest` fails if one changes. See [LICENSE_COMPLIANCE.md](LICENSE_COMPLIANCE.md).
 

@@ -4,21 +4,31 @@
 
 <h1>Shiny</h1>
 
-<p><b>A free music player for Android, designed like Apple Music.</b><br/>
+<p><b>A free, open-source music player for Android, designed like Apple Music.</b><br/>
 Millions of songs from YouTube Music, lyrics that fill word by word, offline downloads and Listen Together.<br/>
-No ads, and no account needed.</p>
+No ads, no subscription, and no account needed.</p>
 
 <p>
-<img alt="Android 8.0+" src="https://img.shields.io/badge/Android-8.0%2B-3DDC84?logo=android&logoColor=white"/>
-<img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-Jetpack%20Compose-7F52FF?logo=kotlin&logoColor=white"/>
-<img alt="License GPL-3.0" src="https://img.shields.io/badge/License-GPL--3.0-blue"/>
+<a href="https://github.com/lastdaytheOG/Shiny/releases/latest"><img alt="Download" src="https://img.shields.io/badge/Download-APK-fa2d48?style=for-the-badge&logo=android&logoColor=white"/></a>
+<a href="https://shinymusic.in"><img alt="Website" src="https://img.shields.io/badge/Website-shinymusic.in-111111?style=for-the-badge"/></a>
 </p>
 
 <p>
-<a href="https://github.com/lastdaytheOG/Shiny/releases/latest"><b>Download</b></a> ·
-<a href="https://shinymusic.in"><b>Website</b></a> ·
-<a href="#build-from-source"><b>Build</b></a> ·
-<a href="PRIVACY_POLICY.md"><b>Privacy</b></a>
+<a href="https://github.com/lastdaytheOG/Shiny/actions/workflows/android-build.yml"><img alt="Build" src="https://github.com/lastdaytheOG/Shiny/actions/workflows/android-build.yml/badge.svg"/></a>
+<a href="https://github.com/lastdaytheOG/Shiny/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/lastdaytheOG/Shiny?style=flat&color=f5c518"/></a>
+<a href="LICENSE"><img alt="License GPL-3.0" src="https://img.shields.io/badge/License-GPL--3.0-blue"/></a>
+<img alt="Android 8.0+" src="https://img.shields.io/badge/Android-8.0%2B-3DDC84?logo=android&logoColor=white"/>
+<img alt="Kotlin and Jetpack Compose" src="https://img.shields.io/badge/Kotlin-Jetpack%20Compose-7F52FF?logo=kotlin&logoColor=white"/>
+<a href="CONTRIBUTING.md"><img alt="PRs welcome" src="https://img.shields.io/badge/PRs-welcome-brightgreen"/></a>
+</p>
+
+<p>
+<a href="#features">Features</a> ·
+<a href="#download">Download</a> ·
+<a href="#build-from-source">Build</a> ·
+<a href="#contributing">Contribute</a> ·
+<a href="#privacy">Privacy</a> ·
+<a href="#acknowledgements">Credits</a>
 </p>
 
 </div>
@@ -32,6 +42,18 @@ No ads, and no account needed.</p>
     <td align="center"><img src="assets/screenshots/together.webp" width="160" alt="Listen Together"/><br/><sub>Listen Together</sub></td>
   </tr>
 </table>
+
+## Why Shiny
+
+| | |
+| :-- | :-- |
+| **Free for good** | No ads, no paid tier, no account. The code is here for anyone to read. |
+| **Built around the music** | The artwork fills the screen, lyrics follow each word, and everything else stays out of the way. |
+| **Yours to keep** | Download to a folder you choose, play the files already on your phone, export as MP3, back up and restore. |
+| **Better with friends** | Listen Together keeps a whole room on the same beat, with a shared queue, votes and chat. |
+| **Private by default** | Your library and history stay on your phone. A `foss` build ships with no Google services at all. |
+
+If Shiny earns a place on your phone, a ⭐ on this repository helps other people find it.
 
 ---
 
@@ -136,7 +158,7 @@ echo "sdk.dir=/path/to/Android/sdk" > local.properties
 ```
 
 - **Variants:** `foss` or `gms`, crossed with an ABI (`universal`, `arm64`, `armeabi`, `x86_64`, …).
-- **`gms` builds** need a `google-services.json`.
+- **`gms` builds** compile without a `google-services.json`, but Google sign-in and Firebase only work once you add your own.
 - **Release builds** need your own signing key.
 - The full setup, including Firebase and signing, is in **[SETUP.md](SETUP.md)**.
 
@@ -144,7 +166,16 @@ echo "sdk.dir=/path/to/Android/sdk" > local.properties
 
 ## Contributing
 
-Bug reports and pull requests are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md) first. Report security issues privately, as described in [SECURITY.md](SECURITY.md).
+Shiny is built in the open and help is welcome, whether or not you write code.
+
+| I want to… | Start here |
+| :-- | :-- |
+| Report a bug | [Open a bug report](https://github.com/lastdaytheOG/Shiny/issues/new?template=bug_report.yml) |
+| Suggest an idea | [Open an idea](https://github.com/lastdaytheOG/Shiny/issues/new?template=feature_request.yml) |
+| Send a fix or a feature | [CONTRIBUTING.md](CONTRIBUTING.md), then [ARCHITECTURE.md](ARCHITECTURE.md) for how the code is laid out |
+| Report a security problem | Privately, as described in [SECURITY.md](SECURITY.md) |
+
+Everyone taking part is expected to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ---
 

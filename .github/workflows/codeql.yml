@@ -44,7 +44,7 @@ jobs:
     - name: Build project
       run: |
         chmod +x gradlew
-        ./gradlew assembleDebug
+        ./gradlew :app:compileUniversalFossDebugKotlin :app:compileUniversalFossDebugJavaWithJavac --no-build-cache -Dorg.gradle.jvmargs=-Xmx5g -Pkotlin.compiler.execution.strategy=in-process
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
