@@ -254,7 +254,6 @@ object YTPlayerUtils {
         Timber.tag(TAG).d("playlistId: $playlistId")
         Timber.tag(TAG).d("audioQuality: $audioQuality")
 
-        // Check if this is an uploaded/privately owned track
         val isUploadedTrack = playlistId == "MLPT" || playlistId?.contains("MLPT") == true
         Timber.tag(TAG).d("Content type detection (preliminary):")
         Timber.tag(TAG).d("  isUploadedTrack (from playlistId): $isUploadedTrack")
@@ -300,7 +299,6 @@ object YTPlayerUtils {
             ),
         )
 
-        // Generate PoToken
         var poToken: PoTokenResult? = null
         val sessionId = if (isLoggedIn) YouTube.dataSyncId else YouTube.visitorData
         val mainClientNeedsPoToken = MAIN_CLIENT.useWebPoTokens
@@ -441,7 +439,6 @@ object YTPlayerUtils {
         var streamPlayerResponse: PlayerResponse? = null
         val retryMainPlayerResponse: PlayerResponse? = if (usedAgeRestrictedClient != null) mainPlayerResponse else null
 
-        // Check current status
         val currentStatus = mainPlayerResponse.playabilityStatus.status
         val isAgeRestricted = currentStatus in listOf("AGE_CHECK_REQUIRED", "AGE_VERIFICATION_REQUIRED", "LOGIN_REQUIRED", "CONTENT_CHECK_REQUIRED")
 
@@ -628,7 +625,6 @@ object YTPlayerUtils {
                     STREAM_FALLBACK_CLIENTS[clientIndex]
                 }
 
-                // Check if this is a privately owned track
                 val isPrivatelyOwnedTrack = streamPlayerResponse.videoDetails?.musicVideoType == "MUSIC_VIDEO_TYPE_PRIVATELY_OWNED_TRACK"
                 val musicVideoType = streamPlayerResponse.videoDetails?.musicVideoType
 

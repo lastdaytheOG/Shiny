@@ -59,7 +59,6 @@ object FunctionNameExtractor {
     // Detect Q-array obfuscation: var Q="...".split("}")
     private val Q_ARRAY_PATTERN = Regex("""var\s+Q\s*=\s*"[^"]+"\s*\.\s*split\s*\(\s*"\}"\s*\)""")
 
-    // Extract player hash from common patterns
     private val PLAYER_HASH_PATTERNS = listOf(
         Regex("""jsUrl['":\s]+[^"']*?/player/([a-f0-9]{8})/"""),
         Regex("""player_ias\.vflset/[^/]+/([a-f0-9]{8})/"""),

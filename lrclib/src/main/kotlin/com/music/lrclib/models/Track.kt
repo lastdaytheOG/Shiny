@@ -58,7 +58,6 @@ internal fun List<Track>.bestMatchingFor(
         return firstOrNull { it.syncedLyrics != null } ?: firstOrNull()
     }
 
-    // Use relaxed matching for duration-based search
     return bestMatchingForRelaxed(duration)
 }
 

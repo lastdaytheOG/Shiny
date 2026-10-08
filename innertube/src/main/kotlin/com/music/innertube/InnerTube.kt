@@ -100,7 +100,6 @@ class InnerTube {
                     )
                 )
                 
-                // Timeout configurations
                 connectTimeout(CONNECT_TIMEOUT_MS, java.util.concurrent.TimeUnit.MILLISECONDS)
                 readTimeout(SOCKET_TIMEOUT_MS, java.util.concurrent.TimeUnit.MILLISECONDS)
                 writeTimeout(SOCKET_TIMEOUT_MS, java.util.concurrent.TimeUnit.MILLISECONDS)
@@ -119,12 +118,10 @@ class InnerTube {
                     )
                 )
                 
-                // Apply proxy configuration
                 this@InnerTube.proxy?.let { proxyConfig ->
                     proxy(proxyConfig)
                 }
                 
-                // Apply proxy authentication
                 this@InnerTube.proxyAuth?.let { auth ->
                     proxyAuthenticator { _, response ->
                         response.request.newBuilder()

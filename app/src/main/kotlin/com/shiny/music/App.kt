@@ -190,7 +190,6 @@ class App : Application(), SingletonImageLoader.Factory {
         YouTube.useLoginForBrowse = settings[UseLoginForBrowse] ?: true
         YouTube.ipVersion = settings[IpVersionKey]?.toEnum(defaultValue = IpVersion.AUTO) ?: IpVersion.AUTO
 
-        // Set playback engine preference
         val engineName = settings[com.shiny.music.constants.PlaybackEngineKey]
         com.shiny.music.utils.YTPlayerUtils.playbackEngine = try {
             if (engineName != null) com.shiny.music.constants.PlaybackEngine.valueOf(engineName)

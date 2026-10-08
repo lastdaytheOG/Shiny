@@ -135,13 +135,11 @@ object TidalCanvasProvider {
             for (item in items) {
                 val obj = item.jsonObject
 
-                // Validate track title if searching tracks
                 val resultTitle = obj["title"]?.jsonPrimitive?.contentOrNull
                 if (songValidation != null && resultTitle != null && !resultTitle.contains(songValidation, ignoreCase = true)) {
                     continue
                 }
 
-                // Validate album title if searching albums
                 if (albumValidation != null && resultTitle != null && !resultTitle.contains(albumValidation, ignoreCase = true) && !albumValidation.contains(resultTitle, ignoreCase = true)) {
                     continue
                 }
@@ -159,7 +157,6 @@ object TidalCanvasProvider {
                     if (!artistMatches) continue
                 }
 
-                // Retrieve videoCover
                 val albumObj = if (types == "TRACKS") obj["album"]?.jsonObject else obj
                 val videoCover = albumObj?.get("videoCover")?.jsonPrimitive?.contentOrNull
 

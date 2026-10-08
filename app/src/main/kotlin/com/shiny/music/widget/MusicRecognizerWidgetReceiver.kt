@@ -95,7 +95,6 @@ class MusicRecognizerWidgetReceiver : AppWidgetProvider() {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val currentState = prefs.getInt(PREF_STATE, STATE_IDLE)
 
-        // If active → stop
         if (currentState == STATE_LISTENING || currentState == STATE_PROCESSING) {
             context.startService(
                 Intent(context, MusicRecognizerWidgetService::class.java).apply {
@@ -121,7 +120,6 @@ class MusicRecognizerWidgetReceiver : AppWidgetProvider() {
             return
         }
 
-        // Start recognition foreground service
         val serviceIntent = Intent(context, MusicRecognizerWidgetService::class.java).apply {
             action = MusicRecognizerWidgetService.ACTION_START_RECOGNITION
         }

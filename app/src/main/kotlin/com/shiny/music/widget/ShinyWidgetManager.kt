@@ -70,13 +70,11 @@ class ShinyWidgetManager @Inject constructor(
         } else {
             albumArt = artworkUri?.let { loadAlbumArt(it, 300) }
             circularAlbumArt = albumArt?.let { getCircularBitmap(it) }
-            // Update cache
             cachedArtworkUri = artworkUri
             cachedAlbumArt = albumArt
             cachedCircularAlbumArt = circularAlbumArt
         }
 
-        // Update main music player widgets
         val componentName = ComponentName(context, MusicWidgetReceiver::class.java)
         val widgetIds = appWidgetManager.getAppWidgetIds(componentName)
         if (widgetIds.isNotEmpty()) {
@@ -96,7 +94,6 @@ class ShinyWidgetManager @Inject constructor(
             }
         }
 
-        // Update turntable widgets
         val turntableComponentName = ComponentName(context, TurntableWidgetReceiver::class.java)
         val turntableWidgetIds = appWidgetManager.getAppWidgetIds(turntableComponentName)
         if (turntableWidgetIds.isNotEmpty()) {
@@ -165,11 +162,9 @@ class ShinyWidgetManager @Inject constructor(
     ): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_music_player)
 
-        // Set song info
         views.setTextViewText(R.id.widget_song_title, title)
         views.setTextViewText(R.id.widget_artist_name, artist)
 
-        // Set album art with rounded corners
         if (albumArt != null) {
             val roundedAlbumArt = getRoundedCornerBitmap(albumArt, 48f)
             views.setImageViewBitmap(R.id.widget_album_art, roundedAlbumArt)
@@ -177,7 +172,6 @@ class ShinyWidgetManager @Inject constructor(
             views.setImageViewBitmap(R.id.widget_album_art, getRoundedDefaultIcon(48f))
         }
 
-        // Set play/pause icon
         val playPauseIcon = if (isPlaying) R.drawable.ic_widget_pause else R.drawable.ic_widget_play
         views.setImageViewResource(R.id.widget_play_pause, playPauseIcon)
 
@@ -185,7 +179,6 @@ class ShinyWidgetManager @Inject constructor(
         val likeIcon = if (isLiked) R.drawable.ic_widget_heart_nav else R.drawable.ic_widget_heart_outline_nav
         views.setImageViewResource(R.id.widget_like_button, likeIcon)
 
-        // Set Progress Level
         if (duration > 0) {
             val level = ((currentPosition.toDouble() / duration.toDouble()) * 10000).toInt()
             views.setInt(R.id.widget_progress_fill, "setImageLevel", level)
@@ -193,7 +186,6 @@ class ShinyWidgetManager @Inject constructor(
             views.setInt(R.id.widget_progress_fill, "setImageLevel", 0)
         }
 
-        // Set click intents
         views.setOnClickPendingIntent(R.id.widget_album_art, getOpenAppIntent())
         views.setOnClickPendingIntent(R.id.widget_play_pause_container, getPlayPauseIntent())
         views.setOnClickPendingIntent(R.id.widget_like_button, getLikeIntent())
@@ -273,7 +265,6 @@ class ShinyWidgetManager @Inject constructor(
     ): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_compact_square)
 
-        // Set album art with rounded corners
         if (albumArt != null) {
             val roundedAlbumArt = getRoundedCornerBitmap(albumArt, 48f)
             views.setImageViewBitmap(R.id.widget_compact_album_art, roundedAlbumArt)
@@ -281,11 +272,9 @@ class ShinyWidgetManager @Inject constructor(
             views.setImageViewBitmap(R.id.widget_compact_album_art, getRoundedDefaultIcon(48f))
         }
 
-        // Set play/pause icon - using low style icons
         val playPauseIcon = if (isPlaying) R.drawable.ic_widget_pause_low else R.drawable.ic_widget_play_low
         views.setImageViewResource(R.id.widget_compact_play_pause, playPauseIcon)
 
-        // Set click intents
         views.setOnClickPendingIntent(R.id.widget_compact_album_art, getOpenAppIntent())
         views.setOnClickPendingIntent(R.id.widget_compact_play_container, getPlayPauseIntent())
 
@@ -301,7 +290,6 @@ class ShinyWidgetManager @Inject constructor(
     ): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_compact_wide)
 
-        // Set song info
         views.setTextViewText(R.id.widget_wide_song_title, title)
         views.setTextViewText(R.id.widget_wide_artist_name, artist)
 
@@ -310,19 +298,15 @@ class ShinyWidgetManager @Inject constructor(
             val roundedAlbumArt = getRoundedCornerBitmap(albumArt, 48f)
             views.setImageViewBitmap(R.id.widget_wide_album_art, roundedAlbumArt)
         } else {
-            // Create rounded default icon
             views.setImageViewBitmap(R.id.widget_wide_album_art, getRoundedDefaultIcon(48f))
         }
 
-        // Set play/pause icon - using low style icons
         val playPauseIcon = if (isPlaying) R.drawable.ic_widget_pause_low else R.drawable.ic_widget_play_low
         views.setImageViewResource(R.id.widget_wide_play_pause, playPauseIcon)
 
-        // Set like icon - using navigation style (purple)
         val likeIcon = if (isLiked) R.drawable.ic_widget_heart_nav else R.drawable.ic_widget_heart_outline_nav
         views.setImageViewResource(R.id.widget_wide_like_button, likeIcon)
 
-        // Set click intents
         views.setOnClickPendingIntent(R.id.widget_wide_album_art, getOpenAppIntent())
         views.setOnClickPendingIntent(R.id.widget_wide_play_container, getPlayPauseIntent())
         views.setOnClickPendingIntent(R.id.widget_wide_like_button, getLikeIntent())
@@ -341,7 +325,6 @@ class ShinyWidgetManager @Inject constructor(
         if (circularAlbumArt != null) {
             views.setImageViewBitmap(R.id.widget_turntable_album_art, circularAlbumArt)
         } else {
-            // Load and make the default icon circular
             views.setImageViewBitmap(R.id.widget_turntable_album_art, getCircularDefaultIcon())
         }
 
@@ -349,7 +332,6 @@ class ShinyWidgetManager @Inject constructor(
         val playPauseIcon = if (isPlaying) R.drawable.ic_widget_pause_secondary else R.drawable.ic_widget_play_secondary
         views.setImageViewResource(R.id.widget_turntable_play_pause, playPauseIcon)
 
-        // Set click intents
         views.setOnClickPendingIntent(R.id.widget_turntable_album_art, getOpenAppIntent())
         views.setOnClickPendingIntent(R.id.widget_turntable_play_container, getTurntablePlayPauseIntent())
         views.setOnClickPendingIntent(R.id.widget_turntable_prev_button, getTurntablePreviousIntent())
@@ -370,7 +352,6 @@ class ShinyWidgetManager @Inject constructor(
     }
     
     private fun getRoundedDefaultIcon(cornerRadius: Float): Bitmap {
-        // Get the launcher icon and make it rounded
         val drawable = context.packageManager.getApplicationIcon(context.packageName)
         val size = 300
         val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)

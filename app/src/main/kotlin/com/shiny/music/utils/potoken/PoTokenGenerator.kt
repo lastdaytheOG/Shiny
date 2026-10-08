@@ -139,7 +139,6 @@ class PoTokenGenerator {
                         webPoTokenGenerator?.close()
                     }
 
-                    // create a new webPoTokenGenerator
                     webPoTokenGenerator = PoTokenWebView.getNewPoTokenGenerator(CipherDeobfuscator.appContext)
 
                     // The streaming poToken needs to be generated exactly once before generating

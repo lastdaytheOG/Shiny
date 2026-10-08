@@ -57,7 +57,6 @@ object YouTubeUrlParser {
         val trimmedUrl = url.trim()
         println("[LINK_PARSE_DEBUG] Parsing URL: $trimmedUrl")
 
-        // Check for video URLs
         for (pattern in VIDEO_URL_PATTERNS) {
             pattern.find(trimmedUrl)?.let { matchResult ->
                 matchResult.groupValues.getOrNull(1)?.let { videoId ->
@@ -67,7 +66,6 @@ object YouTubeUrlParser {
             }
         }
 
-        // Check for artist URLs
         if (trimmedUrl.contains("music.youtube.com")) {
             for (pattern in ARTIST_URL_PATTERNS) {
                 pattern.find(trimmedUrl)?.let { matchResult ->

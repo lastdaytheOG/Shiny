@@ -55,7 +55,6 @@ object PlayerJsFetcher {
                 cacheDir.mkdirs()
             }
 
-            // Check cache first (unless forced refresh)
             if (!forceRefresh) {
                 val cached = readFromCache()
                 if (cached != null) {
@@ -66,7 +65,6 @@ object PlayerJsFetcher {
                 Timber.tag(TAG).d("Cache miss, will fetch fresh")
             }
 
-            // Fetch player hash from iframe_api
             Timber.tag(TAG).d("Fetching player hash from iframe_api...")
             val hash = fetchPlayerHash()
             if (hash == null) {
@@ -75,7 +73,6 @@ object PlayerJsFetcher {
             }
             Timber.tag(TAG).d("Extracted player hash: $hash")
 
-            // Download player JS
             Timber.tag(TAG).d("Downloading player JS for hash: $hash...")
             val playerJs = downloadPlayerJs(hash)
             if (playerJs == null) {
@@ -88,7 +85,6 @@ object PlayerJsFetcher {
             Timber.tag(TAG).d("length: ${playerJs.length} chars")
             Timber.tag(TAG).d("preview: ${playerJs.take(100)}...")
 
-            // Cache the result
             writeToCache(hash, playerJs)
 
             Pair(playerJs, hash)

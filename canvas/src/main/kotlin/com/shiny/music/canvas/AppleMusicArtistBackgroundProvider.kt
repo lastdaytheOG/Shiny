@@ -163,7 +163,6 @@ object AppleMusicArtistBackgroundProvider {
                 }
             }
 
-            // Fallback to editorialArtwork
             val ea = attributes?.get("editorialArtwork")?.jsonObject
             if (ea != null) {
                 val videoUrl = extractEditorialVideoUrl(ea)

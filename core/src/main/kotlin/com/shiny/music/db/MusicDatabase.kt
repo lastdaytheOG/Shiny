@@ -992,17 +992,14 @@ val MIGRATION_43_44 =
  */
 val MIGRATION_44_45 = object : Migration(44, 45) {
     override fun migrate(db: SupportSQLiteDatabase) {
-        // song.isLocal
         if (!hasColumn(db, "song", "isLocal")) {
             db.execSQL("ALTER TABLE `song` ADD COLUMN `isLocal` INTEGER NOT NULL DEFAULT 0")
             Timber.tag("MIGRATION_44_45").i("Added missing isLocal column to song")
         }
-        // artist.isLocal
         if (!hasColumn(db, "artist", "isLocal")) {
             db.execSQL("ALTER TABLE `artist` ADD COLUMN `isLocal` INTEGER NOT NULL DEFAULT 0")
             Timber.tag("MIGRATION_44_45").i("Added missing isLocal column to artist")
         }
-        // playlist.isLocal
         if (!hasColumn(db, "playlist", "isLocal")) {
             db.execSQL("ALTER TABLE `playlist` ADD COLUMN `isLocal` INTEGER NOT NULL DEFAULT 0")
             Timber.tag("MIGRATION_44_45").i("Added missing isLocal column to playlist")
