@@ -423,6 +423,13 @@
             android:noHistory="true"
             android:theme="@style/Theme.Shiny.Transparent" />
 
+        <activity
+            android:name=".shinymusic.updater.UpdateActionActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:noHistory="true"
+            android:theme="@style/Theme.Shiny.Transparent" />
+
         <!-- Music Recognizer Widget -->
         <receiver
             android:name=".widget.MusicRecognizerWidgetReceiver"

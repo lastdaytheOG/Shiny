@@ -5,13 +5,11 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
-import androidx.core.net.toUri
 import com.shiny.music.R
 
 object UpdateNotificationHelper {
@@ -32,7 +30,7 @@ object UpdateNotificationHelper {
 
         
         val apkUrl = com.shiny.music.social.ShinyLinks.DOWNLOAD
-        val intent = Intent(Intent.ACTION_VIEW, apkUrl.toUri())
+        val intent = com.shiny.music.shinymusic.updater.UpdateActionActivity.openUrl(context, apkUrl)
 
         val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         val pending = PendingIntent.getActivity(context, NOTIFICATION_ID, intent, flags)
