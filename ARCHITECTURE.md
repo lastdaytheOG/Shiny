@@ -28,12 +28,12 @@ A free Android music player (Kotlin, Jetpack Compose) that plays the YouTube Mus
 | `:core` | Shared models, constants, the Room database, DataStore |
 | `:playback` | Media3 logic: queues, equaliser, data sources, sleep timer |
 | `:lyrics` | Lyrics orchestration and parsing |
-| `:innertube` | The YouTube Music client |
-| `:kugou` `:lrclib` `:betterlyrics` `:youlyplus` `:paxsenixlyrics` `:simpmusic` | One lyrics source each |
-| `:shazamkit` | Song recognition |
-| `:canvas` `:applecanvas` | Animated artwork |
-| `:artistvideo` | Artist videos |
-| `:unison` | Shared lyrics utilities |
+| `:youtube` | The YouTube Music client |
+| `:lyrics-kugou` `:lyrics-lrclib` `:lyrics-better` `:lyrics-youlyplus` `:lyrics-paxsenix` `:lyrics-simpmusic` | One lyrics source each |
+| `:recognition` | Song recognition |
+| `:artwork-motion` `:artwork-apple` | Animated artwork |
+| `:artwork-artist` | Artist videos |
+| `:lyrics-unison` | Shared lyrics utilities |
 | `:baselineprofile` | Baseline profile generation |
 
 Outside Gradle: `server/` is the Cloudflare Worker behind Listen Together, Shiny Social, shared links and shinymusic.in (`server/together/PROTOCOL.md` describes the session protocol).
@@ -90,8 +90,8 @@ Unit tests run on a plain JVM. Run the suite for what you touched:
 ```bash
 ./gradlew :app:testUniversalFossDebugUnitTest
 ./gradlew :lyrics:testDebugUnitTest      # LRC parsing and line-at-position
-./gradlew :canvas:test
-./gradlew :innertube:test
+./gradlew :artwork-motion:test
+./gradlew :youtube:test
 ```
 
 CI builds the app but does not run tests, so a green build proves nothing about behaviour. Pure logic (parsers, feed building, queue rules) gets a test with the change.

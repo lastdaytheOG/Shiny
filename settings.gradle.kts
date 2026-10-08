@@ -19,18 +19,18 @@ dependencyResolutionManagement {
 rootProject.name = "shinymusic"
 include(
     ":app",
-    ":innertube",
-    ":paxsenixlyrics",
-    ":kugou",
-    ":betterlyrics",
-    ":lrclib",
-    ":simpmusic",
-    ":youlyplus",
-    ":shazamkit",
-    ":artistvideo",
-    ":canvas",
-    ":applecanvas",
-    ":unison",
+    ":youtube",
+    ":lyrics-paxsenix",
+    ":lyrics-kugou",
+    ":lyrics-better",
+    ":lyrics-lrclib",
+    ":lyrics-simpmusic",
+    ":lyrics-youlyplus",
+    ":recognition",
+    ":artwork-artist",
+    ":artwork-motion",
+    ":artwork-apple",
+    ":lyrics-unison",
     ":core",
     ":lyrics",
     ":playback",
@@ -42,7 +42,7 @@ include(
 // We assume, that shinymusic and BravePipe Extractor have the same parent directory.
 // If this is not the case, please change the path in includeBuild().
 //
-// For this to work you also need to change the implementation in innertube/build.gradle.kts
+// For this to work you also need to change the implementation in youtube/build.gradle.kts
 // to one which does not specify a version.
 // From:
 //      implementation(libs.newpipe.extractor)

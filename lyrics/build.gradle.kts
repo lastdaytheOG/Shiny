@@ -23,14 +23,14 @@ kotlin { jvmToolchain(21) }
 
 dependencies {
     implementation(project(":core"))
-    implementation(project(":unison"))
-    implementation(project(":lrclib"))
-    implementation(project(":kugou"))
-    implementation(project(":simpmusic"))
-    implementation(project(":youlyplus"))
-    implementation(project(":betterlyrics"))
-    implementation(project(":paxsenixlyrics"))
-    implementation(project(":innertube"))
+    implementation(project(":lyrics-unison"))
+    implementation(project(":lyrics-lrclib"))
+    implementation(project(":lyrics-kugou"))
+    implementation(project(":lyrics-simpmusic"))
+    implementation(project(":lyrics-youlyplus"))
+    implementation(project(":lyrics-better"))
+    implementation(project(":lyrics-paxsenix"))
+    implementation(project(":youtube"))
     
     implementation(libs.kuromoji.ipadic)
     implementation(libs.tinypinyin)

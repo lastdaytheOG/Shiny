@@ -59,7 +59,7 @@ Say plainly in the pull request what was copied and from where.
 3. Run the tests for the area you touched:
    ```bash
    ./gradlew :app:testUniversalFossDebugUnitTest
-   ./gradlew :lyrics:testDebugUnitTest :canvas:test :innertube:test
+   ./gradlew :lyrics:testDebugUnitTest :artwork-motion:test :youtube:test
    ```
 4. Write the commit summary as one plain sentence saying what the change does, such as `Fix lyrics drifting after a seek`.
 5. In the description, say what changed, why, and how you tested it. Add a screenshot or a short recording for anything visual, and link the issue it closes.

@@ -32,7 +32,7 @@ dependencies {
     implementation(libs.timber)
     testImplementation(libs.junit)
 
-    implementation(project(":betterlyrics"))
+    implementation(project(":lyrics-better"))
 
     coreLibraryDesugaring(libs.desugaring)
 }
