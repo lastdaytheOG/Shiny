@@ -151,10 +151,6 @@ fun TogetherScreen(navController: NavController, showBack: Boolean) {
     }
 }
 
-// ---------------------------------------------------------------------------------------
-// Lobby
-// ---------------------------------------------------------------------------------------
-
 @Composable
 private fun Lobby(
     session: TogetherSession,
@@ -472,10 +468,6 @@ private fun PreviewCard(preview: TogetherPreview, onJoin: () -> Unit) {
     }
 }
 
-// ---------------------------------------------------------------------------------------
-// On the way in
-// ---------------------------------------------------------------------------------------
-
 @Composable
 private fun Arriving(
     session: TogetherSession,
@@ -523,10 +515,6 @@ private fun Arriving(
         }
     }
 }
-
-// ---------------------------------------------------------------------------------------
-// In a session
-// ---------------------------------------------------------------------------------------
 
 @Composable
 private fun LiveSession(
@@ -632,7 +620,6 @@ private fun LiveSession(
             }
         }
 
-        // ---- Up Next --------------------------------------------------------------------
         item(key = "queue_header") {
             Row(
                 Modifier
@@ -711,7 +698,6 @@ private fun LiveSession(
             }
         }
 
-        // ---- People -----------------------------------------------------------------------
         item(key = "people_header") {
             Text(
                 text = stringResource(R.string.together_people, state.listeners),

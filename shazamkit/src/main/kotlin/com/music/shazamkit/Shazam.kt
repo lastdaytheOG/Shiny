@@ -93,13 +93,6 @@ object Shazam {
         "America/Los_Angeles", "Asia/Tokyo", "Asia/Dubai"
     )
 
-    /**
-     * Recognize music from audio signature
-     * 
-     * @param signature Audio signature in Shazam DejaVu format
-     * @param sampleDurationMs Sample duration in milliseconds
-     * @return Result containing recognition result or error
-     */
     suspend fun recognize(signature: String, sampleDurationMs: Long): Result<RecognitionResult> {
         val cacheKey = generateCacheKey(signature)
         getCachedResult(cacheKey)?.let {
@@ -109,26 +102,14 @@ object Shazam {
         return enqueueRequest(signature, sampleDurationMs)
     }
 
-    /**
-     * Get number of pending requests in queue
-     */
     fun getPendingRequestsCount(): Int = requestQueue.size
 
-    /**
-     * Get number of active requests
-     */
     fun getActiveRequestsCount(): Int = activeRequests.get()
 
-    /**
-     * Clear cache
-     */
     fun clearCache() {
         resultCache.clear()
     }
 
-    /**
-     * Cancel all pending requests
-     */
     fun cancelPendingRequests() {
         requestQueue.clear()
     }
@@ -142,9 +123,6 @@ object Shazam {
         client.close()
     }
 
-    /**
-     * Enqueue request for processing
-     */
     private suspend fun enqueueRequest(
         signature: String,
         sampleDurationMs: Long
@@ -174,9 +152,6 @@ object Shazam {
         return request.awaitResult()
     }
 
-    /**
-     * Process request queue
-     */
     private suspend fun processQueue() {
         while (true) {
             val request = requestQueue.poll() ?: break
@@ -313,23 +288,14 @@ object Shazam {
         lastRequestTime = System.currentTimeMillis()
     }
 
-    /**
-     * Calculate delay using Exponential Backoff
-     */
     private fun calculateBackoffDelay(attempt: Int): Long {
         return INITIAL_RETRY_DELAY_MS * (1 shl attempt)
     }
 
-    /**
-     * Generate cache key
-     */
     private fun generateCacheKey(signature: String): String {
         return signature.hashCode().toString()
     }
 
-    /**
-     * Get result from cache
-     */
     private fun getCachedResult(key: String): RecognitionResult? {
         val cached = resultCache[key] ?: return null
         val currentTime = System.currentTimeMillis()
@@ -342,9 +308,6 @@ object Shazam {
         return cached.result
     }
 
-    /**
-     * Cache result
-     */
     private fun cacheResult(key: String, result: RecognitionResult) {
         resultCache[key] = CachedResult(
             timestamp = System.currentTimeMillis(),
@@ -422,9 +385,6 @@ object Shazam {
         )
     }
 
-    /**
-     * Pending request in queue
-     */
     private class PendingRequest(
         val id: Long,
         val signature: String,
@@ -447,9 +407,6 @@ object Shazam {
         }
     }
 
-    /**
-     * Cached result
-     */
     private data class CachedResult(
         val timestamp: Long,
         val result: RecognitionResult

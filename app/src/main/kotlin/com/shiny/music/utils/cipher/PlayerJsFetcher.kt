@@ -181,7 +181,6 @@ object PlayerJsFetcher {
             try {
                 val cacheDir = getCacheDir()
 
-                // Clean old cache files
                 val oldFiles = cacheDir.listFiles()?.filter { it.name.startsWith("player_") }
                 Timber.tag(TAG).d("Cleaning ${oldFiles?.size ?: 0} old cache files")
                 oldFiles?.forEach { it.delete() }

@@ -187,10 +187,6 @@ object Liquid {
     val type: LiquidTypography get() = LiquidTypography
 }
 
-// ---------------------------------------------------------------------------------------
-// Type
-// ---------------------------------------------------------------------------------------
-
 private val InterWeights = listOf(
     FontWeight.Normal,
     FontWeight.Medium,
@@ -272,10 +268,6 @@ val LiquidMaterialTypography = Typography(
     labelMedium = LiquidTypography.caption1.copy(fontWeight = FontWeight.Medium),
     labelSmall = LiquidTypography.caption2,
 )
-
-// ---------------------------------------------------------------------------------------
-// Material bridge
-// ---------------------------------------------------------------------------------------
 
 /**
  * Projects the Liquid palette onto a Material [ColorScheme].

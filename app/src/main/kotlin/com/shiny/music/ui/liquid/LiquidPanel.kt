@@ -82,10 +82,6 @@ fun Modifier.liquidPanel(shape: Shape = PanelShape, fill: Color = Color.Unspecif
     return if (edge == null) filled else filled.border(PanelRimWidth, edge, shape)
 }
 
-// ---------------------------------------------------------------------------------------
-// Atmosphere
-// ---------------------------------------------------------------------------------------
-
 /**
  * The colour an option sheet takes from the artwork it is about: light falling from the
  * cover at the head of the sheet, in the cover's own tones, and dying away towards the foot.

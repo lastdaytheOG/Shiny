@@ -99,8 +99,6 @@ async function route(request, env, ctx) {
   return html(notFoundPage(env), 404);
 }
 
-// ---- Accounts ------------------------------------------------------------------------------
-
 async function signInWithGoogle(request, env) {
   const { idToken } = await readJson(request);
   if (typeof idToken !== "string" || idToken.length === 0 || idToken.length > 4096) throw badRequest("idToken is required");
@@ -243,8 +241,6 @@ function selfView(user, env) {
 const normalizeUsername = (value) => String(value ?? "").trim().replace(/^@/, "").toLowerCase();
 const isValidUsername = (username) => USERNAME_RE.test(username) && !RESERVED_USERNAMES.has(username);
 
-// ---- Presence ------------------------------------------------------------------------------
-
 async function putPresence(request, env) {
   const user = await requireUser(request, env);
   const body = await readJson(request);
@@ -319,8 +315,6 @@ function listenAlongUrl(env, trackId, positionMs, durationMs, now) {
   if (durationMs > 0) params.set("d", String(Math.floor(durationMs / 1000)));
   return `${env.WEB_BASE}/watch?${params}`;
 }
-
-// ---- Friends -------------------------------------------------------------------------------
 
 async function listFriends(request, env) {
   const user = await requireUser(request, env);
@@ -419,8 +413,6 @@ async function findUser(env, value) {
   if (!user) throw notFound("No one has that username");
   return user;
 }
-
-// ---- Shared playlists ----------------------------------------------------------------------
 
 // An artist's YouTube channel. Artists the app made up for itself have other ids, which mean nothing here.
 const CHANNEL_ID_RE = /^UC[A-Za-z0-9_-]{22}$/;
@@ -535,8 +527,6 @@ async function sharedPlaylistRoute(id, env, ctx) {
   if (!playlist) return html(notFoundPage(env), 404);
   return html(sharedPlaylistPage(playlist, env));
 }
-
-// ---- Public profiles, pages and badges -----------------------------------------------------
 
 async function publicProfileRow(env, value) {
   const username = normalizeUsername(value);

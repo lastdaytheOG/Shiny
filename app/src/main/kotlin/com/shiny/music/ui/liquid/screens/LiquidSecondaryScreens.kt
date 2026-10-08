@@ -122,8 +122,6 @@ private fun LoadingItem() {
     Box(Modifier.fillMaxWidth().padding(48.dp), contentAlignment = Alignment.Center) { ActivityIndicator() }
 }
 
-// ---------------------------------------------------------------------------------------
-
 @Composable
 fun LiquidHistoryScreen(
     navController: NavController,
@@ -224,8 +222,6 @@ fun LiquidHistoryScreen(
         }
     }
 }
-
-// ---------------------------------------------------------------------------------------
 
 @Composable
 fun LiquidArtistItemsScreen(
@@ -340,8 +336,6 @@ fun LiquidArtistAlbumsScreen(
         }
     }
 }
-
-// ---------------------------------------------------------------------------------------
 
 @Composable
 fun LiquidMoodAndGenresScreen(

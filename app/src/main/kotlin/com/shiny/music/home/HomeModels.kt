@@ -20,10 +20,6 @@ import kotlinx.serialization.Serializable
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 
-// ---------------------------------------------------------------------------------------
-// Time
-// ---------------------------------------------------------------------------------------
-
 const val HOME_DAY_MS = 86_400_000L
 
 /**
@@ -86,10 +82,6 @@ data class HomeContext(
      */
     val youtubeSignedIn: Boolean = false,
 )
-
-// ---------------------------------------------------------------------------------------
-// Local signals — one Room pass
-// ---------------------------------------------------------------------------------------
 
 /**
  * The listen history and library as Home needs them, read in one pass on IO.
@@ -279,10 +271,6 @@ data class HomeRemote(
         const val VERSION = 2
     }
 }
-
-// ---------------------------------------------------------------------------------------
-// The feed
-// ---------------------------------------------------------------------------------------
 
 data class HomeFeed(
     val sections: List<HomeSection>,

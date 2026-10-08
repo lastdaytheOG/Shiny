@@ -270,10 +270,6 @@ fun LiquidSearchScreen(
     }
 }
 
-// ---------------------------------------------------------------------------------------
-// At rest
-// ---------------------------------------------------------------------------------------
-
 /** Recent searches, then the catalogue to browse. Two sections, each earning its place. */
 private fun LazyListScope.restingContent(
     history: List<SearchHistory>,
@@ -408,10 +404,6 @@ private fun CategoryRow(
         )
     }
 }
-
-// ---------------------------------------------------------------------------------------
-// While typing
-// ---------------------------------------------------------------------------------------
 
 private fun LazyListScope.typeaheadContent(
     query: String,
@@ -633,10 +625,6 @@ private fun LocalResultRow(item: LocalItem, actions: LiquidActions, isActive: Bo
         onMore = { actions.menu(item) },
     )
 }
-
-// ---------------------------------------------------------------------------------------
-// Results
-// ---------------------------------------------------------------------------------------
 
 private data class Scope(val label: String, val filter: YouTube.SearchFilter?)
 

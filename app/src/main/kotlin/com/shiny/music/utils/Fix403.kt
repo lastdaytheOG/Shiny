@@ -63,8 +63,6 @@ object Fix403 {
     /** Short correlation id, e.g. `res-42`. Prefix every line of one logical operation with it. */
     fun nextId(prefix: String): String = "$prefix-${seq.incrementAndGet()}"
 
-    // ── Emit ─────────────────────────────────────────────────────────────────────────────
-
     fun d(id: String, op: String, details: String = "") {
         if (ENABLED) Timber.tag(TAG).d(line(id, op, details))
     }
@@ -94,8 +92,6 @@ object Fix403 {
 
     private fun line(id: String, op: String, details: String): String =
         if (details.isEmpty()) "$id $op" else "$id $op $details"
-
-    // ── Formatting helpers ───────────────────────────────────────────────────────────────
 
     /** `k=v` pairs joined by spaces; nulls render as `-` so columns stay aligned when grepping. */
     fun kv(vararg pairs: Pair<String, Any?>): String =
@@ -128,8 +124,6 @@ object Fix403 {
             "len=${secret.length},sha1=unavailable"
         }
     }
-
-    // ── Trapping ─────────────────────────────────────────────────────────────────────────
 
     /**
      * Run [block], logging any throwable in full, and return `null` on failure.

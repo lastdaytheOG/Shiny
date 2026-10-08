@@ -30,8 +30,6 @@ class InstantTasteTest {
         artistStats = artistStats,
     )
 
-    // ---- confidence --------------------------------------------------------------------------
-
     @Test
     fun `a full library gives a head start but never passes for listening`() {
         val nothing = HomeTaste.confidence(signals())
@@ -51,8 +49,6 @@ class InstantTasteTest {
         assertTrue(HomeTaste.confidence(listened) > HomeTaste.confidence(base))
         assertTrue(HomeTaste.confidence(listened) > HomeTaste.confidence(signals(events = 12)))
     }
-
-    // ---- artists -----------------------------------------------------------------------------
 
     @Test
     fun `saved artists reach Warming but a library alone never makes a Favourite`() {
@@ -123,8 +119,6 @@ class InstantTasteTest {
         )
         assertEquals(listOf("New One"), HomeFeedBuilder.unresolvedSavedArtists(s, mapOf("known" to "UCk"), limit = 5))
     }
-
-    // ---- seeds -------------------------------------------------------------------------------
 
     @Test
     fun `a like seeds harder than a save, a save than a playlist, a playlist than a Spotify mix`() {

@@ -137,10 +137,6 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-// ---------------------------------------------------------------------------------------
-// Shared
-// ---------------------------------------------------------------------------------------
-
 @Composable
 internal fun HomeHeader(
     title: String,
@@ -856,10 +852,6 @@ private fun SeeAllRow(text: String, onClick: () -> Unit) {
     }
 }
 
-// ---------------------------------------------------------------------------------------
-// The library, alive
-// ---------------------------------------------------------------------------------------
-
 @Composable
 internal fun RediscoverShelf(section: RediscoverSection, actions: LiquidActions) {
     val title = stringResource(R.string.home_rediscover)
@@ -1298,10 +1290,6 @@ private fun InsightRow(
         meta?.let { Text(it, style = LiquidTypography.footnote, color = colors.secondaryLabel, maxLines = 1, modifier = Modifier.padding(start = 8.dp)) }
     }
 }
-
-// ---------------------------------------------------------------------------------------
-// Surprise Me
-// ---------------------------------------------------------------------------------------
 
 @Composable
 internal fun SurpriseCard(last: SurprisePick?, onSurprise: () -> Unit) {

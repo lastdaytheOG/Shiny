@@ -98,10 +98,6 @@ async function createRoom(url, env) {
   throw new HttpError(503, "busy", "Couldn't find a free session code");
 }
 
-// ---------------------------------------------------------------------------------------
-// The room
-// ---------------------------------------------------------------------------------------
-
 export class TogetherRoom extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
@@ -187,10 +183,6 @@ export class TogetherRoom extends DurableObject {
     };
   }
 
-  // -------------------------------------------------------------------------------------
-  // Sockets
-  // -------------------------------------------------------------------------------------
-
   async webSocketMessage(ws, data) {
     await this.load();
     if (!this.room || this.room.ended) {
@@ -257,10 +249,6 @@ export class TogetherRoom extends DurableObject {
     await this.scheduleAlarm();
     this.broadcastRoom();
   }
-
-  // -------------------------------------------------------------------------------------
-  // Joining
-  // -------------------------------------------------------------------------------------
 
   async hello(ws, attachment, msg) {
     const room = this.room;
@@ -342,10 +330,6 @@ export class TogetherRoom extends DurableObject {
       s: Date.now(),
     });
   }
-
-  // -------------------------------------------------------------------------------------
-  // Messages from members
-  // -------------------------------------------------------------------------------------
 
   get handlers() {
     return {
@@ -658,10 +642,6 @@ export class TogetherRoom extends DurableObject {
     await this.ctx.storage.setAlarm(Date.now() + 60_000);
   }
 
-  // -------------------------------------------------------------------------------------
-  // Time-based upkeep
-  // -------------------------------------------------------------------------------------
-
   async alarm() {
     await this.load();
     const room = this.room;
@@ -720,10 +700,6 @@ export class TogetherRoom extends DurableObject {
     const anyone = Object.values(room.members).some((m) => m.connected);
     room.emptySince = anyone ? null : room.emptySince ?? Date.now();
   }
-
-  // -------------------------------------------------------------------------------------
-  // State views and delivery
-  // -------------------------------------------------------------------------------------
 
   snapshot(forMember) {
     const room = this.room;
@@ -836,10 +812,6 @@ export class TogetherRoom extends DurableObject {
   }
 }
 
-// ---------------------------------------------------------------------------------------
-// Validation
-// ---------------------------------------------------------------------------------------
-
 function cleanTrack(raw) {
   if (!raw || typeof raw !== "object") return null;
   const id = String(raw.id ?? "");
@@ -906,10 +878,6 @@ function randomToken(bytes) {
 function randomId(prefix) {
   return `${prefix}_${randomToken(5)}`;
 }
-
-// ---------------------------------------------------------------------------------------
-// HTTP helpers
-// ---------------------------------------------------------------------------------------
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",

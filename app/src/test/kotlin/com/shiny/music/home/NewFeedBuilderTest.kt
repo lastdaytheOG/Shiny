@@ -31,8 +31,6 @@ class NewFeedBuilderTest {
     private val now = LocalDateTime.of(2026, 9, 21, 19, 30).toInstant(ZoneOffset.UTC).toEpochMilli()
     private val thisYear = 2026
 
-    // ---- fixture ---------------------------------------------------------------------------
-
     private fun ctx(
         seed: Long = 3,
         online: Boolean = true,
@@ -172,8 +170,6 @@ class NewFeedBuilderTest {
         }
     }
 
-    // ---- a listener Shiny knows nothing about ------------------------------------------------
-
     @Test
     fun `no history gives no personal sections`() {
         val feed = NewFeedBuilder.build(
@@ -210,8 +206,6 @@ class NewFeedBuilderTest {
         assertTrue(feed.isEmpty)
         assertTrue(feed.sections.isEmpty())
     }
-
-    // ---- a listener with a history -----------------------------------------------------------
 
     @Test
     fun `releases by artists the listener plays are separated out and ordered by plays`() {
@@ -275,8 +269,6 @@ class NewFeedBuilderTest {
         assertTrue("and never from outside the pool", chosen.all { it in setOf("r1", "r2", "r3", "r4") })
     }
 
-    // ---- adjacency ---------------------------------------------------------------------------
-
     @Test
     fun `artists listed beside the listener's, whom they never play, become the adjacent shelf`() {
         val feed = NewFeedBuilder.build(
@@ -312,8 +304,6 @@ class NewFeedBuilderTest {
         assertNull(feed.find<AdjacentSection>())
         assertEquals(NewReason.Plays("Name a2", 20), feed.find<FeaturedSection>()!!.release.reason)
     }
-
-    // ---- honesty rules -----------------------------------------------------------------------
 
     @Test
     fun `an album the listener has already heard never appears`() {
@@ -379,8 +369,6 @@ class NewFeedBuilderTest {
         assertEquals(everyId.size, everyId.distinct().size)
     }
 
-    // ---- charts ------------------------------------------------------------------------------
-
     @Test
     fun `charts come from the same cached block and honour the same setting`() {
         val feed = NewFeedBuilder.build(
@@ -414,8 +402,6 @@ class NewFeedBuilderTest {
         assertEquals("the explicit song at rank 1 is gone", "c2", songs.first().id)
         assertEquals("and rank 2 is still rank 2", 2, songs.first().chartPosition)
     }
-
-    // ---- shape -------------------------------------------------------------------------------
 
     @Test
     fun `the page runs from nearest to furthest`() {

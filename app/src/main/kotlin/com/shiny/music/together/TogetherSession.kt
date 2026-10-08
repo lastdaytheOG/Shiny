@@ -171,10 +171,6 @@ class TogetherSession @Inject constructor(
         scope.launch { socket.events.collect(::onSocketEvent) }
     }
 
-    // -------------------------------------------------------------------------------------
-    // Public API
-    // -------------------------------------------------------------------------------------
-
     val serverConfigured: Boolean get() = TogetherServer.base(context) != null
 
     val displayName: String
@@ -430,10 +426,6 @@ class TogetherSession @Inject constructor(
         votesReorder?.let { put("votesReorder", it) }
     }
 
-    // -------------------------------------------------------------------------------------
-    // Player wiring
-    // -------------------------------------------------------------------------------------
-
     /** The activity's player connection, or null when it goes away. */
     fun attach(connection: PlayerConnection?) {
         if (playerConnection === connection) return
@@ -511,10 +503,6 @@ class TogetherSession @Inject constructor(
         applying { playerConnection?.player?.playWhenReady = false }
         setRate(1f)
     }
-
-    // -------------------------------------------------------------------------------------
-    // Connection
-    // -------------------------------------------------------------------------------------
 
     private fun connect(server: String, code: String) {
         clock.reset()
@@ -738,10 +726,6 @@ class TogetherSession @Inject constructor(
         _state.value = State(ending = ending, endedAt = System.currentTimeMillis(), mode = savedMode())
     }
 
-    // -------------------------------------------------------------------------------------
-    // Hosting
-    // -------------------------------------------------------------------------------------
-
     private fun becomeHost(announce: Boolean) {
         stopFollowing(pause = false)
         restoreParameters()
@@ -959,10 +943,6 @@ class TogetherSession @Inject constructor(
         }
         publishQueueSoon()
     }
-
-    // -------------------------------------------------------------------------------------
-    // Following
-    // -------------------------------------------------------------------------------------
 
     private fun becomeGuest() {
         stopHosting()
@@ -1183,10 +1163,6 @@ class TogetherSession @Inject constructor(
 
     private fun isApplying() = SystemClock.uptimeMillis() < applyingUntil
 
-    // -------------------------------------------------------------------------------------
-    // Resume after the app was closed
-    // -------------------------------------------------------------------------------------
-
     private fun saveResume() {
         val st = _state.value
         val code = st.code ?: return
@@ -1213,10 +1189,6 @@ class TogetherSession @Inject constructor(
         if (parts[3] != TogetherServer.base(context)) return
         join(parts[0], resumeToken = parts[1])
     }
-
-    // -------------------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------------------
 
     private inline fun send(type: String, crossinline fields: kotlinx.serialization.json.JsonObjectBuilder.() -> Unit = {}): Boolean =
         socket.send(buildJsonObject {

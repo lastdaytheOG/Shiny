@@ -328,7 +328,6 @@ class ShinyWidgetManager @Inject constructor(
             views.setImageViewBitmap(R.id.widget_turntable_album_art, getCircularDefaultIcon())
         }
 
-        // Set play/pause icon - using secondary color icons for turntable
         val playPauseIcon = if (isPlaying) R.drawable.ic_widget_pause_secondary else R.drawable.ic_widget_play_secondary
         views.setImageViewResource(R.id.widget_turntable_play_pause, playPauseIcon)
 

@@ -106,12 +106,10 @@ object HomeOrder {
             // Promoted into Core by offlineLean (see band()), so it is scored to lead there.
             HomeSlot.ReadyOffline -> 20.0 + 60.0 * taste.offlineLean
 
-            // ---- Library ---------------------------------------------------------------
             HomeSlot.Rediscover -> 40.0 + 25.0 * c
             HomeSlot.AlbumsInProgress -> 35.0 + 40.0 * taste.albumLean
             HomeSlot.RecentlyAdded -> 38.0 + 20.0 * taste.offlineLean
 
-            // ---- Closing ---------------------------------------------------------------
             HomeSlot.Insights -> 40.0 + 20.0 * taste.activeLean
             HomeSlot.Surprise -> 30.0 + 30.0 * taste.discoveryLean
         }

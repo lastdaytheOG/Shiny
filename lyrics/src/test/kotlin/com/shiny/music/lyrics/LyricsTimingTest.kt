@@ -16,8 +16,6 @@ class LyricsTimingTest {
 
     private fun times(lrc: String) = LyricsUtils.parseLyrics(lrc).map { it.time }
 
-    // ---- timestamp parsing --------------------------------------------------------
-
     @Test
     fun `two-digit minutes with centiseconds parse to milliseconds`() {
         assertEquals(listOf(62_340L), times("[01:02.34]hello"))
@@ -65,8 +63,6 @@ class LyricsTimingTest {
         assertEquals(listOf(10_000L), parsed.map { it.time })
     }
 
-    // ---- the offset tag -----------------------------------------------------------
-
     @Test
     fun `positive offset tag shifts lyrics earlier`() {
         // LRC defines a positive offset as "show the lyrics this many ms sooner".
@@ -94,8 +90,6 @@ class LyricsTimingTest {
     fun `absent offset tag leaves timings untouched`() {
         assertEquals(listOf(10_000L, 20_000L), times("[00:10.00]a\n[00:20.00]b"))
     }
-
-    // ---- which line is current ----------------------------------------------------
 
     private val lines = listOf(
         LyricsEntry(10_000L, "first"),
@@ -190,8 +184,6 @@ class LyricsTimingTest {
         }
     }
 
-    // ---- parsing produces something the search can rely on ------------------------
-
     @Test
     fun `parsed lyrics come back sorted by time`() {
         val parsed = LyricsUtils.parseLyrics("[00:30.00]c\n[00:10.00]a\n[00:20.00]b")
@@ -227,8 +219,6 @@ class LyricsTimingTest {
         assertEquals(9.0, words!![0].startTime, 0.001)
         assertTrue(words.all { it.startTime >= 0.0 })
     }
-
-    // ---- seeking -------------------------------------------------------------------
 
     private val timeline = LyricsUtils.parseLyrics(
         "[00:00.000]Line A\n[00:05.000]Line B\n[00:10.000]Line C\n[00:15.000]Line D\n[00:20.000]Line E"

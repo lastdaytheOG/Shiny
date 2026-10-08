@@ -193,8 +193,6 @@ class SoundFxProcessingTest {
         assertTrue("a +12 dB boost reached $peak", peak < 32_700)
     }
 
-    // ---- helpers ----
-
     private fun boost(db: Double) = ParametricEQ(
         preamp = 0.0,
         bands = listOf(ParametricEQBand(frequency = 62.0, gain = db, q = 1.41, filterType = FilterType.PK, enabled = true)),

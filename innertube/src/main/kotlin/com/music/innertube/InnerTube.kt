@@ -107,7 +107,6 @@ class InnerTube {
                 // Enable HTTP/2 for better performance
                 protocols(listOf(okhttp3.Protocol.HTTP_2, okhttp3.Protocol.HTTP_1_1))
                 
-                // Retry on connection failure
                 retryOnConnectionFailure(true)
                 
                 // Cache configuration for better performance
@@ -803,9 +802,6 @@ class InnerTube {
         }
     }
 
-    /**
-     * Upload song data to the provided upload URL.
-     */
     suspend fun uploadSongData(
         uploadUrl: String,
         data: ByteArray,

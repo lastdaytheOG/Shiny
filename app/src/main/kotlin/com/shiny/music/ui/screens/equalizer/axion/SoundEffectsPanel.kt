@@ -54,8 +54,6 @@ import kotlin.math.roundToInt
 private fun edit(transform: (SoundFxSettings) -> SoundFxSettings) =
     SoundFxEngine.update { transform(it).copy(preset = EffectPreset.Custom) }
 
-// ---- Header: A/B ---------------------------------------------------------------------------
-
 /** A for the untouched song, B for everything this screen does to it. Always B again on leaving. */
 @Composable
 fun AbSwitch(modifier: Modifier = Modifier) {
@@ -79,8 +77,6 @@ fun AbSwitch(modifier: Modifier = Modifier) {
         }
     }
 }
-
-// ---- Effect sections ----------------------------------------------------------------------
 
 @Composable
 fun SoundEffectsSections(inListenTogether: Boolean) {
@@ -371,8 +367,6 @@ private fun <T> ChipRow(
         }
     }
 }
-
-// ---- Equaliser curve ---------------------------------------------------------------------
 
 private val EQ_FREQUENCIES = doubleArrayOf(31.0, 62.0, 125.0, 250.0, 500.0, 1000.0, 2000.0, 4000.0, 8000.0, 16000.0)
 

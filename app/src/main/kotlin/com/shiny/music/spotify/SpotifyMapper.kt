@@ -191,9 +191,6 @@ object SpotifyMapper {
         }
     }
 
-    /**
-     * Normalizes a title for comparison, with LRU caching.
-     */
     private fun cachedNormalize(title: String): String {
         normalizeCache[title]?.let { return it }
         val normalized = normalizeTitle(title)
@@ -201,9 +198,6 @@ object SpotifyMapper {
         return normalized
     }
 
-    /**
-     * Returns cached bigrams for a normalized string.
-     */
     private fun cachedBigrams(normalized: String): Set<String> {
         bigramCache[normalized]?.let { return it }
         val bigrams = if (normalized.length < 2) emptySet() else normalized.windowed(2).toSet()

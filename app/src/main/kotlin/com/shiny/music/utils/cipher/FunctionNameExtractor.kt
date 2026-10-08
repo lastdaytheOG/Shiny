@@ -12,8 +12,6 @@ import java.security.MessageDigest
 object FunctionNameExtractor {
     private const val TAG = "Shiny_CipherFnExtract"
 
-    // ==================== DATA CLASSES ====================
-
     data class SigFunctionInfo(
         val name: String,
         val constantArg: Int?, // The first numeric argument (e.g., 48 in JI(48, sig)) - legacy
@@ -49,8 +47,6 @@ object FunctionNameExtractor {
         val nJsExpression: String? = null,
         val signatureTimestamp: Int
     )
-
-    // ==================== DETECTION PATTERNS ====================
 
     // See extractSignatureTimestamp for why these two are tried in different precedence tiers.
     private val ANCHORED_STS_PATTERN = Regex("""signatureTimestamp['":\s]+(\d+)""")
@@ -93,11 +89,6 @@ object FunctionNameExtractor {
         Regex("""([a-zA-Z0-9$]+)\s*=\s*function\([a-zA-Z0-9]\)\s*\{[^}]*?enhanced_except_"""),
     )
 
-    // ==================== EXTRACTION FUNCTIONS ====================
-
-    /**
-     * Detect if player.js uses Q-array obfuscation
-     */
     fun hasQArrayObfuscation(playerJs: String): Boolean {
         val hasQArray = Q_ARRAY_PATTERN.containsMatchIn(playerJs)
         Timber.tag(TAG).d("Q-array obfuscation check: hasQArray=$hasQArray")
@@ -293,9 +284,6 @@ object FunctionNameExtractor {
         return null
     }
 
-    /**
-     * Extract signatureTimestamp from player.js
-     */
     fun extractSignatureTimestamp(playerJs: String, knownHash: String? = null): Int? {
         Timber.tag(TAG).d("Extracting signatureTimestamp...")
 

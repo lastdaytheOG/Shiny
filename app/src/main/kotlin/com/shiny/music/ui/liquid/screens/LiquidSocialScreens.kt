@@ -240,8 +240,6 @@ class SocialViewModel @Inject constructor(
     }
 }
 
-// ---- Friends & Profile -------------------------------------------------------------------------
-
 @Composable
 fun SocialSettingsScreen(
     navController: NavController,
@@ -515,8 +513,6 @@ private fun UsernameGroup(
     )
 }
 
-// ---- Discord -----------------------------------------------------------------------------------
-
 @Composable
 fun DiscordSettingsScreen(navController: NavController) {
     val context = LocalContext.current
@@ -670,8 +666,6 @@ fun DiscordSettingsScreen(navController: NavController) {
 }
 
 private val DiscordBlurple = Color(0xFF5865F2)
-
-// ---- Friends -----------------------------------------------------------------------------------
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -1028,8 +1022,6 @@ private fun PersonRow(
         Row(verticalAlignment = Alignment.CenterVertically) { actions() }
     }
 }
-
-// ---- Shared pieces -----------------------------------------------------------------------------
 
 @Composable
 private fun SectionTitle(text: String) {

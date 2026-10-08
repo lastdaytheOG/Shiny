@@ -364,7 +364,6 @@ object AppleMusicCanvasProvider {
             val albumName = attributes?.get("name")?.jsonPrimitive?.contentOrNull ?: ""
             val artistName = attributes?.get("artistName")?.jsonPrimitive?.contentOrNull ?: fallbackArtist
             
-            // --- Playlist/Station Filtering ---
             val nameLower = albumName.lowercase(Locale.ROOT)
             val isBlacklisted = nameLower.contains("playlist") || nameLower.contains("set list") ||
                     nameLower.contains("essentials") || nameLower.contains("dj mix") ||

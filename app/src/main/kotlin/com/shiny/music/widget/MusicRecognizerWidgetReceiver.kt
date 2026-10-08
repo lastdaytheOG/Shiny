@@ -89,8 +89,6 @@ class MusicRecognizerWidgetReceiver : AppWidgetProvider() {
         }
     }
 
-    // ─── Recognition start / stop ─────────────────────────────────────────────
-
     private fun handleStartRecognition(context: Context) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val currentState = prefs.getInt(PREF_STATE, STATE_IDLE)
@@ -138,8 +136,6 @@ class MusicRecognizerWidgetReceiver : AppWidgetProvider() {
         }
     }
 
-    // ─── Widget update ────────────────────────────────────────────────────────
-
     private fun updateAllWidgets(context: Context, appWidgetManager: AppWidgetManager) {
         val componentName = ComponentName(context, MusicRecognizerWidgetReceiver::class.java)
         val widgetIds = appWidgetManager.getAppWidgetIds(componentName)
@@ -170,8 +166,6 @@ class MusicRecognizerWidgetReceiver : AppWidgetProvider() {
             appWidgetManager.updateAppWidget(widgetId, views)
         }
     }
-
-    // ─── Layout builders ──────────────────────────────────────────────────────
 
     private fun createWideViews(
         context: Context,
@@ -223,8 +217,6 @@ class MusicRecognizerWidgetReceiver : AppWidgetProvider() {
         views.setOnClickPendingIntent(R.id.widget_recognizer_tiny_root, getMicIntent(context))
         return views
     }
-
-    // ─── State helpers ────────────────────────────────────────────────────────
 
     private fun applyAlbumArt(
         views: RemoteViews,
@@ -310,8 +302,6 @@ class MusicRecognizerWidgetReceiver : AppWidgetProvider() {
 
         views.setImageViewResource(pulseViewId, pulseDrawable)
     }
-
-    // ─── PendingIntents ───────────────────────────────────────────────────────
 
     /** Tap on mic button → start or stop recognition */
     private fun getMicIntent(context: Context): PendingIntent =

@@ -69,10 +69,6 @@ import com.shiny.music.ui.liquid.rememberArtworkTones
 import com.shiny.music.ui.theme.pressScale
 import com.shiny.music.ui.utils.resize
 
-// ---------------------------------------------------------------------------------------
-// Shared pieces
-// ---------------------------------------------------------------------------------------
-
 /** A small tracked all-caps line that says why something is here. */
 @Composable
 internal fun Eyebrow(text: String, color: Color, modifier: Modifier = Modifier) {
@@ -296,10 +292,6 @@ private fun OpeningHead(
     }
 }
 
-// ---------------------------------------------------------------------------------------
-// The day's mix
-// ---------------------------------------------------------------------------------------
-
 /**
  * The first thing Home says: a mix for this part of the day, made of songs the listener
  * keeps returning to with a measured share of new ones, over a field of its lead cover's
@@ -427,10 +419,6 @@ internal fun PlayDisc(onClick: () -> Unit, background: Color, tint: Color, size:
         Icon(Icons.Rounded.PlayArrow, null, tint = tint, modifier = Modifier.size(26.dp))
     }
 }
-
-// ---------------------------------------------------------------------------------------
-// Pick up where you left off
-// ---------------------------------------------------------------------------------------
 
 /**
  * Shown while a session is loaded but paused — the restored queue after a relaunch, or a
@@ -613,10 +601,6 @@ private fun QuietStart(online: Boolean) {
         )
     }
 }
-
-// ---------------------------------------------------------------------------------------
-// Offline
-// ---------------------------------------------------------------------------------------
 
 @Composable
 internal fun OfflineNotice(section: OfflineNoticeSection) {

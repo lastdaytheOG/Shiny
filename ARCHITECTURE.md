@@ -90,8 +90,8 @@ Unit tests run on a plain JVM. Run the suite for what you touched:
 ```bash
 ./gradlew :app:testUniversalFossDebugUnitTest
 ./gradlew :lyrics:testDebugUnitTest      # LRC parsing and line-at-position
-./gradlew :canvas:testDebugUnitTest
-./gradlew :innertube:testDebugUnitTest
+./gradlew :canvas:test
+./gradlew :innertube:test
 ```
 
 CI builds the app but does not run tests, so a green build proves nothing about behaviour. Pure logic (parsers, feed building, queue rules) gets a test with the change.

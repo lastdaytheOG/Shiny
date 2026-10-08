@@ -1308,7 +1308,6 @@ object YTPlayerUtils {
             return format.url
         }
 
-        // --- PoToken / CipherDeobfuscator path ---
         val useCipher = engine == com.shiny.music.constants.PlaybackEngine.POTOKEN || engine == com.shiny.music.constants.PlaybackEngine.AUTO
         if (useCipher) {
             val signatureCipher = format.signatureCipher ?: format.cipher
@@ -1327,7 +1326,6 @@ object YTPlayerUtils {
             }
         }
 
-        // --- BravePipe / NewPipeExtractor path ---
         val useBravePipe = engine == com.shiny.music.constants.PlaybackEngine.BRAVEPIPE || engine == com.shiny.music.constants.PlaybackEngine.AUTO
         if (useBravePipe) {
             if (skipNewPipe) {
@@ -1344,7 +1342,6 @@ object YTPlayerUtils {
                     Timber.tag(logTag).e(e, "NewPipe deobfuscation failed")
                 }
 
-                // Fallback: try to get URL from StreamInfo
                 Timber.tag(logTag).d("Trying StreamInfo fallback for URL")
                 try {
                     val streamUrls = YouTube.getNewPipeStreamUrls(videoId)

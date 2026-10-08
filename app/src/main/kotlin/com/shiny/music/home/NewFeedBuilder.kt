@@ -6,10 +6,6 @@ import java.time.LocalDateTime
 import java.time.ZoneOffset
 import kotlin.math.ln
 
-// ---------------------------------------------------------------------------------------
-// What New is made of
-// ---------------------------------------------------------------------------------------
-
 /**
  * Why a release is on the page.
  *
@@ -73,10 +69,6 @@ data class NewFeed(
         val Empty = NewFeed(emptyList(), ListenerProfile.New, true, 0)
     }
 }
-
-// ---------------------------------------------------------------------------------------
-// The builder
-// ---------------------------------------------------------------------------------------
 
 /**
  * New, assembled from the same signals Home uses: the listen history read by

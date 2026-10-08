@@ -184,10 +184,6 @@ fun LiquidLibraryScreen(
     }
 }
 
-// ---------------------------------------------------------------------------------------
-// Playlists
-// ---------------------------------------------------------------------------------------
-
 @Composable
 fun LiquidLibraryPlaylistsScreen(
     navController: NavController,
@@ -338,10 +334,6 @@ private fun LibraryRow(
     }
 }
 
-// ---------------------------------------------------------------------------------------
-// Artists
-// ---------------------------------------------------------------------------------------
-
 @Composable
 fun LiquidLibraryArtistsScreen(
     navController: NavController,
@@ -389,10 +381,6 @@ fun LiquidLibraryArtistsScreen(
         }
     }
 }
-
-// ---------------------------------------------------------------------------------------
-// Albums
-// ---------------------------------------------------------------------------------------
 
 @Composable
 fun LiquidLibraryAlbumsScreen(
@@ -454,10 +442,6 @@ private fun AlbumCell(album: Album, actions: LiquidActions) {
         onLongClick = { actions.menu(album) },
     )
 }
-
-// ---------------------------------------------------------------------------------------
-// Songs
-// ---------------------------------------------------------------------------------------
 
 @Composable
 fun LiquidLibrarySongsScreen(

@@ -120,10 +120,6 @@ val LocalLiquidBottomInset = compositionLocalOf { 0.dp }
 @Composable
 fun liquidBottomPadding(extra: Dp = 24.dp): Dp = LocalLiquidBottomInset.current + extra
 
-// ---------------------------------------------------------------------------------------
-// Press feedback
-// ---------------------------------------------------------------------------------------
-
 /**
  * The iOS table-cell highlight: a flat fill that appears on touch-down and fades on
  * release. No ripple — a ripple is the single most Android thing a list can do.
@@ -167,10 +163,6 @@ fun rememberRowHighlight(): LiquidHighlight {
     val color = Liquid.colors.fill
     return remember(color) { LiquidHighlight(color) }
 }
-
-// ---------------------------------------------------------------------------------------
-// Artwork
-// ---------------------------------------------------------------------------------------
 
 /** Corner radius for artwork of a given edge length — covers stay crisp, never card-like. */
 fun artworkRadius(size: Dp): Dp = (size.value * 0.055f).coerceIn(4f, 14f).dp
@@ -261,10 +253,6 @@ fun Artwork(
         }
     }
 }
-
-// ---------------------------------------------------------------------------------------
-// Glass controls
-// ---------------------------------------------------------------------------------------
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -412,10 +400,6 @@ fun LiquidButton(
     }
 }
 
-// ---------------------------------------------------------------------------------------
-// Text blocks
-// ---------------------------------------------------------------------------------------
-
 /** "Recently Played ›" — a shelf heading, tappable when the shelf has a "see all". */
 @Composable
 fun SectionHeader(
@@ -513,10 +497,6 @@ fun ExplicitBadge(modifier: Modifier = Modifier, color: Color = Liquid.colors.se
     }
 }
 
-// ---------------------------------------------------------------------------------------
-// Tiles
-// ---------------------------------------------------------------------------------------
-
 /**
  * A cover with one quiet line of title and one of subtitle underneath — the unit every
  * shelf is built from.
@@ -581,10 +561,6 @@ fun MediaTile(
         )
     }
 }
-
-// ---------------------------------------------------------------------------------------
-// Rows
-// ---------------------------------------------------------------------------------------
 
 /**
  * A song in a list: artwork (or a track number), title over subtitle, and an ellipsis.
@@ -812,10 +788,6 @@ fun NavigationRow(
     }
 }
 
-// ---------------------------------------------------------------------------------------
-// Inputs
-// ---------------------------------------------------------------------------------------
-
 /** iOS segmented control: a grey track and a thumb that springs between segments. */
 @Composable
 fun LiquidSegmentedControl(
@@ -986,10 +958,6 @@ fun LiquidSearchField(
         }
     }
 }
-
-// ---------------------------------------------------------------------------------------
-// Status
-// ---------------------------------------------------------------------------------------
 
 /** The iOS activity indicator: eight fading spokes. Animates in the draw phase only. */
 @Composable

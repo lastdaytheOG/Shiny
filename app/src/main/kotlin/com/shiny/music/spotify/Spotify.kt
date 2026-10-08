@@ -147,8 +147,6 @@ object Spotify {
         logger?.invoke(level, message)
     }
 
-    // ── JSON navigation helpers ──────────────────────────────────────────
-
     private fun JsonObject.obj(key: String): JsonObject? =
         try {
             this[key]?.takeIf { it !is JsonNull }?.jsonObject
@@ -176,8 +174,6 @@ object Spotify {
         } catch (_: Exception) {
             null
         }
-
-    // ── GraphQL core ─────────────────────────────────────────────────────
 
     /**
      * Callback invoked when a GQL hash is rejected (PersistedQueryNotFound).
@@ -309,8 +305,6 @@ object Spotify {
         throw SpotifyException(429, "Rate limited after $maxRetries retries")
     }
 
-    // ── REST core (fallback for endpoints without GQL equivalent) ────────
-
     private suspend inline fun <reified T> authenticatedGet(
         endpoint: String,
         failFastOn429: Boolean = false,
@@ -362,8 +356,6 @@ object Spotify {
 
         throw SpotifyException(429, "Rate limited after $maxRetries retries")
     }
-
-    // ── GQL response converters ──────────────────────────────────────────
 
     private fun parseGqlImage(source: JsonObject): SpotifyImage? {
         val url = source.str("url") ?: return null
@@ -454,8 +446,6 @@ object Spotify {
             parseGqlImages(imageGroup.jsonObject.arr("sources"))
         } ?: emptyList()
 
-    // ── User Profile (GQL with REST fallback) ──────────────────────────
-
     suspend fun me(): Result<SpotifyUser> =
         runCatching {
             try {
@@ -479,8 +469,6 @@ object Spotify {
                 authenticatedGet<SpotifyUser>("me")
             }
         }
-
-    // ── Playlists (GQL: libraryV3) ──────────────────────────────────────
 
     suspend fun myPlaylists(
         limit: Int = 50,
@@ -539,8 +527,6 @@ object Spotify {
                 offset = pagingInfo?.int("offset") ?: offset,
             )
         }
-
-    // ── Library hierarchy (GQL: libraryV3, folders preserved) ───────────
 
     /**
      * Returns one level of the user's library tree. When [folderUri] is null the
@@ -687,8 +673,6 @@ object Spotify {
         )
     }
 
-    // ── Library Artists (GQL: libraryV3 with Artists filter) ───────────
-
     suspend fun myArtists(
         limit: Int = 50,
         offset: Int = 0,
@@ -759,8 +743,6 @@ object Spotify {
                 offset = pagingInfo?.int("offset") ?: offset,
             )
         }
-
-    // ── Playlist detail (GQL: fetchPlaylist) ────────────────────────────
 
     suspend fun playlist(playlistId: String): Result<SpotifyPlaylist> =
         runCatching {
@@ -849,8 +831,6 @@ object Spotify {
                 offset = offset,
             )
         }
-
-    // ── Playlist Mutations (GQL) ──────────────────────────────────────
 
     /**
      * Adds tracks to a Spotify playlist via GQL mutation.
@@ -968,8 +948,6 @@ object Spotify {
         val uid: String,
     )
 
-    // ── Liked Songs (GQL: fetchLibraryTracks) ───────────────────────────
-
     suspend fun likedSongs(
         limit: Int = 50,
         offset: Int = 0,
@@ -1007,8 +985,6 @@ object Spotify {
             )
         }
 
-    // ── Library Mutations (GQL: addToLibrary / removeFromLibrary) ──────
-
     /**
      * Saves tracks/albums/playlists to the user's Spotify library (like).
      * @param uris Full Spotify URIs, e.g. `["spotify:track:abc123"]`.
@@ -1045,8 +1021,6 @@ object Spotify {
             log("D", "removeFromLibrary: removed ${uris.size} items")
         }
 
-    // ── Top Tracks (REST fallback — no GQL equivalent) ──────────────────
-
     suspend fun topTracks(
         timeRange: String = "medium_term",
         limit: Int = 50,
@@ -1060,8 +1034,6 @@ object Spotify {
             }
         }
 
-    // ── Top Artists (REST fallback — no GQL equivalent) ─────────────────
-
     suspend fun topArtists(
         timeRange: String = "medium_term",
         limit: Int = 50,
@@ -1074,8 +1046,6 @@ object Spotify {
                 parameter("offset", offset)
             }
         }
-
-    // ── Recommendations (REST fallback — no GQL equivalent) ─────────────
 
     suspend fun recommendations(
         seedTrackIds: List<String> = emptyList(),
@@ -1091,8 +1061,6 @@ object Spotify {
                 parameter("limit", limit)
             }
         }
-
-    // ── Search (GQL: searchDesktop) ─────────────────────────────────────
 
     suspend fun search(
         query: String,
@@ -1239,8 +1207,6 @@ object Spotify {
             uri = uri.ifEmpty { null },
         )
     }
-
-    // ── Browse: New Releases (GQL: queryWhatsNewFeed) ───────────────────
 
     suspend fun newReleases(
         limit: Int = 20,
@@ -1461,8 +1427,6 @@ object Spotify {
         )
     }
 
-    // ── Albums (GQL: getAlbum) ──────────────────────────────────────────
-
     suspend fun album(albumId: String): Result<SpotifyAlbum> =
         runCatching {
             val vars =
@@ -1520,8 +1484,6 @@ object Spotify {
                 uri = "spotify:album:$albumId",
             )
         }
-
-    // ── Artists (GQL: queryArtistOverview) ───────────────────────────────
 
     suspend fun artist(artistId: String): Result<SpotifyArtist> =
         runCatching {
@@ -1621,8 +1583,6 @@ object Spotify {
                 SpotifyArtist(id = id, name = name, images = images, uri = uri)
             }
         }
-
-    // ── Related Artists (REST fallback) ─────────────────────────────────
 
     suspend fun relatedArtists(artistId: String): Result<RelatedArtistsResponse> =
         runCatching {

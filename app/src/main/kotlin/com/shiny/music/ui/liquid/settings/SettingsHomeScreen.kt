@@ -281,10 +281,6 @@ fun SettingsHomeScreen(navController: NavController) {
     }
 }
 
-// ---------------------------------------------------------------------------------------
-// The index's own pieces
-// ---------------------------------------------------------------------------------------
-
 /**
  * The colours behind the index glyphs. One muted step down from the system palette, so a
  * page of them reads as a set rather than as a row of stickers; the accent is not among

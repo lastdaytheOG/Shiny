@@ -136,8 +136,6 @@ class AppearanceModelTest {
         assertEquals(1.1f, effectiveDensityScale(1.1f, 0, 0), 0f)
     }
 
-    // ---- artwork presentation ----------------------------------------------------------
-
     @Test
     fun `the default presentation is the square stage Shiny already had`() {
         assertEquals(ArtworkPresentation.Card, ShinyAppearance.Baseline.artwork)
@@ -158,8 +156,6 @@ class AppearanceModelTest {
         assertEquals(listOf(ArtworkPresentation.Card, ArtworkPresentation.Poster), ArtworkPresentation.entries.toList())
         assertEquals(ArtworkPresentation.Card, runCatching { ArtworkPresentation.valueOf("FullScreen") }.getOrDefault(ArtworkPresentation.Card))
     }
-
-    // ---- poster ------------------------------------------------------------------------
 
     @Test
     fun `on a tall screen the poster dissolves over the last part of the cover itself`() {

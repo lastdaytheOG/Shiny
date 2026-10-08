@@ -570,7 +570,6 @@ private fun NowPlaying(
                 }
             }
 
-            // ---- Stage layer: grabber, the artwork's resting place, title row ---------
             Column(
                 Modifier
                     .fillMaxSize()
@@ -624,7 +623,6 @@ private fun NowPlaying(
                 }
             }
 
-            // ---- Compact layer: header row and the lyrics / queue page -----------------
             val headerTop = topInset + 26.dp + 8.dp
             val contentTop = headerTop + 72.dp
             Box(
@@ -705,7 +703,6 @@ private fun NowPlaying(
                 )
             }
 
-            // ---- The artwork, flying between its two resting places --------------------
             FlyingArtwork(
                 model = hiRes ?: artUrl,
                 // The copy that flies up from the mini player lands on this same picture.
@@ -841,7 +838,6 @@ private fun NowPlaying(
                 }
             }
 
-            // ---- Controls: always present, over every mode ----------------------------
             Column(
                 Modifier
                     .align(Alignment.BottomCenter)
@@ -880,7 +876,6 @@ private fun NowPlaying(
                 )
             }
 
-            // ---- Listen Together: friends' reactions rise over the player ---------------
             if (togetherState.isLive && floatReactions && together != null) {
                 TogetherReactionsLayer(session = together, modifier = Modifier.fillMaxSize())
             }

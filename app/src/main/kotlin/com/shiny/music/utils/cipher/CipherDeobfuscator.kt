@@ -260,7 +260,6 @@ object CipherDeobfuscator {
         Timber.tag(TAG).d("=== N-TRANSFORM SUCCESS ===")
         Timber.tag(TAG).d("N-param: $nValue -> $transformedN")
 
-        // Replace n= parameter in URL
         val transformedUrl = url.replaceFirst(
             Regex("([?&])n=[^&]+"),
             "$1n=${Uri.encode(transformedN)}"

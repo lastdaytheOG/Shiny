@@ -41,10 +41,6 @@ object HomeTaste {
     private fun decay(ageMs: Long, halfLifeDays: Double): Double =
         if (ageMs <= 0L) 1.0 else exp(-ageMs.toDouble() / (halfLifeDays * HOME_DAY_MS))
 
-    // -----------------------------------------------------------------------------------
-    // Confidence
-    // -----------------------------------------------------------------------------------
-
     /**
      * How much history there is to personalise from, 0..1.
      *
@@ -88,10 +84,6 @@ object HomeTaste {
         MAX_PRIOR * sat(signals.savedSongs + signals.counts.localSongs, 40.0)
 
     const val MAX_PRIOR = 0.25
-
-    // -----------------------------------------------------------------------------------
-    // Artists
-    // -----------------------------------------------------------------------------------
 
     /**
      * How strongly the listener is attached to one artist, 0..1, and what that is worth
@@ -254,10 +246,6 @@ object HomeTaste {
             searchLean = sat(signals.counts.searches, 12.0),
         )
     }
-
-    // -----------------------------------------------------------------------------------
-    // Progressive minimums
-    // -----------------------------------------------------------------------------------
 
     /**
      * A section's minimum, scaled by confidence: [low] while Shiny is still learning,

@@ -341,8 +341,6 @@ object AudioExporter {
         }
     }
 
-    // ---- Streamed songs ------------------------------------------------------------------
-
     private suspend fun prepareStreamed(context: Context, request: Request): State = withContext(Dispatchers.IO) {
         val deps = EntryPointAccessors.fromApplication(context, Dependencies::class.java)
         val workDir = freshWorkDir(context)

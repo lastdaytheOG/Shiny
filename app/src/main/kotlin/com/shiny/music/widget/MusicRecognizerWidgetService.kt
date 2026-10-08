@@ -94,8 +94,6 @@ class MusicRecognizerWidgetService : Service() {
         return START_NOT_STICKY
     }
 
-    // ─── Foreground notification ──────────────────────────────────────────────
-
     private fun startForegroundNotification() {
         val openAppIntent = PendingIntent.getActivity(
             this, 0,
@@ -133,8 +131,6 @@ class MusicRecognizerWidgetService : Service() {
             startForeground(NOTIFICATION_ID, notification)
         }
     }
-
-    // ─── Recognition flow ─────────────────────────────────────────────────────
 
     private fun startRecognition() {
         saveState(STATE_LISTENING)
@@ -291,8 +287,6 @@ class MusicRecognizerWidgetService : Service() {
         return output
     }
 
-    // ─── Helpers ─────────────────────────────────────────────────────────────
-
     private fun stopRecognitionAndService() {
         recognitionJob?.cancel()
         pulseJob?.cancel()
@@ -341,8 +335,6 @@ class MusicRecognizerWidgetService : Service() {
         }
         getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
     }
-
-    // ─── Constants ────────────────────────────────────────────────────────────
 
     companion object {
         const val ACTION_START_RECOGNITION = "com.shiny.music.widget.recognizer.START"

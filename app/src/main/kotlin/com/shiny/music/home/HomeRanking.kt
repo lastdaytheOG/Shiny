@@ -128,8 +128,6 @@ object HomeRanking {
         return (meanShare / 0.6).coerceIn(0.4, 1.0)
     }
 
-    // ---- ordering helpers ------------------------------------------------------------------
-
     fun primaryArtistKey(song: Song): String =
         song.artists.firstOrNull()?.let { it.id.ifBlank { it.name } } ?: song.song.albumName.orEmpty()
 

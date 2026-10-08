@@ -97,8 +97,6 @@ class ArtworkResolverTest {
         maxEntries = maxEntries,
     )
 
-    // ---- covers ------------------------------------------------------------------------
-
     @Test
     fun `a song with only a video still gets apple's cover`() = runBlocking {
         val catalog = FakeCatalog(listOf(song()))
@@ -225,8 +223,6 @@ class ArtworkResolverTest {
         assertEquals(1, catalog.calls.get())
     }
 
-    // ---- motion ------------------------------------------------------------------------
-
     private val clip = CanvasArtwork(
         albumId = "22",
         animated = "https://mvod.itunes.apple.com/square/P_default.m3u8",
@@ -236,8 +232,6 @@ class ArtworkResolverTest {
         tallAspect = 0.75f,
         tallVideoUrl = "https://mvod.itunes.apple.com/tall/P_664x886.mp4",
     )
-
-    // ---- the one result: static artwork, square motion, tall motion ----------------------
 
     @Test
     fun `one catalogue lookup gives the cover and both shapes of motion artwork`() = runBlocking {
@@ -334,8 +328,6 @@ class ArtworkResolverTest {
         assertEquals(clip.animated, resolver.motion(videoSong)?.animated)
         assertEquals(2, motion.albumCalls.get())
     }
-
-    // ---- which album is asked, and where ------------------------------------------------
 
     private fun onAlbum(id: Long, album: String = "SOS") =
         CatalogCandidate(trackId = id + 1, collectionId = id, trackName = "Kill Bill", artistName = "SZA", collectionName = album, artworkUrl100 = cover)
@@ -526,8 +518,6 @@ class ArtworkResolverTest {
         assertNull(CanvasArtwork(animated = "x").tallStillAt(1200))
     }
 
-    // ---- the disk index ---------------------------------------------------------------
-
     @Test
     fun `what was found is there offline, in a new run of the app`() = runBlocking {
         val index = MemoryIndex()
@@ -572,8 +562,6 @@ class ArtworkResolverTest {
         assertTrue(index.stored.size <= 10)
         assertTrue("the newest is kept", index.stored.keys.any { it.endsWith("songnumber29") })
     }
-
-    // ---- nothing here can hurt playback ---------------------------------------------
 
     @Test
     fun `when everything fails the answer is simply nothing`() = runBlocking {

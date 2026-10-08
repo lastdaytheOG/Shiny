@@ -91,7 +91,6 @@ object HomeFeedBuilder {
             RankedSong(song, it?.plays ?: 0, it?.monthPlays ?: 0, it?.weekPlays ?: 0, it?.lastPlayed ?: 0L)
         }
 
-        // ---- Your Rotation ----------------------------------------------------------------
         val rotationSongs = resolve(signals.rotationIds)
             .sortedByDescending { song ->
                 val st = stats.getValue(song.id)
@@ -100,7 +99,6 @@ object HomeFeedBuilder {
             .let { capPerArtist(it, 2, ::primaryArtistKey) }
         val rotation = rotationSongs.take(10).map(::ranked)
 
-        // ---- This time of day -------------------------------------------------------------
         val minDaypartDays = HomeTaste.minimum(confidence, MIN_DAYPART_DAYS_LOW, MIN_DAYPART_DAYS_HIGH)
         val daypartSongs = if (signals.daypartDays >= minDaypartDays) {
             resolve(signals.daypartIds)
@@ -111,13 +109,11 @@ object HomeFeedBuilder {
             emptyList()
         }
 
-        // ---- Rediscover -------------------------------------------------------------------
         val rediscoverAll = resolve(signals.rediscoverIds)
             .let { rotateHead(it, 24, ctx.seed) }
             .let { capPerArtist(it, 2, ::primaryArtistKey) }
         val rediscover = rediscoverAll.take(10)
 
-        // ---- Discover: never played, each tied to a song that is -------------------------
         val discoverAll = if (!ctx.online) emptyList() else {
             signals.discovery.mapNotNull { link ->
                 val song = signals.songs[link.songId] ?: return@mapNotNull null
@@ -128,7 +124,6 @@ object HomeFeedBuilder {
             }
         }
 
-        // ---- Keep listening: the thread out of the last thing played ---------------------
         val continueSection = if (confidence < CONTINUE_RETIRES_AT) {
             keepListening(signals, discoverAll, taste, ctx, ::allowed)
         } else {
@@ -144,7 +139,6 @@ object HomeFeedBuilder {
             rotateHead(chosen, 16, ctx.seed).take(12)
         }
 
-        // ---- The hero mix -----------------------------------------------------------------
         val hero = buildHero(
             ctx = ctx,
             confidence = confidence,
@@ -247,8 +241,6 @@ object HomeFeedBuilder {
         val feed = HomeOrder.order(sections.keys, ctx, taste).mapNotNull { sections[it] }
         return HomeFeed(feed, profile, ctx.daypart, ctx.online, taste)
     }
-
-    // ---- sections -------------------------------------------------------------------------
 
     /**
      * The day's mix.
@@ -614,8 +606,6 @@ object HomeFeedBuilder {
             replayedPlays = replayed?.weekPlays ?: 0,
         )
     }
-
-    // ---- moods ----------------------------------------------------------------------------
 
     private val daypartMoodWords = mapOf(
         Daypart.Morning to listOf("energ", "commute", "workout", "feel good", "focus"),

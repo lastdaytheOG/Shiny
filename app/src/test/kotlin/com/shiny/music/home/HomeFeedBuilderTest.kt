@@ -43,8 +43,6 @@ class HomeFeedBuilderTest {
     private val morning = wall(8)
     private val afternoon = wall(14)
 
-    // ---- fixture ---------------------------------------------------------------------------
-
     private fun song(
         id: String,
         artist: String = "artist_$id",
@@ -221,8 +219,6 @@ class HomeFeedBuilderTest {
 
     private fun HomeFeed.kinds() = sections.map { it::class.simpleName }
 
-    // ---- first use -------------------------------------------------------------------------
-
     @Test
     fun `a listener with nothing at all opens on real music, not on a wall`() {
         val c = ctx()
@@ -263,8 +259,6 @@ class HomeFeedBuilderTest {
         assertNotNull("never-played files feed Surprise Me", feed.find<SurpriseSection>())
     }
 
-    // ---- pins --------------------------------------------------------------------------------
-
     private fun libraryPlaylist(id: String, songs: Int) = Playlist(
         playlist = PlaylistEntity(id = id, name = "Playlist $id"),
         songCount = songs,
@@ -304,8 +298,6 @@ class HomeFeedBuilderTest {
         val offline = HomeFeedBuilder.build(sig, null, ctx(online = false)).find<LatelySection>()?.tiles.orEmpty()
         assertTrue(offline.none { it is PinnedTile })
     }
-
-    // ---- Spotify and YouTube Music: a row each ------------------------------------------------
 
     private fun mix(id: String, songs: Int) =
         HomeSpotifyMix(spotifyId = id, name = "Daily Mix $id", localPlaylistId = "SPOTIFY_MIX_$id", songCount = songs, syncedAt = 1)
@@ -397,8 +389,6 @@ class HomeFeedBuilderTest {
         assertNull(feed.find<SpotifySection>())
         assertNull(feed.find<YouTubeSection>())
     }
-
-    // ---- an established listener -----------------------------------------------------------
 
     @Test
     fun `an established listener in the evening opens on the mix, then their evenings`() {
@@ -511,8 +501,6 @@ class HomeFeedBuilderTest {
         assertEquals(4, started.albums.first { it.album.id == "lp" }.heard)
     }
 
-    // ---- local and offline -----------------------------------------------------------------
-
     @Test
     fun `a listener who mostly plays files is treated as local-first`() {
         val (library, plays) = establishedLibrary(local = true)
@@ -565,8 +553,6 @@ class HomeFeedBuilderTest {
         val hero = feed.find<HeroMixSection>()
         if (hero != null) assertEquals(0, hero.fresh)
     }
-
-    // ---- filters, charts, scale ------------------------------------------------------------
 
     @Test
     fun `hidden video songs are hidden everywhere`() {
@@ -648,8 +634,6 @@ class HomeFeedBuilderTest {
         feed.find<RotationSection>()?.let { assertTrue(it.songs.size <= 10) }
         feed.find<RediscoverSection>()?.let { assertTrue(it.songs.size <= 10) }
     }
-
-    // ---- surprise --------------------------------------------------------------------------
 
     @Test
     fun `surprise me skips recent picks and recent plays while it can`() {
@@ -742,8 +726,6 @@ class HomeFeedBuilderTest {
         assertNull("charts off", shown(emptyList()))
         assertNull("a country not fetched yet is not faked", shown(listOf("JP")))
     }
-
-    // ---- progressive personalisation -------------------------------------------------------
 
     /** A library of [songs] songs by [artists] artists, each artist holding several songs. */
     private fun youngLibrary(songs: Int = 24, artists: Int = 6) =
@@ -871,8 +853,6 @@ class HomeFeedBuilderTest {
         assertTrue("and never takes the mix over either", knowsNothing <= 0.7)
     }
 
-    // ---- an adaptive order -------------------------------------------------------------------
-
     @Test
     fun `opening the charts keeps them near the top, ignoring them lets them sink`() {
         val (library, plays) = establishedLibrary()
@@ -929,8 +909,6 @@ class HomeFeedBuilderTest {
         val twice = HomeFeedBuilder.build(sig, charts(), c).kinds()
         assertEquals("an adaptive Home is not a shuffling one", once, twice)
     }
-
-    // ---- the charts --------------------------------------------------------------------------
 
     @Test
     fun `chart movement is only claimed once there is an earlier day to compare`() {

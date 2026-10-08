@@ -86,10 +86,6 @@ import kotlinx.coroutines.launch
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 
-// ---------------------------------------------------------------------------------------
-// YouTube Music playlist
-// ---------------------------------------------------------------------------------------
-
 @Composable
 fun LiquidOnlinePlaylistScreen(
     navController: NavController,
@@ -255,10 +251,6 @@ fun LiquidOnlinePlaylistScreen(
     }
 }
 
-// ---------------------------------------------------------------------------------------
-// Playlist opened from a shared link
-// ---------------------------------------------------------------------------------------
-
 @Composable
 fun LiquidSharedPlaylistScreen(
     navController: NavController,
@@ -372,10 +364,6 @@ private fun SharedPlaylistUnavailable(gone: Boolean, onRetry: () -> Unit, onBack
         )
     }
 }
-
-// ---------------------------------------------------------------------------------------
-// Library playlist
-// ---------------------------------------------------------------------------------------
 
 @Composable
 fun LiquidLocalPlaylistScreen(
@@ -584,10 +572,6 @@ fun LiquidLocalPlaylistScreen(
         }
     }
 }
-
-// ---------------------------------------------------------------------------------------
-// Automatic collections
-// ---------------------------------------------------------------------------------------
 
 @Composable
 fun LiquidAutoPlaylistScreen(
