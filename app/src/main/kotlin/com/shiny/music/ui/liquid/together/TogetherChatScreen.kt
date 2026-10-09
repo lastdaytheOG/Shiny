@@ -367,7 +367,7 @@ private fun Bubble(
 @Composable
 private fun linkified(text: String, linkColor: Color): AnnotatedString {
     val context = LocalContext.current
-    val regex = remember { Regex("""(https?://(?:music\.youtube\.com|shinymusic\.vercel\.app|youtu\.be|(?:www\.)?youtube\.com)/[\w\-.?&=%/]*)""") }
+    val regex = remember { Regex("""(https?://(?:music\.youtube\.com|(?:www\.)?shinymusic\.in|youtu\.be|(?:www\.)?youtube\.com)/[\w\-.?&=%/]*)""") }
     val matches = regex.findAll(text).toList()
     if (matches.isEmpty()) return AnnotatedString(text)
     return buildAnnotatedString {
