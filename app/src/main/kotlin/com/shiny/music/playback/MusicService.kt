@@ -68,7 +68,7 @@ import androidx.media3.session.MediaController
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
 import androidx.media3.session.SessionToken
-import com.google.common.util.concurrent.MoreExecutors
+import com.google.common.util.concurrent.ListenableFuture
 import com.music.innertube.YouTube
 import com.music.innertube.models.SongItem
 import com.music.innertube.models.WatchEndpoint
@@ -119,6 +119,7 @@ import com.shiny.music.constants.PreventDuplicateTracksInQueueKey
 import com.shiny.music.constants.SimilarContent
 import com.shiny.music.constants.SkipSilenceInstantKey
 import com.shiny.music.constants.SkipSilenceKey
+import com.shiny.music.constants.StopMusicOnTaskClearKey
 import com.shiny.music.constants.IpVersionKey
 import com.music.innertube.models.IpVersion
 import okhttp3.Dns
@@ -271,8 +272,13 @@ class MusicService :
     private var callHoldJob: Job? = null
     private var wasPlayingBeforeVolumeMute = false
     private var isPausedByVolumeMute = false
-    var preferredDeviceId: Int? = null 
-        private set
+    /**
+     * The output the listener chose for Shiny's own playback (Android's id for the audio
+     * device), or null while playback follows Android's routing. The audio output sheet
+     * observes this; nothing else decides where Shiny plays.
+     */
+    private val _preferredDeviceId = MutableStateFlow<Int?>(null)
+    val preferredDeviceId: kotlinx.coroutines.flow.StateFlow<Int?> = _preferredDeviceId.asStateFlow()
 
     private var crossfadeEnabled = false
     private var crossfadeDuration = 5000f
@@ -346,13 +352,27 @@ class MusicService :
         player.volume = if (muted) 0f else playerVolume.value
     }
 
-    fun setPreferredAudioDevice(deviceId: Int?) { 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val devices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
-            val deviceInfo = devices.find { it.id == deviceId }
-            player.setPreferredAudioDevice(deviceInfo)
-            preferredDeviceId = deviceId
+    /**
+     * Plays through the output with this id, or through wherever Android routes music when
+     * [deviceId] is null. Returns false, changing nothing, if there is no such output any more.
+     * Only the route changes: the player, its queue and its position are left as they are.
+     */
+    fun setPreferredAudioDevice(deviceId: Int?): Boolean {
+        val deviceInfo = deviceId?.let { id ->
+            audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS).firstOrNull { it.id == id }
         }
+        if (deviceId != null && deviceInfo == null) return false
+        player.setPreferredAudioDevice(deviceInfo)
+        // A crossfade's incoming player is the one that will be heard next.
+        secondaryPlayer?.setPreferredAudioDevice(deviceInfo)
+        _preferredDeviceId.value = deviceId
+        return true
+    }
+
+    /** The chosen output as Android's device, for a player built after the choice was made. */
+    private fun preferredAudioDevice(): AudioDeviceInfo? {
+        val id = _preferredDeviceId.value ?: return null
+        return audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS).firstOrNull { it.id == id }
     }
 
 
@@ -452,6 +472,7 @@ class MusicService :
     @Volatile private var cachedPersistShuffleAcrossQueues: Boolean = false
     @Volatile private var cachedHistoryDuration: Float = 30f
     @Volatile private var cachedPauseListenHistory: Boolean = false
+    @Volatile private var cachedStopOnTaskClear: Boolean = false
 
     /** Hides videos when either the explicit preference or Data Saver asks for it. */
     private val cachedHideVideoSongsEffective: Boolean
@@ -530,6 +551,14 @@ class MusicService :
                 }
             }
         }
+
+        override fun onAudioDevicesRemoved(removedDevices: Array<out AudioDeviceInfo>?) {
+            super.onAudioDevicesRemoved(removedDevices)
+            // The chosen output has gone (headphones off, cable out): back to Android's routing,
+            // rather than holding on to an id that would never match a device again.
+            val chosen = _preferredDeviceId.value ?: return
+            if (removedDevices?.any { it.id == chosen } == true) setPreferredAudioDevice(null)
+        }
     }
 
     override fun startForegroundService(service: Intent): android.content.ComponentName? {
@@ -576,6 +605,7 @@ class MusicService :
         cachedPersistShuffleAcrossQueues = read(PersistentShuffleAcrossQueuesKey, false)
         cachedHistoryDuration = read(HistoryDuration, 30f)
         cachedPauseListenHistory = read(PauseListenHistoryKey, false)
+        cachedStopOnTaskClear = read(StopMusicOnTaskClearKey, false)
         cachedPreloadLyrics = read(PreloadLyricsEnabledKey, true)
         cachedPreloadLimit = read(PreloadNextSongLimitKey, 1)
         cachedPreloadEnabled = if (cachedDataSaver) false else read(PreloadNextSongEnabledKey, true)
@@ -601,6 +631,7 @@ class MusicService :
             cachedPersistShuffleAcrossQueues = read(PersistentShuffleAcrossQueuesKey, false)
             cachedHistoryDuration = read(HistoryDuration, 30f)
             cachedPauseListenHistory = read(PauseListenHistoryKey, false)
+            cachedStopOnTaskClear = read(StopMusicOnTaskClearKey, false)
         }
     }
 
@@ -731,9 +762,7 @@ class MusicService :
         }
 
         
-        val sessionToken = SessionToken(this, ComponentName(this, MusicService::class.java))
-        val controllerFuture = MediaController.Builder(this, sessionToken).buildAsync()
-        controllerFuture.addListener({ controllerFuture.get() }, MoreExecutors.directExecutor())
+        holdSelfController()
 
         connectivityManager = getSystemService()!!
         connectivityObserver = NetworkConnectivityObserver(this)
@@ -1204,6 +1233,7 @@ class MusicService :
             .build()
 
         playerSilenceProcessors[player] = silenceProcessor
+        preferredAudioDevice()?.let { player.setPreferredAudioDevice(it) }
 
         player.apply {
             setOffloadEnabled(
@@ -2368,6 +2398,8 @@ class MusicService :
             saveQueueToDisk()
         }
 
+        if (playbackState == Player.STATE_IDLE) shutDownIfStoppedWithoutUi()
+
         if (playbackState == Player.STATE_READY) {
             consecutivePlaybackErr = 0
             retryCount = 0
@@ -2414,6 +2446,7 @@ class MusicService :
         if (playWhenReady) {
             setupLoudnessEnhancer()
         }
+        if (headless) watchHeadlessPause()
     }
 
     // The next-song preload waits for audio. Started at the play request, it resolved the next song
@@ -3747,32 +3780,148 @@ class MusicService :
         player.release()
         discordUpdateJob?.cancel()
         resolveScope.cancel()
+        releaseSelfController()
         super.onDestroy()
+        // A notification posted outside the foreground state is not removed with the service.
+        getSystemService(NotificationManager::class.java)?.cancel(NOTIFICATION_ID)
     }
 
     override fun onBind(intent: Intent?) = super.onBind(intent) ?: binder
 
+    /**
+     * The controller this service connects to itself with. It is a binding like any other, so
+     * for as long as it is held the service outlives the app's window: paused in the background,
+     * the player and its queue stay as they were. It is also why [stopSelf] alone never ends the
+     * service, so [shutDownWithoutUi] lets go of it first.
+     */
+    private var selfController: ListenableFuture<MediaController>? = null
+
+    private fun holdSelfController() {
+        if (selfController != null) return
+        val sessionToken = SessionToken(this, ComponentName(this, MusicService::class.java))
+        selfController = MediaController.Builder(this, sessionToken).buildAsync()
+    }
+
+    private fun releaseSelfController() {
+        selfController?.let { MediaController.releaseFuture(it) }
+        selfController = null
+    }
+
+    /** The app's window was swiped away while a song played on: only the notification is left. */
+    private var headless = false
+
+    /** Guards [shutDownWithoutUi] against the player events it causes itself. */
+    private var shuttingDown = false
+
+    /** Ends a windowless service that has been left paused; see [watchHeadlessPause]. */
+    private var headlessPauseJob: Job? = null
+
+    /**
+     * The app's window is open (again). Called by the activity each time it binds, which is
+     * also how an instance that was on its way out is put back to work.
+     */
+    fun onUiAttached() {
+        headless = false
+        shuttingDown = false
+        headlessPauseJob?.cancel()
+        setForegroundServiceTimeoutMs(DEFAULT_FOREGROUND_SERVICE_TIMEOUT_MS)
+        holdSelfController()
+    }
+
     override fun onTaskRemoved(rootIntent: Intent?) {
-        super.onTaskRemoved(rootIntent)
-
-        // Keep background playback alive when the user dismisses the UI while a song is
-        // actually playing. If playback is paused/stopped, however, there is no reason to
-        // retain the foreground service or its MediaSession notification.
-        if (::player.isInitialized && !player.isPlaying) {
-            Timber.tag(TAG).d("App task removed while playback is inactive; stopping service")
-
-            // Stop the playback engine first so Media3 cannot promote the service again and
-            // recreate the notification after it has been dismissed.
-            player.stop()
-
-            // Remove both the foreground-service notification and any notification last
-            // published by Media3's notification provider.
-            stopForeground(STOP_FOREGROUND_REMOVE)
-            getSystemService(NotificationManager::class.java)?.cancel(NOTIFICATION_ID)
-
-            // onDestroy() releases the MediaLibrarySession, player, audio focus and other
-            // resources. Releasing the session there also removes Android's media controls.
+        // Not passed to Media3: its version pauses and calls stopSelf(), which neither ends a
+        // service that is bound to itself nor keeps the notification from coming back.
+        if (!::player.isInitialized) {
             stopSelf()
+            return
+        }
+        val playing = player.isPlaying ||
+            (player.playWhenReady && player.playbackState == Player.STATE_BUFFERING)
+        if (playing && !cachedStopOnTaskClear) {
+            // The song plays on behind its notification. With no window to come back to, that
+            // notification is all there is: once paused it can be swiped away at once (Media3
+            // would hold it in place for ten minutes), and swiping it away ends the service.
+            headless = true
+            setForegroundServiceTimeoutMs(0)
+            Timber.tag(TAG).d("App task removed while playing; playback continues")
+            return
+        }
+        Timber.tag(TAG).d("App task removed (playing=$playing); stopping service")
+        shutDownWithoutUi()
+    }
+
+    /**
+     * Ends playback and the service after the app's window has gone: nothing of Shiny is left in
+     * the notification shade or the system's media controls.
+     */
+    private fun shutDownWithoutUi() {
+        if (shuttingDown) return
+        shuttingDown = true
+
+        // Media3 keeps a notification up for any session it manages whose player still has a
+        // queue, playing or not, and posts it again after it has been cancelled. A session that
+        // is no longer the service's has none, so this is what takes it down for good; a
+        // controller that connects later (the app, Android Auto) hands the session back.
+        if (isSessionAdded(mediaSession)) removeSession(mediaSession)
+
+        player.pause()
+        player.stop()
+        // The queue is kept. If this instance is bound again before it is destroyed, the next
+        // play request prepares it, as it does a queue restored at launch.
+        restoredQueueAwaitingPrepare = true
+
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        val notifications = getSystemService(NotificationManager::class.java)
+        notifications?.cancel(NOTIFICATION_ID)
+        // Once more behind anything already queued on this thread that would post it again.
+        Handler(Looper.getMainLooper()).post { notifications?.cancel(NOTIFICATION_ID) }
+
+        // With its own binding gone the service can be destroyed, and onDestroy() releases the
+        // session, which is what removes Shiny from the system's media controls.
+        releaseSelfController()
+        stopSelf()
+    }
+
+    /**
+     * With the app's window gone, a paused song can still be resumed from its notification, and
+     * on Android versions that do not let a media notification be swiped away that notification
+     * would otherwise sit there for good. So a pause the listener chose is given as long as
+     * Media3 itself keeps a paused service ready, and then the service ends. A pause that is
+     * about to undo itself (a phone call, a Listen Together room) is left alone.
+     */
+    private fun watchHeadlessPause() {
+        headlessPauseJob?.cancel()
+        if (!headless || shuttingDown || player.playWhenReady) return
+        headlessPauseJob = scope.launch {
+            delay(DEFAULT_FOREGROUND_SERVICE_TIMEOUT_MS)
+            val resumesByItself = wasPlayingBeforeAudioFocusLoss ||
+                callHoldJob?.isActive == true ||
+                together.state.value.active
+            if (headless && !shuttingDown && !player.playWhenReady && !resumesByItself) {
+                Timber.tag(TAG).d("Left paused with no app task; stopping service")
+                shutDownWithoutUi()
+            }
+        }
+    }
+
+    /**
+     * With the app's window gone, a player left stopped is the listener swiping the notification
+     * away (Media3 answers that with stop()), or a sleep timer running out: nothing is left to
+     * come back to. Checked a moment later, because a stream is also re-prepared through
+     * stop(), and a failed one is retried from idle.
+     */
+    private fun shutDownIfStoppedWithoutUi() {
+        if (!headless || shuttingDown) return
+        scope.launch {
+            delay(HEADLESS_STOP_GRACE_MS)
+            if (headless && !shuttingDown &&
+                player.playbackState == Player.STATE_IDLE &&
+                player.playerError == null &&
+                !player.playWhenReady
+            ) {
+                Timber.tag(TAG).d("Stopped with no app task; stopping service")
+                shutDownWithoutUi()
+            }
         }
     }
 
@@ -4439,6 +4588,9 @@ class MusicService :
          * (the ~1 MiB preview cap) retry forever.
          */
         private const val RETRY_BUDGET_REFILL_MS = 30_000L
+
+        /** How long a stopped player is left alone before a windowless service ends; see [shutDownIfStoppedWithoutUi]. */
+        private const val HEADLESS_STOP_GRACE_MS = 600L
         
         private const val MAX_GAIN_MB = 300 
         private const val MIN_GAIN_MB = -1500 

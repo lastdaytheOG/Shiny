@@ -106,6 +106,15 @@ constructor(
         session: MediaSession,
         controller: MediaSession.ControllerInfo,
     ): MediaSession.ConnectionResult {
+        // Android's Quick Settings asks every media app, through this hint, for something to
+        // offer on a "resume" card that it then keeps after the app has gone. Shiny does not
+        // resume playback from there (see onPlaybackResumption), so the card would be a dead
+        // one that outlives the app; declining the request is what keeps it from being made.
+        if (controller.packageName == "com.android.systemui" &&
+            controller.connectionHints.getBoolean(android.service.media.MediaBrowserService.BrowserRoot.EXTRA_RECENT, false)
+        ) {
+            return MediaSession.ConnectionResult.reject()
+        }
         val connectionResult = super.onConnect(session, controller)
         val availableSessionCommands = if (isAuthorizedController(session, controller)) {
             connectionResult.availableSessionCommands

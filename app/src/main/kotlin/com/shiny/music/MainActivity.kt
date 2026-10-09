@@ -182,7 +182,6 @@ import com.shiny.music.constants.PauseSearchHistoryKey
 import com.shiny.music.constants.PureBlackKey
 import com.shiny.music.constants.SYSTEM_DEFAULT
 import com.shiny.music.constants.SelectedThemeColorKey
-import com.shiny.music.constants.StopMusicOnTaskClearKey
 import com.shiny.music.constants.UseNewMiniPlayerDesignKey
 import com.shiny.music.constants.*
 import com.shiny.music.ui.component.shimmer.getShimmerTheme
@@ -361,6 +360,8 @@ class MainActivity : ComponentActivity() {
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             if (service is MusicBinder) {
+                // The window is back: a service left running without one is the app's again.
+                service.service.onUiAttached()
                 try {
                     playerConnection = PlayerConnection(this@MainActivity, service, database, lifecycleScope)
                     Timber.tag("MainActivity").d("PlayerConnection created successfully")
@@ -451,17 +452,8 @@ class MainActivity : ComponentActivity() {
             launchArtVisible = false
             com.shiny.music.ui.liquid.launch.LaunchArt.release()
         }
-        if (dataStore.get(StopMusicOnTaskClearKey, false) &&
-            playerConnection?.isPlaying?.value == true &&
-            isFinishing
-        ) {
-            stopService(Intent(this, MusicService::class.java))
-            if (serviceBound) {
-                unbindService(serviceConnection)
-                serviceBound = false
-            }
-            playerConnection = null
-        }
+        // "Stop when Shiny is swiped away" is the service's to act on (MusicService.onTaskRemoved):
+        // stopService() from here never ended a service that also holds a binding to itself.
     }
 
     override fun onNewIntent(intent: Intent) {
