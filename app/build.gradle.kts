@@ -405,6 +405,13 @@ dependencies {
 
     coreLibraryDesugaring(libs.desugaring)
     testImplementation(libs.junit)
+    // Compose tests that draw a screen on a device (app/src/androidTest); the manifest
+    // artifact gives debug builds the empty activity those tests draw in.
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4:${libs.versions.compose.get()}")
+    // The Espresso that Compose's test rule pulls in by default cannot inject input on Android 16.
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
+    debugImplementation("androidx.compose.ui:ui-test-manifest:${libs.versions.compose.get()}")
     implementation(libs.timber)
     implementation(libs.smoothCorner)
     implementation("androidx.compose.material:material-icons-extended:1.7.8")
