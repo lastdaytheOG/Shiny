@@ -408,6 +408,40 @@ and a press blooms the disc. No ripples, no icon buttons.
 two or three left in the queue. It runs on open and on every index change, and **only with
 Autoplay on** — with Autoplay off the queue stays exactly what the user built.
 
+### Audio output (`player/LiquidOutputSheet.kt` · `playback/output/`)
+
+The sheet the output button in the utility row opens. It is about one thing, the device the
+music is on, and it says only what Android reports.
+
+- **Hero.** A 104dp panel disc with the device's glyph, its name in `title1`, and a status
+  capsule. The glyph follows what the device *is* (headphones, speaker, car, TV, hearing aid,
+  USB, the phone); a Bluetooth device whose kind Android does not give keeps the Bluetooth
+  mark. No product pictures. Behind it, one radial gradient in the accent (20% dark, 10%
+  light) built once; the player and its artwork stay in view above the sheet under a 50% scrim.
+- **Connected is not playing.** Only the route the music is going to reads "Playing here"
+  (green dot). A Bluetooth device that is merely connected reads "Connected"; another output
+  that could be used reads "Available".
+- **Stats** (`statsFor`). Battery · Codec · Connection in one panel, equal cells. Battery is
+  shown for Bluetooth and reads "Unavailable" when the device reports none, never a number.
+  Codec appears only when Android gives it (system apps only from Android 13, so usually not
+  at all). There is **no signal figure**: no public API gives one for a connected device. An
+  output with nothing to say beyond how it is connected gets no panel.
+- **Other outputs.** One panel of rows. A row Android offers as a route moves the music when
+  tapped (the player's own route preference); a device that is connected but not offered as a
+  route opens Android's output switcher, because only Android can make it one.
+- **Bluetooth panel.** At most a notice (Bluetooth is off → Turn on; access is off → Allow, or
+  Settings once Android has stopped asking) above **Connect a device** / **Connect another
+  device**, which opens Android's Bluetooth settings. A phone with no Bluetooth gets one line
+  saying so and no action. The sheet never asks for the permission on its own.
+- **State.** `BluetoothPanelState` (Unavailable, PermissionRequired, BluetoothDisabled,
+  NoDeviceConnected, Connecting, Connected, Disconnecting, ConnectionError) is a pure function
+  of one reading of the system (`reducePanelState`); the sheet draws it and works nothing out.
+  `AudioOutputMonitor` reads the system only while the sheet is on screen, from Android's
+  callbacks and broadcasts, never on a timer.
+- **Motion.** The disc scales in from 88% once, the stat cells follow 60ms apart, the status
+  cross-fades. The only repeating animation is the glyph's breath while a device is
+  connecting or disconnecting, and it ends with that state.
+
 ### Ambient Mode (`ui/screens/ambient/AmbientModeScreen.kt`)
 Lyrics first, landscape. The cover (rounded 14dp, soft shadow, clipped so the living effect never
 smears past it) with title and artist sits centred in the left 40%; the karaoke pane fills the
