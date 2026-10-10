@@ -73,6 +73,7 @@ import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.net.HttpURLConnection
 import java.net.URL
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -643,6 +644,32 @@ private fun formatGitHubDate(githubDate: String): String = try {
     githubDate
 }
 
+private const val GITHUB_API_ACCEPT = "application/vnd.github+json"
+private const val GITHUB_API_VERSION = "2022-11-28"
+private const val GITHUB_USER_AGENT = "Shiny-Updater"
+
+internal fun configureGitHubConnection(connection: HttpURLConnection): HttpURLConnection =
+    connection.apply {
+        connectTimeout = 15_000
+        readTimeout = 15_000
+        requestMethod = "GET"
+        setRequestProperty("Accept", GITHUB_API_ACCEPT)
+        setRequestProperty("X-GitHub-Api-Version", GITHUB_API_VERSION)
+        setRequestProperty("User-Agent", GITHUB_USER_AGENT)
+    }
+
+private fun readGitHubResponse(url: URL): String {
+    val connection = configureGitHubConnection(url.openConnection() as HttpURLConnection)
+    return try {
+        if (connection.responseCode !in 200..299) {
+            throw java.io.IOException("GitHub returned HTTP ${connection.responseCode}")
+        }
+        connection.inputStream.bufferedReader().use { it.readText() }
+    } finally {
+        connection.disconnect()
+    }
+}
+
 
 fun isNewerVersion(latestVersion: String, currentVersion: String): Boolean {
     val latestVersionClean = latestVersion.removePrefix("b").removePrefix("v")
@@ -681,14 +708,12 @@ suspend fun checkForUpdate(
     withContext(Dispatchers.IO) {
         try {
             val url = URL("https://api.github.com/repos/lastdaytheOG/Shiny/releases/latest")
-            val json = url.openStream().bufferedReader().use { it.readText() }
+            val json = readGitHubResponse(url)
             val targetRelease = JSONObject(json)
             
             val currentVersion = BuildConfig.VERSION_NAME
             val targetTagName = targetRelease.getString("tag_name")
-            val currentClean = currentVersion.removePrefix("b").removePrefix("v").trim()
-            val targetClean = targetTagName.removePrefix("b").removePrefix("v").trim()
-            val shouldShow = currentClean != targetClean
+            val shouldShow = isNewerVersion(targetTagName, currentVersion)
 
             if (shouldShow) {
                 val tagWithPrefix = targetRelease.getString("tag_name")
@@ -701,7 +726,7 @@ suspend fun checkForUpdate(
                 try {
                     val changelogUrl =
                         URL("https://github.com/lastdaytheOG/Shiny/releases/download/$tagWithPrefix/changelog.json")
-                    val changelogJson = changelogUrl.openStream().bufferedReader().use { it.readText() }
+                    val changelogJson = readGitHubResponse(changelogUrl)
                     val changelogData = JSONObject(changelogJson)
 
                     description = changelogData.optString("description").takeIf { it.isNotEmpty() }
