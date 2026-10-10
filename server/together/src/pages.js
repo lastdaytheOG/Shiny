@@ -25,6 +25,8 @@ export function invitePage(code, preview, origin, env) {
 <meta property="og:description" content="${escapeHtml(description)}">
 ${playing?.thumbnail ? `<meta property="og:image" content="${escapeHtml(playing.thumbnail)}">` : ""}
 <meta name="theme-color" content="#000000">
+<link rel="preconnect" href="https://github.com">
+<link rel="preconnect" href="https://release-assets.githubusercontent.com">
 <style>
   :root { color-scheme: dark; --rose: #ff375f; --label: #fff; --secondary: rgba(235,235,245,.6); --fill: rgba(118,118,128,.24); }
   * { box-sizing: border-box; }
@@ -67,6 +69,7 @@ ${playing?.thumbnail ? `<meta property="og:image" content="${escapeHtml(playing.
 
 export function homePage(env) {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Shiny Together</title>
+<link rel="preconnect" href="https://github.com"><link rel="preconnect" href="https://release-assets.githubusercontent.com">
 <style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#000;color:#fff;font:17px/1.4 -apple-system,"Inter","Segoe UI",Roboto,sans-serif;text-align:center}a{color:#ff375f}</style></head>
 <body><main><h1>Shiny Together</h1><p>Group listening for <a href="${escapeHtml(env.APP_DOWNLOAD_URL)}">Shiny</a>.</p></main></body></html>`;
 }

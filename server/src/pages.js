@@ -52,6 +52,8 @@ function layout({ title, description, image, body, script }) {
 <meta property="og:title" content="${escapeHtml(title)}">
 <meta property="og:description" content="${escapeHtml(description)}">
 ${image ? `<meta property="og:image" content="${escapeHtml(image)}">\n<meta name="twitter:card" content="summary_large_image">` : `<meta name="twitter:card" content="summary">`}
+<link rel="preconnect" href="https://github.com">
+<link rel="preconnect" href="https://release-assets.githubusercontent.com">
 <style>${STYLE}</style>
 </head>
 <body>
