@@ -23,7 +23,7 @@ GOOGLE_CLIENT_IDS = "971028658395-vk5qhva85bct39tpk5b5ipdbdv5e7dcg.apps.googleus
 # For /.well-known/assetlinks.json: app packages and their signing certificate SHA-256 fingerprints.
 ANDROID_PACKAGES = "com.shiny.music,com.shiny.music.debug"
 ANDROID_CERT_SHA256 = "F3:70:1C:9C:1C:87:54:F4:79:A9:D2:20:D6:E6:56:B1:12:1C:CA:43:B6:1C:7B:BE:FD:15:D8:32:A8:2B:19:46,79:C7:EE:06:6D:80:31:C2:AA:E5:9F:59:26:31:F5:B4:7D:6C:36:9F:6E:AF:F7:5F:AE:92:B8:21:B4:33:DA:05"
-APP_DOWNLOAD_URL = "https://github.com/lastdaytheOG/Shiny/releases/latest"
+APP_DOWNLOAD_URL = "https://github.com/lastdaytheOG/Shiny/releases/download/v1.2.4/Shiny.apk"
 # Listen Together's session server (server/together); /j/CODE invite pages come from it.
 TOGETHER_BASE = "https://shiny-together.shinymusic.workers.dev"
 
