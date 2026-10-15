@@ -2,7 +2,7 @@
 
 The same notes appear in the app under *Settings → About → What's New*. APKs are on the [Releases](https://github.com/lastdaytheOG/Shiny/releases) page.
 
-## 1.2.4
+## 1.2.5
 
 A rebuilt Shiny: a new design on every screen, friends and Discord, and an appearance you can make your own.
 

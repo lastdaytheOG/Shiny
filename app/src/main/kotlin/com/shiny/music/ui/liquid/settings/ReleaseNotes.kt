@@ -7,7 +7,7 @@ package com.shiny.music.ui.liquid.settings
  * That repository is not publicly reachable, so the screen could only ever show its error.
  * The notes now travel with the build, so they are always there, offline included.
  *
- * Every line has to describe something that is in the build. 1.2.4 is written from the
+ * Every line has to describe something that is in the build. 1.2.5 carries forward the
  * commits since 1.2.2 (appearance settings, the foundation rebuild with social features, the
  * startup and playback work) and the changes made on top of them; 1.2.2 is RELEASE_INFO.md.
  */
@@ -25,7 +25,7 @@ data class Highlight(val title: String, val text: String)
 
 val ShinyReleases: List<Release> = listOf(
     Release(
-        version = "1.2.4",
+        version = "1.2.5",
         date = null,
         summary = "A rebuilt Shiny: a new design on every screen, friends and Discord, and an appearance you can make your own.",
         featured = listOf(
