@@ -62,6 +62,7 @@
     <string name="liquid_new_from_your_artists">From Artists You Play</string>
     <string name="liquid_new_adjacent">Next to Your Taste</string>
     <string name="liquid_new_fresh">Out Now</string>
+    <string name="liquid_new_from_apple">Fresh from Apple Music</string>
     <string name="liquid_new_nothing_title">Nothing New Yet</string>
     <string name="liquid_new_nothing_body">Shiny could not reach the catalogue. Releases you have already seen stay here.</string>
     <string name="liquid_new_because_related">Like %1$s, who you play</string>

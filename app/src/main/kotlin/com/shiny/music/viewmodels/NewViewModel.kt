@@ -3,6 +3,7 @@ package com.shiny.music.viewmodels
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.music.innertube.models.AlbumItem
 import com.shiny.music.constants.HideExplicitKey
 import com.shiny.music.constants.HideVideoSongsKey
 import com.shiny.music.constants.HomeChartsCountryKey
@@ -10,6 +11,7 @@ import com.shiny.music.constants.HomeChartsGlobalKey
 import com.shiny.music.constants.InnerTubeCookieKey
 import com.shiny.music.db.MusicDatabase
 import com.shiny.music.home.Daypart
+import com.shiny.music.home.AppleNewReleaseProvider
 import com.shiny.music.home.HomeCharts
 import com.shiny.music.home.HomeContext
 import com.shiny.music.home.HomeFeedBuilder
@@ -43,8 +45,11 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
 import java.time.LocalDateTime
+import java.util.Locale
 import javax.inject.Inject
 
 /**
@@ -85,6 +90,9 @@ class NewViewModel @Inject constructor(
     private val visible = MutableStateFlow(false)
     private val refreshNonce = MutableStateFlow(0)
     private val lastSignals = MutableStateFlow<HomeSignals?>(null)
+    private val appleReleases = MutableStateFlow<List<AlbumItem>>(emptyList())
+    private val appleMutex = Mutex()
+    private var appleFetchedAt = 0L
 
     /** Read once: the network and SIM country do not change under a running app. */
     private val detectedCountry by lazy { HomeCharts.detectCountry(context) }
@@ -136,9 +144,9 @@ class NewViewModel @Inject constructor(
         remote.state,
         online,
         prefs,
-        combine(moment, refreshNonce) { m, n -> m to n },
-    ) { signals, remote, online, prefs, (m, nonce) ->
-        NewFeedBuilder.build(signals, remote, contextFor(m, nonce, online, prefs))
+        combine(moment, refreshNonce, appleReleases) { m, n, apple -> Triple(m, n, apple) },
+    ) { signals, remote, online, prefs, (m, nonce, apple) ->
+        NewFeedBuilder.build(signals, remote, contextFor(m, nonce, online, prefs), apple)
     }
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
@@ -167,6 +175,22 @@ class NewViewModel @Inject constructor(
             .orEmpty()
         try {
             remote.refresh(p.chartScopes, p.accountKey, topArtists, force)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            reportException(e)
+        }
+        refreshApple(force)
+    }
+
+    private suspend fun refreshApple(force: Boolean) = appleMutex.withLock {
+        val now = System.currentTimeMillis()
+        if (!force && now - appleFetchedAt < HomeRemoteRepository.EXPLORE_TTL_MS) return@withLock
+        try {
+            AppleNewReleaseProvider.fetch(Locale.getDefault().country)?.let {
+                appleReleases.value = it
+                appleFetchedAt = now
+            }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {

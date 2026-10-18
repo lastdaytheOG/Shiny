@@ -2,7 +2,6 @@ package com.shiny.music.home
 
 import com.music.innertube.models.AlbumItem
 import com.music.innertube.models.ArtistItem
-import com.music.innertube.models.SongItem
 import com.shiny.music.db.entities.Artist
 import com.shiny.music.db.entities.ArtistEntity
 import com.shiny.music.db.entities.HomeAlbumStat
@@ -140,21 +139,6 @@ class NewFeedBuilderTest {
             related = related,
         )
 
-    private fun chart() = HomeChart(
-        playlistId = "PLin",
-        title = "Top 100 Music Videos India",
-        scope = "IN",
-        songs = (1..20).map {
-            SongItem(
-                id = "c$it",
-                title = "Chart $it",
-                artists = listOf(YTArtist("Chart artist $it", null)),
-                thumbnail = "t",
-                explicit = it == 1,
-            )
-        },
-    )
-
     private inline fun <reified T : NewSection> NewFeed.find(): T? = sections.filterIsInstance<T>().firstOrNull()
 
     private fun NewFeed.kinds() = sections.map { it::class.simpleName }
@@ -166,7 +150,7 @@ class NewFeedBuilderTest {
             is YourArtistsSection -> section.releases.map { it.album.id }
             is AdjacentSection -> section.releases.map { it.album.id }
             is FreshSection -> section.albums.map { it.id }
-            is NewChartsSection -> emptyList()
+            is AppleSection -> section.albums.map { it.id }
         }
     }
 
@@ -370,37 +354,19 @@ class NewFeedBuilderTest {
     }
 
     @Test
-    fun `charts come from the same cached block and honour the same setting`() {
+    fun `new tab never includes charts and keeps fresh apple releases in their own shelf`() {
         val feed = NewFeedBuilder.build(
             signals(mapOf("a1" to 40)),
-            remote(listOf(album("r1", artistId = "a1")), charts = listOf(chart())),
+            remote(
+                releases = listOf(album("r1", artistId = "a1")),
+                charts = listOf(HomeChart("PL", "Charts", "IN", emptyList())),
+            ),
             ctx(chartScopes = listOf("IN")),
+            appleReleases = listOf(album("apple", artistId = "new")),
         )
-        val charts = feed.find<NewChartsSection>()!!
-        assertEquals(listOf("IN"), charts.charts.map { it.scope })
-        assertEquals(1, charts.charts.single().songs.first().chartPosition)
-    }
 
-    @Test
-    fun `a chart scope the listener did not ask for is not shown`() {
-        val feed = NewFeedBuilder.build(
-            signals(mapOf("a1" to 40)),
-            remote(listOf(album("r1", artistId = "a1")), charts = listOf(chart())),
-            ctx(chartScopes = listOf("ZZ")),
-        )
-        assertNull(feed.find<NewChartsSection>())
-    }
-
-    @Test
-    fun `filtering a chart keeps every survivor's true rank`() {
-        val feed = NewFeedBuilder.build(
-            signals(mapOf("a1" to 40)),
-            remote(listOf(album("r1", artistId = "a1")), charts = listOf(chart())),
-            ctx(hideExplicit = true, chartScopes = listOf("IN")),
-        )
-        val songs = feed.find<NewChartsSection>()!!.charts.single().songs
-        assertEquals("the explicit song at rank 1 is gone", "c2", songs.first().id)
-        assertEquals("and rank 2 is still rank 2", 2, songs.first().chartPosition)
+        assertNotNull(feed.find<AppleSection>())
+        assertNull(feed.sections.filterIsInstance<NewSection>().filter { it.key == "charts" }.firstOrNull())
     }
 
     @Test
@@ -415,12 +381,11 @@ class NewFeedBuilderTest {
                     album("r_far", artistId = "nobody"),
                 ),
                 digests = mapOf("a1" to digest("a1", related = listOf(artistItem("near1")))),
-                charts = listOf(chart()),
             ),
-            ctx(chartScopes = listOf("IN")),
+            ctx(),
         )
         assertEquals(
-            listOf("FeaturedSection", "YourArtistsSection", "AdjacentSection", "FreshSection", "NewChartsSection"),
+            listOf("FeaturedSection", "YourArtistsSection", "AdjacentSection", "FreshSection"),
             feed.kinds(),
         )
     }

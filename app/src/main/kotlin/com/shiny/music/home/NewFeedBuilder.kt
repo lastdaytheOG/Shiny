@@ -51,9 +51,8 @@ data class FreshSection(val albums: List<AlbumItem>) : NewSection {
     override val key get() = "fresh"
 }
 
-/** The charts, exactly as the listener's Charts setting asks for them. */
-data class NewChartsSection(val charts: List<HomeChart>, val refreshedAt: Long) : NewSection {
-    override val key get() = "charts"
+data class AppleSection(val albums: List<AlbumItem>) : NewSection {
+    override val key get() = "apple"
 }
 
 data class NewFeed(
@@ -96,6 +95,8 @@ object NewFeedBuilder {
     /** Releases from adjacent artists, at most. */
     const val MAX_ADJACENT = 10
 
+    const val MAX_APPLE = 8
+
     /** How wide the broad shelf opens for a listener Shiny cannot personalise for. */
     const val MAX_FRESH_UNKNOWN = 24
 
@@ -112,7 +113,12 @@ object NewFeedBuilder {
      */
     const val FEATURE_TIE = 0.35
 
-    fun build(signals: HomeSignals, remote: HomeRemote?, ctx: HomeContext): NewFeed {
+    fun build(
+        signals: HomeSignals,
+        remote: HomeRemote?,
+        ctx: HomeContext,
+        appleReleases: List<AlbumItem> = emptyList(),
+    ): NewFeed {
         val profile = HomeFeedBuilder.profile(signals)
         if (remote == null) return NewFeed(emptyList(), profile, ctx.online, 0)
 
@@ -144,10 +150,20 @@ object NewFeedBuilder {
             used += adjacent.map { it.album.id }
         }
 
+        val apple = appleReleases.asSequence()
+            .filter { !(ctx.hideExplicit && it.explicit) }
+            .filter { it.id !in used }
+            .take(MAX_APPLE)
+            .toList()
+        if (apple.isNotEmpty()) {
+            sections += AppleSection(apple)
+            used += apple.map { it.id }
+        }
+
         // The broad shelf opens wider when nothing above it was personal — including the lead,
         // which may itself be the listener's only release — so a page Shiny cannot personalise
         // is still a full page rather than a short apology.
-        val hasPersonal = yours.isNotEmpty() || adjacent.isNotEmpty() ||
+        val hasPersonal = yours.isNotEmpty() || adjacent.isNotEmpty() || apple.isNotEmpty() ||
             (featured != null && featured.reason != NewReason.Fresh)
         val freshLimit = if (hasPersonal) MAX_FRESH_PERSONAL else MAX_FRESH_UNKNOWN
         val fresh = releases.asSequence()
@@ -156,10 +172,6 @@ object NewFeedBuilder {
             .take(freshLimit)
             .toList()
         if (fresh.isNotEmpty()) sections += FreshSection(fresh)
-
-        chartsFor(remote, ctx).takeIf { it.isNotEmpty() }?.let {
-            sections += NewChartsSection(it, remote.chartsAt)
-        }
 
         return NewFeed(sections, profile, ctx.online, remote.exploreAt)
     }

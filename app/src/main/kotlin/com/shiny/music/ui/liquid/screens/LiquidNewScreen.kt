@@ -1,6 +1,5 @@
 package com.shiny.music.ui.liquid.screens
 
-import android.text.format.DateUtils
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -21,10 +20,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -32,9 +29,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,10 +50,9 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
 import com.shiny.music.R
 import com.shiny.music.home.AdjacentSection
+import com.shiny.music.home.AppleSection
 import com.shiny.music.home.FeaturedSection
 import com.shiny.music.home.FreshSection
-import com.shiny.music.home.HomeCharts
-import com.shiny.music.home.NewChartsSection
 import com.shiny.music.home.NewReason
 import com.shiny.music.home.NewRelease
 import com.shiny.music.home.NewSection
@@ -69,7 +63,6 @@ import com.shiny.music.ui.liquid.Hairline
 import com.shiny.music.ui.liquid.LargeTitlePage
 import com.shiny.music.ui.liquid.Liquid
 import com.shiny.music.ui.liquid.LiquidActions
-import com.shiny.music.ui.liquid.LiquidSegmentedControl
 import com.shiny.music.ui.liquid.LiquidTypography
 import com.shiny.music.ui.liquid.MediaTile
 import com.shiny.music.ui.liquid.MoreButton
@@ -78,7 +71,6 @@ import com.shiny.music.ui.liquid.SectionHeader
 import com.shiny.music.ui.liquid.Shelf
 import com.shiny.music.ui.liquid.ShelfGap
 import com.shiny.music.ui.liquid.SkeletonShelf
-import com.shiny.music.ui.liquid.SongRow
 import com.shiny.music.ui.liquid.rememberLiquidActions
 import com.shiny.music.ui.liquid.rememberRowHighlight
 import com.shiny.music.ui.liquid.subtitleText
@@ -93,14 +85,11 @@ import java.util.Locale
  * Three distances, each with its own shape, so the page has a rhythm rather than five
  * carousels — one release given the whole width, the listener's own artists as a list to
  * read down, adjacent artists as a shelf to browse, the rest as a grid to scan, and the
- * charts as what they are, a ranked list.
+ * Apple Music's current releases as a small discovery shelf.
  *
  * Every section comes from [com.shiny.music.home.NewFeedBuilder], and none of them is drawn
  * when it has nothing real in it.
  */
-/** How much of a chart New shows inline before sending the listener to the full one. */
-private const val CHART_ROWS = 10
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LiquidNewScreen(
@@ -243,8 +232,22 @@ private fun LazyListScope.newSection(
             }
         }
 
-        is NewChartsSection -> item(key = section.key) {
-            ChartsPanel(section, actions, navController, activeId, isPlaying)
+        is AppleSection -> {
+            item(key = "${section.key}_h") {
+                SectionHeader(title = stringResource(R.string.liquid_new_from_apple))
+            }
+            item(key = section.key) {
+                Shelf(items = section.albums, key = { "apple_${it.id}" }) { album ->
+                    MediaTile(
+                        title = album.title,
+                        subtitle = album.subtitleText(),
+                        artwork = album.thumbnail.resize(544, 544),
+                        width = 152.dp,
+                        onClick = { actions.open(album) },
+                        onLongClick = { actions.menu(album) },
+                    )
+                }
+            }
         }
     }
 }
@@ -432,104 +435,3 @@ private fun ReleaseRow(release: NewRelease, actions: LiquidActions) {
     }
 }
 
-// ---------------------------------------------------------------------------------------
-// The charts — the source's own ranking, named as the source names it
-// ---------------------------------------------------------------------------------------
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun ChartsPanel(
-    section: NewChartsSection,
-    actions: LiquidActions,
-    navController: NavController,
-    activeId: String?,
-    isPlaying: Boolean,
-) {
-    val colors = Liquid.colors
-    var selected by rememberSaveable { mutableIntStateOf(0) }
-    val index = selected.coerceIn(0, section.charts.lastIndex)
-    val chart = section.charts[index]
-    val now = System.currentTimeMillis()
-    val refreshed = if (now - section.refreshedAt < 60_000) {
-        stringResource(R.string.home_just_now)
-    } else {
-        DateUtils.getRelativeTimeSpanString(section.refreshedAt, now, DateUtils.MINUTE_IN_MILLIS).toString()
-            .let { if (Locale.getDefault().language == "en") it.replaceFirstChar { c -> c.lowercase() } else it }
-    }
-
-    Column(Modifier.fillMaxWidth()) {
-        SectionHeader(
-            title = stringResource(R.string.home_charts),
-            subtitle = stringResource(R.string.home_charts_source, refreshed),
-        )
-        if (section.charts.size > 1) {
-            val global = stringResource(R.string.home_charts_global)
-            LiquidSegmentedControl(
-                items = section.charts.map { c ->
-                    if (c.scope == "ZZ") global else HomeCharts.countryName(c.scope)
-                },
-                selectedIndex = index,
-                onSelect = { selected = it },
-                modifier = Modifier
-                    .padding(horizontal = PageMargin)
-                    .padding(bottom = 10.dp)
-                    .fillMaxWidth(),
-            )
-        }
-        Text(
-            text = chart.title,
-            style = LiquidTypography.footnote.copy(fontWeight = FontWeight.SemiBold),
-            color = colors.secondaryLabel,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(horizontal = PageMargin, vertical = 4.dp),
-        )
-        // A straight column, not the side-paging grid the shelves use: a ranked list that
-        // pages sideways shows the *next* column's rank digits at the screen edge with their
-        // rows still off screen, which reads as a rendering fault rather than as a peek.
-        val songs = chart.songs
-        val shown = songs.take(CHART_ROWS)
-        shown.forEachIndexed { i, song ->
-            SongRow(
-                songId = song.id,
-                title = song.title,
-                subtitle = song.artists.joinToString { it.name },
-                artwork = song.thumbnail,
-                isActive = song.id == activeId,
-                isPlaying = isPlaying,
-                explicit = song.explicit,
-                onClick = {
-                    if (song.id == activeId) actions.togglePlayPause() else actions.playSongItems(chart.title, songs, i)
-                },
-                onLongClick = { actions.menu(song) },
-                onMore = { actions.menu(song) },
-                showSeparator = i != shown.lastIndex,
-                artworkSize = 48.dp,
-                leadingRank = song.chartPosition ?: (i + 1),
-            )
-        }
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .height(48.dp)
-                .combinedClickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = rememberRowHighlight(),
-                    onClick = { navController.navigate("online_playlist/${chart.playlistId}") },
-                )
-                .padding(horizontal = PageMargin),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = stringResource(R.string.home_charts_full),
-                style = LiquidTypography.subheadline.copy(fontWeight = FontWeight.SemiBold),
-                color = colors.accent,
-                modifier = Modifier.weight(1f),
-            )
-            Icon(Icons.Rounded.ChevronRight, null, tint = colors.accent, modifier = Modifier.size(22.dp))
-        }
-        // The charts close the page, and the floating tab bar shrinks to a pill once the page
-        // is scrolled — which is exactly when this row is on screen. Clear it.
-        Spacer(Modifier.height(20.dp))
-    }
-}
