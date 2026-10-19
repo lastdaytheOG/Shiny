@@ -73,6 +73,9 @@ import timber.log.Timber
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 
+private fun decodeArtistName(name: String): String =
+    runCatching { URLDecoder.decode(name, StandardCharsets.UTF_8.toString()) }.getOrDefault(name)
+
 @Composable
 fun AddToPlaylistDialogOnline(
     isVisible: Boolean,
@@ -249,7 +252,7 @@ fun AddToPlaylistDialogOnline(
                                 var allArtists = ""
                                 song.artists.forEach {
                                         artist ->
-                                    allArtists += " ${URLDecoder.decode(artist.name, StandardCharsets.UTF_8.toString())}"
+                                    allArtists += " ${decodeArtistName(artist.name)}"
                                 }
                                 val query = "${song.title} - $allArtists"
 
@@ -319,7 +322,7 @@ fun AddToPlaylistDialogOnline(
                                 var allArtists = ""
                                 song.artists.forEach {
                                         artist ->
-                                    allArtists += " ${URLDecoder.decode(artist.name, StandardCharsets.UTF_8.toString())}"
+                                    allArtists += " ${decodeArtistName(artist.name)}"
                                 }
                                 val query = "${song.title} - $allArtists"
 
