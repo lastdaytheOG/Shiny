@@ -251,7 +251,20 @@ internal fun lineAlpha(line: LyricLineTiming, index: Int, cursor: Float, live: B
  */
 internal fun waveLag(below: Float): Float = 0.009f * below.coerceIn(0f, 5f)
 
-private val CjkRegex = Regex("[\\p{IsHan}\\p{IsHiragana}\\p{IsKatakana}\\p{IsHangul}]")
+/**
+ * Android's regex engine does not support the IsHan/IsHiragana style script properties on every
+ * supported API level. Keep this check regex-free so lyrics cannot crash during class init.
+ */
+internal fun containsCjk(text: String): Boolean =
+    text.codePoints().anyMatch { codePoint ->
+        when (Character.UnicodeScript.of(codePoint)) {
+            Character.UnicodeScript.HAN,
+            Character.UnicodeScript.HIRAGANA,
+            Character.UnicodeScript.KATAKANA,
+            Character.UnicodeScript.HANGUL -> true
+            else -> false
+        }
+    }
 
 /**
  * Where each of [parts] sits in [text], searched in order: a provider's words and syllables
@@ -287,7 +300,7 @@ internal fun buildTimeline(lines: List<LyricsEntry>): LyricTimeline = LyricTimel
     lines.mapIndexed { i, line ->
         val text = line.text.trim()
         val nextTime = lines.getOrNull(i + 1)?.time ?: (line.time + 8000L)
-        val spaced = text.contains(' ') || !CjkRegex.containsMatchIn(text)
+        val spaced = text.contains(' ') || !containsCjk(text)
         val texts = ArrayList<String>()
         val starts = ArrayList<Long>()
         val ends = ArrayList<Long>()

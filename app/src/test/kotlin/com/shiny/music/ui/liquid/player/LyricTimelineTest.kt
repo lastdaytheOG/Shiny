@@ -11,6 +11,15 @@ import kotlin.math.abs
 class LyricTimelineTest {
 
     @Test
+    fun cjkDetectionSupportsLyricScriptsWithoutRegexProperties() {
+        assertTrue(containsCjk("日本語"))
+        assertTrue(containsCjk("한글"))
+        assertTrue(containsCjk("ひらがな"))
+        assertTrue(containsCjk("カタカナ"))
+        assertFalse(containsCjk("English"))
+    }
+
+    @Test
     fun `syllables of one word land side by side inside it`() {
         // How a syllable-timed provider sends "I've been quiet for too long".
         val text = "I've been quiet for too long"
