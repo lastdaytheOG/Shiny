@@ -70,8 +70,7 @@ fun UiDevice.launchApp() {
 }
 
 /**
- * Walks past the first-run screens — onboarding, the appearance welcome, What's New — until the
- * tab bar is showing with nothing on top of it.
+ * Walks past the first-run onboarding until the tab bar is showing with nothing on top of it.
  */
 fun UiDevice.dismissFirstRunScreens(timeoutMs: Long = 60_000) {
     val labels = listOf("Skip", "Get Started", "Start listening", "Continue", "Next")

@@ -222,8 +222,8 @@ lens; *Frosted* blurs harder with a calmer lens and no dispersion. The finish co
   Surfaces (Material), Motion (Artwork motion, Page transitions), Layout (Interface size;
   enlarging stops at 320dp wide / 720dp tall so Now Playing still fits) and *Reset appearance*, which clears only appearance keys.
   Every default is the look Shiny shipped with.
-- **Onboarding / What's New** (`LiquidWelcome.kt`) — paged, glass over a coloured field,
-  shown from `MainActivity` instead of the old dialogs.
+- **Onboarding** (`LiquidWelcome.kt`) — appearance setup shown from `MainActivity`; release notes
+  remain available only from Settings → About.
 
 Shared building blocks in `LiquidComponents.kt` / `LiquidShelves.kt`: `Artwork`,
 `MediaTile`, `SongRow` (separator starts under the text; ⋯ on the right), `SectionHeader`
