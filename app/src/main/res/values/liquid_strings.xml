@@ -119,7 +119,6 @@
     <string name="liquid_no_results">No Results</string>
     <string name="liquid_recognized_empty">No Recognized Songs</string>
     <string name="liquid_recognized_empty_message">Songs you identify will appear here.</string>
-    <string name="liquid_continue">Continue</string>
     <string name="liquid_make_it_yours">Make It Yours</string>
     <string name="liquid_make_it_yours_body">Choose how Shiny looks. You can change this any time in Settings.</string>
     <string name="liquid_appearance_caption">Appearance</string>
@@ -130,18 +129,6 @@
     <string name="liquid_glass_title">Liquid Glass</string>
     <string name="liquid_glass_body">Refracting glass on the tab bar, player and buttons</string>
     <string name="liquid_get_started">Get Started</string>
-    <string name="liquid_whats_new">What’s New in Shiny</string>
-    <string name="liquid_version">Version %1$s</string>
-    <string name="liquid_new_f1_title">A New Look</string>
-    <string name="liquid_new_f1_body">Every screen rebuilt with Liquid Glass, large titles and a floating tab bar.</string>
-    <string name="liquid_new_f2_title">Now Playing, Reimagined</string>
-    <string name="liquid_new_f2_body">The artwork becomes the whole screen, with lyrics and the queue one tap away.</string>
-    <string name="liquid_new_f3_title">Word-by-Word Lyrics</string>
-    <string name="liquid_new_f3_body">Lines fill as they are sung, with pronunciation for other scripts.</string>
-    <string name="liquid_new_f4_title">Listening Stats</string>
-    <string name="liquid_new_f4_body">Your minutes, top songs, artists and albums for any week, month or year.</string>
-    <string name="liquid_new_f5_title">Recognize Music</string>
-    <string name="liquid_new_f5_body">Find out what is playing around you and play it in one tap.</string>
 
     <!-- Music on this device -->
     <string name="local_sources_title">Music sources</string>

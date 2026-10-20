@@ -1273,18 +1273,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                val (lastOpenedVersionCode, setLastOpenedVersionCode) = rememberPreference(com.shiny.music.constants.LastOpenedVersionCodeKey, -1)
                 val (onboardingCompleted, setOnboardingCompleted) = rememberPreference(OnboardingCompletedKey, false)
-                var showWelcomeDialog by remember { mutableStateOf(false) }
-
-                LaunchedEffect(lastOpenedVersionCode, onboardingCompleted) {
-                    // Suppressed on a true first run: onboarding already covers the app, and
-                    // stacking a "what's new" dialog on top of it would greet a brand new
-                    // user with release notes for a version they have never seen.
-                    if (onboardingCompleted && lastOpenedVersionCode < BuildConfig.VERSION_CODE) {
-                        showWelcomeDialog = true
-                    }
-                }
 
                 // Once per launch rather than once per composition. The launch intent
                 // outlives a configuration change, and two of the three handlers do not
@@ -1753,18 +1742,6 @@ class MainActivity : ComponentActivity() {
                         com.shiny.music.ui.liquid.screens.LiquidOnboarding(
                             onFinish = {
                                 setOnboardingCompleted(true)
-                                // Stamp the version too, so the very next launch does not
-                                // immediately show the update dialog for this same build.
-                                setLastOpenedVersionCode(BuildConfig.VERSION_CODE)
-                            }
-                        )
-                    }
-
-                    if (showWelcomeDialog) {
-                        com.shiny.music.ui.liquid.screens.LiquidWhatsNew(
-                            onDismiss = {
-                                showWelcomeDialog = false
-                                setLastOpenedVersionCode(BuildConfig.VERSION_CODE)
                             }
                         )
                     }
