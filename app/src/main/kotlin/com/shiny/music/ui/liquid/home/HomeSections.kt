@@ -74,7 +74,6 @@ import androidx.compose.ui.unit.sp
 import com.music.innertube.models.AlbumItem
 import com.music.innertube.models.ArtistItem
 import com.music.innertube.models.PlaylistItem
-import com.music.innertube.pages.MoodAndGenres
 import com.shiny.music.R
 import com.shiny.music.db.entities.Song
 import com.shiny.music.spotifyimport.SpotifyImportRepository
@@ -93,12 +92,10 @@ import com.shiny.music.home.DeviceTile
 import com.shiny.music.home.DiscoverPick
 import com.shiny.music.home.DiscoverSection
 import com.shiny.music.home.DownloadsTile
-import com.shiny.music.home.InsightsSection
 import com.shiny.music.home.LatelySection
 import com.shiny.music.home.LatelyTile
 import com.shiny.music.home.LikedTile
 import com.shiny.music.home.moveOf
-import com.shiny.music.home.MoodsSection
 import com.shiny.music.home.HomeLikedSongs
 import com.shiny.music.home.HomeSpotifyMix
 import com.shiny.music.home.PinnedTile
@@ -108,8 +105,6 @@ import com.shiny.music.home.RecentlyAddedSection
 import com.shiny.music.home.RediscoverSection
 import com.shiny.music.home.RotationSection
 import com.shiny.music.home.SpotifySection
-import com.shiny.music.home.SurpriseKind
-import com.shiny.music.home.SurprisePick
 import com.shiny.music.home.YouTubeSection
 import com.shiny.music.ui.liquid.Artwork
 import com.shiny.music.ui.liquid.ButtonTone
@@ -424,7 +419,6 @@ internal fun AroundNowCard(
     activeId: String?,
     isPlaying: Boolean,
     actions: LiquidActions,
-    onMoodOpened: () -> Unit,
 ) {
     val title = aroundTitle(section.daypart)
     HomeHeader(
@@ -452,94 +446,6 @@ internal fun AroundNowCard(
             modifier = modifier,
         )
     }
-    if (section.moods.isNotEmpty()) {
-        SubLabel(stringResource(R.string.home_or_set_mood))
-        MoodRail(section.moods, actions, rows = 1, onOpened = onMoodOpened)
-    }
-}
-
-/**
- * Moods and genres as compact editorial tiles rather than coloured chips.
- *
- * YouTube publishes a stripe colour with every mood, and the obvious thing to do with it —
- * flood a big rounded rectangle — gives a page of primary-coloured lozenges that looks
- * like a settings screen for a toy. Here the colour is spent where colour is cheap and
- * reads well: a hairline rule down the leading edge and a barely-there wash behind the
- * type. The tile itself stays a neutral Liquid surface, so a rail of twelve moods reads as
- * one calm block of typography with twelve accents in it.
- */
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun MoodTile(mood: MoodAndGenres.Item, actions: LiquidActions, onOpened: () -> Unit) {
-    val colors = Liquid.colors
-    val interaction = remember { MutableInteractionSource() }
-    val stripe = remember(mood.stripeColor) { Color(mood.stripeColor) }
-    Row(
-        modifier = Modifier
-            .size(width = MoodTileWidth, height = MoodTileHeight)
-            .pressScale(interaction, 0.96f)
-            .clip(RoundedCornerShape(14.dp))
-            .background(colors.secondaryBackground)
-            .background(Brush.horizontalGradient(listOf(stripe.copy(alpha = 0.16f), Color.Transparent)))
-            .combinedClickable(interactionSource = interaction, indication = null, role = Role.Button) {
-                onOpened()
-                actions.navController.navigate("youtube_browse/${mood.endpoint.browseId}?params=${mood.endpoint.params}")
-            },
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            Modifier
-                .padding(vertical = 10.dp)
-                .width(3.dp)
-                .fillMaxHeight()
-                .clip(CircleShape)
-                .background(stripe),
-        )
-        Text(
-            text = mood.title,
-            style = LiquidTypography.subheadline.copy(fontWeight = FontWeight.SemiBold),
-            color = colors.label,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(start = 12.dp, end = 12.dp),
-        )
-    }
-}
-
-private val MoodTileWidth = 158.dp
-private val MoodTileHeight = 58.dp
-
-/** A rail of [MoodTile]s, one row inline under a section or two as a section of its own. */
-@Composable
-private fun MoodRail(moods: List<MoodAndGenres.Item>, actions: LiquidActions, rows: Int, onOpened: () -> Unit) {
-    if (rows <= 1) {
-        LazyRow(
-            contentPadding = PaddingValues(horizontal = PageMargin),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            items(moods, key = { it.title }) { mood -> MoodTile(mood, actions, onOpened) }
-        }
-        return
-    }
-    val state = rememberLazyGridState()
-    LazyHorizontalGrid(
-        rows = GridCells.Fixed(rows.coerceAtMost(moods.size).coerceAtLeast(1)),
-        state = state,
-        contentPadding = PaddingValues(horizontal = PageMargin),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(MoodTileHeight * rows + 10.dp * (rows - 1)),
-    ) {
-        items(moods, key = { it.title }) { mood -> MoodTile(mood, actions, onOpened) }
-    }
-}
-
-@Composable
-internal fun MoodsBlock(section: MoodsSection, actions: LiquidActions, onOpened: () -> Unit) {
-    HomeHeader(stringResource(R.string.home_set_mood), subtitle = daypartEyebrow(section.daypart))
-    MoodRail(section.moods, actions, rows = 2, onOpened = onOpened)
 }
 
 // ---------------------------------------------------------------------------------------
@@ -1184,170 +1090,3 @@ private fun CoverStrip(covers: List<String>) {
 }
 
 // ---------------------------------------------------------------------------------------
-// Your week — true sentences, not a dashboard
-// ---------------------------------------------------------------------------------------
-
-@Composable
-internal fun InsightsBlock(section: InsightsSection, actions: LiquidActions, onPlaySong: (Song) -> Unit) {
-    val colors = Liquid.colors
-    HomeHeader(stringResource(R.string.home_week), onClick = { actions.navController.navigate("stats") })
-    val duration = if (section.weekMinutes >= 60) {
-        stringResource(R.string.home_week_hours, section.weekMinutes / 60, section.weekMinutes % 60)
-    } else {
-        stringResource(R.string.home_week_minutes, section.weekMinutes)
-    }
-    val sentence = emphasized(
-        template = stringResource(R.string.home_week_sentence),
-        args = listOf(
-            pluralStringResource(R.plurals.home_songs, section.weekSongs, section.weekSongs),
-            pluralStringResource(R.plurals.home_week_artists, section.weekArtists, section.weekArtists),
-            duration,
-        ),
-        emphasis = SpanStyle(color = colors.label, fontWeight = FontWeight.SemiBold),
-    )
-    Text(
-        text = sentence,
-        style = LiquidTypography.title3.copy(fontWeight = FontWeight.Normal),
-        color = colors.secondaryLabel,
-        modifier = Modifier.padding(horizontal = PageMargin),
-    )
-    Spacer(Modifier.height(10.dp))
-    section.topArtist?.let { artist ->
-        InsightRow(
-            label = stringResource(R.string.home_week_top_artist),
-            value = artist.title,
-            meta = pluralStringResource(R.plurals.home_week_plays, section.topArtistPlays, section.topArtistPlays),
-            artwork = section.topArtistImage?.resize(144, 144),
-            circular = true,
-            onClick = { actions.open(artist) },
-        )
-    }
-    section.replayed?.let { song ->
-        InsightRow(
-            label = stringResource(R.string.home_week_top_song),
-            value = song.title,
-            meta = pluralStringResource(R.plurals.home_week_plays, section.replayedPlays, section.replayedPlays),
-            artwork = song.thumbnailUrl,
-            circular = false,
-            onClick = { onPlaySong(song) },
-        )
-    }
-    if (section.newSongs > 0) {
-        InsightRow(
-            label = null,
-            value = pluralStringResource(R.plurals.home_week_new, section.newSongs, section.newSongs),
-            meta = null,
-            artwork = null,
-            circular = false,
-            icon = Icons.Rounded.AutoAwesome,
-            onClick = { actions.navController.navigate("stats") },
-        )
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun InsightRow(
-    label: String?,
-    value: String,
-    meta: String?,
-    artwork: String?,
-    circular: Boolean,
-    onClick: () -> Unit,
-    icon: ImageVector? = null,
-) {
-    val colors = Liquid.colors
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .heightIn(min = 56.dp)
-            .combinedClickable(indication = rememberRowHighlight(), interactionSource = remember { MutableInteractionSource() }, onClick = onClick)
-            .semantics(mergeDescendants = true) {}
-            .padding(horizontal = PageMargin, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        if (icon != null) {
-            Box(
-                Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .background(colors.accent.copy(alpha = 0.14f)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(icon, null, tint = colors.accent, modifier = Modifier.size(20.dp))
-            }
-        } else {
-            Artwork(model = artwork, shape = if (circular) CircleShape else RoundedCornerShape(8.dp), modifier = Modifier.size(44.dp))
-        }
-        Column(
-            Modifier
-                .weight(1f)
-                .padding(start = 12.dp),
-        ) {
-            label?.let { Text(it, style = LiquidTypography.caption1, color = colors.secondaryLabel, maxLines = 1) }
-            Text(value, style = LiquidTypography.subheadline.copy(fontWeight = FontWeight.SemiBold), color = colors.label, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        }
-        meta?.let { Text(it, style = LiquidTypography.footnote, color = colors.secondaryLabel, maxLines = 1, modifier = Modifier.padding(start = 8.dp)) }
-    }
-}
-
-@Composable
-internal fun SurpriseCard(last: SurprisePick?, onSurprise: () -> Unit) {
-    val colors = Liquid.colors
-    Column(
-        Modifier
-            .padding(horizontal = PageMargin)
-            .padding(top = 28.dp)
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(24.dp))
-            .background(colors.accent.copy(alpha = 0.12f))
-            .padding(18.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Rounded.Casino, null, tint = colors.accent, modifier = Modifier.size(26.dp))
-            Spacer(Modifier.width(10.dp))
-            Text(
-                stringResource(R.string.home_surprise),
-                style = LiquidTypography.title3.copy(fontWeight = FontWeight.Bold),
-                color = colors.label,
-                modifier = Modifier.semantics { heading() },
-            )
-        }
-        Spacer(Modifier.height(6.dp))
-        Text(stringResource(R.string.home_surprise_body), style = LiquidTypography.subheadline, color = colors.secondaryLabel)
-        if (last != null) {
-            Spacer(Modifier.height(12.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Artwork(model = last.song.thumbnailUrl, shape = RoundedCornerShape(8.dp), modifier = Modifier.size(42.dp))
-                Column(
-                    Modifier
-                        .weight(1f)
-                        .padding(start = 10.dp),
-                ) {
-                    Text(last.song.title, style = LiquidTypography.subheadline.copy(fontWeight = FontWeight.SemiBold), color = colors.label, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text(
-                        stringResource(
-                            when (last.kind) {
-                                SurpriseKind.Forgotten -> R.string.home_surprise_forgotten
-                                SurpriseKind.Unexplored -> R.string.home_surprise_unexplored
-                                SurpriseKind.NewToYou -> R.string.home_surprise_new
-                                SurpriseKind.OnDevice -> R.string.home_surprise_device
-                            }
-                        ),
-                        style = LiquidTypography.caption1,
-                        color = colors.secondaryLabel,
-                        maxLines = 1,
-                    )
-                }
-            }
-        }
-        Spacer(Modifier.height(14.dp))
-        LiquidButton(
-            text = stringResource(if (last == null) R.string.home_surprise_button else R.string.home_surprise_again),
-            icon = Icons.Rounded.Casino,
-            tone = ButtonTone.Filled,
-            height = 44.dp,
-            onClick = onSurprise,
-        )
-    }
-}

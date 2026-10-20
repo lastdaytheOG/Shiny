@@ -498,7 +498,6 @@ internal fun ResumeCard(
 // A Home with no listening behind it
 // ---------------------------------------------------------------------------------------
 
-internal enum class HomePath { Charts, NewReleases, Moods, Search, Device, Identify }
 
 /**
  * The opening for someone Shiny has never heard play anything.
