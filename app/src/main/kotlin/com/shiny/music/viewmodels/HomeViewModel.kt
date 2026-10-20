@@ -28,9 +28,6 @@ import com.shiny.music.constants.SpotifyHomeMixesKey
 import com.shiny.music.constants.SpotifySpDcKey
 import com.shiny.music.home.HomeSignals
 import com.shiny.music.home.HomeSignalsLoader
-import com.shiny.music.home.HomeSurprise
-import com.shiny.music.home.SurprisePick
-import com.shiny.music.home.SurpriseSection
 import com.shiny.music.home.homeOnlineFlow
 import com.shiny.music.home.homeWallNowMs
 import com.shiny.music.utils.SyncUtils
@@ -61,7 +58,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import java.time.LocalDateTime
 import javax.inject.Inject
-import kotlin.random.Random
 
 /**
  * Home's single source of truth: one [feed] assembled by [HomeFeedBuilder] from
@@ -125,10 +121,6 @@ class HomeViewModel @Inject constructor(
     val isRefreshing = MutableStateFlow(false)
     val accountName = MutableStateFlow("Guest")
     val accountImageUrl = MutableStateFlow<String?>(null)
-
-    /** The last Surprise Me pick, shown on its card until the next one. */
-    val lastSurprise = MutableStateFlow<SurprisePick?>(null)
-    private val recentSurprises = ArrayDeque<String>()
 
     /** Set by the screen while Home is resumed; network refreshes only happen then. */
     private val visible = MutableStateFlow(false)
@@ -291,21 +283,6 @@ class HomeViewModel @Inject constructor(
             }
         }
         viewModelScope.launch(Dispatchers.IO) { syncUtils.tryAutoSync() }
-    }
-
-    /** Draws a Surprise Me song; the screen plays it. */
-    fun surprise(section: SurpriseSection): SurprisePick? {
-        val pick = HomeSurprise.pick(
-            section = section,
-            stats = lastSignals.value?.songStats.orEmpty(),
-            recent = recentSurprises,
-            nowMs = homeWallNowMs(),
-            random = Random(System.nanoTime()),
-        ) ?: return null
-        recentSurprises.addLast(pick.song.id)
-        while (recentSurprises.size > HomeSurprise.RECENT_MEMORY) recentSurprises.removeFirst()
-        lastSurprise.value = pick
-        return pick
     }
 
     init {
