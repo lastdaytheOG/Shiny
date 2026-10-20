@@ -53,7 +53,6 @@ import com.shiny.music.constants.InnerTubeCookieKey
 import com.shiny.music.db.entities.Artist
 import com.shiny.music.db.entities.LocalItem
 import com.shiny.music.db.entities.Playlist
-import com.shiny.music.db.entities.Song
 import com.shiny.music.home.AlbumsInProgressSection
 import com.shiny.music.home.AroundNowSection
 import com.shiny.music.home.ChartsSection
@@ -63,9 +62,7 @@ import com.shiny.music.home.DiscoverSection
 import com.shiny.music.home.HeroMixSection
 import com.shiny.music.home.HomeInterest
 import com.shiny.music.home.HomeSection
-import com.shiny.music.home.InsightsSection
 import com.shiny.music.home.LatelySection
-import com.shiny.music.home.MoodsSection
 import com.shiny.music.home.OfflineNoticeSection
 import com.shiny.music.home.ReadyOfflineSection
 import com.shiny.music.home.RecentlyAddedSection
@@ -73,8 +70,6 @@ import com.shiny.music.home.RediscoverSection
 import com.shiny.music.home.RotationSection
 import com.shiny.music.home.SpotifySection
 import com.shiny.music.home.YouTubeSection
-import com.shiny.music.home.SurpriseKind
-import com.shiny.music.home.SurpriseSection
 import com.shiny.music.home.StartHereSection
 import com.shiny.music.ui.liquid.ActivityIndicator
 import com.shiny.music.ui.liquid.Artwork
@@ -92,12 +87,9 @@ import com.shiny.music.ui.liquid.home.ContinueShelf
 import com.shiny.music.ui.liquid.home.DeepDiveBlock
 import com.shiny.music.ui.liquid.home.DiscoverShelf
 import com.shiny.music.ui.liquid.home.HeroMixCard
-import com.shiny.music.ui.liquid.home.HomePath
-import com.shiny.music.ui.liquid.home.InsightsBlock
 import com.shiny.music.ui.liquid.home.LatelyGrid
 import com.shiny.music.ui.liquid.home.SpotifyShelf
 import com.shiny.music.ui.liquid.home.YouTubeShelf
-import com.shiny.music.ui.liquid.home.MoodsBlock
 import com.shiny.music.ui.liquid.home.OfflineNotice
 import com.shiny.music.ui.liquid.home.ReadyOfflineCard
 import com.shiny.music.ui.liquid.home.RecentlyAddedGrid
@@ -105,12 +97,10 @@ import com.shiny.music.ui.liquid.home.RediscoverShelf
 import com.shiny.music.ui.liquid.home.ResumeCard
 import com.shiny.music.ui.liquid.home.RotationList
 import com.shiny.music.ui.liquid.home.StartHereBlock
-import com.shiny.music.ui.liquid.home.SurpriseCard
 import com.shiny.music.ui.liquid.home.mixTitle
 import com.shiny.music.ui.liquid.rememberLiquidActions
 import com.shiny.music.ui.liquid.statusBarHeight
 import com.shiny.music.ui.liquid.subtitleText
-import com.shiny.music.ui.screens.Screens
 import com.shiny.music.ui.theme.pressScale
 import com.shiny.music.ui.utils.resize
 import com.shiny.music.utils.rememberPreference
@@ -137,9 +127,7 @@ fun LiquidHomeScreen(
     val queueTitle by playerConnection.queueTitle.collectAsState()
 
     val feed by viewModel.feed.collectAsState()
-    val online by viewModel.online.collectAsState()
     val isRefreshing by viewModel.isRefreshing.collectAsState()
-    val lastSurprise by viewModel.lastSurprise.collectAsState()
     val accountImageUrl by viewModel.accountImageUrl.collectAsState()
     val cookie by rememberPreference(InnerTubeCookieKey, "")
     val isLoggedIn = remember(cookie) { "SAPISID" in parseCookieString(cookie) }
@@ -201,32 +189,6 @@ fun LiquidHomeScreen(
         if (resumeVisible) runCatching { playerConnection.player.currentPosition }.getOrDefault(0L) else 0L
     }
 
-    /** One song: a streamed one opens a radio that carries on from it; a file or download plays alone. */
-    fun playOne(song: Song, title: String) {
-        if (online && !song.song.isLocal) actions.open(song, radio = true) else actions.playSongs(title, listOf(song))
-    }
-
-    val surpriseTitle = stringResource(R.string.home_surprise)
-    fun surprise(section: SurpriseSection) {
-        val pick = viewModel.surprise(section) ?: return
-        val song = pick.song
-        if (online && !song.song.isLocal && pick.kind != SurpriseKind.OnDevice) {
-            actions.open(song, radio = true)
-        } else {
-            val pool = section.pools.firstOrNull { it.kind == pick.kind }?.songs.orEmpty()
-            actions.playSongs(surpriseTitle, listOf(song) + pool.filter { it.id != song.id }.shuffled().take(30))
-        }
-    }
-
-    fun openPath(path: HomePath) = when (path) {
-        HomePath.Charts -> navController.navigate("charts_screen")
-        HomePath.NewReleases -> navController.navigate("new_release")
-        HomePath.Moods -> navController.navigate("mood_and_genres")
-        HomePath.Search -> navController.navigate(Screens.Search.route)
-        HomePath.Device -> navController.navigate("local_songs")
-        HomePath.Identify -> navController.navigate("recognition")
-    }
-
     /** What the listener reached for, so Home can lead with it next time. */
     fun note(kind: HomeInterest.Kind) = viewModel.note(kind)
 
@@ -268,7 +230,9 @@ fun LiquidHomeScreen(
                 }
             }
 
-            current.sections.forEach { section ->
+            current.sections
+                .filterNot { it is com.shiny.music.home.InsightsSection || it is com.shiny.music.home.SurpriseSection || it is com.shiny.music.home.MoodsSection }
+                .forEach { section ->
                 item(key = section.key, contentType = section.contentType()) {
                     HomeItem(reduceMotion) {
                         HomeSectionContent(
@@ -278,11 +242,7 @@ fun LiquidHomeScreen(
                             isPlaying = isPlaying,
                             compactHero = resumeVisible && live != null,
                             reduceMotion = reduceMotion,
-                            lastSurprise = lastSurprise,
-                            onSurprise = ::surprise,
-                            onPath = ::openPath,
                             onNote = ::note,
-                            onPlaySong = { playOne(it, it.title) },
                         )
                     }
                 }
@@ -323,11 +283,7 @@ private fun HomeSectionContent(
     isPlaying: Boolean,
     compactHero: Boolean,
     reduceMotion: Boolean,
-    lastSurprise: com.shiny.music.home.SurprisePick?,
-    onSurprise: (SurpriseSection) -> Unit,
-    onPath: (HomePath) -> Unit,
     onNote: (HomeInterest.Kind) -> Unit,
-    onPlaySong: (Song) -> Unit,
 ) {
     when (section) {
         is OfflineNoticeSection -> OfflineNotice(section)
@@ -357,8 +313,7 @@ private fun HomeSectionContent(
         is ContinueSection -> ContinueShelf(section, activeId, actions)
         is LatelySection -> LatelyGrid(section, actions)
         is RotationSection -> RotationList(section, activeId, isPlaying, actions)
-        is AroundNowSection -> AroundNowCard(section, activeId, isPlaying, actions) { onNote(HomeInterest.Kind.Moods) }
-        is MoodsSection -> MoodsBlock(section, actions) { onNote(HomeInterest.Kind.Moods) }
+        is AroundNowSection -> AroundNowCard(section, activeId, isPlaying, actions)
         is DiscoverSection -> DiscoverShelf(section, actions) { onNote(HomeInterest.Kind.Discovery) }
         is DeepDiveSection -> DeepDiveBlock(section, actions)
         is ChartsSection -> ChartsBlock(section, activeId, isPlaying, actions) { onNote(HomeInterest.Kind.Charts) }
@@ -368,11 +323,7 @@ private fun HomeSectionContent(
         is AlbumsInProgressSection -> AlbumsInProgressShelf(section, actions)
         is RecentlyAddedSection -> RecentlyAddedGrid(section, activeId, isPlaying, actions)
         is ReadyOfflineSection -> ReadyOfflineCard(section, actions)
-        is InsightsSection -> InsightsBlock(section, actions, onPlaySong)
-        is SurpriseSection -> SurpriseCard(lastSurprise, onSurprise = {
-            onNote(HomeInterest.Kind.Discovery)
-            onSurprise(section)
-        })
+        else -> Unit
     }
 }
 

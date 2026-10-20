@@ -249,8 +249,6 @@
         <item quantity="one">%d song you tend to play around this time</item>
         <item quantity="other">%d songs you tend to play around this time</item>
     </plurals>
-    <string name="home_set_mood">Set the Mood</string>
-    <string name="home_or_set_mood">Or set a mood</string>
     <string name="home_discover">Fresh discoveries</string>
     <string name="home_discover_subtitle">Never played, each tied to a song you love</string>
     <string name="home_discover_like_song">More like %1$s</string>
@@ -299,34 +297,7 @@
         <item quantity="other">%d songs play without a connection</item>
     </plurals>
     <string name="home_ready_offline_split">%1$d downloaded · %2$d on this device</string>
-    <string name="home_week">Your Week</string>
-    <plurals name="home_week_artists">
-        <item quantity="one">%d artist</item>
-        <item quantity="other">%d artists</item>
-    </plurals>
-    <string name="home_week_minutes">%1$d min</string>
-    <string name="home_week_hours">%1$d h %2$d min</string>
-    <string name="home_week_sentence">You played %1$s by %2$s this week, %3$s in all.</string>
     <string name="home_just_now">just now</string>
-    <string name="home_week_top_artist">Most played artist</string>
-    <string name="home_week_top_song">Played most</string>
-    <plurals name="home_week_plays">
-        <item quantity="one">%d play this week</item>
-        <item quantity="other">%d plays this week</item>
-    </plurals>
-    <plurals name="home_week_new">
-        <item quantity="one">%d song was new to you</item>
-        <item quantity="other">%d songs were new to you</item>
-    </plurals>
-    <string name="home_week_stats">Listening stats</string>
-    <string name="home_surprise">Surprise Me</string>
-    <string name="home_surprise_body">One song from your own music universe: a forgotten favourite, a save you never played, or something close to what you love.</string>
-    <string name="home_surprise_button">Surprise me</string>
-    <string name="home_surprise_again">Another one</string>
-    <string name="home_surprise_forgotten">A forgotten favourite</string>
-    <string name="home_surprise_unexplored">Yours, barely played</string>
-    <string name="home_surprise_new">New to you, close to what you love</string>
-    <string name="home_surprise_device">On this device, not heard lately</string>
 
     <!-- Sharing a playlist that isn't on YouTube Music as a link -->
     <string name="share_making_link">Making a link…</string>
