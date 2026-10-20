@@ -43,6 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -50,6 +51,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.LocalDensity
@@ -152,6 +154,11 @@ fun LiquidTabBar(
     tabs: List<LiquidTab>,
     selectedRoute: String?,
     searchRoute: String?,
+    indicatorProgress: (() -> Float)? = null,
+    indicatorDragStart: (() -> Unit)? = null,
+    indicatorDragDelta: ((Float, Float) -> Unit)? = null,
+    indicatorDragEnd: ((Float) -> Unit)? = null,
+    indicatorDragCancel: (() -> Unit)? = null,
     onTabClick: (LiquidTab, Boolean) -> Unit,
     onSearchClick: (Boolean) -> Unit,
     backdrop: Backdrop,
@@ -176,6 +183,11 @@ fun LiquidTabBar(
                     TabCapsule(
                         tabs = tabs,
                         selectedIndex = selectedIndex,
+                        indicatorProgress = indicatorProgress,
+                        indicatorDragStart = indicatorDragStart,
+                        indicatorDragDelta = indicatorDragDelta,
+                        indicatorDragEnd = indicatorDragEnd,
+                        indicatorDragCancel = indicatorDragCancel,
                         collapse = { chromeState.progress },
                         expandedWidth = { expandedTabsWidth[0] },
                         onTabClick = { tab, reselect ->
@@ -262,6 +274,11 @@ fun LiquidTabBar(
 private fun TabCapsule(
     tabs: List<LiquidTab>,
     selectedIndex: Int,
+    indicatorProgress: (() -> Float)?,
+    indicatorDragStart: (() -> Unit)?,
+    indicatorDragDelta: ((Float, Float) -> Unit)?,
+    indicatorDragEnd: ((Float) -> Unit)?,
+    indicatorDragCancel: (() -> Unit)?,
     collapse: () -> Float,
     expandedWidth: () -> Int,
     onTabClick: (LiquidTab, Boolean) -> Unit,
@@ -270,14 +287,16 @@ private fun TabCapsule(
 ) {
     val colors = Liquid.colors
     val indicator = remember { Animatable(selectedIndex.coerceAtLeast(0).toFloat()) }
-    LaunchedEffect(selectedIndex) {
-        if (selectedIndex >= 0) {
+    LaunchedEffect(selectedIndex, indicatorProgress == null) {
+        if (indicatorProgress == null && selectedIndex >= 0) {
             indicator.animateTo(selectedIndex.toFloat(), spring(dampingRatio = 0.72f, stiffness = 420f))
         }
     }
     val outer = remember { MutableInteractionSource() }
     val press = rememberGlassPress(outer)
     val lozenge = if (colors.isDark) Color.White.copy(alpha = 0.13f) else Color.Black.copy(alpha = 0.07f)
+    val indicatorWidthPx = remember { IntArray(1) }
+    val indicatorInteraction = remember { MutableInteractionSource() }
 
     Box(
         modifier = modifier
@@ -295,6 +314,16 @@ private fun TabCapsule(
                     Modifier
                         .clip(CircleShape)
                         .background(lozenge)
+                )
+                Box(
+                    Modifier.drawBehind {
+                        // A small, local streak gives the capsule a sense of light moving with
+                        // the finger without adding a full-width blur or a second glass layer.
+                        drawRoundRect(
+                            color = colors.accent.copy(alpha = 0.16f),
+                            cornerRadius = androidx.compose.ui.geometry.CornerRadius(size.height / 2f),
+                        )
+                    }
                 )
                 Row {
                     tabs.forEachIndexed { index, tab ->
@@ -338,6 +367,38 @@ private fun TabCapsule(
                         }
                     }
                 }
+                if (indicatorDragStart != null && indicatorDragDelta != null && indicatorDragEnd != null) {
+                    Box(
+                        Modifier
+                            .combinedClickable(
+                                interactionSource = indicatorInteraction,
+                                indication = null,
+                                onClick = {
+                                    if (collapse() > 0.5f) onCollapsedClick()
+                                    else tabs.getOrNull(selectedIndex)?.let { onTabClick(it, true) }
+                                },
+                            )
+                            .pointerInput(indicatorDragStart, indicatorDragDelta, indicatorDragEnd) {
+                                val tracker = VelocityTracker()
+                                detectHorizontalDragGestures(
+                                    onDragStart = {
+                                        tracker.resetTracking()
+                                        indicatorDragStart()
+                                    },
+                                    onHorizontalDrag = { change, amount ->
+                                        change.consume()
+                                        tracker.addPosition(change.uptimeMillis, change.position)
+                                        indicatorDragDelta(amount, indicatorWidthPx[0].toFloat())
+                                    },
+                                    onDragEnd = {
+                                        val width = indicatorWidthPx[0].coerceAtLeast(1)
+                                        indicatorDragEnd(tracker.calculateVelocity().x * tabs.size)
+                                    },
+                                    onDragCancel = { indicatorDragCancel?.invoke() },
+                                )
+                            },
+                    )
+                }
             },
         ) { measurables, constraints ->
             val width = constraints.maxWidth
@@ -346,17 +407,31 @@ private fun TabCapsule(
             val inset = 4.dp.roundToPx()
             val count = tabs.size.coerceAtLeast(1)
             val tabW = (full - inset * 2) / count
+            indicatorWidthPx[0] = tabW
             val lozengeP = measurables[0].measure(Constraints.fixed(tabW, (height - inset * 2).coerceAtLeast(0)))
-            val rowP = measurables[1].measure(Constraints.fixed(tabW * count, height))
+            val trailP = measurables[1].measure(Constraints.fixed(tabW, (height - inset * 2).coerceAtLeast(0)))
+            val rowP = measurables[2].measure(Constraints.fixed(tabW * count, height))
+            val handleP = measurables.getOrNull(3)?.measure(Constraints.fixed(tabW, (height - inset * 2).coerceAtLeast(0)))
             layout(width, height) {
                 val c = collapse()
                 val selected = selectedIndex.coerceAtLeast(0)
                 val selectedCenter = inset + tabW * selected + tabW / 2f
                 val shift = lerp(0f, width / 2f - selectedCenter, c).roundToInt()
-                lozengeP.placeRelativeWithLayer(inset + (tabW * indicator.value).roundToInt() + shift, inset) {
+                val indicatorPosition = indicatorProgress?.invoke() ?: indicator.value
+                val trailAlpha = if (indicatorProgress == null) 0f else {
+                    (abs(indicatorPosition - selected.toFloat()) * 1.6f).coerceIn(0f, 0.34f)
+                }
+                trailP.placeRelativeWithLayer(inset + (tabW * indicatorPosition).roundToInt() + shift, inset) {
+                    alpha = trailAlpha
+                }
+                lozengeP.placeRelativeWithLayer(inset + (tabW * indicatorPosition).roundToInt() + shift, inset) {
                     alpha = if (selectedIndex < 0) 0f else (1f - c * 1.6f).coerceIn(0f, 1f)
                 }
                 rowP.placeRelative(inset + shift, 0)
+                handleP?.placeRelative(
+                    inset + (tabW * indicatorPosition).roundToInt() + shift,
+                    inset,
+                )
             }
         }
     }

@@ -126,6 +126,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.changedToDown
+import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.platform.LocalView
 import android.view.HapticFeedbackConstants
@@ -203,6 +204,7 @@ import com.shiny.music.ui.liquid.LocalPageCovered
 import com.shiny.music.ui.liquid.player.LiquidPlayerSheet
 import com.shiny.music.ui.liquid.appearance.ArtworkAccent
 import com.shiny.music.ui.liquid.appearance.LocalShinyAppearance
+import com.shiny.music.ui.liquid.appearance.PageTransitions
 import com.shiny.music.ui.liquid.shell.LiquidNav
 import com.shiny.music.ui.liquid.shell.isTabSwitch
 import com.shiny.music.ui.liquid.shell.LiquidChromeBottomMargin
@@ -212,6 +214,8 @@ import com.shiny.music.ui.liquid.shell.LiquidRail
 import com.shiny.music.ui.liquid.shell.chromeReservedHeight
 import com.shiny.music.ui.liquid.shell.liquidTabIcon
 import com.shiny.music.ui.liquid.shell.rememberLiquidChromeState
+import com.shiny.music.ui.liquid.shell.LiquidTopLevelPager
+import com.shiny.music.ui.liquid.shell.rememberLiquidTabSwipeState
 import com.shiny.music.ui.player.LocalPlayerExpansion
 import com.shiny.music.ui.player.PlayerArtworkFlight
 import com.shiny.music.ui.player.rememberPlayerExpansionState
@@ -890,18 +894,30 @@ class MainActivity : ComponentActivity() {
                     .pointerInput(enableHaptics) {
                         if (enableHaptics) {
                             awaitPointerEventScope {
+                                var pointerDown = false
+                                var moved = false
                                 while (true) {
                                     val event = awaitPointerEvent(androidx.compose.ui.input.pointer.PointerEventPass.Initial)
-                                    val isClick = event.changes.any { it.changedToDown() }
-                                    val isScroll = event.changes.any { it.positionChange() != Offset.Zero && it.pressed }
-                                    if (isClick) {
-                                        view.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
-                                    } else if (isScroll) {
+                                    if (event.changes.any { it.changedToDown() }) {
+                                        pointerDown = true
+                                        moved = false
+                                    }
+                                    val hasMovement = event.changes.any { it.pressed && it.positionChange() != Offset.Zero }
+                                    if (hasMovement) moved = true
+                                    val isVerticalScroll = event.changes.any {
+                                        val delta = it.positionChange()
+                                        it.pressed && delta != Offset.Zero && kotlin.math.abs(delta.y) > kotlin.math.abs(delta.x)
+                                    }
+                                    if (isVerticalScroll) {
                                         val currentTime = System.currentTimeMillis()
                                         if (currentTime - lastScrollHapticTime > 100) {
                                             view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
                                             lastScrollHapticTime = currentTime
                                         }
+                                    }
+                                    if (pointerDown && event.changes.any { it.changedToUp() }) {
+                                        if (!moved) view.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
+                                        pointerDown = false
                                     }
                                 }
                             }
@@ -1063,6 +1079,11 @@ class MainActivity : ComponentActivity() {
                     currentRoute == "recognition"
                 val showLiquidAccessory = hasMedia && !chromeHidden
                 val liquidChromeState = rememberLiquidChromeState()
+                val liquidSwipeRoutes = remember {
+                    listOf(Screens.Home.route, Screens.Explore.route, Screens.Library.route)
+                }
+                val liquidSwipeIndex = liquidSwipeRoutes.indexOf(currentRoute).takeIf { it >= 0 }
+                val liquidSwipeState = rememberLiquidTabSwipeState(liquidSwipeRoutes.size)
 
                 // Everything floating at the bottom of the window: the system bar, the
                 // tab bar and the mini player accessory. Pages end their content above it.
@@ -1433,34 +1454,48 @@ class MainActivity : ComponentActivity() {
                         CompositionLocalProvider(
                             LocalSharedTransitionScope provides this,
                         ) {
+                            val onNavItemClick: (Screens, Boolean) -> Unit = remember(navController, coroutineScope, topAppBarScrollBehavior, playerBottomSheetState) {
+                                { screen: Screens, isSelected: Boolean ->
+                                    if (playerBottomSheetState.isExpanded) {
+                                        playerBottomSheetState.collapseSoft()
+                                    }
+
+                                    if (isSelected) {
+                                        navController.currentBackStackEntry?.savedStateHandle?.set("scrollToTop", true)
+                                        coroutineScope.launch {
+                                            topAppBarScrollBehavior.state.resetHeightOffset()
+                                        }
+                                    } else {
+                                        navController.navigate(screen.route) {
+                                            popUpTo(navController.graph.startDestinationId) {
+                                                saveState = true
+                                            }
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
+                                    }
+                                }
+                            }
+                            val liquidPagerInstant = LocalShinyAppearance.current.transitions == PageTransitions.Instant
+                            val commitLiquidPage: (Int) -> Unit = remember(onNavItemClick, enableHaptics) {
+                                { target ->
+                                    val screen = when (target) {
+                                        0 -> Screens.Home
+                                        1 -> Screens.Explore
+                                        else -> Screens.Library
+                                    }
+                                    onNavItemClick(screen, false)
+                                    if (enableHaptics) {
+                                        view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                                    }
+                                }
+                            }
+
                             Scaffold(
                                 snackbarHost = { SnackbarHost(snackbarHostState) },
                                 // Every Liquid page draws its own large title or floating bar.
                                 topBar = {},
                                 bottomBar = {
-                                    val onNavItemClick: (Screens, Boolean) -> Unit = remember(navController, coroutineScope, topAppBarScrollBehavior, playerBottomSheetState) {
-                                        { screen: Screens, isSelected: Boolean ->
-                                            if (playerBottomSheetState.isExpanded) {
-                                                playerBottomSheetState.collapseSoft()
-                                            }
-
-                                            if (isSelected) {
-                                                navController.currentBackStackEntry?.savedStateHandle?.set("scrollToTop", true)
-                                                coroutineScope.launch {
-                                                    topAppBarScrollBehavior.state.resetHeightOffset()
-                                                }
-                                            } else {
-                                                navController.navigate(screen.route) {
-                                                    popUpTo(navController.graph.startDestinationId) {
-                                                        saveState = true
-                                                    }
-                                                    launchSingleTop = true
-                                                    restoreState = true
-                                                }
-                                            }
-                                        }
-                                    }
-
                                     if (!chromeHidden) {
                                         Box(Modifier.fillMaxWidth()) {
                                             val tabScreens = remember(navigationItems) {
@@ -1481,10 +1516,41 @@ class MainActivity : ComponentActivity() {
                                             LaunchedEffect(matchedRoute) {
                                                 if (matchedRoute != null) lastTabRoute = matchedRoute
                                             }
+                                            val indicatorDragEnabled = liquidSwipeIndex != null && tabScreens.map { it.route } == liquidSwipeRoutes
+                                            val indicatorDragStart = if (indicatorDragEnabled) remember(liquidSwipeState, liquidSwipeIndex) {
+                                                { liquidSwipeState.beginDragImmediately(liquidSwipeIndex) }
+                                            } else null
+                                            val indicatorDragDelta = if (indicatorDragEnabled) remember(liquidSwipeState) {
+                                                { delta: Float, tabWidth: Float ->
+                                                    coroutineScope.launch { liquidSwipeState.dragBy(delta, tabWidth) }
+                                                    Unit
+                                                }
+                                            } else null
+                                            val indicatorDragEnd = if (indicatorDragEnabled) remember(liquidSwipeState, liquidPagerInstant, commitLiquidPage) {
+                                                { velocity: Float ->
+                                                    coroutineScope.launch {
+                                                        liquidSwipeState.settle(velocity, liquidPagerInstant, commitLiquidPage)
+                                                    }
+                                                    Unit
+                                                }
+                                            } else null
+                                            val indicatorDragCancel = if (indicatorDragEnabled) remember(liquidSwipeState, liquidPagerInstant) {
+                                                {
+                                                    coroutineScope.launch { liquidSwipeState.cancel(liquidPagerInstant) }
+                                                    Unit
+                                                }
+                                            } else null
                                             LiquidTabBar(
                                                 tabs = liquidTabs,
                                                 selectedRoute = matchedRoute ?: lastTabRoute,
                                                 searchRoute = if (navigationItems.contains(Screens.Search)) Screens.Search.route else null,
+                                                indicatorProgress = if (liquidSwipeIndex != null && tabScreens.map { it.route } == liquidSwipeRoutes) {
+                                                    { liquidSwipeState.progress }
+                                                } else null,
+                                                indicatorDragStart = indicatorDragStart,
+                                                indicatorDragDelta = indicatorDragDelta,
+                                                indicatorDragEnd = indicatorDragEnd,
+                                                indicatorDragCancel = indicatorDragCancel,
                                                 onTabClick = { tab, reselect ->
                                                     tabScreens.firstOrNull { it.route == tab.route }?.let { onNavItemClick(it, reselect && matchedRoute != null) }
                                                 },
@@ -1580,39 +1646,52 @@ class MainActivity : ComponentActivity() {
                                             // Read here, not in the transition lambdas, so a change
                                             // in Appearance re-creates them once.
                                             val pageTransitions = LocalShinyAppearance.current.transitions
-                                            NavHost(
-                                                navController = navController,
-                                                startDestination = when (tabOpenedFromShortcut ?: defaultOpenTab) {
-                                                    NavigationTab.HOME -> Screens.Home
-                                                    NavigationTab.LIBRARY -> Screens.Library
-                                                    else -> Screens.Home
-                                                }.route,
-                                    
-                                                // iOS navigation: switching tabs is a quick dissolve, drilling
-                                                // in pushes the new page over the old one, which slides a third
-                                                // of the way under it. Predictive back scrubs the same pair.
-                                                enterTransition = {
-                                                    LiquidNav.enter(pageTransitions, isTabSwitch(initialState.destination.route, targetState.destination.route, navigationItems))
-                                                },
-                                                exitTransition = {
-                                                    LiquidNav.exit(pageTransitions, isTabSwitch(initialState.destination.route, targetState.destination.route, navigationItems))
-                                                },
-                                                popEnterTransition = {
-                                                    LiquidNav.popEnter(pageTransitions, isTabSwitch(initialState.destination.route, targetState.destination.route, navigationItems))
-                                                },
-                                                popExitTransition = {
-                                                    LiquidNav.popExit(pageTransitions, isTabSwitch(initialState.destination.route, targetState.destination.route, navigationItems))
-                                                },
-                                                modifier = Modifier
-                                                    .layerBackdrop(appBackdrop)
-                                                    .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection)
-                                            ) {
-                                                navigationBuilder(
+                                            val rootModifier = Modifier
+                                                .fillMaxSize()
+                                                .layerBackdrop(appBackdrop)
+                                                .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection)
+                                            if (liquidSwipeIndex != null && !showRail) {
+                                                LiquidTopLevelPager(
                                                     navController = navController,
-                                                    scrollBehavior = topAppBarScrollBehavior,
-                                                    activity = this@MainActivity,
-                                                    snackbarHostState = snackbarHostState
+                                                    homeViewModel = homeViewModel,
+                                                    selectedIndex = liquidSwipeIndex,
+                                                    swipeState = liquidSwipeState,
+                                                    onPageCommitted = commitLiquidPage,
+                                                    modifier = rootModifier,
                                                 )
+                                            } else {
+                                                NavHost(
+                                                    navController = navController,
+                                                    startDestination = when (tabOpenedFromShortcut ?: defaultOpenTab) {
+                                                        NavigationTab.HOME -> Screens.Home
+                                                        NavigationTab.LIBRARY -> Screens.Library
+                                                        else -> Screens.Home
+                                                    }.route,
+
+                                                    // iOS navigation: switching tabs is a quick dissolve, drilling
+                                                    // in pushes the new page over the old one, which slides a third
+                                                    // of the way under it. Predictive back scrubs the same pair.
+                                                    enterTransition = {
+                                                        LiquidNav.enter(pageTransitions, isTabSwitch(initialState.destination.route, targetState.destination.route, navigationItems))
+                                                    },
+                                                    exitTransition = {
+                                                        LiquidNav.exit(pageTransitions, isTabSwitch(initialState.destination.route, targetState.destination.route, navigationItems))
+                                                    },
+                                                    popEnterTransition = {
+                                                        LiquidNav.popEnter(pageTransitions, isTabSwitch(initialState.destination.route, targetState.destination.route, navigationItems))
+                                                    },
+                                                    popExitTransition = {
+                                                        LiquidNav.popExit(pageTransitions, isTabSwitch(initialState.destination.route, targetState.destination.route, navigationItems))
+                                                    },
+                                                    modifier = rootModifier,
+                                                ) {
+                                                    navigationBuilder(
+                                                        navController = navController,
+                                                        scrollBehavior = topAppBarScrollBehavior,
+                                                        activity = this@MainActivity,
+                                                        snackbarHostState = snackbarHostState
+                                                    )
+                                                }
                                             }
                                         }
                                     }
