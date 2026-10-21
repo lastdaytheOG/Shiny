@@ -1,16 +1,5 @@
 package com.shiny.music.ui.liquid.settings
 
-/**
- * Shiny's release notes, shipped inside the app.
- *
- * What's New used to download `changelog.json` from the GitHub release for the running tag.
- * That repository is not publicly reachable, so the screen could only ever show its error.
- * The notes now travel with the build, so they are always there, offline included.
- *
- * Every line has to describe something that is in the build. 1.2.5 carries forward the
- * commits since 1.2.2 (appearance settings, the foundation rebuild with social features, the
- * startup and playback work) and the changes made on top of them; 1.2.2 is RELEASE_INFO.md.
- */
 data class Release(
     val version: String,
     val date: String?,
@@ -24,6 +13,18 @@ data class Release(
 data class Highlight(val title: String, val text: String)
 
 val ShinyReleases: List<Release> = listOf(
+    Release(
+        version = "1.2.6",
+        date = null,
+        summary = "A cleaner Home and more dependable playback controls.",
+        improved = listOf(
+            "Cleaner Home: the Your Week summary, Surprise Me card, and mood-selection section are gone.",
+            "Improved Shuffle: shuffle behavior and queue synchronization are more reliable.",
+            "Better Repeat Controls: repeat-mode handling is more consistent while tracks finish or change.",
+            "Autoplay Improvements: automatic track selection and playback behavior are more dependable.",
+            "Queue Improvements: playback modes and queue controls stay synchronized.",
+        ),
+    ),
     Release(
         version = "1.2.5",
         date = null,

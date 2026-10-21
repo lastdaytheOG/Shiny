@@ -8,6 +8,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -39,12 +41,7 @@ import com.shiny.music.BuildConfig
 import com.shiny.music.ui.liquid.Hairline
 import com.shiny.music.ui.liquid.Liquid
 import com.shiny.music.ui.liquid.LiquidTypography
-
-/**
- * What's New: the current version first, told as a release rather than a commit log — a
- * sentence about it, the three things worth knowing, then everything else sorted into New,
- * Improved and Fixed. Older versions fold away underneath.
- */
+import com.shiny.music.ui.liquid.liquidPanel
 @Composable
 fun WhatsNewScreen(navController: NavController) {
     val current = ShinyReleases.firstOrNull { it.version == BuildConfig.VERSION_NAME } ?: ShinyReleases.first()
@@ -90,26 +87,46 @@ private fun ReleaseHero(release: Release) {
         Modifier
             .fillMaxWidth()
             .padding(horizontal = SettingsGutter)
-            .padding(top = 10.dp, bottom = 4.dp),
+            .padding(top = 8.dp, bottom = 4.dp)
+            .liquidPanel(fill = colors.accent.copy(alpha = 0.08f))
+            .padding(horizontal = 18.dp, vertical = 16.dp),
     ) {
-        Text(
-            text = if (release.version == BuildConfig.VERSION_NAME) "CURRENT VERSION" else "LATEST VERSION",
-            style = LiquidTypography.caption1.copy(fontWeight = FontWeight.SemiBold),
-            letterSpacing = 0.9.sp,
-            color = colors.accent,
-        )
-        Text(
-            text = "Version ${release.version}",
-            style = LiquidTypography.title1,
-            color = colors.label,
-            modifier = Modifier.padding(top = 4.dp),
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier
+                    .size(42.dp)
+                    .clip(CircleShape)
+                    .background(colors.accent.copy(alpha = 0.18f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.AutoAwesome,
+                    contentDescription = null,
+                    tint = colors.accent,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
+            Column(Modifier.padding(start = 12.dp)) {
+                Text(
+                    text = if (release.version == BuildConfig.VERSION_NAME) "CURRENT VERSION" else "LATEST VERSION",
+                    style = LiquidTypography.caption1.copy(fontWeight = FontWeight.SemiBold),
+                    letterSpacing = 0.9.sp,
+                    color = colors.accent,
+                )
+                Text(
+                    text = "Version ${release.version}",
+                    style = LiquidTypography.title1,
+                    color = colors.label,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+        }
         release.summary?.let {
             Text(
                 text = it,
                 style = LiquidTypography.callout,
                 color = colors.secondaryLabel,
-                modifier = Modifier.padding(top = 8.dp),
+                modifier = Modifier.padding(top = 14.dp),
             )
         }
     }
