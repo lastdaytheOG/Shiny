@@ -58,6 +58,7 @@ import com.shiny.music.LocalPlayerConnection
 import com.shiny.music.R
 import com.shiny.music.constants.AutoLoadMoreKey
 import com.shiny.music.extensions.metadata
+import com.shiny.music.playback.nextRepeatMode
 import com.shiny.music.ui.component.backdrop.Backdrop
 import com.shiny.music.ui.liquid.Artwork
 import com.shiny.music.ui.liquid.GlassKind
@@ -174,11 +175,7 @@ fun LiquidQueuePane(
                     backdrop = backdrop,
                     onClick = {
                         if (enabled) {
-                            playerConnection.player.repeatMode = when (repeatMode) {
-                                Player.REPEAT_MODE_OFF -> Player.REPEAT_MODE_ALL
-                                Player.REPEAT_MODE_ALL -> Player.REPEAT_MODE_ONE
-                                else -> Player.REPEAT_MODE_OFF
-                            }
+                            playerConnection.player.repeatMode = nextRepeatMode(repeatMode)
                         }
                     },
                     modifier = Modifier.weight(1f),
@@ -188,7 +185,13 @@ fun LiquidQueuePane(
                     label = stringResource(R.string.liquid_autoplay),
                     active = autoplay,
                     backdrop = backdrop,
-                    onClick = { setAutoplay(!autoplay) },
+                    onClick = {
+                        val next = !autoplay
+                        // Preference snapshots update asynchronously. Update the engine first so
+                        // an end-of-track callback cannot observe yesterday's setting.
+                        playerConnection.service.setAutoplayEnabled(next)
+                        setAutoplay(next)
+                    },
                     modifier = Modifier.weight(1f),
                 )
             }
