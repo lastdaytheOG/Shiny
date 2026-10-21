@@ -464,6 +464,8 @@ class MusicService :
     @Volatile private var cachedCrossfadeEnabled: Boolean = false
     @Volatile private var cachedPersistentQueue: Boolean = true
     @Volatile private var cachedAutoLoadMore: Boolean = true
+    /** Changes whenever an autoplay request must no longer be allowed to mutate the queue. */
+    private var autoplayRequestVersion: Long = 0L
     @Volatile private var cachedDisableLoadMoreWhenRepeatAll: Boolean = false
     @Volatile private var cachedHideExplicit: Boolean = false
     @Volatile private var cachedHideVideoSongs: Boolean = false
@@ -622,7 +624,7 @@ class MusicService :
             cachedAudioOffload = read(AudioOffload, false)
             cachedCrossfadeEnabled = read(CrossfadeEnabledKey, false)
             cachedPersistentQueue = read(PersistentQueueKey, true)
-            cachedAutoLoadMore = read(AutoLoadMoreKey, true)
+            updateAutoplayEnabled(read(AutoLoadMoreKey, true))
             cachedDisableLoadMoreWhenRepeatAll = read(DisableLoadMoreWhenRepeatAllKey, false)
             cachedHideExplicit = read(HideExplicitKey, false)
             cachedHideVideoSongs = read(HideVideoSongsKey, false)
@@ -1779,8 +1781,8 @@ class MusicService :
      * and not with a repeat mode on: that queue was asked to come round again.
      */
     private fun continueWhenRunningOut() {
-        if (!playerInitialized.value || !cachedAutoLoadMore || together.isFollowing) return
-        if (!player.playWhenReady || player.repeatMode != REPEAT_MODE_OFF) return
+        if (!playerInitialized.value || !canAutoplay(cachedAutoLoadMore, together.isFollowing, player.repeatMode)) return
+        if (!player.playWhenReady) return
         if (currentQueue.hasNextPage()) return
         val current = player.currentMetadata?.id ?: return
         // A file on the phone has no radio, and offline there is nothing to ask.
@@ -1798,26 +1800,32 @@ class MusicService :
     fun ensureUpNext(minimum: Int = 15) {
         if (!playerInitialized.value || fillingUpNext || queueLoadsInFlight > 0) return
         // Following a Listen Together host: the room decides what comes next.
-        if (together.isFollowing) return
-        if (!cachedAutoLoadMore) return
+        if (!canAutoplay(cachedAutoLoadMore, together.isFollowing, player.repeatMode)) return
         if (cachedDisableLoadMoreWhenRepeatAll && player.repeatMode == REPEAT_MODE_ALL) return
         val current = player.currentMetadata ?: return
+        val requestVersion = autoplayRequestVersion
         // In play order: with shuffle on, the song at the last index can be the first to play.
         fun upcoming() = upcomingInPlayOrder(minimum)
         if (upcoming() >= minimum) return
         fillingUpNext = true
         scope.launch(SilentHandler) {
             try {
+                fun requestIsCurrent() = isCurrentAutoplayRequest(
+                    cachedAutoLoadMore,
+                    requestVersion,
+                    autoplayRequestVersion,
+                ) && !together.isFollowing
                 val hideExplicit = cachedHideExplicit
                 val hideVideos = dataStore.get(HideVideoSongsKey, false) ||
                     dataStore.get(com.shiny.music.constants.DataSaverEnabledKey, false)
                 fun queuedIds() = (0 until player.mediaItemCount).mapTo(HashSet()) { player.getMediaItemAt(it).mediaId }
 
                 var pages = 0
-                while (upcoming() < minimum && currentQueue.hasNextPage() && pages++ < 3) {
+                while (requestIsCurrent() && upcoming() < minimum && currentQueue.hasNextPage() && pages++ < 3) {
                     val items = withContext(Dispatchers.IO) {
                         currentQueue.nextPage().filterExplicit(hideExplicit).filterVideoSongs(hideVideos)
                     }
+                    if (!requestIsCurrent()) return@launch
                     val queued = queuedIds()
                     val fresh = items.filter { it.mediaId !in queued }
                     if (fresh.isEmpty()) break
@@ -1825,13 +1833,14 @@ class MusicService :
                 }
 
                 // A file on the phone has no radio, and offline there is nothing to ask.
-                if (upcoming() < minimum && player.currentMetadata?.id == current.id &&
+                if (requestIsCurrent() && upcoming() < minimum && player.currentMetadata?.id == current.id &&
                     !current.id.isLocalMediaId() && isNetworkConnected.value
                 ) {
                     val radio = YouTubeQueue(WatchEndpoint(videoId = current.id, playlistId = "RDAMVM${current.id}"), current)
                     val status = withContext(Dispatchers.IO) {
                         radio.getInitialStatus().filterExplicit(hideExplicit).filterVideoSongs(hideVideos)
                     }
+                    if (!requestIsCurrent()) return@launch
                     val queued = queuedIds()
                     val fresh = status.items.filter { it.mediaId !in queued }.take(minimum + 5 - upcoming())
                     if (fresh.isNotEmpty()) {
@@ -1843,13 +1852,32 @@ class MusicService :
                     }
                 }
 
-                if (player.shuffleModeEnabled) {
+                if (requestIsCurrent() && player.shuffleModeEnabled) {
                     applyShuffleOrder(player.currentMediaItemIndex, player.mediaItemCount, cachedShufflePlaylistFirst)
                 }
             } finally {
                 fillingUpNext = false
             }
         }
+    }
+
+    /**
+     * Applies the Queue pane's choice immediately, rather than waiting for its asynchronous
+     * DataStore write to come back through the preference collector. Invalidating the request
+     * version also prevents a radio/page fetch begun before an off toggle from appending later.
+     */
+    fun setAutoplayEnabled(enabled: Boolean) {
+        updateAutoplayEnabled(enabled)
+        scope.launch {
+            dataStore.edit { settings -> settings[AutoLoadMoreKey] = enabled }
+        }
+    }
+
+    private fun updateAutoplayEnabled(enabled: Boolean) {
+        if (cachedAutoLoadMore == enabled) return
+        cachedAutoLoadMore = enabled
+        autoplayRequestVersion++
+        if (enabled) continueWhenRunningOut()
     }
 
     fun startRadioSeamlessly() {
@@ -2318,8 +2346,6 @@ class MusicService :
         )
     }
 
-    private var previousMediaItemIndex = C.INDEX_UNSET
-
     override fun onMediaItemTransition(
         mediaItem: MediaItem?,
         reason: Int,
@@ -2327,16 +2353,6 @@ class MusicService :
         // Measurement only (debug builds plant Timber's tree): start mark for skip timing.
         Timber.tag("fix403").d("media.transition item=${mediaItem?.mediaId} reason=$reason")
         socialPresencePublisher.notifyChanged()
-
-        if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
-            if (cachedRepeatMode == REPEAT_MODE_ONE &&
-                previousMediaItemIndex != C.INDEX_UNSET &&
-                previousMediaItemIndex != player.currentMediaItemIndex) {
-
-                player.seekTo(previousMediaItemIndex, 0)
-            }
-        }
-        previousMediaItemIndex = player.currentMediaItemIndex
 
         lastPlaybackSpeed = -1.0f 
 
@@ -2349,20 +2365,24 @@ class MusicService :
         
         
         
-        if (cachedAutoLoadMore &&
-            !together.isFollowing &&
+        if (canAutoplay(cachedAutoLoadMore, together.isFollowing, player.repeatMode) &&
             reason != Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT &&
             player.mediaItemCount - player.currentMediaItemIndex <= 5 &&
             currentQueue.hasNextPage() &&
             !(cachedDisableLoadMoreWhenRepeatAll && player.repeatMode == REPEAT_MODE_ALL)
         ) {
+            val requestVersion = autoplayRequestVersion
+            val queueGeneration = playQueueGeneration
             scope.launch(SilentHandler) {
                 val mediaItems = withContext(Dispatchers.IO) {
                     currentQueue.nextPage()
                         .filterExplicit(cachedHideExplicit)
                         .filterVideoSongs(cachedHideVideoSongsEffective)
                 }
-                if (player.playbackState != STATE_IDLE && mediaItems.isNotEmpty()) {
+                if (isCurrentAutoplayRequest(cachedAutoLoadMore, requestVersion, autoplayRequestVersion) &&
+                    queueGeneration == playQueueGeneration &&
+                    player.playbackState != STATE_IDLE && mediaItems.isNotEmpty()
+                ) {
                     player.addMediaItems(mediaItems)
                     if (player.shuffleModeEnabled) {
                         val shufflePlaylistFirst = cachedShufflePlaylistFirst
@@ -2385,7 +2405,10 @@ class MusicService :
         
         if (playbackState == Player.STATE_ENDED) {
             if (cachedRepeatMode == REPEAT_MODE_ALL && player.mediaItemCount > 0) {
-                player.seekTo(0, 0)
+                // Media3 normally loops before STATE_ENDED. This is only a recovery path;
+                // preserve its shuffle order instead of incorrectly jumping to physical item 0.
+                val first = player.currentTimeline.getFirstWindowIndex(player.shuffleModeEnabled)
+                player.seekTo(if (first == C.INDEX_UNSET) 0 else first, 0)
                 player.prepare()
                 player.play()
             } else {
@@ -2557,6 +2580,9 @@ class MusicService :
     }
 
     override fun onRepeatModeChanged(repeatMode: Int) {
+        // Completion callbacks can arrive before the asynchronous preference write is observed.
+        // Keep their decision in lockstep with the player the button just changed.
+        cachedRepeatMode = repeatMode
         updateNotification()
         scope.launch {
             dataStore.edit { settings ->
@@ -2605,16 +2631,12 @@ class MusicService :
             }
             player.setShuffleOrder(DefaultShuffleOrder(shuffledIndices, System.currentTimeMillis()))
         } else {
-            val shuffledIndices = IntArray(totalCount) { it }
-            shuffledIndices.shuffle()
-            
-            val currentItemIndexInShuffled = shuffledIndices.indexOf(currentIndex)
-            if (currentItemIndexInShuffled != -1) { 
-                val temp = shuffledIndices[0]
-                shuffledIndices[0] = shuffledIndices[currentItemIndexInShuffled]
-                shuffledIndices[currentItemIndexInShuffled] = temp
-            }
-            player.setShuffleOrder(DefaultShuffleOrder(shuffledIndices, System.currentTimeMillis()))
+            player.setShuffleOrder(
+                DefaultShuffleOrder(
+                    shuffledIndicesKeepingCurrentFirst(totalCount, currentIndex),
+                    System.currentTimeMillis(),
+                ),
+            )
         }
     }
 
