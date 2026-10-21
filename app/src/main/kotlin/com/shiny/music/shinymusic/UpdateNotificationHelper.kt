@@ -29,8 +29,9 @@ object UpdateNotificationHelper {
         }
 
         
-        val apkUrl = com.shiny.music.social.ShinyLinks.DOWNLOAD
-        val intent = com.shiny.music.shinymusic.updater.UpdateActionActivity.openUrl(context, apkUrl)
+        // A notification tap is navigation, not consent to download an APK. The native update
+        // screen shows the target version and lets the user start the existing worker explicitly.
+        val intent = com.shiny.music.shinymusic.updater.UpdateActionActivity.openUpdate(context)
 
         val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         val pending = PendingIntent.getActivity(context, NOTIFICATION_ID, intent, flags)

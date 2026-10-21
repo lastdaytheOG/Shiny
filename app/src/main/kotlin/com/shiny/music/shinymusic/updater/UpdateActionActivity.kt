@@ -18,7 +18,12 @@ class UpdateActionActivity : Activity() {
         super.onCreate(savedInstanceState)
         val url = intent.getStringExtra(EXTRA_URL)
         val apkPath = intent.getStringExtra(EXTRA_APK_PATH)
+        val openUpdate = intent.getBooleanExtra(EXTRA_OPEN_UPDATE, false)
         val target = when {
+            openUpdate -> Intent(this, com.shiny.music.MainActivity::class.java).apply {
+                action = com.shiny.music.MainActivity.ACTION_OPEN_UPDATE
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            }
             url != null -> Intent(Intent.ACTION_VIEW, url.toUri())
             apkPath != null -> Intent(Intent.ACTION_VIEW).apply {
                 setDataAndType(
@@ -37,9 +42,13 @@ class UpdateActionActivity : Activity() {
     companion object {
         private const val EXTRA_URL = "url"
         private const val EXTRA_APK_PATH = "apkPath"
+        private const val EXTRA_OPEN_UPDATE = "open_update"
 
         fun openUrl(context: Context, url: String): Intent =
             Intent(context, UpdateActionActivity::class.java).putExtra(EXTRA_URL, url)
+
+        fun openUpdate(context: Context): Intent =
+            Intent(context, UpdateActionActivity::class.java).putExtra(EXTRA_OPEN_UPDATE, true)
 
         fun installApk(context: Context, filePath: String): Intent =
             Intent(context, UpdateActionActivity::class.java).putExtra(EXTRA_APK_PATH, filePath)

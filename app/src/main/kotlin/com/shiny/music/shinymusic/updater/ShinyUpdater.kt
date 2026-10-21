@@ -130,7 +130,7 @@ sealed class ShinyUpdateStatus {
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun UpdateScreen(navController: NavHostController) {
+fun UpdateScreen(navController: NavHostController, checkOnOpen: Boolean = false) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var status by remember { mutableStateOf<ShinyUpdateStatus>(ShinyUpdateStatus.NoUpdate(BuildConfig.VERSION_NAME)) }
@@ -225,7 +225,7 @@ fun UpdateScreen(navController: NavHostController) {
     }
 
     LaunchedEffect(Unit) {
-        if (autoUpdateCheckEnabled) {
+        if (autoUpdateCheckEnabled || checkOnOpen) {
             triggerUpdateCheck()
         }
     }
@@ -352,7 +352,9 @@ fun UpdateScreen(navController: NavHostController) {
                                                 )
                                                 .addTag("update_download")
                                                 .build()
-                                            WorkManager.getInstance(context).enqueueUniqueWork("update_download", ExistingWorkPolicy.REPLACE, downloadRequest)
+                                            // KEEP makes a second tap (or a recomposition after process
+                                            // restore) observe the existing download instead of replacing it.
+                                            WorkManager.getInstance(context).enqueueUniqueWork("update_download", ExistingWorkPolicy.KEEP, downloadRequest)
                                             isDownloading = true
                                         }
                                     },

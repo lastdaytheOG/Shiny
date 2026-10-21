@@ -439,8 +439,19 @@ fun NavGraphBuilder.navigationBuilder(
         AboutSettingsScreen(navController)
     }
 
-    screen("update") {
-        UpdateScreen(navController)
+    screen(
+        route = "update?check={check}",
+        arguments = listOf(
+            navArgument("check") {
+                type = NavType.BoolType
+                defaultValue = false
+            },
+        ),
+    ) { entry ->
+        UpdateScreen(
+            navController = navController,
+            checkOnOpen = entry.arguments?.getBoolean("check") == true,
+        )
     }
 
     screen("login") {

@@ -159,6 +159,18 @@ class UpdateDownloadWorker(private val context: Context, workerParams: WorkerPar
                 downloadFile
             }
 
+            // A 200 response can still be an HTML error page or a partial artifact. Only expose
+            // Install after PackageManager can parse the downloaded APK for this application.
+            val packageInfo = context.packageManager.getPackageArchiveInfo(finalFile.absolutePath, 0)
+            if (packageInfo?.applicationInfo?.packageName != context.packageName) {
+                if (finalFile.exists()) finalFile.delete()
+                DownloadNotificationManager.showDownloadFailed(
+                    version,
+                    context.getString(R.string.download_failed),
+                )
+                return@withContext Result.failure()
+            }
+
             if (version.startsWith("nightly-r")) {
                 val runNumberString = version.removePrefix("nightly-r")
                 val runNumber = runNumberString.toIntOrNull()

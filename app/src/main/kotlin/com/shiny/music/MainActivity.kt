@@ -265,6 +265,7 @@ class MainActivity : ComponentActivity() {
         const val ACTION_SEARCH = "com.shiny.music.action.SEARCH"
         const val ACTION_LIBRARY = "com.shiny.music.action.LIBRARY"
         const val ACTION_RECOGNITION = "com.shiny.music.action.RECOGNITION"
+        const val ACTION_OPEN_UPDATE = "com.shiny.music.action.OPEN_UPDATE"
         const val EXTRA_AUTO_START_RECOGNITION = "auto_start_recognition"
 
         /** What a YouTube Music id in a link can be made of: video, playlist, album and channel ids alike. */
@@ -1291,11 +1292,11 @@ class MainActivity : ComponentActivity() {
                     val queued = pendingIntent
                     if (queued != null) {
                         pendingIntent = null
-                        handleDeepLinkIntent(queued, navController)
-                        handleRecognitionIntent(queued, navController)
-                        handleAssistantSearchIntent(queued, navController)
+                        handleLaunchIntent(queued, navController)
                     } else if (intent != null && (intent.action == Intent.ACTION_VIEW || intent.action == Intent.ACTION_SEND)) {
                         handleDeepLinkIntent(intent, navController)
+                    } else if (intent != null && intent.action == ACTION_OPEN_UPDATE) {
+                        handleUpdateIntent(intent, navController)
                     } else if (intent != null && intent.action == ACTION_RECOGNITION) {
                         handleRecognitionIntent(intent, navController)
                     } else if (intent != null && intent.action == android.provider.MediaStore.INTENT_ACTION_MEDIA_PLAY_FROM_SEARCH) {
@@ -1305,13 +1306,7 @@ class MainActivity : ComponentActivity() {
 
                 DisposableEffect(Unit) {
                     val listener = Consumer<Intent> { intent ->
-                        if (intent.action == Intent.ACTION_VIEW || intent.action == Intent.ACTION_SEND) {
-                            handleDeepLinkIntent(intent, navController)
-                        } else if (intent.action == ACTION_RECOGNITION) {
-                            handleRecognitionIntent(intent, navController)
-                        } else if (intent.action == android.provider.MediaStore.INTENT_ACTION_MEDIA_PLAY_FROM_SEARCH) {
-                            handleAssistantSearchIntent(intent, navController)
-                        }
+                        handleLaunchIntent(intent, navController)
                     }
 
                     addOnNewIntentListener(listener)
@@ -1747,6 +1742,23 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+        }
+    }
+
+    private fun handleLaunchIntent(intent: Intent, navController: NavHostController) {
+        when {
+            intent.action == ACTION_OPEN_UPDATE -> handleUpdateIntent(intent, navController)
+            intent.action == Intent.ACTION_VIEW || intent.action == Intent.ACTION_SEND -> handleDeepLinkIntent(intent, navController)
+            intent.action == ACTION_RECOGNITION -> handleRecognitionIntent(intent, navController)
+            intent.action == android.provider.MediaStore.INTENT_ACTION_MEDIA_PLAY_FROM_SEARCH -> handleAssistantSearchIntent(intent, navController)
+        }
+    }
+
+    private fun handleUpdateIntent(intent: Intent, navController: NavHostController) {
+        if (intent.action != ACTION_OPEN_UPDATE) return
+        intent.action = null // consume the one-shot notification route on warm launches
+        navController.navigate("update?check=true") {
+            launchSingleTop = true
         }
     }
 
