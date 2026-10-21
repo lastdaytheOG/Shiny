@@ -12,7 +12,11 @@ data class Release(
 
 data class Highlight(val title: String, val text: String)
 
-val ShinyReleases: List<Release> = listOf(
+/**
+ * Release history shipped with the app. The list is sorted here so adding a future release
+ * cannot accidentally put an older release above it in What's New.
+ */
+val ShinyReleases: List<Release> = sortReleaseHistory(listOf(
     Release(
         version = "1.2.6",
         date = null,
@@ -67,19 +71,21 @@ val ShinyReleases: List<Release> = listOf(
             "The first song of a new queue now gets the next one ready in time.",
         ),
     ),
-    Release(
-        version = "1.2.2",
-        date = "August 28, 2026",
-        summary = null,
-        improved = listOf(
-            "Input fields and dialog buttons, including in Spotify Import, have a more rounded, modern look.",
-            "Some app components were updated to their latest stable versions for better reliability.",
-        ),
-        fixed = listOf(
-            "A crash when adding a song to a playlist, album or artist before it had fully loaded.",
-            "A crash caused by outdated saved settings after an update. Shiny now falls back to a safe default.",
-            "Spotify sign-in with Google, Apple or Facebook could show a black screen or fail to finish.",
-            "The Update Available dialog didn't match the rest of the app.",
-        ),
-    ),
-)
+))
+
+internal fun sortReleaseHistory(releases: List<Release>): List<Release> =
+    releases.sortedWith(Comparator { left, right ->
+        compareVersionKeys(right.version.releaseVersionKey(), left.version.releaseVersionKey())
+    })
+
+private fun String.releaseVersionKey(): List<Int> =
+    removePrefix("v").split('.').map { it.toIntOrNull() ?: 0 }
+
+private fun compareVersionKeys(left: List<Int>, right: List<Int>): Int {
+    val length = maxOf(left.size, right.size)
+    for (index in 0 until length) {
+        val comparison = left.getOrElse(index) { 0 }.compareTo(right.getOrElse(index) { 0 })
+        if (comparison != 0) return comparison
+    }
+    return 0
+}

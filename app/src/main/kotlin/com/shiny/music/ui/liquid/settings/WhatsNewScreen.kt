@@ -44,27 +44,27 @@ import com.shiny.music.ui.liquid.LiquidTypography
 import com.shiny.music.ui.liquid.liquidPanel
 @Composable
 fun WhatsNewScreen(navController: NavController) {
-    val current = ShinyReleases.firstOrNull { it.version == BuildConfig.VERSION_NAME } ?: ShinyReleases.first()
-    val earlier = ShinyReleases.filter { it !== current }
+    val latest = ShinyReleases.first()
+    val earlier = ShinyReleases.drop(1)
 
     SettingsPage(title = "What's New", navController = navController) {
-        item(key = "hero") { ReleaseHero(current) }
+        item(key = "hero") { ReleaseHero(latest) }
 
-        if (current.featured.isNotEmpty()) {
+        if (latest.featured.isNotEmpty()) {
             item(key = "featured") {
                 SettingsSection(title = "Featured") {
-                    current.featured.forEachIndexed { index, highlight ->
+                    latest.featured.forEachIndexed { index, highlight ->
                         FeaturedRow(
                             number = index + 1,
                             highlight = highlight,
-                            divider = index != current.featured.lastIndex,
+                            divider = index != latest.featured.lastIndex,
                         )
                     }
                 }
             }
         }
 
-        releaseNotes(current, keyPrefix = "current")
+        releaseNotes(latest, keyPrefix = "latest")
 
         if (earlier.isNotEmpty()) {
             item(key = "earlier") {
