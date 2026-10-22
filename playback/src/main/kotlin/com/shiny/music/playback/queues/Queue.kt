@@ -13,6 +13,8 @@ interface Queue {
 
     fun hasNextPage(): Boolean
 
+    val pagesAreSource: Boolean get() = false
+
     suspend fun nextPage(): List<MediaItem>
 
     data class Status(

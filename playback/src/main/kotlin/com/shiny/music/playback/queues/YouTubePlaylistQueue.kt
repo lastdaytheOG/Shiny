@@ -44,6 +44,8 @@ class YouTubePlaylistQueue(
 
     override fun hasNextPage(): Boolean = continuation != null
 
+    override val pagesAreSource: Boolean get() = true
+
     override suspend fun nextPage(): List<MediaItem> {
         return withContext(IO) {
             val currentContinuation = continuation ?: return@withContext emptyList()

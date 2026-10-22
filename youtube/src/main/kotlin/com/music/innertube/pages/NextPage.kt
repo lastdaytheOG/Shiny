@@ -18,6 +18,7 @@ data class NextResult(
     val relatedEndpoint: BrowseEndpoint? = null,
     val continuation: String?,
     val endpoint: WatchEndpoint, // current or continuation next endpoint
+    val automixStartIndex: Int? = null,
 )
 
 object NextPage {
