@@ -308,6 +308,8 @@
     <string name="update_available_title">Update available</string>
     <string name="update_channel_name">App updates</string>
     <string name="update_channel_desc">Notifications about new versions</string>
+    <string name="update_notification_title">Shiny %1$s is available</string>
+    <string name="update_notification_text">Tap to see what\'s new and update.</string>
 
     <!-- Offload -->
     <string name="audio_offload">Enable offload</string>

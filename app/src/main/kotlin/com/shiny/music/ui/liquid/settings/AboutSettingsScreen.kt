@@ -105,6 +105,7 @@ fun AboutSettingsScreen(navController: NavController) {
                     onCheckedChange = {
                         autoCheck = it
                         saveAutoUpdateCheckSetting(context, it)
+                        com.shiny.music.shinymusic.updater.UpdateCheckScheduler.sync(context)
                     },
                 )
                 SettingsToggleRow(

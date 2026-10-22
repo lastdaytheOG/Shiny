@@ -124,6 +124,10 @@ class App : Application(), SingletonImageLoader.Factory {
             com.shiny.music.telemetry.Telemetry.install(this@App)
         }
 
+        applicationScope.launch(Dispatchers.IO) {
+            runCatching { com.shiny.music.shinymusic.updater.UpdateCheckScheduler.sync(this@App) }
+        }
+
         // HTTP/3 for streams on the Play build; streams use OkHttp until (and unless) it is ready.
         com.shiny.music.playback.CronetTransport.install(this)
 

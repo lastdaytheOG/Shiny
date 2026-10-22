@@ -756,9 +756,16 @@ class MainActivity : ComponentActivity() {
                             showUpdateDialog = true
                         }
 
-                        if (isAvailable && getUpdateNotificationsSetting(context)) {
-                            Log.d("UpdateCheck", "Posting update notification for $latestVersion")
+                        if (isAvailable &&
+                            getUpdateNotificationsSetting(context) &&
+                            com.shiny.music.shinymusic.updater.shouldNotifyAboutUpdate(
+                                latestVersion,
+                                currentVersion,
+                                com.shiny.music.shinymusic.updater.getLastNotifiedUpdate(context),
+                            ) &&
                             UpdateNotificationHelper.showUpdateNotification(context, latestVersion)
+                        ) {
+                            com.shiny.music.shinymusic.updater.saveLastNotifiedUpdate(context, latestVersion)
                         }
                     },
                     onError = {
