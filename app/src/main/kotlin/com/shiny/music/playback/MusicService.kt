@@ -220,6 +220,22 @@ import com.shiny.music.utils.getOrNull
 private const val INSTANT_SILENCE_SKIP_STEP_MS = 15_000L
 private const val INSTANT_SILENCE_SKIP_SETTLE_MS = 350L
 
+data class QueuePageStatus(
+    val hasMore: Boolean = false,
+    val isLoading: Boolean = false,
+    val error: String? = null,
+)
+
+class QueueUndo internal constructor(
+    val id: Long,
+    val title: String?,
+    val count: Int,
+    internal val removed: List<Pair<Int, MediaItem>>,
+    internal val previousOrder: IntArray?,
+    internal val itemsAfter: List<MediaItem>,
+    internal val pausedQueue: Queue? = null,
+)
+
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @androidx.annotation.OptIn(UnstableApi::class)
 @AndroidEntryPoint
@@ -320,6 +336,11 @@ class MusicService :
 
     private var currentQueue: Queue = EmptyQueue
     var queueTitle: String? = null
+    val queuePageStatus = MutableStateFlow(QueuePageStatus())
+    val queueSessionId = MutableStateFlow(0L)
+    private var queuePageLoadJob: Job? = null
+    val queueUndo = MutableStateFlow<QueueUndo?>(null)
+    private var queueUndoId = 0L
 
     val currentMediaMetadata = MutableStateFlow<com.shiny.music.models.MediaMetadata?>(null)
     private val currentSong =
@@ -1651,7 +1672,12 @@ class MusicService :
         }
 
         restoredQueueAwaitingPrepare = false
+        queuePageLoadJob?.cancel()
+        queuePageLoadJob = null
         currentQueue = queue
+        queueSessionId.value++
+        queuePageStatus.value = QueuePageStatus()
+        queueUndo.value = null
         queueIsPreShuffled = (queue as? ListQueue)?.preShuffled == true
         val generation = ++playQueueGeneration
         autoplayFoundNothingFor = null
@@ -1685,7 +1711,10 @@ class MusicService :
                 if (initialStatus.title != null) {
                     queueTitle = initialStatus.title
                 }
-                if (initialStatus.items.isEmpty()) return@launch
+                if (initialStatus.items.isEmpty()) {
+                    updateQueuePageStatus(queue)
+                    return@launch
+                }
 
                 originalQueueSize = initialStatus.items.size
                 if (queue.preloadItem != null) {
@@ -1720,10 +1749,14 @@ class MusicService :
                     val shufflePlaylistFirst = cachedShufflePlaylistFirst
                     applyShuffleOrder(player.currentMediaItemIndex, player.mediaItemCount, shufflePlaylistFirst)
                 }
+                updateQueuePageStatus(queue)
             } finally {
                 queueLoadsInFlight--
                 // The queue is in place: one that starts on its last songs gets what follows now.
-                if (isActive && generation == playQueueGeneration) continueWhenRunningOut()
+                if (isActive && generation == playQueueGeneration) {
+                    loadQueuePageIfRunningLow()
+                    continueWhenRunningOut()
+                }
             }
         }
     }
@@ -1754,6 +1787,124 @@ class MusicService :
      * radio before the queue's own songs, and both would then be queued. Main thread only.
      */
     private var queueLoadsInFlight = 0
+
+    private fun autoplayAllowed() = canAutoplay(cachedAutoLoadMore, together.isFollowing, player.repeatMode)
+
+    private fun queuePageAllowed(queue: Queue = currentQueue) =
+        canLoadQueuePage(queue.hasNextPage(), queue.pagesAreSource, autoplayAllowed())
+
+    private fun updateQueuePageStatus(
+        queue: Queue = currentQueue,
+        loading: Boolean = false,
+        error: String? = null,
+    ) {
+        if (playerInitialized.value && queue === currentQueue) {
+            queuePageStatus.value = QueuePageStatus(
+                hasMore = queuePageAllowed(queue),
+                isLoading = loading,
+                error = error,
+            )
+        }
+    }
+
+    private fun loadQueuePageIfRunningLow(isRepeatTransition: Boolean = false) {
+        val queue = currentQueue
+        val shufflingSource = player.shuffleModeEnabled && queue.pagesAreSource && queue.hasNextPage()
+        if (shufflingSource || shouldLoadQueuePage(
+                upcomingInPlayOrder(QUEUE_PAGE_LOAD_BELOW + 1),
+                queue.hasNextPage(),
+                queue.pagesAreSource,
+                autoplayAllowed(),
+                isRepeatTransition,
+            )
+        ) {
+            loadMoreQueuePage()
+        }
+    }
+
+    fun loadMoreQueuePage() {
+        if (!playerInitialized.value || queueLoadsInFlight > 0 || fillingUpNext) return
+        if (queuePageLoadJob?.isActive == true) return
+        val queue = currentQueue
+        if (!queuePageAllowed(queue)) {
+            updateQueuePageStatus(queue)
+            return
+        }
+        val source = queue.pagesAreSource
+        val generation = playQueueGeneration
+        updateQueuePageStatus(queue, loading = true)
+        queuePageLoadJob = scope.launch(SilentHandler) {
+            var appended = false
+            try {
+                val page = withContext(Dispatchers.IO) {
+                    queue.nextPage()
+                        .filterExplicit(cachedHideExplicit)
+                        .filterVideoSongs(cachedHideVideoSongsEffective)
+                }
+                if (generation != playQueueGeneration || queue !== currentQueue) return@launch
+                if (source || autoplayAllowed()) {
+                    val items = if (source) page else page.filter { it.mediaId !in queuedMediaIds() }
+                    appendToQueue(items, if (source) ShufflePlacement.Mixed else ShufflePlacement.End)
+                    appended = items.isNotEmpty()
+                }
+                updateQueuePageStatus(queue)
+            } catch (error: Throwable) {
+                if (error is kotlinx.coroutines.CancellationException) throw error
+                if (generation == playQueueGeneration && queue === currentQueue) {
+                    updateQueuePageStatus(queue, error = error.message ?: "Unable to load more songs")
+                }
+            } finally {
+                if (generation == playQueueGeneration && queue === currentQueue) {
+                    queuePageLoadJob = null
+                    if (appended) loadQueuePageIfRunningLow()
+                }
+            }
+        }
+    }
+
+    private fun queuedMediaIds(): HashSet<String> =
+        (0 until player.mediaItemCount).mapTo(HashSet()) { player.getMediaItemAt(it).mediaId }
+
+    private fun currentPlayOrder(): IntArray {
+        val timeline = player.currentTimeline
+        if (timeline.isEmpty) return IntArray(0)
+        val order = IntArray(timeline.windowCount)
+        var index = timeline.getFirstWindowIndex(true)
+        var position = 0
+        while (index != C.INDEX_UNSET && position < order.size) {
+            order[position++] = index
+            index = timeline.getNextWindowIndex(index, REPEAT_MODE_OFF, true)
+        }
+        return if (position == order.size) order else IntArray(0)
+    }
+
+    private fun setPlayOrder(order: IntArray) {
+        if (order.size == player.mediaItemCount && order.isNotEmpty()) {
+            player.setShuffleOrder(DefaultShuffleOrder(order, System.currentTimeMillis()))
+        }
+    }
+
+    private fun placeInShuffle(inserted: IntRange, placement: ShufflePlacement) {
+        if (!player.shuffleModeEnabled || inserted.isEmpty()) return
+        if (queueIsPreShuffled) {
+            setPlayOrder(IntArray(player.mediaItemCount) { it })
+            return
+        }
+        val order = currentPlayOrder()
+        if (order.isEmpty()) return
+        setPlayOrder(playOrderWithInserted(order, player.currentMediaItemIndex, inserted, placement))
+    }
+
+    private fun insertIntoQueue(index: Int, items: List<MediaItem>, placement: ShufflePlacement) {
+        if (items.isEmpty()) return
+        val at = index.coerceIn(0, player.mediaItemCount)
+        player.addMediaItems(at, items)
+        placeInShuffle(at until at + items.size, placement)
+        if (cachedPersistentQueue) saveQueueToDisk()
+    }
+
+    private fun appendToQueue(items: List<MediaItem>, placement: ShufflePlacement) =
+        insertIntoQueue(player.mediaItemCount, items, placement)
 
     /** The song whose radio last had nothing new to add, so it is not asked for again. Main thread only. */
     private var autoplayFoundNothingFor: String? = null
@@ -1798,7 +1949,7 @@ class MusicService :
      * anything already queued. Only with Autoplay on, and never while a load is in flight.
      */
     fun ensureUpNext(minimum: Int = 15) {
-        if (!playerInitialized.value || fillingUpNext || queueLoadsInFlight > 0) return
+        if (!playerInitialized.value || fillingUpNext || queueLoadsInFlight > 0 || queuePageLoadJob?.isActive == true) return
         // Following a Listen Together host: the room decides what comes next.
         if (!canAutoplay(cachedAutoLoadMore, together.isFollowing, player.repeatMode)) return
         if (cachedDisableLoadMoreWhenRepeatAll && player.repeatMode == REPEAT_MODE_ALL) return
@@ -1818,18 +1969,19 @@ class MusicService :
                 val hideExplicit = cachedHideExplicit
                 val hideVideos = dataStore.get(HideVideoSongsKey, false) ||
                     dataStore.get(com.shiny.music.constants.DataSaverEnabledKey, false)
-                fun queuedIds() = (0 until player.mediaItemCount).mapTo(HashSet()) { player.getMediaItemAt(it).mediaId }
-
+                val generation = playQueueGeneration
                 var pages = 0
                 while (requestIsCurrent() && upcoming() < minimum && currentQueue.hasNextPage() && pages++ < 3) {
-                    val items = withContext(Dispatchers.IO) {
-                        currentQueue.nextPage().filterExplicit(hideExplicit).filterVideoSongs(hideVideos)
+                    val queue = currentQueue
+                    val source = queue.pagesAreSource
+                    val page = withContext(Dispatchers.IO) {
+                        queue.nextPage().filterExplicit(hideExplicit).filterVideoSongs(hideVideos)
                     }
-                    if (!requestIsCurrent()) return@launch
-                    val queued = queuedIds()
-                    val fresh = items.filter { it.mediaId !in queued }
-                    if (fresh.isEmpty()) break
-                    player.addMediaItems(fresh)
+                    if (!requestIsCurrent() || generation != playQueueGeneration || queue !== currentQueue) return@launch
+                    val items = if (source) page else page.filter { it.mediaId !in queuedMediaIds() }
+                    if (items.isEmpty()) break
+                    appendToQueue(items, if (source) ShufflePlacement.Mixed else ShufflePlacement.End)
+                    updateQueuePageStatus()
                 }
 
                 // A file on the phone has no radio, and offline there is nothing to ask.
@@ -1840,20 +1992,17 @@ class MusicService :
                     val status = withContext(Dispatchers.IO) {
                         radio.getInitialStatus().filterExplicit(hideExplicit).filterVideoSongs(hideVideos)
                     }
-                    if (!requestIsCurrent()) return@launch
-                    val queued = queuedIds()
+                    if (!requestIsCurrent() || generation != playQueueGeneration) return@launch
+                    val queued = queuedMediaIds()
                     val fresh = status.items.filter { it.mediaId !in queued }.take(minimum + 5 - upcoming())
                     if (fresh.isNotEmpty()) {
-                        player.addMediaItems(fresh)
+                        appendToQueue(fresh, ShufflePlacement.End)
                         // Later top-ups continue from the radio once the original queue is spent.
                         if (!currentQueue.hasNextPage()) currentQueue = radio
+                        updateQueuePageStatus()
                     } else {
                         autoplayFoundNothingFor = current.id
                     }
-                }
-
-                if (requestIsCurrent() && player.shuffleModeEnabled) {
-                    applyShuffleOrder(player.currentMediaItemIndex, player.mediaItemCount, cachedShufflePlaylistFirst)
                 }
             } finally {
                 fillingUpNext = false
@@ -1877,6 +2026,7 @@ class MusicService :
         if (cachedAutoLoadMore == enabled) return
         cachedAutoLoadMore = enabled
         autoplayRequestVersion++
+        updateQueuePageStatus()
         if (enabled) continueWhenRunningOut()
     }
 
@@ -1932,6 +2082,7 @@ class MusicService :
                 }
 
                 currentQueue = radioQueue
+                updateQueuePageStatus()
             } catch (e: Exception) {
                 
                 try {
@@ -2066,115 +2217,138 @@ class MusicService :
     }
 
     fun playNext(items: List<MediaItem>) {
+        if (items.isEmpty()) return
         if (player.mediaItemCount == 0 || player.playbackState == STATE_IDLE) {
+            detachFromSourceQueue()
             player.setMediaItems(items)
             player.prepare()
             player.play()
             return
         }
-
-        
-        if (dataStore.get(PreventDuplicateTracksInQueueKey, false)) {
-            val itemIds = items.map { it.mediaId }.toSet()
-            val indicesToRemove = mutableListOf<Int>()
-            val currentIndex = player.currentMediaItemIndex
-
-            for (i in 0 until player.mediaItemCount) {
-                if (i != currentIndex && player.getMediaItemAt(i).mediaId in itemIds) {
-                    indicesToRemove.add(i)
-                }
-            }
-
-            
-            indicesToRemove.sortedDescending().forEach { index ->
-                player.removeMediaItem(index)
-            }
-        }
-
-        val insertIndex = player.currentMediaItemIndex + 1
-        val shuffleEnabled = player.shuffleModeEnabled
-
-        player.addMediaItems(insertIndex, items)
+        removeQueuedDuplicatesOf(items)
+        insertIntoQueue(player.currentMediaItemIndex + 1, items, ShufflePlacement.Next)
         player.prepare()
-
-        if (shuffleEnabled) {
-            
-            val timeline = player.currentTimeline
-            if (!timeline.isEmpty) {
-                val size = timeline.windowCount
-                val currentIndex = player.currentMediaItemIndex
-
-                
-                val newIndices = (insertIndex until (insertIndex + items.size)).toSet()
-
-                
-                val orderAfter = mutableListOf<Int>()
-                var idx = currentIndex
-                while (true) {
-                    idx = timeline.getNextWindowIndex(idx, Player.REPEAT_MODE_OFF, true)
-                    if (idx == C.INDEX_UNSET) break
-                    if (idx != currentIndex) orderAfter.add(idx)
-                }
-
-                val prevList = mutableListOf<Int>()
-                var pIdx = currentIndex
-                while (true) {
-                    pIdx = timeline.getPreviousWindowIndex(pIdx, Player.REPEAT_MODE_OFF, true)
-                    if (pIdx == C.INDEX_UNSET) break
-                    if (pIdx != currentIndex) prevList.add(pIdx)
-                }
-                prevList.reverse() 
-
-                val existingOrder = (prevList + orderAfter).filter { it != currentIndex && it !in newIndices }
-
-                
-                val nextBlock = (insertIndex until (insertIndex + items.size)).toList()
-                val finalOrder = IntArray(size)
-                var pos = 0
-                finalOrder[pos++] = currentIndex
-                nextBlock.forEach { if (it in 0 until size) finalOrder[pos++] = it }
-                existingOrder.forEach { if (pos < size) finalOrder[pos++] = it }
-
-                
-                if (pos < size) {
-                    for (i in 0 until size) {
-                        if (!finalOrder.contains(i)) {
-                            finalOrder[pos++] = i
-                            if (pos == size) break
-                        }
-                    }
-                }
-
-                player.setShuffleOrder(DefaultShuffleOrder(finalOrder, System.currentTimeMillis()))
-            }
-        }
     }
 
     fun addToQueue(items: List<MediaItem>) {
-        if (dataStore.get(PreventDuplicateTracksInQueueKey, false)) {
-            val itemIds = items.map { it.mediaId }.toSet()
-            val indicesToRemove = mutableListOf<Int>()
-            val currentIndex = player.currentMediaItemIndex
-
-            for (i in 0 until player.mediaItemCount) {
-                if (i != currentIndex && player.getMediaItemAt(i).mediaId in itemIds) {
-                    indicesToRemove.add(i)
-                }
-            }
-
-            
-            indicesToRemove.sortedDescending().forEach { index ->
-                player.removeMediaItem(index)
-            }
-        }
-
-        player.addMediaItems(items)
-
-        if (player.shuffleModeEnabled) {
-            val shufflePlaylistFirst = cachedShufflePlaylistFirst
-            applyShuffleOrder(player.currentMediaItemIndex, player.mediaItemCount, shufflePlaylistFirst)
-        }
+        if (items.isEmpty()) return
+        removeQueuedDuplicatesOf(items)
+        appendToQueue(items, ShufflePlacement.End)
         player.prepare()
+    }
+
+    private fun removeQueuedDuplicatesOf(items: List<MediaItem>) {
+        if (!dataStore.get(PreventDuplicateTracksInQueueKey, false)) return
+        val ids = items.mapTo(HashSet()) { it.mediaId }
+        val current = player.currentMediaItemIndex
+        for (i in player.mediaItemCount - 1 downTo 0) {
+            if (i != current && player.getMediaItemAt(i).mediaId in ids) player.removeMediaItem(i)
+        }
+    }
+
+    private fun detachFromSourceQueue() {
+        queuePageLoadJob?.cancel()
+        queuePageLoadJob = null
+        currentQueue = EmptyQueue
+        playQueueGeneration++
+        queueSessionId.value++
+        queueIsPreShuffled = false
+        queueUndo.value = null
+        updateQueuePageStatus()
+    }
+
+    fun moveUpcoming(mediaIndex: Int, toUpcomingSlot: Int) {
+        val current = player.currentMediaItemIndex
+        if (mediaIndex !in 0 until player.mediaItemCount || mediaIndex == current) return
+        if (player.shuffleModeEnabled) {
+            val order = currentPlayOrder()
+            if (order.isEmpty()) return
+            setPlayOrder(playOrderWithMoved(order, current, mediaIndex, toUpcomingSlot))
+        } else {
+            val removedBefore = if (mediaIndex < current) 1 else 0
+            val target = (current - removedBefore + 1 + toUpcomingSlot).coerceIn(0, player.mediaItemCount - 1)
+            if (target != mediaIndex) player.moveMediaItem(mediaIndex, target)
+        }
+        queueUndo.value = null
+        if (cachedPersistentQueue) saveQueueToDisk()
+    }
+
+    fun playQueueItemNext(mediaIndex: Int) = moveUpcoming(mediaIndex, 0)
+
+    fun removeQueueItem(mediaIndex: Int) {
+        if (mediaIndex !in 0 until player.mediaItemCount || mediaIndex == player.currentMediaItemIndex) return
+        removeQueueItems(listOf(mediaIndex), player.getMediaItemAt(mediaIndex).metadata?.title)
+    }
+
+    fun clearUpcoming() {
+        val timeline = player.currentTimeline
+        var index = player.currentMediaItemIndex
+        if (timeline.isEmpty || index !in 0 until timeline.windowCount) return
+        val upcoming = mutableListOf<Int>()
+        while (true) {
+            index = timeline.getNextWindowIndex(index, REPEAT_MODE_OFF, player.shuffleModeEnabled)
+            if (index == C.INDEX_UNSET) break
+            upcoming += index
+        }
+        if (upcoming.isEmpty()) return
+        val source = currentQueue.takeIf { it.hasNextPage() }
+        if (source != null) {
+            queuePageLoadJob?.cancel()
+            queuePageLoadJob = null
+            currentQueue = EmptyQueue
+            updateQueuePageStatus()
+        }
+        removeQueueItems(upcoming, null, source)
+    }
+
+    private fun removeQueueItems(indices: List<Int>, title: String?, pausedQueue: Queue? = null) {
+        val previousOrder = if (player.shuffleModeEnabled) currentPlayOrder().takeIf { it.isNotEmpty() } else null
+        val ascending = indices.distinct().sorted()
+        val removed = ascending.map { it to player.getMediaItemAt(it) }
+        if (ascending.last() - ascending.first() + 1 == ascending.size) {
+            player.removeMediaItems(ascending.first(), ascending.last() + 1)
+        } else {
+            ascending.asReversed().forEach { player.removeMediaItem(it) }
+        }
+        queueUndo.value = QueueUndo(
+            id = ++queueUndoId,
+            title = title,
+            count = removed.size,
+            removed = removed,
+            previousOrder = previousOrder,
+            itemsAfter = List(player.mediaItemCount) { player.getMediaItemAt(it) },
+            pausedQueue = pausedQueue,
+        )
+        if (cachedPersistentQueue) saveQueueToDisk()
+    }
+
+    private fun QueueUndo.stillApplies(): Boolean {
+        if (player.mediaItemCount < itemsAfter.size) return false
+        return itemsAfter.indices.all { player.getMediaItemAt(it) === itemsAfter[it] }
+    }
+
+    fun undoQueueEdit(id: Long) {
+        val undo = queueUndo.value?.takeIf { it.id == id } ?: return
+        queueUndo.value = null
+        if (!undo.stillApplies()) return
+        val appendedFrom = undo.itemsAfter.size
+        val appendedCount = player.mediaItemCount - appendedFrom
+        undo.removed.forEach { (index, item) -> player.addMediaItem(index, item) }
+        val previousOrder = undo.previousOrder
+        if (player.shuffleModeEnabled && previousOrder != null) {
+            val restoredCount = appendedFrom + undo.removed.size
+            setPlayOrder(previousOrder + IntArray(appendedCount) { restoredCount + it })
+        }
+        if (undo.pausedQueue != null && currentQueue === EmptyQueue) {
+            currentQueue = undo.pausedQueue
+            updateQueuePageStatus()
+        }
+        if (player.playbackState == STATE_IDLE) player.prepare()
+        if (cachedPersistentQueue) saveQueueToDisk()
+    }
+
+    fun dismissQueueUndo(id: Long) {
+        if (queueUndo.value?.id == id) queueUndo.value = null
     }
 
     fun toggleLibrary() {
@@ -2365,32 +2539,7 @@ class MusicService :
         
         
         
-        if (canAutoplay(cachedAutoLoadMore, together.isFollowing, player.repeatMode) &&
-            reason != Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT &&
-            player.mediaItemCount - player.currentMediaItemIndex <= 5 &&
-            currentQueue.hasNextPage() &&
-            !(cachedDisableLoadMoreWhenRepeatAll && player.repeatMode == REPEAT_MODE_ALL)
-        ) {
-            val requestVersion = autoplayRequestVersion
-            val queueGeneration = playQueueGeneration
-            scope.launch(SilentHandler) {
-                val mediaItems = withContext(Dispatchers.IO) {
-                    currentQueue.nextPage()
-                        .filterExplicit(cachedHideExplicit)
-                        .filterVideoSongs(cachedHideVideoSongsEffective)
-                }
-                if (isCurrentAutoplayRequest(cachedAutoLoadMore, requestVersion, autoplayRequestVersion) &&
-                    queueGeneration == playQueueGeneration &&
-                    player.playbackState != STATE_IDLE && mediaItems.isNotEmpty()
-                ) {
-                    player.addMediaItems(mediaItems)
-                    if (player.shuffleModeEnabled) {
-                        val shufflePlaylistFirst = cachedShufflePlaylistFirst
-                        applyShuffleOrder(player.currentMediaItemIndex, player.mediaItemCount, shufflePlaylistFirst)
-                    }
-                }
-            }
-        }
+        loadQueuePageIfRunningLow(isRepeatTransition = reason == Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT)
         if (reason != Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT) continueWhenRunningOut()
 
 
@@ -2489,6 +2638,9 @@ class MusicService :
         if (reason == Player.TIMELINE_CHANGE_REASON_PLAYLIST_CHANGED && player.isPlaying) {
             preloadUpcomingItems()
         }
+        if (reason == Player.TIMELINE_CHANGE_REASON_PLAYLIST_CHANGED && queueUndo.value?.stillApplies() == false) {
+            queueUndo.value = null
+        }
     }
 
     override fun onEvents(
@@ -2561,10 +2713,12 @@ class MusicService :
             val currentIndex = player.currentMediaItemIndex
             val totalCount = player.mediaItemCount
 
-            applyShuffleOrder(currentIndex, totalCount, shufflePlaylistFirst)
+            applyShuffleOrder(currentIndex, totalCount, shufflePlaylistFirst, keepPlayed = true)
+            loadQueuePageIfRunningLow()
         }
+        queueUndo.value = null
 
-        
+
         if (dataStore.get(RememberShuffleAndRepeatKey, true)) {
             scope.launch {
                 dataStore.edit { settings ->
@@ -2584,6 +2738,7 @@ class MusicService :
         // Keep their decision in lockstep with the player the button just changed.
         cachedRepeatMode = repeatMode
         updateNotification()
+        updateQueuePageStatus()
         scope.launch {
             dataStore.edit { settings ->
                 settings[RepeatModeKey] = repeatMode
@@ -2600,9 +2755,10 @@ class MusicService :
     private fun applyShuffleOrder(
         currentIndex: Int,
         totalCount: Int,
-        shufflePlaylistFirst: Boolean
+        shufflePlaylistFirst: Boolean,
+        keepPlayed: Boolean = false,
     ) {
-        if (totalCount == 0) return
+        if (currentIndex !in 0 until totalCount) return
 
         if (queueIsPreShuffled) {
             // The queue order is the shuffle: songs added later play after it, in turn.
@@ -2610,34 +2766,13 @@ class MusicService :
             return
         }
 
-        if (shufflePlaylistFirst && originalQueueSize > 0 && originalQueueSize < totalCount) {
-            
-            val originalIndices = (0 until originalQueueSize).filter { it != currentIndex }.toMutableList()
-            val addedIndices = (originalQueueSize until totalCount).filter { it != currentIndex }.toMutableList()
-
-            originalIndices.shuffle()
-            addedIndices.shuffle()
-
-            val shuffledIndices = IntArray(totalCount)
-            var pos = 0
-            shuffledIndices[pos++] = currentIndex
-
-            if (currentIndex < originalQueueSize) {
-                originalIndices.forEach { shuffledIndices[pos++] = it }
-                addedIndices.forEach { shuffledIndices[pos++] = it }
-            } else {
-                (0 until originalQueueSize).shuffled().forEach { shuffledIndices[pos++] = it }
-                addedIndices.forEach { shuffledIndices[pos++] = it }
-            }
-            player.setShuffleOrder(DefaultShuffleOrder(shuffledIndices, System.currentTimeMillis()))
-        } else {
-            player.setShuffleOrder(
-                DefaultShuffleOrder(
-                    shuffledIndicesKeepingCurrentFirst(totalCount, currentIndex),
-                    System.currentTimeMillis(),
-                ),
-            )
-        }
+        val order = shuffleOrderFrom(
+            totalCount = totalCount,
+            currentIndex = currentIndex,
+            keepPlayed = keepPlayed,
+            originalSize = if (shufflePlaylistFirst) originalQueueSize else 0,
+        )
+        player.setShuffleOrder(DefaultShuffleOrder(order, System.currentTimeMillis()))
     }
 
     override fun onPlaybackParametersChanged(playbackParameters: PlaybackParameters) {
@@ -3667,11 +3802,19 @@ class MusicService :
         }
 
         return try {
+            val current = player.currentMediaItemIndex
+            val items = ArrayList<com.shiny.music.models.MediaMetadata>(player.mediaItemCount)
+            var savedIndex = 0
+            for (i in 0 until player.mediaItemCount) {
+                val metadata = player.getMediaItemAt(i).metadata ?: continue
+                if (i < current) savedIndex++
+                items += metadata
+            }
             QueueSnapshot(
                 queue = currentQueue.toPersistQueue(
                     title = queueTitle,
-                    items = player.mediaItems.mapNotNull { it.metadata },
-                    mediaItemIndex = player.currentMediaItemIndex,
+                    items = items,
+                    mediaItemIndex = savedIndex.coerceAtMost((items.size - 1).coerceAtLeast(0)),
                     position = player.currentPosition,
                 ).let { queue ->
                     // The saved items are in the Smart Shuffle order; this keeps shuffle mode
@@ -3694,7 +3837,7 @@ class MusicService :
                     shuffleModeEnabled = player.shuffleModeEnabled,
                     volume = restorePlayerVolume(playerVolume.value),
                     currentPosition = player.currentPosition,
-                    currentMediaItemIndex = player.currentMediaItemIndex,
+                    currentMediaItemIndex = savedIndex,
                     playbackState = player.playbackState,
                 ),
             )
@@ -4212,6 +4355,9 @@ class MusicService :
         val items = mutableListOf<MediaItem>()
         for (i in 0 until itemCount) items.add(player.getMediaItemAt(i))
         secPlayer.setMediaItems(items)
+        currentPlayOrder().takeIf { it.size == itemCount }?.let { order ->
+            secPlayer.setShuffleOrder(DefaultShuffleOrder(order, System.currentTimeMillis()))
+        }
 
         secPlayer.seekTo(targetIndex, 0)
         fxPlaybackParameters()?.let { if (it != PlaybackParameters.DEFAULT) secPlayer.playbackParameters = it }
@@ -4231,7 +4377,6 @@ class MusicService :
         // for one target index and then rejected as stale for another; and these ran
         // `runBlocking` on the main thread at the exact instant the blend was starting.
         val savedRepeatMode = cachedRepeatMode
-        val savedShuffleEnabled = cachedShuffleEnabled
 
         val targetIndex = if (savedRepeatMode == REPEAT_MODE_ONE) {
             player.currentMediaItemIndex
@@ -4268,11 +4413,6 @@ class MusicService :
         )
 
         performCrossfadeSwap()
-
-        if (savedShuffleEnabled) {
-            val shufflePlaylistFirst = cachedShufflePlaylistFirst
-            applyShuffleOrder(player.currentMediaItemIndex, player.mediaItemCount, shufflePlaylistFirst)
-        }
     }
 
     private fun performCrossfadeSwap() {
@@ -4858,15 +4998,18 @@ class MusicService :
         val preloadLyrics = cachedPreloadLyrics
 
         val currentIndex = player.currentMediaItemIndex
-        if (currentIndex == androidx.media3.common.C.INDEX_UNSET) return
+        val timeline = player.currentTimeline
+        if (currentIndex == androidx.media3.common.C.INDEX_UNSET || timeline.isEmpty) return
 
-        val limit = kotlin.math.min(preloadLimit, player.mediaItemCount - currentIndex - 1)
-        if (limit <= 0) return
-
+        val repeat = if (player.repeatMode == REPEAT_MODE_ALL) REPEAT_MODE_ALL else REPEAT_MODE_OFF
         val upcomingMediaIds = mutableListOf<String>()
-        for (i in 1..limit) {
-            upcomingMediaIds.add(player.getMediaItemAt(currentIndex + i).mediaId)
+        var index = currentIndex
+        while (upcomingMediaIds.size < preloadLimit) {
+            index = timeline.getNextWindowIndex(index, repeat, player.shuffleModeEnabled)
+            if (index == C.INDEX_UNSET || index == currentIndex) break
+            upcomingMediaIds.add(player.getMediaItemAt(index).mediaId)
         }
+        if (upcomingMediaIds.isEmpty()) return
 
         // Already preparing exactly these songs: let that finish. Restarting it on every queue edit,
         // resume or rebuffer would cut a pre-cache off part-way and never start it again.

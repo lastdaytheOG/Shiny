@@ -133,6 +133,9 @@ class PlayerConnection(
     val queueWindows = MutableStateFlow<List<Timeline.Window>>(emptyList())
     val currentMediaItemIndex = MutableStateFlow(-1)
     val currentWindowIndex = MutableStateFlow(-1)
+    val queuePageStatus = service.queuePageStatus
+    val queueSessionId = service.queueSessionId
+    val queueUndo = service.queueUndo
 
     val shuffleModeEnabled = MutableStateFlow(false)
     val repeatMode = MutableStateFlow(REPEAT_MODE_OFF)
@@ -246,6 +249,20 @@ class PlayerConnection(
             throw e
         }
     }
+
+    fun loadMoreQueuePage() = service.loadMoreQueuePage()
+
+    fun moveUpcoming(mediaIndex: Int, toUpcomingSlot: Int) = service.moveUpcoming(mediaIndex, toUpcomingSlot)
+
+    fun playQueueItemNext(mediaIndex: Int) = service.playQueueItemNext(mediaIndex)
+
+    fun removeQueueItem(mediaIndex: Int) = service.removeQueueItem(mediaIndex)
+
+    fun clearUpcoming() = service.clearUpcoming()
+
+    fun undoQueueEdit(id: Long) = service.undoQueueEdit(id)
+
+    fun dismissQueueUndo(id: Long) = service.dismissQueueUndo(id)
 
     fun toggleLike() {
         try {
