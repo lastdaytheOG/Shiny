@@ -2,6 +2,37 @@
 
 The same notes appear in the app under *Settings → About → What's New*. APKs are on the [Releases](https://github.com/lastdaytheOG/Shiny/releases) page.
 
+## 1.2.7
+
+A calmer, roomier queue, and playlists that play all the way through.
+
+**New**
+- Redesigned Up Next: one list with the song playing now highlighted, songs you've played above it and what's next below.
+- Queue mode gives the list the whole screen on a dark background, with play and pause in the header.
+- Every song in the queue has a menu with Play Next, Remove from Queue and Clear upcoming songs, and you can undo a removal or a clear.
+
+**Improved**
+- Long playlists now load in full, even with Autoplay off, instead of stopping after 50 songs.
+- Shuffle keeps its order when songs are added, and stays in sync as more of a playlist loads.
+- Shuffle, Repeat and Autoplay sit together at the top of the queue, with clear labels.
+- Long queues show their songs a page at a time, so the queue opens quickly.
+- Reorder songs by long-pressing and dragging them.
+
+**Fixed**
+- Songs were sometimes skipped or played twice when you started a playlist while it was still loading.
+- The queue could show the same songs twice for a moment after you picked a song.
+
+## 1.2.6
+
+A cleaner Home and more dependable playback controls.
+
+**Improved**
+- Cleaner Home: the Your Week summary, Surprise Me card, and mood-selection section are gone.
+- Improved Shuffle: shuffle behavior and queue synchronization are more reliable.
+- Better Repeat Controls: repeat-mode handling is more consistent while tracks finish or change.
+- Autoplay Improvements: automatic track selection and playback behavior are more dependable.
+- Queue Improvements: playback modes and queue controls stay synchronized.
+
 ## 1.2.5
 
 A rebuilt Shiny: a new design on every screen, friends and Discord, and an appearance you can make your own.

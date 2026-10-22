@@ -15,10 +15,10 @@ class ReleaseNotesTest {
     }
 
     @Test
-    fun `release history is newest first and keeps 1 2 5 available`() {
-        assertEquals(listOf("1.2.6", "1.2.5"), ShinyReleases.map { it.version })
-        assertEquals("1.2.6", ShinyReleases.first().version)
-        assertEquals("1.2.5", ShinyReleases[1].version)
+    fun `release history is newest first and keeps 1 2 6 and 1 2 5 available`() {
+        assertEquals(listOf("1.2.7", "1.2.6", "1.2.5"), ShinyReleases.map { it.version })
+        assertEquals("1.2.7", ShinyReleases.first().version)
+        assertEquals(5, ShinyReleases.first { it.version == "1.2.6" }.improved.size)
         val previous = ShinyReleases.first { it.version == "1.2.5" }
         assertNotNull(previous.summary)
         assertEquals(3, previous.featured.size)
@@ -53,5 +53,15 @@ class ReleaseNotesTest {
         assertTrue(notes.any { it.startsWith("Better Repeat Controls:") })
         assertTrue(notes.any { it.startsWith("Autoplay Improvements:") })
         assertTrue(notes.any { it.startsWith("Queue Improvements:") })
+    }
+
+    @Test
+    fun `version 1 2 7 describes the queue release`() {
+        val release = ShinyReleases.first { it.version == "1.2.7" }
+
+        assertNotNull(release.summary)
+        assertTrue(release.new.any { it.startsWith("Redesigned Up Next:") })
+        assertTrue(release.improved.any { it.startsWith("Long playlists now load in full") })
+        assertTrue(release.fixed.isNotEmpty())
     }
 }

@@ -44,8 +44,8 @@ android {
         applicationId = "com.shiny.music"
         minSdk = 26
         targetSdk = 36
-        versionCode = 156
-        versionName = "1.2.6"
+        versionCode = 157
+        versionName = "1.2.7"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true

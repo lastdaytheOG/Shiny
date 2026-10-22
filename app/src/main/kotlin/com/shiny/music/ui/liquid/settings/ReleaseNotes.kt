@@ -18,6 +18,27 @@ data class Highlight(val title: String, val text: String)
  */
 val ShinyReleases: List<Release> = sortReleaseHistory(listOf(
     Release(
+        version = "1.2.7",
+        date = null,
+        summary = "A calmer, roomier queue, and playlists that play all the way through.",
+        new = listOf(
+            "Redesigned Up Next: one list with the song playing now highlighted, songs you've played above it and what's next below.",
+            "Queue mode gives the list the whole screen on a dark background, with play and pause in the header.",
+            "Every song in the queue has a menu with Play Next, Remove from Queue and Clear upcoming songs, and you can undo a removal or a clear.",
+        ),
+        improved = listOf(
+            "Long playlists now load in full, even with Autoplay off, instead of stopping after 50 songs.",
+            "Shuffle keeps its order when songs are added, and stays in sync as more of a playlist loads.",
+            "Shuffle, Repeat and Autoplay sit together at the top of the queue, with clear labels.",
+            "Long queues show their songs a page at a time, so the queue opens quickly.",
+            "Reorder songs by long-pressing and dragging them.",
+        ),
+        fixed = listOf(
+            "Songs were sometimes skipped or played twice when you started a playlist while it was still loading.",
+            "The queue could show the same songs twice for a moment after you picked a song.",
+        ),
+    ),
+    Release(
         version = "1.2.6",
         date = null,
         summary = "A cleaner Home and more dependable playback controls.",
