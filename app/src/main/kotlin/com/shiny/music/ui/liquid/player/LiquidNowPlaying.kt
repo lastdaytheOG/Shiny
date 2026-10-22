@@ -1,7 +1,12 @@
 package com.shiny.music.ui.liquid.player
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -20,6 +25,7 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -37,9 +43,12 @@ import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.MoreHoriz
+import androidx.compose.material.icons.rounded.Pause
+import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material3.Text
@@ -70,7 +79,6 @@ import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithCache
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
@@ -84,6 +92,15 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
+import androidx.compose.material3.Icon
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import com.shiny.music.R
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.layout.positionInRoot
@@ -402,6 +419,8 @@ private fun NowPlaying(
         var stageRect by remember { mutableStateOf<Rect?>(null) }
         var compactRect by remember { mutableStateOf<Rect?>(null) }
         var controlsTop by remember { mutableFloatStateOf(0f) }
+        var paneControlsTop by remember { mutableFloatStateOf(0f) }
+        val queueCompact = animateFloatAsState(if (mode == NowPlayingMode.Queue) 1f else 0f, tween(260), label = "queueCompact")
 
         // ---- Poster: portrait artwork at the head of the player, its foot going out of focus
         // into its own colours. Portrait only: landscape already gives the cover a whole half
@@ -489,6 +508,11 @@ private fun NowPlaying(
                     .layerBackdrop(playerBackdrop),
             )
         }
+        Box(
+            Modifier
+                .fillMaxSize()
+                .drawBehind { drawRect(Color.Black, alpha = 0.82f * queueCompact.value) }
+        )
 
         if (width > height) {
             // iOS 27 landscape: the artwork on one side, the controls — or the lyrics
@@ -624,7 +648,7 @@ private fun NowPlaying(
             }
 
             val headerTop = topInset + 26.dp + 8.dp
-            val contentTop = headerTop + 72.dp
+            val contentTop = headerTop + 60.dp
             Box(
                 Modifier
                     .fillMaxSize()
@@ -634,7 +658,7 @@ private fun NowPlaying(
                     },
             ) {
                 if (modeProgress.value > 0.001f || mode != NowPlayingMode.Stage) {
-                    val paneBottom = (height - with(density) { controlsTop.toDp() }).coerceAtLeast(0.dp)
+                    val paneBottom = (height - with(density) { paneControlsTop.toDp() }).coerceAtLeast(0.dp)
                     val listPadding = PaddingValues(top = 18.dp, bottom = 56.dp)
                     Box(
                         Modifier
@@ -664,14 +688,12 @@ private fun NowPlaying(
 
                                 // The lyrics fade their own lines at the edges; the queue, which
                                 // only moves when it is scrolled, keeps the mask.
-                                NowPlayingMode.Queue -> Box(Modifier.fillMaxSize().fadingTopEdge()) {
-                                    LiquidQueuePane(
-                                        contentPadding = listPadding,
-                                        nestedScrollConnection = sheet.preUpPostDownNestedScrollConnection,
-                                        backdrop = playerBackdrop,
-                                        enabled = controlsEnabled,
-                                    )
-                                }
+                                NowPlayingMode.Queue -> LiquidQueuePane(
+                                    contentPadding = PaddingValues(top = 4.dp, bottom = 40.dp),
+                                    nestedScrollConnection = sheet.preUpPostDownNestedScrollConnection,
+                                    backdrop = playerBackdrop,
+                                    enabled = controlsEnabled,
+                                )
 
                                 NowPlayingMode.Stage -> Box(Modifier.fillMaxSize())
                             }
@@ -697,6 +719,8 @@ private fun NowPlaying(
                     },
                     onArtworkSlot = { c -> compactRect = c.rectIn(containerCoords[0]) },
                     onClick = { mode = NowPlayingMode.Stage },
+                    isPlaying = isPlaying,
+                    onPlayPause = if (mode == NowPlayingMode.Queue && controlsEnabled) ({ playerConnection.togglePlayPause() }) else null,
                     modifier = Modifier
                         .padding(top = headerTop)
                         .padding(horizontal = 20.dp),
@@ -842,31 +866,43 @@ private fun NowPlaying(
                 Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
-                    .onGloballyPositioned { c -> controlsTop = c.rectIn(containerCoords[0]).top }
+                    .onGloballyPositioned { c ->
+                        val top = c.rectIn(containerCoords[0]).top
+                        paneControlsTop = top
+                        if (queueCompact.value == 0f || controlsTop == 0f) controlsTop = top
+                    }
                     .padding(horizontal = 28.dp)
                     .padding(bottom = bottomInset + 14.dp),
             ) {
-                LiquidScrubber(
-                    positionProvider = positionProvider,
-                    durationProvider = durationProvider,
-                    onSeek = onSeek,
-                    enabled = controlsEnabled,
-                )
-                Spacer(Modifier.height(20.dp))
-                LiquidTransport(
-                    isPlaying = isPlaying,
-                    canSkipPrevious = canSkipPrevious,
-                    canSkipNext = canSkipNext,
-                    onPrevious = { playerConnection.seekToPrevious() },
-                    onPlayPause = { playerConnection.togglePlayPause() },
-                    onNext = { playerConnection.seekToNext() },
-                    enabled = controlsEnabled,
-                )
-                if (showVolume) {
-                    Spacer(Modifier.height(18.dp))
-                    LiquidVolumeSlider()
+                AnimatedVisibility(
+                    visible = mode != NowPlayingMode.Queue,
+                    enter = fadeIn(tween(220, delayMillis = 80)) + expandVertically(tween(300)),
+                    exit = fadeOut(tween(140)) + shrinkVertically(tween(300)),
+                ) {
+                    Column {
+                        LiquidScrubber(
+                            positionProvider = positionProvider,
+                            durationProvider = durationProvider,
+                            onSeek = onSeek,
+                            enabled = controlsEnabled,
+                        )
+                        Spacer(Modifier.height(20.dp))
+                        LiquidTransport(
+                            isPlaying = isPlaying,
+                            canSkipPrevious = canSkipPrevious,
+                            canSkipNext = canSkipNext,
+                            onPrevious = { playerConnection.seekToPrevious() },
+                            onPlayPause = { playerConnection.togglePlayPause() },
+                            onNext = { playerConnection.seekToNext() },
+                            enabled = controlsEnabled,
+                        )
+                        if (showVolume) {
+                            Spacer(Modifier.height(18.dp))
+                            LiquidVolumeSlider()
+                        }
+                        Spacer(Modifier.height(20.dp))
+                    }
                 }
-                Spacer(Modifier.height(20.dp))
                 NowPlayingUtilityRow(
                     lyricsActive = mode == NowPlayingMode.Lyrics,
                     queueActive = mode == NowPlayingMode.Queue,
@@ -891,22 +927,6 @@ private val ControlsBlockHeight: Dp = 30.dp + 18.dp + 14.dp + 104.dp + 12.dp + 3
 
 /** About how tall the title row is, for laying out the poster before the row has been measured. */
 private val PosterTitleHeight: Dp = 56.dp
-
-/** Fades the top of the lyrics / queue page into the header instead of cutting it. */
-private fun Modifier.fadingTopEdge(): Modifier = this
-    .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
-    .drawWithContent {
-        drawContent()
-        drawRect(
-            brush = Brush.verticalGradient(
-                0f to Color.Transparent,
-                0.06f to Color.Black,
-                0.9f to Color.Black,
-                1f to Color.Transparent,
-            ),
-            blendMode = BlendMode.DstIn,
-        )
-    }
 
 @Composable
 private fun StageTitleRow(
@@ -969,46 +989,72 @@ private fun CompactHeader(
     onMore: () -> Unit,
     onArtworkSlot: (LayoutCoordinates) -> Unit,
     onClick: () -> Unit,
+    isPlaying: Boolean,
+    onPlayPause: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     val interaction = remember { MutableInteractionSource() }
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(64.dp),
+            .height(56.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
             Modifier
-                .size(60.dp)
+                .size(52.dp)
                 .onGloballyPositioned { onArtworkSlot(it) }
         )
         Column(
             Modifier
                 .weight(1f)
-                .padding(start = 14.dp, end = 8.dp)
+                .padding(start = 12.dp, end = 8.dp)
                 .combinedClickable(interactionSource = interaction, indication = null, onClick = onClick),
         ) {
             Text(title, style = LiquidTypography.headline, color = NowPlayingInk.primary, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(artist, style = LiquidTypography.subheadline, color = NowPlayingInk.secondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
-        GlassIconButton(
+        HeaderIcon(
             icon = if (liked) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+            label = stringResource(R.string.like),
+            state = if (liked) stringResource(R.string.liked) else null,
             onClick = onLike,
-            size = 34.dp,
-            iconSize = 18.dp,
-            kind = GlassKind.Clear,
-            tint = Color.White,
         )
-        Spacer(Modifier.width(10.dp))
-        GlassIconButton(
+        if (onPlayPause != null) {
+            HeaderIcon(
+                icon = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                label = stringResource(if (isPlaying) R.string.pause else R.string.play),
+                onClick = onPlayPause,
+            )
+        }
+        HeaderIcon(
             icon = Icons.Rounded.MoreHoriz,
+            label = stringResource(R.string.liquid_more_options),
             onClick = onMore,
-            size = 34.dp,
-            iconSize = 20.dp,
-            kind = GlassKind.Clear,
-            tint = Color.White,
         )
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun HeaderIcon(icon: ImageVector, label: String, onClick: () -> Unit, state: String? = null) {
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    Box(
+        Modifier
+            .padding(start = 8.dp)
+            .size(40.dp)
+            .clip(CircleShape)
+            .background(Color.White.copy(alpha = if (pressed) 0.2f else 0.1f))
+            .combinedClickable(interactionSource = interaction, indication = null, onClick = onClick)
+            .semantics {
+                role = Role.Button
+                contentDescription = label
+                if (state != null) stateDescription = state
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(icon, null, tint = NowPlayingInk.primary, modifier = Modifier.size(20.dp))
     }
 }
 
