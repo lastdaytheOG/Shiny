@@ -119,13 +119,16 @@ fun LiquidOnlinePlaylistScreen(
             }
     }
 
-    fun queueFrom(index: Int, shuffled: Boolean = false) = YouTubePlaylistQueue(
-        playlistId = current.id,
-        playlistTitle = current.title,
-        initialSongs = if (shuffled) songs.shuffled() else songs,
-        initialContinuation = viewModel.continuation,
-        startIndex = if (shuffled) 0 else index,
-    )
+    fun queueFrom(index: Int, shuffled: Boolean = false): YouTubePlaylistQueue {
+        val (loaded, continuation) = viewModel.queueSnapshot()
+        return YouTubePlaylistQueue(
+            playlistId = current.id,
+            playlistTitle = current.title,
+            initialSongs = if (shuffled) loaded.shuffled() else loaded,
+            initialContinuation = continuation,
+            startIndex = if (shuffled) 0 else index.coerceIn(0, (loaded.size - 1).coerceAtLeast(0)),
+        )
+    }
 
     val saved = dbPlaylist?.playlist?.bookmarkedAt != null
     val footerText = stringResource(R.string.liquid_songs_count, songs.size)

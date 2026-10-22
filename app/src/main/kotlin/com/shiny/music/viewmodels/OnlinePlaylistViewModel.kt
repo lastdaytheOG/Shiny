@@ -55,6 +55,15 @@ class OnlinePlaylistViewModel @Inject constructor(
     var continuation: String? = null
         private set
 
+    private val pageLock = Any()
+
+    fun queueSnapshot(): Pair<List<SongItem>, String?> = synchronized(pageLock) { playlistSongs.value to continuation }
+
+    private fun setPage(songs: List<SongItem>, next: String?) = synchronized(pageLock) {
+        playlistSongs.value = songs
+        continuation = next
+    }
+
     private var proactiveLoadJob: Job? = null
 
     init {
@@ -71,9 +80,8 @@ class OnlinePlaylistViewModel @Inject constructor(
             YouTube.playlist(playlistId)
                 .onSuccess { playlistPage ->
                     playlist.value = playlistPage.playlist
-                    playlistSongs.value = applySongFilters(playlistPage.songs)
+                    setPage(applySongFilters(playlistPage.songs), playlistPage.songsContinuation)
                     relatedItems.value = playlistPage.related ?: emptyList()
-                    continuation = playlistPage.songsContinuation
                     _isLoading.value = false
                     if (continuation != null) {
                         startProactiveBackgroundLoading()
@@ -102,12 +110,8 @@ class OnlinePlaylistViewModel @Inject constructor(
 
                 YouTube.playlistContinuation(currentProactiveToken)
                     .onSuccess { playlistContinuationPage ->
-                        val currentSongs = playlistSongs.value.toMutableList()
-                        currentSongs.addAll(playlistContinuationPage.songs)
-                        playlistSongs.value = applySongFilters(currentSongs)
                         currentProactiveToken = playlistContinuationPage.continuation
-                        
-                        this@OnlinePlaylistViewModel.continuation = currentProactiveToken 
+                        setPage(applySongFilters(playlistSongs.value + playlistContinuationPage.songs), currentProactiveToken)
                     }.onFailure { throwable ->
                         reportException(throwable)
                         currentProactiveToken = null 
@@ -128,10 +132,7 @@ class OnlinePlaylistViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             YouTube.playlistContinuation(tokenForManualLoad)
                 .onSuccess { playlistContinuationPage ->
-                    val currentSongs = playlistSongs.value.toMutableList()
-                    currentSongs.addAll(playlistContinuationPage.songs)
-                    playlistSongs.value = applySongFilters(currentSongs)
-                    continuation = playlistContinuationPage.continuation
+                    setPage(applySongFilters(playlistSongs.value + playlistContinuationPage.songs), playlistContinuationPage.continuation)
                 }.onFailure { throwable ->
                     reportException(throwable)
                 }.also {
