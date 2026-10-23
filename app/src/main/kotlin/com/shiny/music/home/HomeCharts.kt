@@ -2,6 +2,7 @@ package com.shiny.music.home
 
 import android.content.Context
 import android.telephony.TelephonyManager
+import com.shiny.music.discover.ChartRegions
 import java.util.Locale
 
 /**
@@ -24,6 +25,10 @@ object HomeCharts {
         "PT", "RO", "RU", "SA", "RS", "SG", "ZA", "KR", "ES", "SE", "CH", "TW", "TZ", "TH", "TR",
         "UG", "UA", "AE", "GB", "US", "UY", "VN", "ZW",
     )
+
+    /** Every country Settings offers: YouTube's chart countries and Apple's storefronts, which Discover uses. */
+    fun choosableCountries(): List<String> =
+        (COUNTRIES + ChartRegions.STOREFRONTS.map { it.uppercase(Locale.ROOT) }).distinct()
 
     /** The listener's country, if YouTube Charts has a chart for it. */
     fun detectCountry(context: Context): String? {

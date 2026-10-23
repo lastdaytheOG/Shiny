@@ -76,11 +76,20 @@ import com.shiny.music.ui.liquid.rememberRowHighlight
 import com.shiny.music.ui.liquid.subtitleText
 import com.shiny.music.ui.theme.pressScale
 import com.shiny.music.ui.utils.resize
+import com.shiny.music.ui.liquid.appearance.LocalShinyAppearance
+import com.shiny.music.ui.liquid.appearance.PageTransitions
+import com.shiny.music.ui.liquid.discover.DiscoverEvents
+import com.shiny.music.ui.liquid.discover.DiscoverLifecycle
+import com.shiny.music.ui.liquid.discover.DiscoverNoticeHost
+import com.shiny.music.ui.liquid.discover.discoverCharts
+import com.shiny.music.ui.liquid.discover.rememberDiscoverUi
+import com.shiny.music.viewmodels.DiscoverViewModel
 import com.shiny.music.viewmodels.NewViewModel
 import java.util.Locale
 
 /**
- * New: what is worth hearing that the listener has not heard.
+ * Discover: Apple's public charts for the chosen region (see [discoverCharts]), then what is
+ * worth hearing that the listener has not heard.
  *
  * Three distances, each with its own shape, so the page has a rhythm rather than five
  * carousels — one release given the whole width, the listener's own artists as a list to
@@ -95,6 +104,7 @@ import java.util.Locale
 fun LiquidNewScreen(
     navController: NavController,
     viewModel: NewViewModel = hiltViewModel(),
+    discover: DiscoverViewModel = hiltViewModel(),
 ) {
     val actions = rememberLiquidActions(navController) ?: return
     val feed by viewModel.feed.collectAsState()
@@ -103,8 +113,24 @@ fun LiquidNewScreen(
     val mediaMetadata by actions.playerConnection.mediaMetadata.collectAsState()
     val isPlaying by actions.playerConnection.isPlaying.collectAsState()
 
-    val listState = rememberLazyListState()
+    val charts by discover.charts.collectAsState()
+    val busy by discover.busy.collectAsState()
+    val notice by discover.notice.collectAsState()
+    val artistItems by discover.artistItems.collectAsState()
+    val chartsRefreshing by discover.isRefreshing.collectAsState()
+    val reduceMotion = LocalShinyAppearance.current.transitions == PageTransitions.Instant
+    val ui = rememberDiscoverUi(discover, actions, reduceMotion)
+    DiscoverLifecycle(discover)
+    DiscoverEvents(discover, actions)
+
+    val listState = rememberLazyListState(discover.scrollIndex, discover.scrollOffset)
     val pullState = rememberPullToRefreshState()
+    DisposableEffect(listState, discover) {
+        onDispose {
+            discover.scrollIndex = listState.firstVisibleItemIndex
+            discover.scrollOffset = listState.firstVisibleItemScrollOffset
+        }
+    }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -123,42 +149,61 @@ fun LiquidNewScreen(
     }
 
     PullToRefreshBox(
-        isRefreshing = isRefreshing,
-        onRefresh = viewModel::refresh,
+        isRefreshing = isRefreshing || chartsRefreshing,
+        onRefresh = {
+            viewModel.refresh()
+            discover.refresh()
+        },
         state = pullState,
-        indicator = { RefreshIndicator(pullState, isRefreshing) },
+        indicator = { RefreshIndicator(pullState, isRefreshing || chartsRefreshing) },
         modifier = Modifier.fillMaxSize(),
     ) {
         LargeTitlePage(
-            title = stringResource(R.string.liquid_tab_new),
+            title = stringResource(R.string.liquid_tab_discover),
             state = listState,
             scrollToTopSignal = navController,
         ) {
-            val current = feed
-            when {
-                current == null -> items(3, key = { "skeleton_$it" }, contentType = { "skeleton" }) { SkeletonShelf() }
+            discoverCharts(
+                charts = charts,
+                ui = ui,
+                activeId = mediaMetadata?.id,
+                isPlaying = isPlaying,
+                busy = busy,
+                artistItems = artistItems,
+            )
 
-                current.isEmpty -> item(key = "empty") {
-                    EmptyState(
-                        icon = Icons.Rounded.LibraryMusic,
-                        title = stringResource(R.string.liquid_new_nothing_title),
-                        message = stringResource(R.string.liquid_new_nothing_body),
-                        actionLabel = if (online) stringResource(R.string.retry) else null,
-                        onAction = if (online) viewModel::refresh else null,
-                    )
+            val current = feed
+            val chartsShown = charts?.isEmpty == false
+            when {
+                current == null -> item(key = "skeleton_new", contentType = "skeleton") { SkeletonShelf() }
+
+                current.isEmpty -> if (!chartsShown) {
+                    item(key = "empty") {
+                        EmptyState(
+                            icon = Icons.Rounded.LibraryMusic,
+                            title = stringResource(R.string.liquid_new_nothing_title),
+                            message = stringResource(R.string.liquid_new_nothing_body),
+                            actionLabel = if (online) stringResource(R.string.retry) else null,
+                            onAction = if (online) viewModel::refresh else null,
+                        )
+                    }
                 }
 
-                else -> current.sections.forEach { section ->
-                    newSection(
-                        section = section,
-                        actions = actions,
-                        navController = navController,
-                        activeId = mediaMetadata?.id,
-                        isPlaying = isPlaying,
-                    )
+                else -> {
+                    if (chartsShown) item(key = "new_gap") { Spacer(Modifier.height(34.dp)) }
+                    current.sections.forEach { section ->
+                        newSection(
+                            section = section,
+                            actions = actions,
+                            navController = navController,
+                            activeId = mediaMetadata?.id,
+                            isPlaying = isPlaying,
+                        )
+                    }
                 }
             }
         }
+        DiscoverNoticeHost(notice, reduceMotion, navController, discover::dismissNotice, discover::choose)
     }
 }
 

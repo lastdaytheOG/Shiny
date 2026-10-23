@@ -595,6 +595,7 @@ fun SongRow(
     leadingRankStyle: TextStyle? = null,
     /** Overrides the rank's colour; unspecified follows [titleColor]. */
     leadingRankColor: Color = Color.Unspecified,
+    leadingRankWidth: Dp = 30.dp,
     /** The song this row plays, so touching it starts the stream early; null for anything else. */
     songId: String? = null,
 ) {
@@ -635,7 +636,7 @@ fun SongRow(
                     // A right-aligned rank would otherwise sit against the cover; the
                     // default left-aligned one already has the whole box to breathe in.
                     modifier = Modifier
-                        .width(30.dp)
+                        .width(leadingRankWidth)
                         .padding(end = if (leadingRankStyle != null) 8.dp else 0.dp),
                 )
             }
@@ -713,7 +714,7 @@ fun SongRow(
         if (showSeparator) {
             Hairline(
                 modifier = Modifier.align(Alignment.BottomStart),
-                startIndent = startPadding + leadingWidth + (if (leadingRank != null) 30.dp else 0.dp) + if (showArtwork) 13.dp else 6.dp,
+                startIndent = startPadding + leadingWidth + (if (leadingRank != null) leadingRankWidth else 0.dp) + if (showArtwork) 13.dp else 6.dp,
                 color = separatorColor,
             )
         }

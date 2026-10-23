@@ -29,7 +29,7 @@ sealed class Screens(
     )
 
     object Explore : Screens(
-        titleId = R.string.liquid_tab_new,
+        titleId = R.string.liquid_tab_discover,
         iconIdInactive = R.drawable.explore_outlined,
         iconIdActive = R.drawable.explore_outlined,
         route = "explore"

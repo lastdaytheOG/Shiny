@@ -153,6 +153,22 @@ fun NavGraphBuilder.navigationBuilder(
         com.shiny.music.ui.liquid.screens.LiquidChartsScreen(navController)
     }
 
+    screen("discover/songs") {
+        com.shiny.music.ui.liquid.discover.DiscoverSongsScreen(navController)
+    }
+
+    screen("discover/albums") {
+        com.shiny.music.ui.liquid.discover.DiscoverAlbumsScreen(navController)
+    }
+
+    screen("discover/artists") {
+        com.shiny.music.ui.liquid.discover.DiscoverArtistsScreen(navController)
+    }
+
+    screen("discover/videos") {
+        com.shiny.music.ui.liquid.discover.DiscoverVideosScreen(navController)
+    }
+
     screen(
         route = "browse/{browseId}",
         arguments = listOf(
