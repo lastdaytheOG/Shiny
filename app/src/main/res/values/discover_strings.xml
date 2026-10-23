@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="liquid_tab_discover">Discover</string>
+
+    <string name="discover_hero_eyebrow">Top 100 · %1$s</string>
+    <string name="discover_hero_title">Most Played in %1$s</string>
+    <string name="discover_hero_lead">No. 1 · %1$s</string>
+    <string name="discover_chart_queue_title">Top 100: %1$s</string>
+    <string name="discover_videos_queue_title">Music Videos: %1$s</string>
+
+    <string name="discover_top_songs">Top Songs</string>
+    <string name="discover_trending_artists">Trending Artists</string>
+    <string name="discover_top_albums">Top Albums</string>
+    <string name="discover_top_videos">Top Music Videos</string>
+
+    <plurals name="discover_artist_songs">
+        <item quantity="one">%d song in the Top 100</item>
+        <item quantity="other">%d songs in the Top 100</item>
+    </plurals>
+    <plurals name="discover_artist_songs_short">
+        <item quantity="one">%d song</item>
+        <item quantity="other">%d songs</item>
+    </plurals>
+    <string name="discover_artist_peak">highest No. %1$d</string>
+    <plurals name="discover_artist_featured">
+        <item quantity="one">featured on %d more</item>
+        <item quantity="other">featured on %d more</item>
+    </plurals>
+
+    <string name="discover_no_match">No exact match for “%1$s”</string>
+    <string name="discover_no_match_body">Shiny won\'t play a guess.</string>
+    <string name="discover_choices_body">These come closest. Pick one, or search.</string>
+    <string name="discover_choice_song">Song</string>
+    <string name="discover_choice_album">Album</string>
+    <string name="discover_alternative">Playing a different recording of “%1$s”</string>
+    <string name="discover_unreachable">Couldn\'t look up “%1$s”</string>
+    <string name="discover_unreachable_body">Check your connection and try again.</string>
+    <string name="discover_search">Search</string>
+
+    <string name="discover_unavailable_title">Charts Unavailable</string>
+    <string name="discover_unavailable_body">The charts for %1$s couldn\'t be loaded.</string>
+    <string name="discover_empty_chart">There\'s no chart here right now.</string>
+</resources>
