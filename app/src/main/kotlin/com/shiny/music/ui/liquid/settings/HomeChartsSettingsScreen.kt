@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.navigation.NavController
 import com.shiny.music.constants.HomeChartsCountryKey
 import com.shiny.music.constants.HomeChartsGlobalKey
+import com.shiny.music.discover.ChartRegions
 import com.shiny.music.home.HomeCharts
 import com.shiny.music.ui.liquid.Liquid
 import com.shiny.music.utils.rememberPreference
@@ -29,8 +30,8 @@ fun homeChartsLabel(setting: String, detected: String?): String = when (setting)
 }
 
 /**
- * Which YouTube chart Home shows. Your location is the default; any country YouTube Charts
- * publishes can be chosen instead, or Global alone, or no charts at all.
+ * Which country's charts Home and Discover show. Your location is the default; any country
+ * YouTube Charts or Apple publishes can be chosen instead, or Global alone, or no Home charts.
  */
 @Composable
 fun HomeChartsSettingsScreen(navController: NavController) {
@@ -38,12 +39,12 @@ fun HomeChartsSettingsScreen(navController: NavController) {
     var setting by rememberPreference(HomeChartsCountryKey, HomeCharts.AUTO)
     var showGlobal by rememberPreference(HomeChartsGlobalKey, true)
     val detected = remember { HomeCharts.detectCountry(context) }
-    val countries = remember { HomeCharts.COUNTRIES.sortedBy { HomeCharts.countryName(it) } }
+    val countries = remember { HomeCharts.choosableCountries().sortedBy { HomeCharts.countryName(it) } }
 
     SettingsPage(title = "Charts", navController = navController) {
         item(key = "intro") {
             SettingsIntro(
-                "Home shows YouTube Charts' own ranking, refreshed about once an hour. " +
+                "Home shows YouTube Charts and Discover shows Apple Music's charts, both for the country chosen here. " +
                     "Your location is read from your mobile network or SIM, never from GPS.",
             )
         }
@@ -59,13 +60,13 @@ fun HomeChartsSettingsScreen(navController: NavController) {
                 )
                 ChartChoice(
                     title = "Global",
-                    subtitle = "The worldwide chart only",
+                    subtitle = "The worldwide chart on Home. Discover follows your location",
                     selected = setting == HomeCharts.GLOBAL,
                     onClick = { setting = HomeCharts.GLOBAL },
                 )
                 ChartChoice(
                     title = "Off",
-                    subtitle = "No charts on Home",
+                    subtitle = "No charts on Home. Discover follows your location",
                     selected = setting == HomeCharts.OFF,
                     onClick = { setting = HomeCharts.OFF },
                     divider = false,
@@ -92,6 +93,11 @@ fun HomeChartsSettingsScreen(navController: NavController) {
         items(countries, key = { it }) { code ->
             ChartChoice(
                 title = HomeCharts.countryName(code),
+                subtitle = when {
+                    code !in HomeCharts.COUNTRIES -> "Home shows the Global chart"
+                    !ChartRegions.has(code) -> "Discover follows your location"
+                    else -> null
+                },
                 selected = setting == code,
                 onClick = { setting = code },
                 divider = code != countries.last(),

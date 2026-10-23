@@ -261,7 +261,10 @@ val LyricsProviderOrderKey = stringPreferencesKey("lyricsProviderOrder")
 
 val ShowSpeedDialKey = booleanPreferencesKey("showSpeedDial")
 
-/** Which country's YouTube chart Home shows: "AUTO" (the listener's location), "OFF", "ZZ" (Global) or a country code. */
+/**
+ * Which country's charts Home and Discover show: "AUTO" (the listener's location), "OFF", "ZZ" (Global) or a
+ * country code. Apple has no worldwide chart, so Discover uses the listener's location for anything it can't chart.
+ */
 val HomeChartsCountryKey = stringPreferencesKey("homeChartsCountry")
 
 /** Whether Home shows the Global chart beside the chosen country's. */

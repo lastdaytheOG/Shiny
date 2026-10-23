@@ -84,7 +84,7 @@ fun LibraryHomeSettingsScreen(navController: NavController) {
                 )
                 SettingsNavRow(
                     title = "Charts",
-                    subtitle = if (chartsSetting == HomeCharts.AUTO) "From your location" else "Which country's YouTube chart Home shows",
+                    subtitle = if (chartsSetting == HomeCharts.AUTO) "From your location" else "Which country's charts Home and Discover show",
                     value = homeChartsLabel(chartsSetting, detectedCountry),
                     onClick = { navController.navigate("settings/library/charts") },
                 )

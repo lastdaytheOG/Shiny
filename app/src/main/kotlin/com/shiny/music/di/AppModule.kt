@@ -12,6 +12,12 @@ import androidx.room.Room
 import com.shiny.music.constants.MaxSongCacheSizeKey
 import com.shiny.music.db.InternalDatabase
 import com.shiny.music.db.MusicDatabase
+import com.shiny.music.discover.AppleChartsRepository
+import com.shiny.music.discover.AppleRssSource
+import com.shiny.music.discover.ChartResolver
+import com.shiny.music.discover.FileArtistStore
+import com.shiny.music.discover.FileChartStore
+import com.shiny.music.discover.YouTubeChartCatalog
 import com.shiny.music.home.HomeRemoteRepository
 import com.shiny.music.utils.PreferencesSnapshot
 import com.shiny.music.utils.dataStore
@@ -24,6 +30,7 @@ import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import java.io.File
 import javax.inject.Singleton
 
 @Module
@@ -63,6 +70,24 @@ object AppModule {
         @ApplicationContext context: Context,
         database: MusicDatabase,
     ): HomeRemoteRepository = HomeRemoteRepository(context, database)
+
+    @Singleton
+    @Provides
+    fun provideAppleChartsRepository(
+        @ApplicationContext context: Context,
+    ): AppleChartsRepository = AppleChartsRepository(
+        source = AppleRssSource(),
+        store = FileChartStore(File(context.filesDir, "discover")),
+    )
+
+    @Singleton
+    @Provides
+    fun provideChartResolver(
+        @ApplicationContext context: Context,
+    ): ChartResolver = ChartResolver(
+        catalog = YouTubeChartCatalog,
+        artistStore = FileArtistStore(File(context.filesDir, "discover/artists.json")),
+    )
 
     @Singleton
     @Provides
