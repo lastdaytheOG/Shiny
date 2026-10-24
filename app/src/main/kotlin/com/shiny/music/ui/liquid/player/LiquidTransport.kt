@@ -36,6 +36,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.shiny.music.R
 import com.shiny.music.ui.liquid.GlassKind
 import com.shiny.music.ui.liquid.liquidGlass
 import com.shiny.music.ui.liquid.rememberGlassPress
@@ -77,6 +79,7 @@ private fun PlayDisc(isPlaying: Boolean, size: Dp, enabled: Boolean, onClick: ()
     val interaction = remember { MutableInteractionSource() }
     val press = rememberGlassPress(interaction)
     val haptics = LocalHapticFeedback.current
+    val playLabel = stringResource(if (isPlaying) R.string.pause else R.string.play)
     // 0 = pause bars, 1 = play triangle.
     val morph by animateFloatAsState(
         targetValue = if (isPlaying) 0f else 1f,
@@ -87,7 +90,7 @@ private fun PlayDisc(isPlaying: Boolean, size: Dp, enabled: Boolean, onClick: ()
     Box(
         Modifier
             .size(size)
-            .semantics { contentDescription = if (isPlaying) "Pause" else "Play" }
+            .semantics { contentDescription = playLabel }
             .graphicsLayer {
                 val s = 1f + 0.07f * press.value
                 scaleX = s
@@ -115,13 +118,14 @@ private fun SkipDisc(forward: Boolean, size: Dp, enabled: Boolean, onClick: () -
     val interaction = remember { MutableInteractionSource() }
     val press = rememberGlassPress(interaction)
     val haptics = LocalHapticFeedback.current
+    val skipLabel = stringResource(if (forward) R.string.next else R.string.previous)
     val scope = rememberCoroutineScope()
     val nudge = remember { Animatable(0f) }
     val ink = if (enabled) Color.White else Color.White.copy(alpha = 0.35f)
     Box(
         Modifier
             .size(size)
-            .semantics { contentDescription = if (forward) "Next" else "Previous" }
+            .semantics { contentDescription = skipLabel }
             .graphicsLayer {
                 val s = 1f + 0.08f * press.value
                 scaleX = s

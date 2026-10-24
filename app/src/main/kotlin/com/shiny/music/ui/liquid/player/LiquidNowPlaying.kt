@@ -158,6 +158,7 @@ import androidx.compose.ui.unit.IntSize
 import com.shiny.music.constants.DataSaverEnabledKey
 import com.shiny.music.artwork.ArtworkMatcher
 import com.shiny.music.ui.liquid.appearance.posterCoverHeight
+import com.shiny.music.ui.liquid.appearance.rememberReducedMotion
 import androidx.compose.ui.platform.LocalConfiguration
 import com.shiny.music.ui.utils.resize
 import kotlinx.coroutines.delay
@@ -258,7 +259,7 @@ private fun NowPlaying(
     LaunchedEffect(mode) {
         modeProgress.animateTo(
             if (mode == NowPlayingMode.Stage) 0f else 1f,
-            spring(dampingRatio = 0.86f, stiffness = 280f),
+            PlayerMotion.modeSpring,
         )
     }
     BackHandler(enabled = sheet.isExpanded && mode != NowPlayingMode.Stage) { mode = NowPlayingMode.Stage }
@@ -309,6 +310,7 @@ private fun NowPlaying(
     val livingPref by rememberPreference(LiquidPrefs.LivingArtwork, LiquidPrefs.LivingArtworkDefault)
     val motionVideoPref by rememberPreference(LiquidPrefs.MotionArtwork, true)
     val showVolume by rememberPreference(LiquidPrefs.ShowVolume, true)
+    val reducedMotion = rememberReducedMotion()
     val keepScreenOn by rememberPreference(KeepScreenOn, false)
     DisposableEffect(keepScreenOn, isPlaying, sheet.isExpanded) {
         val window = (context as? android.app.Activity)?.window
@@ -420,7 +422,7 @@ private fun NowPlaying(
         var compactRect by remember { mutableStateOf<Rect?>(null) }
         var controlsTop by remember { mutableFloatStateOf(0f) }
         var paneControlsTop by remember { mutableFloatStateOf(0f) }
-        val queueCompact = animateFloatAsState(if (mode == NowPlayingMode.Queue) 1f else 0f, tween(260), label = "queueCompact")
+        val queueCompact = animateFloatAsState(if (mode == NowPlayingMode.Queue) 1f else 0f, PlayerMotion.queue(), label = "queueCompact")
 
         // ---- Poster: portrait artwork at the head of the player, its foot going out of focus
         // into its own colours. Portrait only: landscape already gives the cover a whole half
@@ -478,7 +480,7 @@ private fun NowPlaying(
         // Still while the lyrics are up: under lyrics that move every frame, the field's slow
         // turn made every frame redraw the backdrop each glass button refracts. The turn is
         // imperceptible behind the words; the cost was dropped frames (phone, 2026-09-30).
-        val fieldPlaying = isPlaying && sheet.isExpanded && motionPref && mode != NowPlayingMode.Lyrics
+        val fieldPlaying = isPlaying && sheet.isExpanded && motionPref && !reducedMotion && mode != NowPlayingMode.Lyrics
         if (posterChosen) {
             // The poster's ground is part of the background the glass refracts, so a glass
             // button over the cover shows the cover's own blur and not some other picture.
@@ -511,7 +513,7 @@ private fun NowPlaying(
         Box(
             Modifier
                 .fillMaxSize()
-                .drawBehind { drawRect(Color.Black, alpha = 0.82f * queueCompact.value) }
+                .drawBehind { drawRect(Color.Black, alpha = 0.9f * queueCompact.value) }
         )
 
         if (width > height) {
@@ -569,6 +571,7 @@ private fun NowPlaying(
                             nestedScrollConnection = sheet.preUpPostDownNestedScrollConnection,
                             backdrop = playerBackdrop,
                             enabled = controlsEnabled,
+                            compact = true,
                         )
                     },
                 )
@@ -624,7 +627,7 @@ private fun NowPlaying(
                                 )
                             }
                         },
-                        playing = isPlaying,
+                        playing = isPlaying && !reducedMotion,
                         onArtist = {
                             metadata?.artists?.firstOrNull()?.id?.let { id ->
                                 sheet.collapseSoft()
@@ -675,7 +678,7 @@ private fun NowPlaying(
                         // looked at the queue and back. Purely a state-retention wrapper:
                         // the Crossfade, its timing and the panes themselves are unchanged.
                         val paneStateHolder = rememberSaveableStateHolder()
-                        Crossfade(targetState = mode, label = "pane") { pane ->
+                        Crossfade(targetState = mode, animationSpec = PlayerMotion.queue(), label = "pane") { pane ->
                             paneStateHolder.SaveableStateProvider(pane) {
                             when (pane) {
                                 NowPlayingMode.Lyrics -> LiquidLyricsPane(
@@ -845,7 +848,7 @@ private fun NowPlaying(
                                 )
                             }
                         },
-                        playing = isPlaying,
+                        playing = isPlaying && !reducedMotion,
                         onArtist = {
                             metadata?.artists?.firstOrNull()?.id?.let { id ->
                                 sheet.collapseSoft()
@@ -876,8 +879,8 @@ private fun NowPlaying(
             ) {
                 AnimatedVisibility(
                     visible = mode != NowPlayingMode.Queue,
-                    enter = fadeIn(tween(220, delayMillis = 80)) + expandVertically(tween(300)),
-                    exit = fadeOut(tween(140)) + shrinkVertically(tween(300)),
+                    enter = fadeIn(PlayerMotion.queue()) + expandVertically(PlayerMotion.queue()),
+                    exit = fadeOut(PlayerMotion.small()) + shrinkVertically(PlayerMotion.queue()),
                 ) {
                     Column {
                         LiquidScrubber(
@@ -940,41 +943,59 @@ private fun StageTitleRow(
     modifier: Modifier = Modifier,
 ) {
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style = LiquidTypography.title3.copy(fontWeight = FontWeight.SemiBold),
-                color = NowPlayingInk.primary,
-                maxLines = 1,
-                modifier = if (playing) Modifier.basicMarquee(iterations = Int.MAX_VALUE, initialDelayMillis = 2600, repeatDelayMillis = 2600) else Modifier,
-            )
-            val interaction = remember { MutableInteractionSource() }
-            Text(
-                text = artist,
-                style = LiquidTypography.title3.copy(fontWeight = FontWeight.Normal),
-                color = NowPlayingInk.secondary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.combinedClickable(interactionSource = interaction, indication = null, onClick = onArtist),
-            )
+        Crossfade(
+            targetState = title to artist,
+            animationSpec = PlayerMotion.small(),
+            modifier = Modifier.weight(1f),
+            label = "stageTitle",
+        ) { (shownTitle, shownArtist) ->
+            Column {
+                Text(
+                    text = shownTitle,
+                    style = PlayerType.stageTitle,
+                    color = NowPlayingInk.primary,
+                    maxLines = 1,
+                    overflow = if (playing) TextOverflow.Clip else TextOverflow.Ellipsis,
+                    modifier = if (playing) Modifier.basicMarquee(iterations = Int.MAX_VALUE, initialDelayMillis = 2600, repeatDelayMillis = 2600) else Modifier,
+                )
+                val interaction = remember { MutableInteractionSource() }
+                Text(
+                    text = shownArtist,
+                    style = PlayerType.stageArtist,
+                    color = NowPlayingInk.secondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.combinedClickable(interactionSource = interaction, indication = null, onClick = onArtist),
+                )
+            }
         }
-        Spacer(Modifier.width(12.dp))
-        GlassIconButton(
+        Spacer(Modifier.width(PlayerSpace.s))
+        StageGlassButton(
             icon = if (liked) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+            label = stringResource(if (liked) R.string.liked else R.string.like),
+            iconSize = 20.dp,
             onClick = onLike,
-            size = 36.dp,
-            iconSize = 19.dp,
-            kind = GlassKind.Clear,
-            tint = Color.White,
         )
-        Spacer(Modifier.width(10.dp))
-        GlassIconButton(
+        StageGlassButton(
             icon = Icons.Rounded.MoreHoriz,
+            label = stringResource(R.string.liquid_more_options),
+            iconSize = 22.dp,
             onClick = onMore,
-            size = 36.dp,
-            iconSize = 21.dp,
+        )
+    }
+}
+
+@Composable
+internal fun StageGlassButton(icon: ImageVector, label: String, iconSize: Dp, onClick: () -> Unit) {
+    Box(Modifier.size(QueueMetrics.target), contentAlignment = Alignment.Center) {
+        GlassIconButton(
+            icon = icon,
+            onClick = onClick,
+            size = 40.dp,
+            iconSize = iconSize,
             kind = GlassKind.Clear,
             tint = Color.White,
+            contentDescription = label,
         )
     }
 }
@@ -1005,14 +1026,19 @@ private fun CompactHeader(
                 .size(52.dp)
                 .onGloballyPositioned { onArtworkSlot(it) }
         )
-        Column(
-            Modifier
+        Crossfade(
+            targetState = title to artist,
+            animationSpec = PlayerMotion.small(),
+            modifier = Modifier
                 .weight(1f)
-                .padding(start = 12.dp, end = 8.dp)
+                .padding(start = PlayerSpace.m, end = PlayerSpace.xs)
                 .combinedClickable(interactionSource = interaction, indication = null, onClick = onClick),
-        ) {
-            Text(title, style = LiquidTypography.headline, color = NowPlayingInk.primary, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(artist, style = LiquidTypography.subheadline, color = NowPlayingInk.secondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            label = "compactTitle",
+        ) { (shownTitle, shownArtist) ->
+            Column {
+                Text(shownTitle, style = LiquidTypography.headline, color = NowPlayingInk.primary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(shownArtist, style = LiquidTypography.subheadline, color = NowPlayingInk.secondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
         }
         HeaderIcon(
             icon = if (liked) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
@@ -1042,10 +1068,7 @@ private fun HeaderIcon(icon: ImageVector, label: String, onClick: () -> Unit, st
     val pressed by interaction.collectIsPressedAsState()
     Box(
         Modifier
-            .padding(start = 8.dp)
-            .size(40.dp)
-            .clip(CircleShape)
-            .background(Color.White.copy(alpha = if (pressed) 0.2f else 0.1f))
+            .size(QueueMetrics.target)
             .combinedClickable(interactionSource = interaction, indication = null, onClick = onClick)
             .semantics {
                 role = Role.Button
@@ -1054,6 +1077,11 @@ private fun HeaderIcon(icon: ImageVector, label: String, onClick: () -> Unit, st
             },
         contentAlignment = Alignment.Center,
     ) {
+        Box(
+            Modifier
+                .size(40.dp)
+                .background(Color.White.copy(alpha = if (pressed) 0.2f else 0.1f), CircleShape)
+        )
         Icon(icon, null, tint = NowPlayingInk.primary, modifier = Modifier.size(20.dp))
     }
 }

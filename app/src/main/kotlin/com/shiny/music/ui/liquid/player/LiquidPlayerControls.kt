@@ -70,6 +70,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import com.shiny.music.R
 import com.shiny.music.constants.PlayerShowRemainingTimeKey
 import com.shiny.music.ui.liquid.LiquidIcons
 import com.shiny.music.ui.liquid.LiquidTypography
@@ -80,7 +87,7 @@ import kotlin.math.roundToInt
 
 /** White at the three intensities the Now Playing controls use. */
 internal object NowPlayingInk {
-    val primary = Color.White
+    val primary = Color(0xFFF5F5F7)
     val secondary = Color.White.copy(alpha = 0.62f)
     val tertiary = Color.White.copy(alpha = 0.38f)
     val track = Color.White.copy(alpha = 0.22f)
@@ -313,15 +320,16 @@ fun NowPlayingUtilityRow(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        UtilityButton(LiquidIcons.Lyrics, lyricsActive, onLyrics, onLyricsLongClick)
-        UtilityButton(LiquidIcons.Output, false, onOutput)
-        UtilityButton(LiquidIcons.Queue, queueActive, onQueue)
+        UtilityButton(LiquidIcons.Lyrics, stringResource(R.string.lyrics), lyricsActive, onLyrics, onLyricsLongClick)
+        UtilityButton(LiquidIcons.Output, stringResource(R.string.liquid_audio_output), false, onOutput)
+        UtilityButton(LiquidIcons.Queue, stringResource(R.string.queue), queueActive, onQueue)
     }
 }
 
 @Composable
 private fun UtilityButton(
     icon: ImageVector,
+    label: String,
     active: Boolean,
     onClick: () -> Unit,
     onLongClick: (() -> Unit)? = null,
@@ -351,7 +359,12 @@ private fun UtilityButton(
                 indication = null,
                 onClick = onClick,
                 onLongClick = onLongClick,
-            ),
+            )
+            .semantics {
+                role = Role.Button
+                contentDescription = label
+                selected = active
+            },
         contentAlignment = Alignment.Center,
     ) {
         Box(

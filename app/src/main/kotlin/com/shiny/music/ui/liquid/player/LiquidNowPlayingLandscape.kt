@@ -1,6 +1,9 @@
 package com.shiny.music.ui.liquid.player
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
@@ -28,8 +31,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.MoreHoriz
-import androidx.compose.material.icons.rounded.Star
-import androidx.compose.material.icons.rounded.StarBorder
+import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.FavoriteBorder
+import androidx.compose.ui.res.stringResource
+import com.shiny.music.R
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
@@ -156,25 +161,20 @@ internal fun NowPlayingLandscape(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        Text(title, style = LiquidTypography.title3.copy(fontWeight = FontWeight.SemiBold), color = NowPlayingInk.primary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(title, style = PlayerType.stageTitle, color = NowPlayingInk.primary, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text(artist, style = LiquidTypography.body, color = NowPlayingInk.secondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
-                    GlassIconButton(
-                        icon = if (liked) Icons.Rounded.Star else Icons.Rounded.StarBorder,
-                        onClick = onLike,
-                        size = 34.dp,
-                        iconSize = 18.dp,
-                        kind = GlassKind.Clear,
-                        tint = Color.White,
-                    )
-                    Spacer(Modifier.width(10.dp))
-                    GlassIconButton(
-                        icon = Icons.Rounded.MoreHoriz,
-                        onClick = onMore,
-                        size = 34.dp,
+                    StageGlassButton(
+                        icon = if (liked) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                        label = stringResource(if (liked) R.string.liked else R.string.like),
                         iconSize = 20.dp,
-                        kind = GlassKind.Clear,
-                        tint = Color.White,
+                        onClick = onLike,
+                    )
+                    StageGlassButton(
+                        icon = Icons.Rounded.MoreHoriz,
+                        label = stringResource(R.string.liquid_more_options),
+                        iconSize = 22.dp,
+                        onClick = onMore,
                     )
                 }
 
@@ -191,12 +191,19 @@ internal fun NowPlayingLandscape(
                     }
                 }
 
-                LiquidScrubber(
-                    positionProvider = positionProvider,
-                    durationProvider = durationProvider,
-                    onSeek = onSeek,
-                    enabled = controlsEnabled,
-                )
+                val queue = mode == NowPlayingMode.Queue
+                AnimatedVisibility(
+                    visible = !queue,
+                    enter = fadeIn(PlayerMotion.queue()) + expandVertically(PlayerMotion.queue()),
+                    exit = fadeOut(PlayerMotion.small()) + shrinkVertically(PlayerMotion.queue()),
+                ) {
+                    LiquidScrubber(
+                        positionProvider = positionProvider,
+                        durationProvider = durationProvider,
+                        onSeek = onSeek,
+                        enabled = controlsEnabled,
+                    )
+                }
                 LiquidTransport(
                     isPlaying = isPlaying,
                     canSkipPrevious = canSkipPrevious,
@@ -205,8 +212,8 @@ internal fun NowPlayingLandscape(
                     onPlayPause = onPlayPause,
                     onNext = onNext,
                     enabled = controlsEnabled,
-                    playSize = 72.dp,
-                    skipSize = 56.dp,
+                    playSize = if (queue) 56.dp else 72.dp,
+                    skipSize = if (queue) 44.dp else 56.dp,
                 )
                 if (mode == NowPlayingMode.Stage) {
                     LiquidVolumeSlider()
