@@ -86,6 +86,8 @@ import androidx.compose.ui.node.DrawModifierNode
 import androidx.compose.ui.node.invalidateDraw
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
+import com.shiny.music.R
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -730,12 +732,12 @@ fun MoreButton(
     val interaction = remember { MutableInteractionSource() }
     Box(
         modifier = modifier
-            .size(width = 48.dp, height = 44.dp)
+            .size(48.dp)
             .pressScale(interaction, 0.85f)
             .combinedClickable(interactionSource = interaction, indication = null, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(Icons.Rounded.MoreHoriz, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
+        Icon(Icons.Rounded.MoreHoriz, contentDescription = stringResource(R.string.more_options), tint = tint, modifier = Modifier.size(22.dp))
     }
 }
 
