@@ -45,6 +45,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import com.shiny.music.constants.CombineDownloadsWithDeviceKey
+import com.shiny.music.utils.rememberPreference
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -89,6 +91,7 @@ import com.shiny.music.home.ContinueSection
 import com.shiny.music.home.Daypart
 import com.shiny.music.home.DeepDiveSection
 import com.shiny.music.home.DeviceTile
+import com.shiny.music.home.combineDeviceTiles
 import com.shiny.music.home.DiscoverPick
 import com.shiny.music.home.DiscoverSection
 import com.shiny.music.home.DownloadsTile
@@ -227,11 +230,13 @@ private fun emphasized(template: String, args: List<String>, emphasis: SpanStyle
 @Composable
 internal fun LatelyGrid(section: LatelySection, actions: LiquidActions) {
     HomeHeader(stringResource(R.string.home_lately))
+    val combine by rememberPreference(CombineDownloadsWithDeviceKey, false)
+    val tiles = remember(section, combine) { if (combine) combineDeviceTiles(section.tiles) else section.tiles }
     Column(
         Modifier.padding(horizontal = PageMargin),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        section.tiles.chunked(2).forEach { row ->
+        tiles.chunked(2).forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 row.forEach { tile -> LatelyCell(tile, actions, Modifier.weight(1f)) }
                 if (row.size == 1) Spacer(Modifier.weight(1f))

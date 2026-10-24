@@ -3,7 +3,12 @@ package com.shiny.music.viewmodels
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.shiny.music.constants.CombineDownloadsWithDeviceKey
 import com.shiny.music.constants.LocalSongsHiddenIdsKey
+import com.shiny.music.constants.SongSortType
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import com.shiny.music.db.MusicDatabase
 import com.shiny.music.localmedia.LocalSongScanConfig
 import com.shiny.music.localmedia.LocalSongScanSummary
@@ -23,6 +28,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class LocalSongsViewModel
 @Inject
@@ -39,8 +45,16 @@ constructor(
         .map { it[LocalSongsHiddenIdsKey].orEmpty() }
         .distinctUntilChanged()
 
-    val songs = combine(database.localSongs(), hiddenIds) { songs, hidden ->
-        if (hidden.isEmpty()) songs else songs.filterNot { it.id in hidden }
+    private val downloads = context.dataStore.data
+        .map { it[CombineDownloadsWithDeviceKey] ?: false }
+        .distinctUntilChanged()
+        .flatMapLatest { combined ->
+            if (combined) database.downloadedSongs(SongSortType.CREATE_DATE, true) else flowOf(emptyList())
+        }
+
+    val songs = combine(database.localSongs(), hiddenIds, downloads) { songs, hidden, downloaded ->
+        val local = if (hidden.isEmpty()) songs else songs.filterNot { it.id in hidden }
+        if (downloaded.isEmpty()) local else (local + downloaded).distinctBy { it.id }
     }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5_000),

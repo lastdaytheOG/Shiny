@@ -172,8 +172,9 @@ fun LiquidLocalSongsScreen(
     // permission was taken back). None of them would play, and the page only asked for the
     // permission when it was empty; so it asks once, as soon as it has songs to show.
     var askedForAccess by rememberSaveable { mutableStateOf(false) }
-    LaunchedEffect(hasPermission, songs.isNotEmpty()) {
-        if (!hasPermission && songs.isNotEmpty() && !askedForAccess) {
+    val hasDeviceFiles = songs.any { it.song.isLocal }
+    LaunchedEffect(hasPermission, hasDeviceFiles) {
+        if (!hasPermission && hasDeviceFiles && !askedForAccess) {
             askedForAccess = true
             permissionLauncher.launch(storagePermission)
         }
@@ -183,14 +184,14 @@ fun LiquidLocalSongsScreen(
     val visible by remember(songs, query, sort, sortDescending) {
         derivedStateOf {
             val q = query.trim()
-            val supported = songs.filter { SupportedLocalAudio.isSupportedMimeType(it.format?.mimeType) }
+            val supported = songs.filter { !it.song.isLocal || SupportedLocalAudio.isSupportedMimeType(it.format?.mimeType) }
             val filtered = if (q.isBlank()) supported else supported.filter { song ->
                 song.song.title.contains(q, true) ||
                     song.song.albumName.orEmpty().contains(q, true) ||
                     song.artists.any { it.name.contains(q, true) }
             }
             val sorted = when (sort) {
-                LocalSort.MODIFIED -> filtered.sortedBy { it.song.dateModified ?: LocalDateTime.MIN }
+                LocalSort.MODIFIED -> filtered.sortedBy { it.song.dateModified ?: it.song.dateDownload ?: LocalDateTime.MIN }
                 LocalSort.NAME -> filtered.sortedWith(compareBy(collator) { it.song.title })
                 LocalSort.ARTIST -> filtered.sortedWith(compareBy(collator) { s -> s.artists.joinToString("") { it.name } })
                 LocalSort.ALBUM -> filtered.sortedWith(compareBy(collator) { it.song.albumName.orEmpty() })

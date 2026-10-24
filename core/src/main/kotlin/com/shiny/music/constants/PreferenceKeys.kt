@@ -183,6 +183,8 @@ val ArtistSongSortTypeKey = stringPreferencesKey("artistSongSortType")
 val ArtistSongSortDescendingKey = booleanPreferencesKey("artistSongSortDescending")
 
 val LocalSongsMinDurationSecondsKey = intPreferencesKey("local_songs_min_duration_seconds")
+val LocalCoversOnlineKey = booleanPreferencesKey("local_covers_online")
+val CombineDownloadsWithDeviceKey = booleanPreferencesKey("combine_downloads_with_device")
 val LocalSongsExcludedFoldersKey = stringSetPreferencesKey("local_songs_excluded_folders")
 
 /** Folders whose audio is always music, even where the default skips would leave it out. */

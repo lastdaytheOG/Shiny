@@ -74,7 +74,9 @@ fun settingsCatalog(): List<SettingsEntry> = listOf(
     SettingsEntry("Top list length", "Library & Home", "settings/library", "my top songs count"),
     SettingsEntry("Grid size", "Library & Home", "settings/library", "grid tiles large small"),
     SettingsEntry("Swipe a song row", "Library & Home", "settings/library", "swipe queue play next gesture"),
-    SettingsEntry("Music sources", "Library & Home", "settings/library/sources", "local device folders whatsapp recordings ringtones scan exclude include"),
+    SettingsEntry("Show downloads with device songs", "Library & Home", "settings/library", "downloaded on this device local combine merge together hide"),
+    SettingsEntry("Find missing covers online", "Library & Home", "settings/library", "artwork thumbnail cover local files missing"),
+    SettingsEntry("Music sources", "Library & Home", "settings/library/sources","local device folders whatsapp recordings ringtones scan exclude include"),
 
     // Downloads & Storage
     SettingsEntry("Download folder", "Downloads & Storage", "settings/storage", "download location folder directory sd card external"),

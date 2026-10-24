@@ -409,6 +409,19 @@ data class DeviceTile(val count: Int) : LatelyTile {
     override val key get() = "device"
 }
 
+fun combineDeviceTiles(tiles: List<LatelyTile>): List<LatelyTile> {
+    val downloads = tiles.filterIsInstance<DownloadsTile>().sumOf { it.count }
+    if (downloads == 0) return tiles
+    val device = tiles.filterIsInstance<DeviceTile>().sumOf { it.count }
+    var placed = false
+    return tiles.mapNotNull { tile ->
+        when (tile) {
+            is DownloadsTile, is DeviceTile -> if (placed) null else DeviceTile(device + downloads).also { placed = true }
+            else -> tile
+        }
+    }
+}
+
 /** A song with the numbers that put it where it is. */
 data class RankedSong(
     val song: Song,

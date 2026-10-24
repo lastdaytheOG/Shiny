@@ -6,7 +6,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.setValue
 import androidx.navigation.NavController
+import com.shiny.music.constants.CombineDownloadsWithDeviceKey
 import com.shiny.music.constants.GridItemSize
+import com.shiny.music.constants.LocalCoversOnlineKey
 import com.shiny.music.constants.GridItemsSizeKey
 import com.shiny.music.constants.ListenTogetherInTopBarKey
 import com.shiny.music.constants.ShowSpeedDialKey
@@ -35,6 +37,8 @@ fun LibraryHomeSettingsScreen(navController: NavController) {
     var topLength by rememberPreference(TopSize, "50")
     val chartsSetting by rememberPreference(HomeChartsCountryKey, HomeCharts.AUTO)
     var spotifyMixes by rememberPreference(SpotifyHomeMixesKey, true)
+    var combineDownloads by rememberPreference(CombineDownloadsWithDeviceKey, false)
+    var coversOnline by rememberPreference(LocalCoversOnlineKey, true)
     val spotifySession by rememberPreference(SpotifySpDcKey, "")
     val context = LocalContext.current
     val detectedCountry = remember { HomeCharts.detectCountry(context) }
@@ -84,7 +88,7 @@ fun LibraryHomeSettingsScreen(navController: NavController) {
                 )
                 SettingsNavRow(
                     title = "Charts",
-                    subtitle = if (chartsSetting == HomeCharts.AUTO) "From your location" else "Which country's charts Home and Discover show",
+                    subtitle = if (chartsSetting == HomeCharts.AUTO) "From your location" else "Which country's charts Discover shows",
                     value = homeChartsLabel(chartsSetting, detectedCountry),
                     onClick = { navController.navigate("settings/library/charts") },
                 )
@@ -136,7 +140,22 @@ fun LibraryHomeSettingsScreen(navController: NavController) {
         }
 
         item(key = "device") {
-            SettingsSection(title = "On this device") {
+            SettingsSection(
+                title = "On this device",
+                footer = "Covers are looked up by the song's title and artist only. A file's name never leaves the phone.",
+            ) {
+                SettingsToggleRow(
+                    title = "Show downloads with device songs",
+                    subtitle = "Downloaded songs appear in On This Device, and Downloaded is hidden from Library",
+                    checked = combineDownloads,
+                    onCheckedChange = { combineDownloads = it },
+                )
+                SettingsToggleRow(
+                    title = "Find missing covers online",
+                    subtitle = "For songs whose file has no cover inside it",
+                    checked = coversOnline,
+                    onCheckedChange = { coversOnline = it },
+                )
                 SettingsNavRow(
                     title = "Music sources",
                     subtitle = "What counts as music, and which folders to include",
