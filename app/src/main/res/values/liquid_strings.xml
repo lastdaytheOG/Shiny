@@ -52,6 +52,9 @@
     <string name="liquid_queue_empty_autoplay">Similar songs will play when this one ends</string>
     <string name="liquid_queue_clear_upcoming">Clear upcoming songs</string>
     <string name="liquid_queue_reorder_hint">Touch and hold a song to reorder</string>
+    <string name="liquid_queue_ends_here">The queue ends here</string>
+    <string name="liquid_queue_autoplay_off">Autoplay is off, so no similar songs will be added.</string>
+    <string name="liquid_queue_autoplay_turn_on">Turn on Autoplay</string>
     <string name="liquid_queue_now_playing">Now playing</string>
     <string name="liquid_audio_output">Audio output</string>
     <string name="liquid_on">On</string>

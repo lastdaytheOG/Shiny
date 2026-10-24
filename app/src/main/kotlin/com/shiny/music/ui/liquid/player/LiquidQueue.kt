@@ -150,7 +150,7 @@ fun LiquidQueuePane(
     val haptic = LocalHapticFeedback.current
 
     LaunchedEffect(currentIndex, windows.size, autoplay, enabled) {
-        if (autoplay && enabled) playerConnection.service.ensureUpNext(15)
+        if (autoplay && enabled) playerConnection.service.ensureUpNext(25)
     }
 
     val past = remember {
@@ -378,11 +378,19 @@ fun LiquidQueuePane(
                     }
                 }
 
-                if (upcoming.isEmpty() && !pageStatus.isLoading) {
-                    item(key = "queue_empty") {
-                        QueueNote(
-                            text = stringResource(if (autoplay) R.string.liquid_queue_empty_autoplay else R.string.liquid_queue_empty),
+                if (!autoplay && !pageStatus.isLoading && !pageStatus.hasMore && upcoming.size <= renderCount) {
+                    item(key = "queue_autoplay_off") {
+                        AutoplayOffNote(
+                            ended = upcoming.isEmpty(),
+                            onTurnOn = {
+                                playerConnection.service.setAutoplayEnabled(true)
+                                setAutoplay(true)
+                            },
                         )
+                    }
+                } else if (upcoming.isEmpty() && !pageStatus.isLoading) {
+                    item(key = "queue_empty") {
+                        QueueNote(text = stringResource(R.string.liquid_queue_empty_autoplay))
                     }
                 }
 
@@ -554,6 +562,51 @@ private fun QueueNote(text: String) {
             .fillMaxWidth()
             .padding(horizontal = PlayerSpace.xxxl, vertical = 28.dp),
     )
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun AutoplayOffNote(ended: Boolean, onTurnOn: () -> Unit) {
+    val accent = Liquid.colors.accent
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = PlayerSpace.xxxl, vertical = PlayerSpace.xxl),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            stringResource(if (ended) R.string.liquid_queue_empty else R.string.liquid_queue_ends_here),
+            style = LiquidTypography.subheadline.copy(fontWeight = FontWeight.SemiBold),
+            color = NowPlayingInk.primary,
+            textAlign = TextAlign.Center,
+        )
+        Text(
+            stringResource(R.string.liquid_queue_autoplay_off),
+            style = LiquidTypography.footnote,
+            color = NowPlayingInk.secondary,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = PlayerSpace.xs),
+        )
+        Row(
+            Modifier
+                .padding(top = PlayerSpace.m)
+                .heightIn(min = QueueMetrics.target)
+                .clip(CircleShape)
+                .drawBehind { drawRect(accent.copy(alpha = 0.24f)) }
+                .combinedClickable(onClick = onTurnOn)
+                .semantics { role = Role.Button }
+                .padding(horizontal = PlayerSpace.l),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Rounded.AllInclusive, null, tint = accent, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(PlayerSpace.s))
+            Text(
+                stringResource(R.string.liquid_queue_autoplay_turn_on),
+                style = PlayerType.label,
+                color = NowPlayingInk.primary,
+            )
+        }
+    }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
