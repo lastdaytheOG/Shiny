@@ -268,10 +268,8 @@ val LocalPlayerExpansion = staticCompositionLocalOf<PlayerExpansionState?> { nul
  * the sheet holding it is still below the bottom of the screen — which is exactly when the
  * flight needs to know where it is going.
  */
-private fun LayoutCoordinates.layoutRectInWindow(): Rect {
-    val position = positionInWindow()
-    return Rect(position, Size(size.width.toFloat(), size.height.toFloat()))
-}
+private fun LayoutCoordinates.layoutRectInWindow(): Rect =
+    Rect(localToWindow(Offset.Zero), localToWindow(Offset(size.width.toFloat(), size.height.toFloat())))
 
 /**
  * Marks a composable as one end of the artwork transition.
@@ -309,8 +307,9 @@ fun Modifier.playerArtworkAnchor(
 
     val report: (LayoutCoordinates) -> Unit = { coordinates ->
         val bounds = coordinates.layoutRectInWindow()
+        val drawnScale = if (coordinates.size.width > 0) bounds.width / coordinates.size.width else 1f
         val cornerPx = cornerRadius
-            ?.let { with(density) { it.toPx() } }
+            ?.let { with(density) { it.toPx() } * drawnScale }
             ?: (bounds.minDimension / 2f)
         when (anchor) {
             ArtworkAnchor.Mini -> expansion.reportMini(bounds, cornerPx, model)
@@ -484,7 +483,7 @@ private fun TravellingArtwork(
 
                     clipPath(clip) {
                         drawArtwork(fallbackPainter, dst, crop)
-                        drawArtwork(painter, dst, crop)
+                        drawArtwork(painter, dst, crop, alpha = ExpansionCurve.ramp(p, 0.05f, 0.45f))
                     }
 
                     if (treatment == ArtworkTreatment.BottomFade) {
@@ -528,11 +527,13 @@ internal fun DrawScope.drawArtwork(
     painter: Painter,
     dst: Rect,
     crop: Boolean,
+    alpha: Float = 1f,
 ) {
+    if (alpha <= 0.001f) return
     val intrinsic = painter.intrinsicSize
     if (intrinsic.isUnspecified || intrinsic.width <= 0f || intrinsic.height <= 0f) {
         translate(dst.left, dst.top) {
-            with(painter) { draw(dst.size) }
+            with(painter) { draw(dst.size, alpha) }
         }
         return
     }
@@ -548,6 +549,6 @@ internal fun DrawScope.drawArtwork(
         left = dst.center.x - drawnWidth / 2f,
         top = dst.center.y - drawnHeight / 2f,
     ) {
-        with(painter) { draw(Size(drawnWidth, drawnHeight)) }
+        with(painter) { draw(Size(drawnWidth, drawnHeight), alpha) }
     }
 }

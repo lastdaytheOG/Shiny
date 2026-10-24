@@ -139,6 +139,7 @@ import com.shiny.music.ui.liquid.LiquidTypography
 import com.shiny.music.ui.liquid.LocalLiquidBackdrop
 import com.shiny.music.ui.menu.PlayerMenu
 import com.shiny.music.ui.player.ArtworkAnchor
+import com.shiny.music.ui.player.LocalPlayerExpansion
 import com.shiny.music.ui.player.playerArtworkAnchor
 import com.shiny.music.ui.player.rememberPlayerBackdrop
 import com.shiny.music.ui.player.PlayerBackdrop
@@ -1147,6 +1148,7 @@ private fun FlyingArtwork(
     onDoubleTap: (() -> Unit)? = null,
 ) {
     val density = LocalDensity.current
+    val expansion = LocalPlayerExpansion.current
     // A full-poster cover does not settle back on pause: there is nothing behind it to reveal,
     // so the breathe would only show a band of background around the edges.
     val restScale by animateFloatAsState(
@@ -1167,7 +1169,7 @@ private fun FlyingArtwork(
                             Modifier.artworkGlow(
                                 color = glowColor,
                                 strength = {
-                                    glowStrength *
+                                    (if (expansion?.isFlying() == true) 0f else glowStrength) *
                                         glowPauseFactor(restScale, PausedArtworkScale) *
                                         (1f - progress() * 2.5f).coerceAtLeast(0f)
                                 },
@@ -1195,7 +1197,7 @@ private fun FlyingArtwork(
                             playing -> 30.dp.toPx()
                             else -> 14.dp.toPx()
                         }
-                        shadowElevation = with(density) { lerp(restElevation, 6.dp.toPx(), t) }
+                        shadowElevation = if (expansion?.isFlying() == true) 0f else with(density) { lerp(restElevation, 6.dp.toPx(), t) }
                         val restCorner = if (bleed) 0f else 12.dp.toPx()
                         val corner = with(density) { lerp(restCorner, 8.dp.toPx(), t) }
                         shape = RoundedCornerShape(corner)
