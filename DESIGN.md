@@ -297,8 +297,17 @@ One screen, three modes, one gesture each (the mode-driven design):
   auto-follow that yields to the finger until a clear-glass **Sync lyrics** capsule (low,
   centred, arrow pointing to the sung line; only there while scrolled away) hands it back;
   tap a line or seek to resume too.
-- **Queue** — Shuffle / Repeat / Autoplay glass capsules, *Playing Next* with drag
-  handles, history above; with Autoplay on it always offers a real run of songs.
+- **Queue** — the only place Shuffle / Repeat / Autoplay live: three tiles (18dp, glyph over
+  a label that names the mode — Repeat / Repeat all / Repeat one), lit in the accent at 24%
+  with an accent rim. *Playing Next* (22sp) with "N songs · time" on its baseline, then one
+  list: played (50%) → current (accent bars over its thumbnail, no menu) → upcoming. Rows
+  68dp, 52dp art, hairlines inset to the text. Touch and hold lifts a row (scale, shadow, ≡);
+  a one-line hint says so until the first reorder. Transport folds away; the header keeps
+  play/pause. In landscape the tiles go to one line and the scrubber folds.
+  With Autoplay on it always offers a real run of songs.
+- **Player motion** (`player/PlayerDesign.kt`) — one clock for mode changes (`PlayerMotion`:
+  press 120, small 180, queue 300ms, one spring for the artwork flight); no delayed
+  entrances. Reduced motion stops the background turn and the title marquee.
 - **Landscape** — artwork left (living too), controls or the lyrics/queue page right.
 
 ### Living artwork (`player/LiquidLivingArtwork.kt`)
