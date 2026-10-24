@@ -159,14 +159,11 @@ object HomeFeedBuilder {
         if (hero != null) {
             sections[HomeSlot.Opening] = hero
         } else {
-            // Nothing of the listener's own to open on. Show them the best real music
-            // Shiny has instead of an empty state: the chart for where they are, or what
-            // is already on the device.
-            val chart = remote?.takeIf { ctx.online }?.let { chartsFor(it, ctx).firstOrNull() }
+            // Nothing of the listener's own to open on: what is already on the device.
             val device = signals.offlineSongs.filter(::allowed)
-            if (chart != null || device.isNotEmpty() || !ctx.online) {
+            if (device.isNotEmpty() || !ctx.online) {
                 sections[HomeSlot.Opening] = StartHereSection(
-                    chart = chart,
+                    chart = null,
                     deviceSongs = device.take(30),
                     localSongs = signals.counts.localSongs,
                     downloadedSongs = signals.counts.downloadedSongs,
@@ -207,7 +204,6 @@ object HomeFeedBuilder {
 
         if (ctx.online && remote != null) {
             deepDive(signals, remote, ctx, taste)?.let { sections[HomeSlot.DeepDive] = it }
-            charts(remote, ctx)?.let { sections[HomeSlot.Charts] = it }
         }
 
         spotify?.let { sections[HomeSlot.Spotify] = it }
@@ -532,12 +528,6 @@ object HomeFeedBuilder {
         val mixes = remote?.youtubeMixes.orEmpty()
         if (liked == null && mixes.isEmpty()) return null
         return YouTubeSection(liked, mixes)
-    }
-
-    private fun charts(remote: HomeRemote, ctx: HomeContext): ChartsSection? {
-        val charts = chartsFor(remote, ctx)
-        if (charts.isEmpty()) return null
-        return ChartsSection(charts, remote.chartsAt)
     }
 
     private fun albumsInProgress(signals: HomeSignals, ctx: HomeContext): AlbumsInProgressSection? {

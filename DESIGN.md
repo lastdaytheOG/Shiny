@@ -164,10 +164,10 @@ lens; *Frosted* blurs harder with a calmer lens and no dispersion. The finish co
   lead artwork's colour that rises out of the page ground and sinks back into it, its
   fade measured in pixels from the real height so it never meets a hard edge. Every
   opening state wears the same shape — eyebrow, headline, one true sentence, Play and
-  Shuffle: **the day's mix** (*First Light / Daylight / Golden Hour / Afterglow*, with a
+  Shuffle (YouTube's charts are not on Home; charts live in Discover): **the day's mix** (*First Light / Daylight / Golden Hour / Afterglow*, with a
   reason line that states the familiar/new split, and a "place to start" eyebrow while
   confidence is low) or, for a listener with no history at all, **Start Here** — the
-  chart for where they are, or the music already on the phone. There is no onboarding
+  music already on the phone. There is no onboarding
   wall and no plays-until-personal meter.
 
   The rest: **Pick up where you left off** (a paused session, decided on arrival),
@@ -177,9 +177,7 @@ lens; *Frosted* blurs harder with a calmer lens and no dispersion. The finish co
   a paged grid, plus moods), **Discover** (never-played songs, headed from the data —
   "More like *song*" only when one song really did seed the shelf), **Go deeper** (one
   artist, only above Exploring), **New Releases** (one featured record set as editorial,
-  no panel), **The Charts** (rank in the display cut, movement flags computed by
-  comparing two of Shiny's own fetches, region segmented, "refreshed X ago"),
-  **Long Time No Hear**, **Albums You Started**, **Recently Added**, **Ready Offline**,
+  no panel), **Long Time No Hear**, **Albums You Started**, **Recently Added**, **Ready Offline**,
   **Your Week** and **Surprise Me**. Moods are compact neutral tiles with a colour rule,
   never flooded chips.
 - **New**, **Library** (category rows → pushed category pages, Recently Added grid),
@@ -412,7 +410,7 @@ and a press blooms the disc. No ripples, no icon buttons.
 
 ### Up Next (`playback/MusicService.kt` · `player/LiquidQueue.kt`)
 
-`ensureUpNext(minimum = 15)` pages the queue and then tops it up from the song's radio
+`ensureUpNext(minimum = 25)` (from the open Queue) pages the queue and then tops it up from the song's radio
 (`RDAMVM<id>`), de-duplicated, so *Playing Next* is a real run of songs rather than the
 two or three left in the queue. It runs on open and on every index change, and **only with
 Autoplay on** — with Autoplay off the queue stays exactly what the user built.

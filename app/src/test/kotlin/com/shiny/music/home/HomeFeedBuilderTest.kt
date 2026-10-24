@@ -222,16 +222,17 @@ class HomeFeedBuilderTest {
     @Test
     fun `a listener with nothing at all opens on real music, not on a wall`() {
         val c = ctx()
-        val feed = HomeFeedBuilder.build(HomeSignals.Empty, charts(), c)
+        val moods = listOf("Chill", "Feel good", "Focus").map {
+            com.music.innertube.pages.MoodAndGenres.Item(it, 0xFF00FF00, com.music.innertube.models.BrowseEndpoint("FEmusic_moods_and_genres_category", "p"))
+        }
+        val feed = HomeFeedBuilder.build(HomeSignals.Empty, charts().copy(moods = moods), c)
 
         assertEquals(ListenerProfile.New, feed.profile)
-        val start = feed.sections.first() as StartHereSection
-        assertNotNull("the opening is the chart, not an empty state", start.chart)
-        assertEquals("IN", start.chart!!.scope)
+        assertNotNull("the moods welcome a new listener, not an empty page", feed.find<MoodsSection>())
         // Nothing personal is invented from a history that does not exist.
         listOf(HeroMixSection::class, RotationSection::class, DiscoverSection::class, InsightsSection::class, RediscoverSection::class)
             .forEach { kind -> assertTrue("$kind must not appear", feed.sections.none { kind.isInstance(it) }) }
-        assertNotNull("charts are real data, and welcome a new listener", feed.find<ChartsSection>())
+        assertNull("YouTube's charts are not on Home", feed.find<ChartsSection>())
     }
 
     @Test
@@ -324,7 +325,8 @@ class HomeFeedBuilderTest {
         assertNotNull(section)
         assertEquals("a mix still matching (or nearly empty) is not shown", listOf("1"), section!!.mixes.map { it.spotifyId })
         val kinds = feed.kinds()
-        assertTrue("their own mixes beat the charts while Shiny knows nothing", kinds.indexOf("SpotifySection") < kinds.indexOf("ChartsSection"))
+        assertTrue("their own mixes lead a new Home", kinds.indexOf("SpotifySection") in 0..1)
+        assertFalse(kinds.contains("ChartsSection"))
     }
 
     @Test
@@ -514,16 +516,10 @@ class HomeFeedBuilderTest {
         // the feed, ahead of everything that needs a network.
         assertNotNull(feed.find<ReadyOfflineSection>())
         assertTrue(
-            "what plays offline outranks the charts",
-            kinds.indexOf("ReadyOfflineSection") < kinds.indexOf("ChartsSection"),
-        )
-        assertTrue(
             "and sits in the body of the feed, not in its footnotes",
             kinds.indexOf("ReadyOfflineSection") <= 3,
         )
-        listOf("AroundNowSection", "RotationSection", "ReadyOfflineSection").forEach {
-            assertTrue("$it outranks the charts for a local listener", kinds.indexOf(it) < kinds.indexOf("ChartsSection"))
-        }
+        assertFalse(kinds.contains("ChartsSection"))
     }
 
     @Test
@@ -571,22 +567,6 @@ class HomeFeedBuilderTest {
         }
         assertTrue(shown.isNotEmpty())
         assertTrue(shown.none { it.song.isVideo })
-    }
-
-    @Test
-    fun `charts keep each song's true rank when some are filtered`() {
-        val c = ctx(hideExplicit = true)
-        val charts = HomeFeedBuilder.build(HomeSignals.Empty, charts(), c).find<ChartsSection>()!!
-        val songs = charts.charts.single().songs
-        assertEquals("c2", songs.first().id)
-        assertEquals(2, songs.first().chartPosition)
-        assertEquals("Top 100 Music Videos India", charts.charts.single().title)
-    }
-
-    @Test
-    fun `charts too thin to be a chart are not shown`() {
-        val thin = charts().let { r -> r.copy(charts = r.charts.map { it.copy(songs = it.songs.take(4)) }) }
-        assertNull(HomeFeedBuilder.build(HomeSignals.Empty, thin, ctx()).find<ChartsSection>())
     }
 
     @Test
@@ -711,20 +691,6 @@ class HomeFeedBuilderTest {
         assertEquals(listOf("GB", "ZZ"), HomeCharts.scopes("GB", showGlobal = true, detected = "IN"))
         assertEquals(listOf("ZZ"), HomeCharts.scopes(HomeCharts.GLOBAL, showGlobal = true, detected = "IN"))
         assertEquals(emptyList<String>(), HomeCharts.scopes(HomeCharts.OFF, showGlobal = true, detected = "IN"))
-    }
-
-    @Test
-    fun `Home shows only the charts the listener chose, in their order`() {
-        val remote = charts().let { r ->
-            r.copy(charts = r.charts + r.charts.single().copy(playlistId = "PLus", title = "Top 100 Music Videos United States", scope = "US") +
-                r.charts.single().copy(playlistId = "PLzz", title = "Top 100 Music Videos Global", scope = "ZZ"))
-        }
-        fun shown(scopes: List<String>) =
-            HomeFeedBuilder.build(HomeSignals.Empty, remote, ctx().copy(chartScopes = scopes)).find<ChartsSection>()?.charts?.map { it.scope }
-        assertEquals(listOf("IN", "ZZ"), shown(listOf("IN", "ZZ")))
-        assertEquals(listOf("ZZ"), shown(listOf("ZZ")))
-        assertNull("charts off", shown(emptyList()))
-        assertNull("a country not fetched yet is not faked", shown(listOf("JP")))
     }
 
     /** A library of [songs] songs by [artists] artists, each artist holding several songs. */
@@ -854,39 +820,6 @@ class HomeFeedBuilderTest {
     }
 
     @Test
-    fun `opening the charts keeps them near the top, ignoring them lets them sink`() {
-        val (library, plays) = establishedLibrary()
-        val c = ctx(seed = 3)
-        val sig = signals(library + relatedSongs(), plays, c, related())
-        fun chartsAt(interest: HomeInterest) =
-            HomeFeedBuilder.build(sig, charts(), c, interest).kinds().indexOf("ChartsSection")
-
-        var reader = HomeInterest.Empty
-        repeat(8) { reader = reader.noting(HomeInterest.Kind.Charts, evening) }
-
-        assertTrue(
-            "a chart reader sees them earlier than someone who never opens them",
-            chartsAt(reader) < chartsAt(HomeInterest.Empty),
-        )
-    }
-
-    @Test
-    fun `the charts lead a new Home and step aside as the listener becomes known`() {
-        val c = ctx(seed = 3)
-        val newcomer = HomeFeedBuilder.build(HomeSignals.Empty, charts(), c).kinds()
-        assertEquals("ChartsSection", newcomer.first { it != "StartHereSection" })
-
-        val (library, plays) = establishedLibrary()
-        val known = HomeFeedBuilder.build(signals(library + relatedSongs(), plays, c, related()), charts(), c).kinds()
-        listOf("RotationSection", "AroundNowSection", "DiscoverSection").forEach {
-            assertTrue(
-                "$it outranks the charts once there is a listener to know",
-                known.indexOf(it) < known.indexOf("ChartsSection"),
-            )
-        }
-    }
-
-    @Test
     fun `an interest that stops being acted on fades away`() {
         var reader = HomeInterest.Empty
         repeat(8) { reader = reader.noting(HomeInterest.Kind.Charts, evening) }
@@ -908,6 +841,18 @@ class HomeFeedBuilderTest {
         val once = HomeFeedBuilder.build(sig, charts(), c).kinds()
         val twice = HomeFeedBuilder.build(sig, charts(), c).kinds()
         assertEquals("an adaptive Home is not a shuffling one", once, twice)
+    }
+
+    @Test
+    fun `Home never shows YouTube charts, even when chart data is held`() {
+        val newcomer = HomeFeedBuilder.build(HomeSignals.Empty, charts(), ctx())
+        assertNull(newcomer.find<ChartsSection>())
+        newcomer.find<StartHereSection>()?.let { assertNull(it.chart) }
+
+        val (library, plays) = establishedLibrary()
+        val c = ctx(seed = 3)
+        val known = HomeFeedBuilder.build(signals(library + relatedSongs(), plays, c, related()), charts(), c)
+        assertNull(known.find<ChartsSection>())
     }
 
     @Test

@@ -177,7 +177,7 @@ class NewViewModel @Inject constructor(
             ?.let { HomeFeedBuilder.topArtists(it, 6).map { a -> a.artistId } }
             .orEmpty()
         try {
-            remote.refresh(p.chartScopes, p.accountKey, topArtists, force)
+            remote.refresh(emptyList(), p.accountKey, topArtists, force)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {

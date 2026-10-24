@@ -262,7 +262,7 @@ class HomeViewModel @Inject constructor(
             }
             val artistIds = remote.state.value?.artistIds.orEmpty()
             val topArtists = signals?.let { HomeFeedBuilder.topArtists(it, 6, artistIds).map { a -> a.artistId } }.orEmpty()
-            remote.refresh(p.chartScopes, p.accountKey, topArtists, force)
+            remote.refresh(emptyList(), p.accountKey, topArtists, force)
             if (signals != null && signals.discovery.size < RELATED_TOP_UP_BELOW) {
                 // An empty Discover is a listener Shiny has only just met: fill it faster.
                 val limit = if (signals.discovery.isEmpty()) 6 else 3
