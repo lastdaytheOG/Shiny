@@ -2,16 +2,20 @@ package com.shiny.music.ui.liquid.player
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,7 +30,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -47,6 +51,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -59,12 +64,18 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
@@ -98,10 +109,13 @@ import com.shiny.music.ui.component.backdrop.Backdrop
 import com.shiny.music.ui.liquid.Artwork
 import com.shiny.music.ui.liquid.GlassKind
 import com.shiny.music.ui.liquid.Liquid
+import com.shiny.music.ui.liquid.LiquidPrefs
 import com.shiny.music.ui.liquid.LiquidPullDownMenu
 import com.shiny.music.ui.liquid.LiquidTypography
 import com.shiny.music.ui.liquid.LocalLiquidColors
 import com.shiny.music.ui.liquid.MenuAction
+import com.shiny.music.ui.liquid.TileShape
+import com.shiny.music.ui.liquid.artworkRadius
 import com.shiny.music.ui.liquid.glassPressScale
 import com.shiny.music.ui.liquid.liquidDarkColors
 import com.shiny.music.ui.liquid.liquidGlass
@@ -120,6 +134,7 @@ fun LiquidQueuePane(
     backdrop: Backdrop?,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    compact: Boolean = false,
 ) {
     val playerConnection = LocalPlayerConnection.current ?: return
     val windows by playerConnection.queueWindows.collectAsState()
@@ -131,6 +146,7 @@ fun LiquidQueuePane(
     val shuffle by playerConnection.shuffleModeEnabled.collectAsState()
     val repeatMode by playerConnection.repeatMode.collectAsState()
     val (autoplay, setAutoplay) = rememberPreference(AutoLoadMoreKey, defaultValue = true)
+    val (hintSeen, setHintSeen) = rememberPreference(LiquidPrefs.QueueReorderHintSeen, defaultValue = false)
     val haptic = LocalHapticFeedback.current
 
     LaunchedEffect(currentIndex, windows.size, autoplay, enabled) {
@@ -159,6 +175,7 @@ fun LiquidQueuePane(
             upcoming.add(t, upcoming.removeAt(f))
             draggedUid = upcoming[t].uid
             dragSlot = t
+            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
         }
     }
     val dragging = reorderState.isAnyItemDragging
@@ -171,6 +188,7 @@ fun LiquidQueuePane(
             val position = live.indexOfFirst { it.uid == uid }
             if (position > liveCurrent && position - liveCurrent - 1 != dragSlot) {
                 playerConnection.moveUpcoming(live[position].firstPeriodIndex, dragSlot)
+                setHintSeen(true)
             }
             draggedUid = null
             dragSlot = -1
@@ -187,6 +205,7 @@ fun LiquidQueuePane(
 
     var renderCount by rememberSaveable(queueSessionId) { mutableIntStateOf(QUEUE_RENDER_PAGE) }
     val rendered = upcoming.size.coerceAtMost(renderCount)
+    val entries by remember { derivedStateOf { queueEntries(past, now, upcoming, renderCount) } }
     val summary = remember(windows, currentIndex) {
         queueSummary(
             if (currentIndex in windows.indices) {
@@ -231,7 +250,7 @@ fun LiquidQueuePane(
     }
 
     fun play(window: Timeline.Window) {
-        if (!enabled || listState.isScrollInProgress) return
+        if (!enabled || listState.isScrollInProgress || reorderState.isAnyItemDragging) return
         playerConnection.player.seekToDefaultPosition(window.firstPeriodIndex)
         playerConnection.player.playWhenReady = true
     }
@@ -246,6 +265,7 @@ fun LiquidQueuePane(
                 shuffle = shuffle,
                 repeatMode = repeatMode,
                 autoplay = autoplay,
+                compact = compact,
                 onShuffle = { if (enabled) playerConnection.player.shuffleModeEnabled = !shuffle },
                 onRepeat = { if (enabled) playerConnection.player.repeatMode = nextRepeatMode(repeatMode) },
                 onAutoplay = {
@@ -258,53 +278,34 @@ fun LiquidQueuePane(
                 title = stringResource(
                     if (autoplay && upcoming.isEmpty()) R.string.liquid_continue_playing else R.string.liquid_playing_next,
                 ),
-                source = queueTitle?.takeIf { it.isNotBlank() }?.let { stringResource(R.string.liquid_from, it) },
-                count = if (summary.count > 0) stringResource(R.string.liquid_songs_count, summary.count) else null,
-                duration = summary.totalSeconds?.let { makeTimeString(it * 1000L) },
+                source = queueTitle?.takeIf { it.isNotBlank() && !compact }?.let { stringResource(R.string.liquid_from, it) },
+                summary = if (summary.count > 0) {
+                    listOfNotNull(
+                        stringResource(R.string.liquid_songs_count, summary.count),
+                        summary.totalSeconds?.let { makeTimeString(it * 1000L) },
+                    ).joinToString(" · ")
+                } else {
+                    null
+                },
+                hint = if (!hintSeen && enabled && !compact && upcoming.size >= 2) stringResource(R.string.liquid_queue_reorder_hint) else null,
+                compact = compact,
             )
             LazyColumn(
                 state = listState,
-                contentPadding = PaddingValues(top = 6.dp, bottom = contentPadding.calculateBottomPadding()),
+                contentPadding = PaddingValues(
+                    top = PlayerSpace.xs,
+                    bottom = contentPadding.calculateBottomPadding() + if (undo != null) 64.dp else 0.dp,
+                ),
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
                     .fadingEdges(top = 10.dp, bottom = 28.dp)
                     .nestedScroll(nestedScrollConnection),
             ) {
-                items(past, key = ::queueKey) { window ->
-                    QueueRow(
-                        window = window,
-                        dimmed = true,
-                        onClick = { play(window) },
-                        menu = {
-                            listOf(
-                                MenuAction(
-                                    title = stringResource(R.string.liquid_queue_remove),
-                                    icon = Icons.Rounded.RemoveCircleOutline,
-                                    destructive = true,
-                                    onClick = { if (enabled) playerConnection.removeQueueItem(window.firstPeriodIndex) },
-                                ),
-                            )
-                        },
-                    )
-                }
-
-                now?.let { window ->
-                    item(key = queueKey(window)) {
-                        QueueRow(window = window, dimmed = false, current = true, onClick = {}, menu = null)
-                    }
-                }
-
-                if (upcoming.isEmpty() && !pageStatus.isLoading) {
-                    item(key = "queue_empty") {
-                        QueueNote(
-                            text = stringResource(if (autoplay) R.string.liquid_queue_empty_autoplay else R.string.liquid_queue_empty),
-                        )
-                    }
-                }
-
-                items(upcoming.take(renderCount), key = ::queueKey) { window ->
-                    ReorderableItem(reorderState, key = queueKey(window), enabled = enabled) { lifted ->
+                itemsIndexed(entries, key = { _, entry -> queueKey(entry.item) }) { index, entry ->
+                    val window = entry.item
+                    val movable = entry.role == QueueRole.Upcoming
+                    ReorderableItem(reorderState, key = queueKey(window), enabled = enabled && movable) { lifted ->
                         val moveUp = stringResource(R.string.liquid_queue_move_up)
                         val moveDown = stringResource(R.string.liquid_queue_move_down)
                         fun move(by: Int): Boolean {
@@ -316,41 +317,71 @@ fun LiquidQueuePane(
                         }
                         QueueRow(
                             window = window,
-                            dimmed = false,
+                            role = entry.role,
                             lifted = lifted,
-                            gestures = Modifier
-                                .longPressDraggableHandle(
-                                    enabled = enabled,
-                                    onDragStarted = { haptic.performHapticFeedback(HapticFeedbackType.LongPress) },
-                                )
-                                .semantics {
-                                    customActions = listOf(
-                                        CustomAccessibilityAction(moveUp) { move(-1) },
-                                        CustomAccessibilityAction(moveDown) { move(1) },
+                            divider = index < entries.lastIndex,
+                            gestures = if (movable) {
+                                Modifier
+                                    .longPressDraggableHandle(
+                                        enabled = enabled,
+                                        onDragStarted = { haptic.performHapticFeedback(HapticFeedbackType.LongPress) },
                                     )
-                                },
-                            onClick = { play(window) },
-                            menu = {
-                                listOf(
-                                    MenuAction(
-                                        title = stringResource(R.string.liquid_queue_play_next),
-                                        icon = Icons.AutoMirrored.Rounded.PlaylistPlay,
-                                        onClick = { if (enabled) playerConnection.playQueueItemNext(window.firstPeriodIndex) },
-                                    ),
-                                    MenuAction(
-                                        title = stringResource(R.string.liquid_queue_remove),
-                                        icon = Icons.Rounded.RemoveCircleOutline,
-                                        destructive = true,
-                                        onClick = { if (enabled) playerConnection.removeQueueItem(window.firstPeriodIndex) },
-                                    ),
-                                    MenuAction(
-                                        title = stringResource(R.string.liquid_queue_clear_upcoming),
-                                        icon = Icons.Rounded.ClearAll,
-                                        destructive = true,
-                                        onClick = { if (enabled) playerConnection.clearUpcoming() },
-                                    ),
-                                )
+                                    .semantics {
+                                        customActions = listOf(
+                                            CustomAccessibilityAction(moveUp) { move(-1) },
+                                            CustomAccessibilityAction(moveDown) { move(1) },
+                                        )
+                                    }
+                            } else {
+                                Modifier
                             },
+                            onClick = { play(window) },
+                            menu = when (entry.role) {
+                                QueueRole.Current -> null
+                                QueueRole.Played -> {
+                                    {
+                                        listOf(
+                                            MenuAction(
+                                                title = stringResource(R.string.liquid_queue_remove),
+                                                icon = Icons.Rounded.RemoveCircleOutline,
+                                                destructive = true,
+                                                onClick = { if (enabled) playerConnection.removeQueueItem(window.firstPeriodIndex) },
+                                            ),
+                                        )
+                                    }
+                                }
+                                QueueRole.Upcoming -> {
+                                    {
+                                        listOf(
+                                            MenuAction(
+                                                title = stringResource(R.string.liquid_queue_play_next),
+                                                icon = Icons.AutoMirrored.Rounded.PlaylistPlay,
+                                                onClick = { if (enabled) playerConnection.playQueueItemNext(window.firstPeriodIndex) },
+                                            ),
+                                            MenuAction(
+                                                title = stringResource(R.string.liquid_queue_remove),
+                                                icon = Icons.Rounded.RemoveCircleOutline,
+                                                destructive = true,
+                                                onClick = { if (enabled) playerConnection.removeQueueItem(window.firstPeriodIndex) },
+                                            ),
+                                            MenuAction(
+                                                title = stringResource(R.string.liquid_queue_clear_upcoming),
+                                                icon = Icons.Rounded.ClearAll,
+                                                destructive = true,
+                                                onClick = { if (enabled) playerConnection.clearUpcoming() },
+                                            ),
+                                        )
+                                    }
+                                }
+                            },
+                        )
+                    }
+                }
+
+                if (upcoming.isEmpty() && !pageStatus.isLoading) {
+                    item(key = "queue_empty") {
+                        QueueNote(
+                            text = stringResource(if (autoplay) R.string.liquid_queue_empty_autoplay else R.string.liquid_queue_empty),
                         )
                     }
                 }
@@ -368,11 +399,11 @@ fun LiquidQueuePane(
 
         AnimatedVisibility(
             visible = undo != null,
-            enter = fadeIn(tween(160)) + slideInVertically(tween(220)) { it / 2 },
-            exit = fadeOut(tween(140)) + slideOutVertically(tween(180)) { it / 2 },
+            enter = fadeIn(tween(PlayerMotion.Small)) + slideInVertically(tween(PlayerMotion.Small)) { it / 2 },
+            exit = fadeOut(tween(PlayerMotion.Press)) + slideOutVertically(tween(PlayerMotion.Small)) { it / 2 },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 12.dp),
+                .padding(bottom = PlayerSpace.m),
         ) {
             val shown = remember { mutableStateOf(undo) }
             undo?.let { shown.value = it }
@@ -401,44 +432,44 @@ private fun QueueModes(
     onShuffle: () -> Unit,
     onRepeat: () -> Unit,
     onAutoplay: () -> Unit,
+    compact: Boolean,
 ) {
     val on = stringResource(R.string.liquid_on)
     val off = stringResource(R.string.liquid_off)
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+            .padding(horizontal = PlayerSpace.xl, vertical = if (compact) PlayerSpace.xs else PlayerSpace.s),
+        horizontalArrangement = Arrangement.spacedBy(PlayerSpace.s),
     ) {
-        QueueToggle(
+        QueueModeTile(
             icon = Icons.Rounded.Shuffle,
             label = stringResource(R.string.liquid_shuffle),
             active = shuffle,
             state = if (shuffle) on else off,
             role = Role.Switch,
             onClick = onShuffle,
+            compact = compact,
             modifier = Modifier.weight(1f),
         )
-        QueueToggle(
+        QueueModeTile(
             icon = if (repeatMode == Player.REPEAT_MODE_ONE) Icons.Rounded.RepeatOne else Icons.Rounded.Repeat,
-            label = stringResource(R.string.liquid_repeat),
+            label = stringResource(repeatLabel(repeatMode)),
             active = repeatMode != Player.REPEAT_MODE_OFF,
-            state = when (repeatMode) {
-                Player.REPEAT_MODE_ONE -> stringResource(R.string.liquid_repeat_one)
-                Player.REPEAT_MODE_ALL -> stringResource(R.string.liquid_repeat_all)
-                else -> off
-            },
+            state = if (repeatMode == Player.REPEAT_MODE_OFF) off else stringResource(repeatLabel(repeatMode)),
             role = Role.Button,
             onClick = onRepeat,
+            compact = compact,
             modifier = Modifier.weight(1f),
         )
-        QueueToggle(
+        QueueModeTile(
             icon = Icons.Rounded.AllInclusive,
             label = stringResource(R.string.liquid_autoplay),
             active = autoplay,
             state = if (autoplay) on else off,
             role = Role.Switch,
             onClick = onAutoplay,
+            compact = compact,
             modifier = Modifier.weight(1f),
         )
     }
@@ -448,40 +479,66 @@ private fun QueueModes(
 private fun QueueHeading(
     title: String,
     source: String?,
-    count: String?,
-    duration: String?,
+    summary: String?,
+    hint: String?,
+    compact: Boolean,
 ) {
-    Row(
-        modifier = Modifier
+    Column(
+        Modifier
             .fillMaxWidth()
-            .padding(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            .padding(
+                start = PlayerSpace.xl,
+                end = PlayerSpace.xl,
+                top = if (compact) PlayerSpace.s else PlayerSpace.l,
+                bottom = if (compact) PlayerSpace.xs else PlayerSpace.s,
+            ),
     ) {
-        Column(Modifier.weight(1f)) {
+        Row(Modifier.fillMaxWidth()) {
             Text(
                 title,
-                style = LiquidTypography.title3,
+                style = PlayerType.section,
                 color = NowPlayingInk.primary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .weight(1f)
+                    .alignByBaseline(),
             )
-            if (source != null) {
+            if (summary != null) {
                 Text(
-                    source,
-                    style = LiquidTypography.footnote,
+                    summary,
+                    style = LiquidTypography.footnote.copy(fontFeatureSettings = "tnum"),
                     color = NowPlayingInk.secondary,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .padding(start = PlayerSpace.m)
+                        .alignByBaseline(),
                 )
             }
         }
-        if (count != null) {
-            Column(Modifier.padding(start = 16.dp), horizontalAlignment = Alignment.End) {
-                Text(count, style = LiquidTypography.footnote.copy(fontFeatureSettings = "tnum"), color = NowPlayingInk.secondary, maxLines = 1)
-                if (duration != null) {
-                    Text(duration, style = LiquidTypography.footnote.copy(fontFeatureSettings = "tnum"), color = NowPlayingInk.secondary, maxLines = 1)
-                }
-            }
+        if (source != null) {
+            Text(
+                source,
+                style = LiquidTypography.footnote,
+                color = NowPlayingInk.secondary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+        }
+        AnimatedVisibility(
+            visible = hint != null,
+            enter = fadeIn(tween(PlayerMotion.Small)) + expandVertically(tween(PlayerMotion.Small)),
+            exit = fadeOut(tween(PlayerMotion.Press)) + shrinkVertically(tween(PlayerMotion.Small)),
+        ) {
+            val shown = remember { mutableStateOf(hint) }
+            hint?.let { shown.value = it }
+            Text(
+                shown.value.orEmpty(),
+                style = LiquidTypography.footnote,
+                color = NowPlayingInk.tertiary,
+                modifier = Modifier.padding(top = PlayerSpace.xs),
+            )
         }
     }
 }
@@ -495,7 +552,7 @@ private fun QueueNote(text: String) {
         textAlign = TextAlign.Center,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 32.dp, vertical = 28.dp),
+            .padding(horizontal = PlayerSpace.xxxl, vertical = 28.dp),
     )
 }
 
@@ -524,59 +581,109 @@ private fun QueuePageFeedback(loading: Boolean, onRetry: (() -> Unit)?) {
     }
 }
 
+private val RowShape = RoundedCornerShape(14.dp)
+private val RowArtShape = RoundedCornerShape(artworkRadius(QueueMetrics.artwork))
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun QueueRow(
     window: Timeline.Window,
-    dimmed: Boolean,
+    role: QueueRole,
     onClick: () -> Unit,
     menu: (@Composable () -> List<MenuAction>)?,
     lifted: Boolean = false,
-    current: Boolean = false,
+    divider: Boolean = false,
     gestures: Modifier = Modifier,
 ) {
     val metadata = window.mediaItem.metadata ?: return
+    val accent = Liquid.colors.accent
     val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
     var menuOpen by remember { mutableStateOf(false) }
-    val bg by animateColorAsState(
+    val current = role == QueueRole.Current
+    val fill = animateColorAsState(
         when {
-            lifted -> Color.White.copy(alpha = 0.12f)
-            current -> Color.White.copy(alpha = 0.08f)
+            lifted -> Color.White.copy(alpha = 0.10f)
+            pressed && !current -> Color.White.copy(alpha = 0.06f)
             else -> Color.Transparent
         },
-        animationSpec = spring(stiffness = 600f),
-        label = "lift",
+        animationSpec = tween(PlayerMotion.Press),
+        label = "rowFill",
     )
+    val lift = animateFloatAsState(if (lifted) 1f else 0f, spring(dampingRatio = 0.8f, stiffness = 600f), label = "lift")
+    val dim = animateFloatAsState(if (role == QueueRole.Played) 0.5f else 1f, PlayerMotion.small(), label = "dim")
+    val nowness = animateFloatAsState(if (current) 1f else 0f, PlayerMotion.small(), label = "now")
+    val nowPlaying = stringResource(R.string.liquid_queue_now_playing)
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 64.dp)
-            .padding(horizontal = 8.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .background(bg)
-            .combinedClickable(interactionSource = interaction, indication = null, onClick = onClick)
-            .then(gestures)
-            .padding(start = 12.dp, end = 4.dp, top = 8.dp, bottom = 8.dp)
+            .heightIn(min = QueueMetrics.rowMinHeight)
+            .padding(horizontal = PlayerSpace.s)
             .graphicsLayer {
-                alpha = if (dimmed) 0.5f else 1f
+                val l = lift.value
+                scaleX = 1f + 0.02f * l
+                scaleY = 1f + 0.02f * l
+                shadowElevation = 8.dp.toPx() * l
+                shape = RowShape
+                clip = true
+            }
+            .drawBehind {
+                drawRect(fill.value)
+                if (divider && lift.value < 0.01f) {
+                    val start = (PlayerSpace.m + QueueMetrics.artwork + 14.dp).toPx()
+                    val stroke = 0.5.dp.toPx()
+                    drawRect(
+                        Color.White.copy(alpha = 0.08f * dim.value),
+                        topLeft = Offset(start, size.height - stroke),
+                        size = Size(size.width - start - PlayerSpace.m.toPx(), stroke),
+                    )
+                }
+            }
+            .then(
+                if (current) {
+                    Modifier.semantics(mergeDescendants = true) { stateDescription = nowPlaying }
+                } else {
+                    Modifier.combinedClickable(
+                        interactionSource = interaction,
+                        indication = null,
+                        onClick = onClick,
+                        onLongClick = {},
+                        hapticFeedbackEnabled = false,
+                    )
+                }
+            )
+            .then(gestures)
+            .padding(start = PlayerSpace.m, end = PlayerSpace.xs, top = PlayerSpace.s, bottom = PlayerSpace.s)
+            .graphicsLayer {
+                alpha = dim.value
                 compositingStrategy = CompositingStrategy.ModulateAlpha
             },
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Artwork(
-            model = metadata.thumbnailUrl,
-            shape = RoundedCornerShape(8.dp),
-            hairline = false,
-            modifier = Modifier.size(48.dp),
-        )
+        Box(Modifier.size(QueueMetrics.artwork)) {
+            Artwork(
+                model = metadata.thumbnailUrl,
+                shape = RowArtShape,
+                hairline = false,
+                modifier = Modifier.fillMaxSize(),
+            )
+            if (current || nowness.value > 0f) {
+                Canvas(
+                    Modifier
+                        .fillMaxSize()
+                        .clip(RowArtShape)
+                        .graphicsLayer { alpha = nowness.value }
+                ) { drawNowPlayingMark(accent) }
+            }
+        }
         Column(
             Modifier
                 .weight(1f)
-                .padding(start = 14.dp, end = 4.dp),
+                .padding(start = 14.dp, end = PlayerSpace.xs),
         ) {
             Text(
                 metadata.title,
-                style = LiquidTypography.callout.copy(fontWeight = FontWeight.SemiBold),
+                style = PlayerType.rowTitle,
                 color = NowPlayingInk.primary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -584,7 +691,7 @@ private fun QueueRow(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     metadata.artists.joinToString { it.name },
-                    style = LiquidTypography.subheadline,
+                    style = PlayerType.rowMeta,
                     color = NowPlayingInk.secondary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -593,7 +700,7 @@ private fun QueueRow(
                 if (metadata.duration > 0) {
                     Text(
                         " · " + makeTimeString(metadata.duration * 1000L),
-                        style = LiquidTypography.subheadline.copy(fontFeatureSettings = "tnum"),
+                        style = PlayerType.rowMeta.copy(fontFeatureSettings = "tnum"),
                         color = NowPlayingInk.tertiary,
                         maxLines = 1,
                     )
@@ -601,18 +708,18 @@ private fun QueueRow(
             }
         }
         if (menu == null) {
-            Spacer(Modifier.width(44.dp))
+            Spacer(Modifier.width(QueueMetrics.target))
             return@Row
         }
         Box {
             val more = stringResource(R.string.liquid_queue_more, metadata.title)
             Box(
                 modifier = Modifier
-                    .size(44.dp)
+                    .size(QueueMetrics.target)
                     .clip(CircleShape)
                     .combinedClickable(onClick = { menuOpen = true })
                     .semantics {
-                        role = Role.Button
+                        this.role = Role.Button
                         contentDescription = more
                     },
                 contentAlignment = Alignment.Center,
@@ -620,7 +727,7 @@ private fun QueueRow(
                 Icon(
                     if (lifted) Icons.Rounded.DragHandle else Icons.Rounded.MoreHoriz,
                     null,
-                    tint = NowPlayingInk.secondary,
+                    tint = if (lifted) NowPlayingInk.primary else NowPlayingInk.secondary,
                     modifier = Modifier.size(20.dp),
                 )
             }
@@ -639,54 +746,90 @@ private fun QueueRow(
     }
 }
 
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawNowPlayingMark(accent: Color) {
+    drawRect(Color.Black.copy(alpha = 0.5f))
+    val bar = 3.dp.toPx()
+    val gap = 2.5.dp.toPx()
+    val tall = 16.dp.toPx()
+    val heights = floatArrayOf(0.55f, 1f, 0.75f)
+    val total = bar * 3 + gap * 2
+    var x = (size.width - total) / 2f
+    val bottom = (size.height + tall) / 2f
+    for (h in heights) {
+        val barHeight = tall * h
+        drawRoundRect(accent, Offset(x, bottom - barHeight), Size(bar, barHeight), CornerRadius(bar / 2f))
+        x += bar + gap
+    }
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun QueueToggle(
+private fun QueueModeTile(
     icon: ImageVector,
     label: String,
     active: Boolean,
     state: String,
     role: Role,
     onClick: () -> Unit,
+    compact: Boolean,
     modifier: Modifier = Modifier,
 ) {
+    val accent = Liquid.colors.accent
+    val haptic = LocalHapticFeedback.current
     val interaction = remember { MutableInteractionSource() }
     val press = rememberGlassPress(interaction)
-    val fill by animateColorAsState(
-        if (active) Color.White.copy(alpha = 0.9f) else Color.White.copy(alpha = 0.08f),
-        animationSpec = tween(140),
-        label = "toggleFill",
-    )
-    val ink by animateColorAsState(
-        if (active) Color(0xFF1C1C1E) else NowPlayingInk.primary,
-        animationSpec = tween(140),
-        label = "toggleInk",
-    )
-    val shape = RoundedCornerShape(14.dp)
-    Row(
-        modifier = modifier
-            .height(48.dp)
-            .glassPressScale(press, -0.04f)
-            .clip(shape)
-            .background(fill, shape)
-            .combinedClickable(interactionSource = interaction, indication = null, onClick = onClick)
+    val on by animateFloatAsState(if (active) 1f else 0f, PlayerMotion.small(), label = "modeOn")
+    val tile = modifier
+        .heightIn(min = if (compact) QueueMetrics.target else QueueMetrics.modeTileHeight)
+        .glassPressScale(press, -0.04f)
+            .clip(TileShape)
+            .drawBehind {
+                drawRect(lerp(Color.White.copy(alpha = 0.07f), accent.copy(alpha = 0.24f), on))
+                if (on > 0.01f) {
+                    val stroke = 1.dp.toPx()
+                    drawRoundRect(
+                        accent.copy(alpha = 0.55f * on),
+                        topLeft = Offset(stroke / 2f, stroke / 2f),
+                        size = Size(size.width - stroke, size.height - stroke),
+                        cornerRadius = CornerRadius(18.dp.toPx() - stroke / 2f),
+                        style = Stroke(stroke),
+                    )
+                }
+            }
+            .combinedClickable(
+                interactionSource = interaction,
+                indication = null,
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                    onClick()
+                },
+            )
             .semantics(mergeDescendants = true) {
                 this.role = role
                 stateDescription = state
             }
-            .padding(horizontal = 8.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(icon, null, tint = ink, modifier = Modifier.size(18.dp))
-        Spacer(Modifier.width(8.dp))
-        Text(
-            label,
-            style = LiquidTypography.subheadline.copy(fontWeight = FontWeight.Medium),
-            color = ink,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
+    val iconTint = lerp(NowPlayingInk.secondary, accent, on)
+    val labelInk = lerp(NowPlayingInk.secondary, NowPlayingInk.primary, on)
+    if (compact) {
+        Row(
+            tile.padding(horizontal = PlayerSpace.s),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(icon, null, tint = iconTint, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(6.dp))
+            Text(label, style = PlayerType.label, color = labelInk, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+    } else {
+        Column(
+            tile.padding(horizontal = PlayerSpace.s, vertical = 10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Icon(icon, null, tint = iconTint, modifier = Modifier.size(22.dp))
+            Spacer(Modifier.height(PlayerSpace.xs))
+            Text(label, style = PlayerType.label, color = labelInk, maxLines = 2, textAlign = TextAlign.Center)
+        }
     }
 }
 
@@ -695,9 +838,9 @@ private fun QueueToggle(
 private fun UndoPill(text: String, backdrop: Backdrop?, onUndo: () -> Unit) {
     Row(
         modifier = Modifier
-            .padding(horizontal = 20.dp)
+            .padding(horizontal = PlayerSpace.xl)
             .liquidGlass(CircleShape, GlassKind.Regular, backdrop = backdrop)
-            .heightIn(min = 44.dp)
+            .heightIn(min = 48.dp)
             .padding(start = 18.dp, end = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -712,16 +855,15 @@ private fun UndoPill(text: String, backdrop: Backdrop?, onUndo: () -> Unit) {
         Text(
             stringResource(R.string.liquid_queue_undo),
             style = LiquidTypography.subheadline.copy(fontWeight = FontWeight.SemiBold, fontSize = 15.sp),
-            color = NowPlayingInk.primary,
+            color = Liquid.colors.accent,
             modifier = Modifier
                 .clip(CircleShape)
                 .combinedClickable(onClick = onUndo)
                 .semantics { role = Role.Button }
-                .padding(horizontal = 12.dp, vertical = 12.dp),
+                .padding(horizontal = 12.dp, vertical = 14.dp),
         )
     }
 }
-
 
 private fun Modifier.fadingEdges(top: Dp, bottom: Dp): Modifier = this
     .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }

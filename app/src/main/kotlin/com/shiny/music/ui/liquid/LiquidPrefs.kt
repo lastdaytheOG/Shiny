@@ -14,6 +14,8 @@ object LiquidPrefs {
     /** The system volume slider under the transport. */
     val ShowVolume = booleanPreferencesKey("liquidShowVolume")
 
+    val QueueReorderHintSeen = booleanPreferencesKey("liquidQueueReorderHintSeen")
+
     /** Lines fill word by word when the provider has word timings. */
     val WordByWord = booleanPreferencesKey("liquidWordByWord")
 
