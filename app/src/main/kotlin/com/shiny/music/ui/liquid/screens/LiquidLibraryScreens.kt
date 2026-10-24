@@ -13,11 +13,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
+import androidx.compose.material.icons.automirrored.rounded.TrendingUp
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Album
 import androidx.compose.material.icons.rounded.BarChart
@@ -28,14 +30,16 @@ import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material.icons.rounded.Mic
+import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.PhoneAndroid
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Shuffle
-import androidx.compose.material.icons.automirrored.rounded.TrendingUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -57,18 +61,31 @@ import androidx.navigation.NavController
 import com.shiny.music.R
 import com.shiny.music.constants.AlbumFilter
 import com.shiny.music.constants.AlbumFilterKey
+import com.shiny.music.constants.AlbumSortDescendingKey
+import com.shiny.music.constants.AlbumSortType
+import com.shiny.music.constants.AlbumSortTypeKey
 import com.shiny.music.constants.ArtistFilter
 import com.shiny.music.constants.ArtistFilterKey
+import com.shiny.music.constants.ArtistSortDescendingKey
+import com.shiny.music.constants.ArtistSortType
+import com.shiny.music.constants.ArtistSortTypeKey
+import com.shiny.music.constants.CombineDownloadsWithDeviceKey
 import com.shiny.music.constants.ListenTogetherInTopBarKey
+import com.shiny.music.constants.PlaylistSortDescendingKey
+import com.shiny.music.constants.PlaylistSortType
+import com.shiny.music.constants.PlaylistSortTypeKey
 import com.shiny.music.constants.SongFilter
 import com.shiny.music.constants.SongFilterKey
+import com.shiny.music.constants.SongSortDescendingKey
+import com.shiny.music.constants.SongSortType
+import com.shiny.music.constants.SongSortTypeKey
 import com.shiny.music.db.entities.Album
-import com.shiny.music.db.entities.Artist
 import com.shiny.music.db.entities.Playlist
 import com.shiny.music.ui.component.CreatePlaylistDialog
 import com.shiny.music.ui.liquid.Artwork
 import com.shiny.music.ui.liquid.ButtonTone
 import com.shiny.music.ui.liquid.EmptyState
+import com.shiny.music.ui.liquid.GlassIconButton
 import com.shiny.music.ui.liquid.Hairline
 import com.shiny.music.ui.liquid.LargeTitlePage
 import com.shiny.music.ui.liquid.Liquid
@@ -76,9 +93,15 @@ import com.shiny.music.ui.liquid.LiquidActions
 import com.shiny.music.ui.liquid.LiquidBackButton
 import com.shiny.music.ui.liquid.LiquidButton
 import com.shiny.music.ui.liquid.LiquidIcons
+import com.shiny.music.ui.liquid.LiquidPullDownMenu
+import com.shiny.music.ui.liquid.LiquidSearchField
 import com.shiny.music.ui.liquid.LiquidSegmentedControl
 import com.shiny.music.ui.liquid.LiquidTypography
 import com.shiny.music.ui.liquid.MediaTile
+import com.shiny.music.ui.liquid.MenuAction
+import com.shiny.music.ui.liquid.MenuDivider
+import com.shiny.music.ui.liquid.MenuEntry
+import com.shiny.music.ui.liquid.MenuHeader
 import com.shiny.music.ui.liquid.NavigationRow
 import com.shiny.music.ui.liquid.PageMargin
 import com.shiny.music.ui.liquid.SectionHeader
@@ -96,11 +119,6 @@ import com.shiny.music.viewmodels.LibraryPlaylistsViewModel
 import com.shiny.music.viewmodels.LibrarySongsViewModel
 import com.shiny.music.viewmodels.LiquidLibraryViewModel
 
-/**
- * Library as the Music app has it: a large title, the categories as a list of tinted
- * glyph rows, and the newest additions as a two-column grid of covers below. Every
- * category is its own page, pushed.
- */
 @Composable
 fun LiquidLibraryScreen(
     navController: NavController,
@@ -108,37 +126,32 @@ fun LiquidLibraryScreen(
 ) {
     val actions = rememberLiquidActions(navController) ?: return
     val recent by viewModel.recentlyAdded.collectAsState()
+    val counts by viewModel.counts.collectAsState()
     val (listenTogetherInTopBar) = rememberPreference(ListenTogetherInTopBarKey, defaultValue = true)
-
-    data class Category(val icon: ImageVector, val title: String, val route: String)
-
-    val categories = listOfNotNull(
-        Category(Icons.AutoMirrored.Rounded.QueueMusic, stringResource(R.string.playlists), "library/playlists"),
-        Category(Icons.Rounded.Mic, stringResource(R.string.artists), "library/artists"),
-        Category(Icons.Rounded.Album, stringResource(R.string.albums), "library/albums"),
-        Category(Icons.Rounded.MusicNote, stringResource(R.string.songs), "library/songs"),
-        Category(Icons.Rounded.Favorite, stringResource(R.string.liquid_liked_songs), "auto_playlist/liked"),
-        Category(Icons.Rounded.Download, stringResource(R.string.liquid_downloaded), "auto_playlist/downloaded"),
-        Category(Icons.Rounded.PhoneAndroid, stringResource(R.string.liquid_local_files), "local_songs"),
-        Category(Icons.Rounded.History, stringResource(R.string.liquid_history), "history"),
-        Category(Icons.Rounded.BarChart, stringResource(R.string.liquid_stats), "stats"),
-        if (listenTogetherInTopBar) Category(LiquidIcons.Waves, stringResource(R.string.listen_together), "together") else null,
-        Category(Icons.Rounded.GraphicEq, stringResource(R.string.recognition), "recognition"),
-    )
+    val combine by rememberPreference(CombineDownloadsWithDeviceKey, false)
+    val go: (String) -> () -> Unit = { route -> { navController.navigate(route) } }
 
     LargeTitlePage(
         title = stringResource(R.string.liquid_library),
         state = rememberListState(viewModel.scroll),
         scrollToTopSignal = navController,
     ) {
-        items(categories, key = { "cat_${it.route}" }) { c ->
-            NavigationRow(
-                icon = c.icon,
-                title = c.title,
-                onClick = { navController.navigate(c.route) },
-                showSeparator = c != categories.last(),
-            )
+        item(key = "playlists") { NavigationRow(Icons.AutoMirrored.Rounded.QueueMusic, stringResource(R.string.playlists), go("library/playlists"), detail = countText(counts.playlists)) }
+        item(key = "artists") { NavigationRow(Icons.Rounded.Mic, stringResource(R.string.artists), go("library/artists"), detail = countText(counts.artists)) }
+        item(key = "albums") { NavigationRow(Icons.Rounded.Album, stringResource(R.string.albums), go("library/albums"), detail = countText(counts.albums)) }
+        item(key = "songs") { NavigationRow(Icons.Rounded.MusicNote, stringResource(R.string.songs), go("library/songs"), detail = countText(counts.songs)) }
+        item(key = "liked") { NavigationRow(Icons.Rounded.Favorite, stringResource(R.string.liquid_liked_songs), go("auto_playlist/liked"), detail = countText(counts.liked)) }
+        if (!combine) {
+            item(key = "downloaded") { NavigationRow(Icons.Rounded.Download, stringResource(R.string.liquid_downloaded), go("auto_playlist/downloaded"), detail = countText(counts.downloaded)) }
         }
+        item(key = "device") { NavigationRow(Icons.Rounded.PhoneAndroid, stringResource(R.string.liquid_local_files), go("local_songs"), showSeparator = false) }
+        item(key = "gap") { Spacer(Modifier.height(28.dp)) }
+        item(key = "history") { NavigationRow(Icons.Rounded.History, stringResource(R.string.liquid_history), go("history")) }
+        item(key = "stats") { NavigationRow(Icons.Rounded.BarChart, stringResource(R.string.liquid_stats), go("stats")) }
+        if (listenTogetherInTopBar) {
+            item(key = "together") { NavigationRow(LiquidIcons.Waves, stringResource(R.string.listen_together), go("together")) }
+        }
+        item(key = "recognition") { NavigationRow(Icons.Rounded.GraphicEq, stringResource(R.string.recognition), go("recognition"), showSeparator = false) }
 
         if (recent.isNotEmpty()) {
             item(key = "recent_header") {
@@ -186,6 +199,35 @@ fun LiquidLibraryScreen(
     }
 }
 
+private fun countText(count: Int): String? = count.takeIf { it > 0 }?.toString()
+
+@Composable
+private fun <T : Enum<T>> SortMenuButton(
+    options: List<T>,
+    selected: T,
+    label: (T) -> String,
+    descending: Boolean,
+    onSelect: (T) -> Unit,
+    onDescending: (Boolean) -> Unit,
+) {
+    var open by remember { mutableStateOf(false) }
+    val entries: List<MenuEntry> = buildList {
+        add(MenuHeader(stringResource(R.string.liquid_sort_by)))
+        options.forEach { option -> add(MenuAction(label(option), checked = option == selected) { onSelect(option) }) }
+        add(MenuDivider)
+        add(MenuAction(stringResource(R.string.liquid_ascending), checked = !descending) { onDescending(false) })
+        add(MenuAction(stringResource(R.string.liquid_descending), checked = descending) { onDescending(true) })
+    }
+    Box {
+        GlassIconButton(
+            icon = Icons.Rounded.MoreHoriz,
+            onClick = { open = true },
+            contentDescription = stringResource(R.string.liquid_sort_options),
+        )
+        LiquidPullDownMenu(expanded = open, onDismiss = { open = false }, entries = entries)
+    }
+}
+
 @Composable
 fun LiquidLibraryPlaylistsScreen(
     navController: NavController,
@@ -197,7 +239,16 @@ fun LiquidLibraryPlaylistsScreen(
     val top by viewModel.topThumbnails.collectAsState()
     val downloaded by viewModel.downloadedThumbnails.collectAsState()
     val topValue by viewModel.topValue.collectAsState(initial = "50")
+    val combine by rememberPreference(CombineDownloadsWithDeviceKey, false)
+    var sort by rememberEnumPreference(PlaylistSortTypeKey, PlaylistSortType.CREATE_DATE)
+    var descending by rememberPreference(PlaylistSortDescendingKey, true)
     var showCreate by rememberSaveable { mutableStateOf(false) }
+    val sortLabels = mapOf(
+        PlaylistSortType.CREATE_DATE to stringResource(R.string.sort_by_create_date),
+        PlaylistSortType.NAME to stringResource(R.string.sort_by_name),
+        PlaylistSortType.SONG_COUNT to stringResource(R.string.sort_by_song_count),
+        PlaylistSortType.LAST_UPDATED to stringResource(R.string.sort_by_last_updated),
+    )
 
     if (showCreate) {
         CreatePlaylistDialog(onDismiss = { showCreate = false })
@@ -206,6 +257,9 @@ fun LiquidLibraryPlaylistsScreen(
     LargeTitlePage(
         title = stringResource(R.string.playlists),
         navigationButton = { LiquidBackButton(onClick = { navController.navigateUp() }) },
+        actions = {
+            SortMenuButton(PlaylistSortType.entries, sort, { sortLabels.getValue(it) }, descending, { sort = it }, { descending = it })
+        },
     ) {
         item(key = "new_playlist") {
             LibraryRow(
@@ -237,15 +291,18 @@ fun LiquidLibraryPlaylistsScreen(
                 leading = { CoverThumb(top, Icons.AutoMirrored.Rounded.TrendingUp) },
                 title = "${stringResource(R.string.my_top)} $topValue",
                 onClick = { navController.navigate("top_playlist/$topValue") },
+                showSeparator = !combine || playlists.isNotEmpty(),
             )
         }
-        item(key = "auto_downloaded") {
-            LibraryRow(
-                leading = { CoverThumb(downloaded, Icons.Rounded.Download) },
-                title = stringResource(R.string.liquid_downloaded),
-                onClick = { navController.navigate("auto_playlist/downloaded") },
-                showSeparator = playlists.isNotEmpty(),
-            )
+        if (!combine) {
+            item(key = "auto_downloaded") {
+                LibraryRow(
+                    leading = { CoverThumb(downloaded, Icons.Rounded.Download) },
+                    title = stringResource(R.string.liquid_downloaded),
+                    onClick = { navController.navigate("auto_playlist/downloaded") },
+                    showSeparator = playlists.isNotEmpty(),
+                )
+            }
         }
         items(playlists, key = { "pl_${it.id}" }) { playlist ->
             LibraryRow(
@@ -344,10 +401,21 @@ fun LiquidLibraryArtistsScreen(
     val actions = rememberLiquidActions(navController) ?: return
     val artists by viewModel.allArtists.collectAsState()
     var filter by rememberEnumPreference(ArtistFilterKey, ArtistFilter.LIKED)
+    var sort by rememberEnumPreference(ArtistSortTypeKey, ArtistSortType.CREATE_DATE)
+    var descending by rememberPreference(ArtistSortDescendingKey, true)
+    val sortLabels = mapOf(
+        ArtistSortType.CREATE_DATE to stringResource(R.string.sort_by_create_date),
+        ArtistSortType.NAME to stringResource(R.string.sort_by_name),
+        ArtistSortType.SONG_COUNT to stringResource(R.string.sort_by_song_count),
+        ArtistSortType.PLAY_TIME to stringResource(R.string.liquid_sort_most_played),
+    )
 
     LargeTitlePage(
         title = stringResource(R.string.artists),
         navigationButton = { LiquidBackButton(onClick = { navController.navigateUp() }) },
+        actions = {
+            SortMenuButton(ArtistSortType.entries, sort, { sortLabels.getValue(it) }, descending, { sort = it }, { descending = it })
+        },
     ) {
         item(key = "filter") {
             LiquidSegmentedControl(
@@ -375,6 +443,7 @@ fun LiquidLibraryArtistsScreen(
                     )
                 },
                 title = artist.title,
+                subtitle = artist.songCount.takeIf { it > 0 }?.let { stringResource(R.string.liquid_songs_count, it) },
                 chevron = true,
                 onClick = { navController.navigate("artist/${artist.id}") },
                 onLongClick = { actions.menu(artist) },
@@ -392,10 +461,24 @@ fun LiquidLibraryAlbumsScreen(
     val actions = rememberLiquidActions(navController) ?: return
     val albums by viewModel.allAlbums.collectAsState()
     var filter by rememberEnumPreference(AlbumFilterKey, AlbumFilter.LIKED)
+    var sort by rememberEnumPreference(AlbumSortTypeKey, AlbumSortType.CREATE_DATE)
+    var descending by rememberPreference(AlbumSortDescendingKey, true)
+    val sortLabels = mapOf(
+        AlbumSortType.CREATE_DATE to stringResource(R.string.sort_by_create_date),
+        AlbumSortType.NAME to stringResource(R.string.sort_by_name),
+        AlbumSortType.ARTIST to stringResource(R.string.sort_by_artist),
+        AlbumSortType.YEAR to stringResource(R.string.liquid_sort_year),
+        AlbumSortType.SONG_COUNT to stringResource(R.string.sort_by_song_count),
+        AlbumSortType.LENGTH to stringResource(R.string.liquid_sort_length),
+        AlbumSortType.PLAY_TIME to stringResource(R.string.liquid_sort_most_played),
+    )
 
     LargeTitlePage(
         title = stringResource(R.string.albums),
         navigationButton = { LiquidBackButton(onClick = { navController.navigateUp() }) },
+        actions = {
+            SortMenuButton(AlbumSortType.entries, sort, { sortLabels.getValue(it) }, descending, { sort = it }, { descending = it })
+        },
     ) {
         item(key = "filter") {
             LiquidSegmentedControl(
@@ -455,21 +538,57 @@ fun LiquidLibrarySongsScreen(
     val songs by viewModel.allSongs.collectAsState()
     val isPlaying by playerConnection.isPlaying.collectAsState()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
+    val combine by rememberPreference(CombineDownloadsWithDeviceKey, false)
     var filter by rememberEnumPreference(SongFilterKey, SongFilter.LIKED)
-    val filters = listOf(SongFilter.LIKED, SongFilter.LIBRARY, SongFilter.DOWNLOADED)
+    var sort by rememberEnumPreference(SongSortTypeKey, SongSortType.CREATE_DATE)
+    var descending by rememberPreference(SongSortDescendingKey, true)
+    var query by rememberSaveable { mutableStateOf("") }
+    val filters = if (combine) listOf(SongFilter.LIKED, SongFilter.LIBRARY) else listOf(SongFilter.LIKED, SongFilter.LIBRARY, SongFilter.DOWNLOADED)
+    LaunchedEffect(combine, filter) {
+        if (filter !in filters) filter = SongFilter.LIKED
+    }
     val title = stringResource(R.string.songs)
+    val sortLabels = mapOf(
+        SongSortType.CREATE_DATE to stringResource(R.string.sort_by_create_date),
+        SongSortType.NAME to stringResource(R.string.sort_by_name),
+        SongSortType.ARTIST to stringResource(R.string.sort_by_artist),
+        SongSortType.PLAY_TIME to stringResource(R.string.liquid_sort_most_played),
+    )
+    val shown = remember(songs, query) {
+        val q = query.trim()
+        if (q.isBlank()) songs else songs.filter { song ->
+            song.title.contains(q, true) ||
+                song.artists.any { it.name.contains(q, true) } ||
+                song.song.albumName.orEmpty().contains(q, true)
+        }
+    }
 
     LargeTitlePage(
         title = title,
         navigationButton = { LiquidBackButton(onClick = { navController.navigateUp() }) },
+        actions = {
+            SortMenuButton(SongSortType.entries, sort, { sortLabels.getValue(it) }, descending, { sort = it }, { descending = it })
+        },
     ) {
+        item(key = "search") {
+            LiquidSearchField(
+                value = query,
+                onValueChange = { query = it },
+                placeholder = stringResource(R.string.liquid_search_songs),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = PageMargin, vertical = 6.dp),
+            )
+        }
         item(key = "filter") {
             LiquidSegmentedControl(
-                items = listOf(
-                    stringResource(R.string.liked),
-                    stringResource(R.string.liquid_library),
-                    stringResource(R.string.liquid_downloaded),
-                ),
+                items = filters.map {
+                    when (it) {
+                        SongFilter.LIKED -> stringResource(R.string.liked)
+                        SongFilter.DOWNLOADED -> stringResource(R.string.liquid_downloaded)
+                        else -> stringResource(R.string.liquid_library)
+                    }
+                },
                 selectedIndex = filters.indexOf(filter).coerceAtLeast(0),
                 onSelect = { filter = filters[it] },
                 modifier = Modifier
@@ -488,26 +607,30 @@ fun LiquidLibrarySongsScreen(
                     text = stringResource(R.string.liquid_play),
                     icon = Icons.Rounded.PlayArrow,
                     tone = ButtonTone.Tinted,
-                    enabled = songs.isNotEmpty(),
-                    onClick = { actions.playSongs(title, songs) },
+                    enabled = shown.isNotEmpty(),
+                    onClick = { actions.playSongs(title, shown) },
                     modifier = Modifier.weight(1f),
                 )
                 LiquidButton(
                     text = stringResource(R.string.liquid_shuffle),
                     icon = Icons.Rounded.Shuffle,
                     tone = ButtonTone.Tinted,
-                    enabled = songs.isNotEmpty(),
-                    onClick = { actions.playSongs(title, songs, shuffle = true) },
+                    enabled = shown.isNotEmpty(),
+                    onClick = { actions.playSongs(title, shown, shuffle = true) },
                     modifier = Modifier.weight(1f),
                 )
             }
         }
-        if (songs.isEmpty()) {
+        if (shown.isEmpty()) {
             item(key = "empty") {
-                EmptyState(icon = Icons.Rounded.MusicNote, title = stringResource(R.string.liquid_library_empty_title))
+                if (query.isNotBlank()) {
+                    EmptyState(icon = Icons.Rounded.Search, title = stringResource(R.string.local_songs_no_matches_title))
+                } else {
+                    EmptyState(icon = Icons.Rounded.MusicNote, title = stringResource(R.string.liquid_library_empty_title))
+                }
             }
         }
-        items(songs, key = { "so_${it.id}" }) { song ->
+        items(shown, key = { "so_${it.id}" }) { song ->
             SongRow(
                 songId = song.id,
                 title = song.title,
@@ -518,7 +641,7 @@ fun LiquidLibrarySongsScreen(
                 explicit = song.song.explicit,
                 onClick = {
                     if (song.id == mediaMetadata?.id) playerConnection.togglePlayPause()
-                    else actions.playSongs(title, songs, startIndex = songs.indexOf(song))
+                    else actions.playSongs(title, shown, startIndex = shown.indexOf(song))
                 },
                 onLongClick = { actions.menu(song) },
                 onMore = { actions.menu(song) },
@@ -526,6 +649,3 @@ fun LiquidLibrarySongsScreen(
         }
     }
 }
-
-@Suppress("unused")
-private val keepArtist = Artist::class

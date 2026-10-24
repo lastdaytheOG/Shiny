@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.shiny.music.constants.AlbumSortType
 import com.shiny.music.constants.PlaylistSortType
 import com.shiny.music.db.MusicDatabase
+import com.shiny.music.db.entities.LibraryCounts
 import com.shiny.music.db.entities.LocalItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -23,6 +24,9 @@ class LiquidLibraryViewModel @Inject constructor(
     database: MusicDatabase,
 ) : ViewModel() {
     val scroll = ListScroll()
+
+    val counts: StateFlow<LibraryCounts> =
+        database.libraryCounts().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LibraryCounts())
 
     val recentlyAdded: StateFlow<List<LocalItem>> =
         combine(

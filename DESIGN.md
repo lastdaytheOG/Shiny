@@ -180,7 +180,12 @@ lens; *Frosted* blurs harder with a calmer lens and no dispersion. The finish co
   no panel), **Long Time No Hear**, **Albums You Started**, **Recently Added**, **Ready Offline**,
   **Your Week** and **Surprise Me**. Moods are compact neutral tiles with a colour rule,
   never flooded chips.
-- **New**, **Library** (category rows → pushed category pages, Recently Added grid),
+- **New**, **Library** (one flat list of accent-glyph category rows with grey counts, no
+  panels, a gap before History/Stats/Together/Recognition; pushed category pages with a ⋯
+  sort menu, Songs also searchable; Recently Added grid. Settings → Library & Home can fold
+  downloads into On This Device and hide Downloaded everywhere. A phone file's cover is its
+  own `…/audio/media/<id>/albumart`, read by `LocalArtworkFetcher`: Android's thumbnail, then
+  the embedded picture, then Apple's cover by title and artist when allowed),
   **Search** (field + Cancel, scope switch, history/suggestions, Browse Categories grid,
   results with scope capsules and a Top Result card), **History**, **Settings** (the index
   is set in panels with a muted colour plate behind each glyph, a rimmed "Search settings"

@@ -53,6 +53,15 @@
     <string name="liquid_queue_clear_upcoming">Clear upcoming songs</string>
     <string name="liquid_queue_reorder_hint">Touch and hold a song to reorder</string>
     <string name="liquid_queue_ends_here">The queue ends here</string>
+    <string name="liquid_library_section_music">Your Music</string>
+    <string name="liquid_library_section_saved">Saved</string>
+    <string name="liquid_library_section_listening">Listening</string>
+    <string name="liquid_library_section_more">More</string>
+    <string name="liquid_sort_most_played">Most played</string>
+    <string name="liquid_sort_year">Year</string>
+    <string name="liquid_sort_length">Length</string>
+    <string name="liquid_search_songs">Search Songs</string>
+    <string name="liquid_sort_options">Sort options</string>
     <string name="liquid_queue_autoplay_off">Autoplay is off, so no similar songs will be added.</string>
     <string name="liquid_queue_autoplay_turn_on">Turn on Autoplay</string>
     <string name="liquid_queue_now_playing">Now playing</string>

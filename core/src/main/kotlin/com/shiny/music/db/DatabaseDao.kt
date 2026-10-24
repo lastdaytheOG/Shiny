@@ -24,6 +24,7 @@ import com.shiny.music.constants.ArtistSortType
 import com.shiny.music.constants.PlaylistSortType
 import com.shiny.music.constants.SongSortType
 import com.shiny.music.db.entities.Album
+import com.shiny.music.db.entities.LibraryCounts
 import com.shiny.music.db.entities.AlbumArtistMap
 import com.shiny.music.db.entities.AlbumEntity
 import com.shiny.music.db.entities.AlbumWithSongs
@@ -182,6 +183,19 @@ interface DatabaseDao {
     @Transaction
     @Query("SELECT COUNT(1) FROM song WHERE liked")
     fun likedSongsCount(): Flow<Int>
+
+    @Query(
+        """
+        SELECT
+            (SELECT COUNT(1) FROM playlist WHERE bookmarkedAt IS NOT NULL) AS playlists,
+            (SELECT COUNT(1) FROM artist WHERE bookmarkedAt IS NOT NULL) AS artists,
+            (SELECT COUNT(1) FROM album WHERE bookmarkedAt IS NOT NULL) AS albums,
+            (SELECT COUNT(1) FROM song WHERE inLibrary IS NOT NULL) AS songs,
+            (SELECT COUNT(1) FROM song WHERE liked) AS liked,
+            (SELECT COUNT(1) FROM song WHERE isDownloaded = 1) AS downloaded
+        """
+    )
+    fun libraryCounts(): Flow<LibraryCounts>
 
     @Transaction
     @Query("SELECT song.* FROM song JOIN song_album_map ON song.id = song_album_map.songId WHERE song_album_map.albumId = :albumId")
