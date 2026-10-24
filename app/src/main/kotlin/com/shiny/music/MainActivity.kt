@@ -35,6 +35,8 @@ import android.view.WindowManager
 import android.view.animation.LinearInterpolator
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.EnterExitState
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
@@ -1092,6 +1094,7 @@ class MainActivity : ComponentActivity() {
                 }
                 val liquidSwipeIndex = liquidSwipeRoutes.indexOf(currentRoute).takeIf { it >= 0 }
                 val liquidSwipeState = rememberLiquidTabSwipeState(liquidSwipeRoutes.size)
+                val heldPagerIndex = remember { intArrayOf(0) }
 
                 // Everything floating at the bottom of the window: the system bar, the
                 // tab bar and the mini player accessory. Pages end their content above it.
@@ -1641,47 +1644,63 @@ class MainActivity : ComponentActivity() {
                                                 .fillMaxSize()
                                                 .layerBackdrop(appBackdrop)
                                                 .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection)
-                                            if (liquidSwipeIndex != null && !showRail) {
-                                                LiquidTopLevelPager(
-                                                    navController = navController,
-                                                    homeViewModel = homeViewModel,
-                                                    selectedIndex = liquidSwipeIndex,
-                                                    swipeState = liquidSwipeState,
-                                                    onPageCommitted = commitLiquidPage,
-                                                    modifier = rootModifier,
-                                                )
-                                            } else {
-                                                NavHost(
-                                                    navController = navController,
-                                                    startDestination = when (tabOpenedFromShortcut ?: defaultOpenTab) {
-                                                        NavigationTab.HOME -> Screens.Home
-                                                        NavigationTab.LIBRARY -> Screens.Library
-                                                        else -> Screens.Home
-                                                    }.route,
-
-                                                    // iOS navigation: switching tabs is a quick dissolve, drilling
-                                                    // in pushes the new page over the old one, which slides a third
-                                                    // of the way under it. Predictive back scrubs the same pair.
-                                                    enterTransition = {
-                                                        LiquidNav.enter(pageTransitions, isTabSwitch(initialState.destination.route, targetState.destination.route, navigationItems))
-                                                    },
-                                                    exitTransition = {
-                                                        LiquidNav.exit(pageTransitions, isTabSwitch(initialState.destination.route, targetState.destination.route, navigationItems))
-                                                    },
-                                                    popEnterTransition = {
-                                                        LiquidNav.popEnter(pageTransitions, isTabSwitch(initialState.destination.route, targetState.destination.route, navigationItems))
-                                                    },
-                                                    popExitTransition = {
-                                                        LiquidNav.popExit(pageTransitions, isTabSwitch(initialState.destination.route, targetState.destination.route, navigationItems))
-                                                    },
-                                                    modifier = rootModifier,
-                                                ) {
-                                                    navigationBuilder(
+                                            liquidSwipeIndex?.let { heldPagerIndex[0] = it }
+                                            AnimatedContent(
+                                                targetState = liquidSwipeIndex != null && !showRail,
+                                                transitionSpec = {
+                                                    if (targetState) {
+                                                        LiquidNav.returnToTabs(pageTransitions)
+                                                    } else {
+                                                        LiquidNav.leaveTabs(pageTransitions, currentRoute in navigationItemRoutes)
+                                                    }
+                                                },
+                                                modifier = rootModifier,
+                                                label = "tabsOrPages",
+                                            ) { pagerShown ->
+                                                if (pagerShown) {
+                                                    val returning = pageTransitions != PageTransitions.Instant &&
+                                                        transition.currentState != EnterExitState.Visible
+                                                    if (!returning) LiquidTopLevelPager(
                                                         navController = navController,
-                                                        scrollBehavior = topAppBarScrollBehavior,
-                                                        activity = this@MainActivity,
-                                                        snackbarHostState = snackbarHostState
+                                                        homeViewModel = homeViewModel,
+                                                        selectedIndex = liquidSwipeIndex ?: heldPagerIndex[0],
+                                                        swipeState = liquidSwipeState,
+                                                        onPageCommitted = commitLiquidPage,
+                                                        modifier = Modifier.fillMaxSize(),
                                                     )
+                                                } else {
+                                                    NavHost(
+                                                        navController = navController,
+                                                        startDestination = when (tabOpenedFromShortcut ?: defaultOpenTab) {
+                                                            NavigationTab.HOME -> Screens.Home
+                                                            NavigationTab.LIBRARY -> Screens.Library
+                                                            else -> Screens.Home
+                                                        }.route,
+
+                                                        // iOS navigation: switching tabs is a quick dissolve, drilling
+                                                        // in pushes the new page over the old one, which slides a third
+                                                        // of the way under it. Predictive back scrubs the same pair.
+                                                        enterTransition = {
+                                                            LiquidNav.enter(pageTransitions, isTabSwitch(initialState.destination.route, targetState.destination.route, navigationItems))
+                                                        },
+                                                        exitTransition = {
+                                                            LiquidNav.exit(pageTransitions, isTabSwitch(initialState.destination.route, targetState.destination.route, navigationItems))
+                                                        },
+                                                        popEnterTransition = {
+                                                            LiquidNav.popEnter(pageTransitions, isTabSwitch(initialState.destination.route, targetState.destination.route, navigationItems))
+                                                        },
+                                                        popExitTransition = {
+                                                            LiquidNav.popExit(pageTransitions, isTabSwitch(initialState.destination.route, targetState.destination.route, navigationItems))
+                                                        },
+                                                        modifier = Modifier.fillMaxSize(),
+                                                    ) {
+                                                        navigationBuilder(
+                                                            navController = navController,
+                                                            scrollBehavior = topAppBarScrollBehavior,
+                                                            activity = this@MainActivity,
+                                                            snackbarHostState = snackbarHostState
+                                                        )
+                                                    }
                                                 }
                                             }
                                         }

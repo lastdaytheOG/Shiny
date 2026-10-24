@@ -79,11 +79,21 @@ fun NavGraphBuilder.navigationBuilder(
     }
 
     screen(Screens.Explore.route) {
-        com.shiny.music.ui.liquid.screens.LiquidNewScreen(navController)
+        val owner = activity as androidx.activity.ComponentActivity
+        com.shiny.music.ui.liquid.screens.LiquidNewScreen(
+            navController = navController,
+            viewModel = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel(viewModelStoreOwner = owner),
+            discover = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel(viewModelStoreOwner = owner),
+        )
     }
 
     screen(Screens.Library.route) {
-        com.shiny.music.ui.liquid.screens.LiquidLibraryScreen(navController)
+        com.shiny.music.ui.liquid.screens.LiquidLibraryScreen(
+            navController = navController,
+            viewModel = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel(
+                viewModelStoreOwner = activity as androidx.activity.ComponentActivity,
+            ),
+        )
     }
 
     screen("library/playlists") {

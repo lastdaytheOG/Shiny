@@ -1,8 +1,10 @@
 package com.shiny.music.ui.liquid.shell
 
+import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -71,6 +73,23 @@ object LiquidNav {
         PageTransitions.Slide -> if (tabSwitch) tabExit else popExit
         PageTransitions.Fade -> if (tabSwitch) tabExit else fadeExit
         PageTransitions.Instant -> ExitTransition.None
+    }
+
+    fun leaveTabs(style: PageTransitions, tabSwitch: Boolean): ContentTransform =
+        ContentTransform(enter(style, tabSwitch), exit(style, tabSwitch), targetContentZIndex = 1f, sizeTransform = null)
+
+    fun returnToTabs(style: PageTransitions): ContentTransform {
+        val hold = when (style) {
+            PageTransitions.Slide -> PushMillis
+            PageTransitions.Fade -> FadeMillis
+            PageTransitions.Instant -> return ContentTransform(EnterTransition.None, ExitTransition.None, sizeTransform = null)
+        }
+        return ContentTransform(
+            fadeIn(snap(delayMillis = hold)),
+            fadeOut(snap(delayMillis = hold)),
+            targetContentZIndex = -1f,
+            sizeTransform = null,
+        )
     }
 }
 
