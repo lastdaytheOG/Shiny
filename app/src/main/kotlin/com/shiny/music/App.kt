@@ -310,6 +310,7 @@ class App : Application(), SingletonImageLoader.Factory {
             // Covers load over the app's shared HTTP threads and connections (see SharedHttp)
             // instead of a client and thread pool of Coil's own.
             components {
+                add(com.shiny.music.localmedia.LocalArtworkFetcher.Factory(this@App))
                 add(coil3.network.okhttp.OkHttpNetworkFetcherFactory(callFactory = { com.music.innertube.SharedHttp.client }))
             }
             crossfade(true)

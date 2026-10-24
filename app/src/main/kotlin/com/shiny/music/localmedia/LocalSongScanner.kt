@@ -526,9 +526,7 @@ constructor(
                         ?.let { LocalDateTime.ofInstant(Instant.ofEpochSecond(it), ZoneId.systemDefault()) },
                     sizeBytes = cursor.getLong(sizeIndex).coerceAtLeast(0L),
                     mimeType = mimeType,
-                    thumbnailUrl = mediaStoreAlbumId?.takeIf { it > 0 }?.let {
-                        ContentUris.withAppendedId(AlbumArtUri, it).toString()
-                    },
+                    thumbnailUrl = LocalArtworkFetcher.uriFor(contentUri),
                 )
             }
         }
@@ -693,9 +691,8 @@ constructor(
          * under the new rules. 2: music-only discovery (skipped sources, speech codecs,
          * MIDI and DRM files dropped from the supported formats).
          */
-        const val FilterVersion = 2
+        const val FilterVersion = 3
         val StorageRootRegex = Regex("^/?(storage/emulated/\\d+|storage/[^/]+|sdcard|mnt/sdcard)(/|$)", RegexOption.IGNORE_CASE)
-        val AlbumArtUri: Uri = Uri.parse("content://media/external/audio/albumart")
         val ArtistSeparators = Regex("[,;/&]")
         const val SqlBatchSize = 900
     }

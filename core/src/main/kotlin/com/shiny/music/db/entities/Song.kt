@@ -51,12 +51,7 @@ constructor(
         get() = song.title
     override val thumbnailUrl: String?
         get() {
-            if (song.isLocal) {
-                val mediaStoreAlbumId = song.albumId?.removePrefix("LOCAL_ALBUM_")?.toLongOrNull()
-                if (mediaStoreAlbumId != null && mediaStoreAlbumId > 0) {
-                    return "content://media/external/audio/albumart/$mediaStoreAlbumId"
-                }
-            }
+            if (song.isLocal && song.id.startsWith("content://media/")) return "${song.id}/albumart"
             return song.thumbnailUrl
         }
     val romanizeLyrics: Boolean
