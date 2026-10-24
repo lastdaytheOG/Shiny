@@ -84,6 +84,7 @@ import com.shiny.music.ui.liquid.PageMargin
 import com.shiny.music.ui.liquid.SectionHeader
 import com.shiny.music.ui.liquid.ShelfGap
 import com.shiny.music.ui.liquid.SongRow
+import com.shiny.music.ui.liquid.rememberListState
 import com.shiny.music.ui.liquid.rememberLiquidActions
 import com.shiny.music.ui.liquid.rememberRowHighlight
 import com.shiny.music.ui.utils.resize
@@ -127,6 +128,7 @@ fun LiquidLibraryScreen(
 
     LargeTitlePage(
         title = stringResource(R.string.liquid_library),
+        state = rememberListState(viewModel.scroll),
         scrollToTopSignal = navController,
     ) {
         items(categories, key = { "cat_${it.route}" }) { c ->

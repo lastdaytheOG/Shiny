@@ -22,6 +22,8 @@ import javax.inject.Inject
 class LiquidLibraryViewModel @Inject constructor(
     database: MusicDatabase,
 ) : ViewModel() {
+    val scroll = ListScroll()
+
     val recentlyAdded: StateFlow<List<LocalItem>> =
         combine(
             database.albums(AlbumSortType.CREATE_DATE, true),

@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyItemScope
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Person
@@ -98,6 +97,7 @@ import com.shiny.music.ui.liquid.home.ResumeCard
 import com.shiny.music.ui.liquid.home.RotationList
 import com.shiny.music.ui.liquid.home.StartHereBlock
 import com.shiny.music.ui.liquid.home.mixTitle
+import com.shiny.music.ui.liquid.rememberListState
 import com.shiny.music.ui.liquid.rememberLiquidActions
 import com.shiny.music.ui.liquid.statusBarHeight
 import com.shiny.music.ui.liquid.subtitleText
@@ -133,7 +133,7 @@ fun LiquidHomeScreen(
     val isLoggedIn = remember(cookie) { "SAPISID" in parseCookieString(cookie) }
     val reduceMotion = LocalShinyAppearance.current.transitions == PageTransitions.Instant
 
-    val listState = rememberLazyListState()
+    val listState = rememberListState(viewModel.scroll)
     val pullState = rememberPullToRefreshState()
 
     // "Pick up where you left off" is decided when Home comes on screen, not live: pausing
@@ -167,22 +167,23 @@ fun LiquidHomeScreen(
         com.shiny.music.playback.PlaybackPrewarm.likely(likelyIds)
     }
     val lifecycleOwner = LocalLifecycleOwner.current
+    val viewer = remember { Any() }
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_RESUME -> {
-                    viewModel.setVisible(true)
+                    viewModel.setVisible(viewer, true)
                     resumeVisible = playerConnection.mediaMetadata.value != null &&
                         !playerConnection.isPlaying.value
                 }
-                Lifecycle.Event.ON_PAUSE -> viewModel.setVisible(false)
+                Lifecycle.Event.ON_PAUSE -> viewModel.setVisible(viewer, false)
                 else -> Unit
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
-            viewModel.setVisible(false)
+            viewModel.setVisible(viewer, false)
         }
     }
     val resumePosition = remember(mediaMetadata?.id, resumeVisible) {

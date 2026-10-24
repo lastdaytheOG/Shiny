@@ -231,8 +231,13 @@ class HomeViewModel @Inject constructor(
         youtubeSignedIn = prefs?.youtubeSignedIn ?: false,
     )
 
-    fun setVisible(isVisible: Boolean) {
-        visible.value = isVisible
+    val scroll = ListScroll()
+
+    private val viewers = mutableSetOf<Any>()
+
+    fun setVisible(viewer: Any, isVisible: Boolean) {
+        if (isVisible) viewers += viewer else viewers -= viewer
+        visible.value = viewers.isNotEmpty()
     }
 
     /**
