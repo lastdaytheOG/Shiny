@@ -14,7 +14,7 @@ val hasGoogleServicesConfig = file("google-services.json").exists()
 // The commit this APK is built from, and whether the working tree held anything git does not
 // (edits or untracked files). Every APK names the exact source it corresponds to: GPL-3.0
 // section 6 asks for that source, and a build from a dirty tree matches no commit.
-// See LICENSE_COMPLIANCE.md, "Exact APK/source matching".
+// See docs/LICENSE_COMPLIANCE.md, "Exact APK/source matching".
 fun gitOutput(vararg args: String): String? = runCatching {
     providers.exec {
         commandLine("git", *args)
@@ -287,7 +287,7 @@ val copyLegalDocs = tasks.register<CopyLegalDocs>("copyLegalDocs") {
     licenses.set(rootProject.layout.projectDirectory.dir("licenses"))
 }
 
-// Run before an APK is published (LICENSE_COMPLIANCE.md, "Source-code distribution"): the build
+// Run before an APK is published (docs/LICENSE_COMPLIANCE.md, "Source-code distribution"): the build
 // must name a public source URL and come from a committed tree, so the published commit is exactly
 // the source of the APK. It checks only; it never builds, tags or publishes anything.
 tasks.register("verifyReleaseSource") {

@@ -140,7 +140,7 @@ F3:70:1C:9C:1C:87:54:F4:79:A9:D2:20:D6:E6:56:B1:12:1C:CA:43:B6:1C:7B:BE:FD:15:D8
 - **The `foss` build** contains no Firebase at all.
 - **Listen Together and Shiny Social** run on Shiny's own servers.
 
-Full details: [PRIVACY_POLICY.md](PRIVACY_POLICY.md).
+Full details: [PRIVACY_POLICY.md](docs/PRIVACY_POLICY.md).
 
 ---
 
@@ -160,7 +160,7 @@ echo "sdk.dir=/path/to/Android/sdk" > local.properties
 - **Variants:** `foss` or `gms`, crossed with an ABI (`universal`, `arm64`, `armeabi`, `x86_64`, …).
 - **`gms` builds** compile without a `google-services.json`, but Google sign-in and Firebase only work once you add your own.
 - **Release builds** need your own signing key.
-- The full setup, including Firebase and signing, is in **[SETUP.md](SETUP.md)**.
+- The full setup, including Firebase and signing, is in **[SETUP.md](docs/SETUP.md)**.
 
 ---
 
@@ -172,7 +172,7 @@ Shiny is built in the open and help is welcome, whether or not you write code.
 | :-- | :-- |
 | Report a bug | [Open a bug report](https://github.com/lastdaytheOG/Shiny/issues/new?template=bug_report.yml) |
 | Suggest an idea | [Open an idea](https://github.com/lastdaytheOG/Shiny/issues/new?template=feature_request.yml) |
-| Send a fix or a feature | [CONTRIBUTING.md](CONTRIBUTING.md), then [ARCHITECTURE.md](ARCHITECTURE.md) for how the code is laid out |
+| Send a fix or a feature | [CONTRIBUTING.md](CONTRIBUTING.md), then [ARCHITECTURE.md](docs/ARCHITECTURE.md) for how the code is laid out |
 | Report a security problem | Privately, as described in [SECURITY.md](SECURITY.md) |
 
 Everyone taking part is expected to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
@@ -225,7 +225,7 @@ Shiny is free software: you can redistribute it and modify it under the terms of
 - **Source code.** Each release is built from a tagged commit of this repository; the source of a release is this repository at that tag. In the app, *Settings → About → Source code* opens this repository.
 - **Notices.** [NOTICE](NOTICE) holds the copyright notice and the upstream projects.
 - **Third-party licences.** Bundled components keep their own licences, including Apache-2.0, MIT, ISC, LGPL, OFL and the Unlicense. They are listed in [`licenses/`](licenses), and the same files travel inside every APK.
-- **Compliance.** [LICENSE_COMPLIANCE.md](LICENSE_COMPLIANCE.md) describes how the licences are met and how a release's source is matched to its APK.
+- **Compliance.** [LICENSE_COMPLIANCE.md](docs/LICENSE_COMPLIANCE.md) describes how the licences are met and how a release's source is matched to its APK.
 
 <div align="center">
 <sub>Licensed under <a href="LICENSE">GPL-3.0</a></sub>

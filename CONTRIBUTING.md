@@ -13,7 +13,7 @@ For anything larger than a fix, open an issue first. Shiny has a deliberate desi
 
 ## Build it
 
-You need JDK 21 and the Android SDK. [SETUP.md](SETUP.md) has the full walkthrough; the short version is:
+You need JDK 21 and the Android SDK. [SETUP.md](docs/SETUP.md) has the full walkthrough; the short version is:
 
 ```bash
 git clone https://github.com/lastdaytheOG/Shiny.git
@@ -30,9 +30,9 @@ Three documents describe how Shiny is put together. Read the one that matches yo
 
 | If you're changing | Read |
 | :-- | :-- |
-| Anything on screen | [DESIGN.md](DESIGN.md): the Liquid design system, its components and its rules |
-| Project structure, modules, tests | [ARCHITECTURE.md](ARCHITECTURE.md) |
-| Code taken from another project, or a dependency | [LICENSE_COMPLIANCE.md](LICENSE_COMPLIANCE.md) |
+| Anything on screen | [DESIGN.md](docs/DESIGN.md): the Liquid design system, its components and its rules |
+| Project structure, modules, tests | [ARCHITECTURE.md](docs/ARCHITECTURE.md) |
+| Code taken from another project, or a dependency | [LICENSE_COMPLIANCE.md](docs/LICENSE_COMPLIANCE.md) |
 
 A few things reviewers will always check:
 

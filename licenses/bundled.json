@@ -1,5 +1,5 @@
 {
- "_comment": "Hand-maintained: everything the APK contains that does not come through Gradle, plus the projects Shiny's own GPL code derives from. Each fact was checked against the cited source on 2026-10-01; see LICENSE_COMPLIANCE.md. Paths in noticeFiles are relative to the repository root.",
+ "_comment": "Hand-maintained: everything the APK contains that does not come through Gradle, plus the projects Shiny's own GPL code derives from. Each fact was checked against the cited source on 2026-10-01; see docs/LICENSE_COMPLIANCE.md. Paths in noticeFiles are relative to the repository root.",
  "groups": [
   {
    "title": "Shiny",

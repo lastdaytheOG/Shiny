@@ -61,3 +61,6 @@ __pycache__/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Local working files (APKs, handoff notes, screenshots)
+_local/
