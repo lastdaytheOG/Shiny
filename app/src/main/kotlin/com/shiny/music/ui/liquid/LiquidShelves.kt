@@ -72,12 +72,13 @@ fun <T> SongGrid(
     modifier: Modifier = Modifier,
     rows: Int = 4,
     rowHeight: Dp = 62.dp,
+    peek: Dp = 30.dp,
     cell: @Composable (item: T, index: Int, modifier: Modifier, isLastInColumn: Boolean) -> Unit,
 ) {
     val state = rememberLazyGridState()
     val effectiveRows = rows.coerceAtMost(items.size).coerceAtLeast(1)
     BoxWithConstraints(modifier.fillMaxWidth()) {
-        val columnWidth = maxWidth - PageMargin - 30.dp
+        val columnWidth = maxWidth - PageMargin - peek
         LazyHorizontalGrid(
             rows = GridCells.Fixed(effectiveRows),
             state = state,
