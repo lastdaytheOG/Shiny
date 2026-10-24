@@ -162,8 +162,11 @@ class NewViewModel @Inject constructor(
         chartScopes = prefs?.chartScopes,
     )
 
-    fun setVisible(isVisible: Boolean) {
-        visible.value = isVisible
+    private val viewers = mutableSetOf<Any>()
+
+    fun setVisible(viewer: Any, isVisible: Boolean) {
+        if (isVisible) viewers += viewer else viewers -= viewer
+        visible.value = viewers.isNotEmpty()
     }
 
     /** Brings the stale parts of the shared block up to date; each is TTL-guarded. */

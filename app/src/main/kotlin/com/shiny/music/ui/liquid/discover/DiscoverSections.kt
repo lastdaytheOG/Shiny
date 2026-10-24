@@ -1,7 +1,9 @@
 package com.shiny.music.ui.liquid.discover
 
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.runtime.Composable
@@ -18,7 +20,7 @@ import com.shiny.music.discover.ChartRegions
 import com.shiny.music.ui.liquid.EmptyState
 import com.shiny.music.ui.liquid.LiquidActions
 import com.shiny.music.ui.liquid.Shelf
-import com.shiny.music.ui.liquid.SkeletonShelf
+import com.shiny.music.ui.liquid.ShelfGap
 import com.shiny.music.ui.liquid.SongGrid
 import com.shiny.music.viewmodels.DiscoverCharts
 import com.shiny.music.viewmodels.DiscoverViewModel
@@ -28,13 +30,31 @@ internal class DiscoverUi(
     val viewModel: DiscoverViewModel,
     val actions: LiquidActions,
     val reduceMotion: Boolean,
+    val listState: LazyListState? = null,
 ) {
     fun navigate(route: String) = actions.navController.navigate(route)
+
+    val heroDrift: (() -> Float)? = listState?.takeUnless { reduceMotion }?.let { state -> { heroDrift(state) } }
 }
 
 @Composable
-internal fun rememberDiscoverUi(viewModel: DiscoverViewModel, actions: LiquidActions, reduceMotion: Boolean): DiscoverUi =
-    remember(viewModel, actions, reduceMotion) { DiscoverUi(viewModel, actions, reduceMotion) }
+internal fun rememberDiscoverUi(
+    viewModel: DiscoverViewModel,
+    actions: LiquidActions,
+    reduceMotion: Boolean,
+    listState: LazyListState? = null,
+): DiscoverUi = remember(viewModel, actions, reduceMotion, listState) { DiscoverUi(viewModel, actions, reduceMotion, listState) }
+
+private const val HERO_KEY = "dc_hero"
+
+private fun heroDrift(state: LazyListState): Float {
+    val items = state.layoutInfo.visibleItemsInfo
+    for (i in items.indices) {
+        val item = items[i]
+        if (item.key == HERO_KEY) return (-item.offset.toFloat() / item.size).coerceIn(0f, 1f)
+    }
+    return if (state.firstVisibleItemIndex > 1) 1f else 0f
+}
 
 internal const val DISCOVER_SONGS = "discover/songs"
 internal const val DISCOVER_ALBUMS = "discover/albums"
@@ -54,7 +74,7 @@ internal fun LazyListScope.discoverCharts(
     val vm = ui.viewModel
     if (charts == null || (charts.isEmpty && charts.loading)) {
         item(key = "dc_hero_skeleton", contentType = "dc_hero_skeleton") { ChartHeroSkeleton() }
-        item(key = "dc_shelf_skeleton", contentType = "skeleton") { SkeletonShelf() }
+        item(key = "dc_grid_skeleton", contentType = "dc_grid_skeleton") { ChartGridSkeleton() }
         return
     }
     if (charts.isEmpty) {
@@ -77,12 +97,12 @@ internal fun LazyListScope.discoverCharts(
     val region = charts.region
     val songs = charts.songs.entries
     if (songs.isNotEmpty()) {
-        item(key = "dc_hero", contentType = "dc_hero") {
+        item(key = HERO_KEY, contentType = "dc_hero") {
             val title = stringResource(R.string.discover_chart_queue_title, ChartRegions.name(region.storefront))
             ChartHero(
                 songs = songs,
                 region = region,
-                reduceMotion = ui.reduceMotion,
+                drift = ui.heroDrift,
                 onPlay = { vm.playAll(songs, title, shuffle = false) },
                 onShuffle = { vm.playAll(songs, title, shuffle = true) },
                 onOpen = { ui.navigate(DISCOVER_SONGS) },
@@ -94,7 +114,7 @@ internal fun LazyListScope.discoverCharts(
         item(key = "dc_songs", contentType = "dc_song_grid") {
             val title = stringResource(R.string.discover_chart_queue_title, ChartRegions.name(region.storefront))
             val preview = remember(songs) { songs.take(20) }
-            SongGrid(items = preview, key = { it.id }, rows = 4) { entry, _, modifier, last ->
+            SongGrid(items = preview, key = { it.id }, rows = 4, rowHeight = ChartRowHeight, peek = 48.dp) { entry, _, modifier, last ->
                 val active = activeId != null && vm.playingId(entry) == activeId
                 ChartSongRow(
                     entry = entry,
@@ -105,7 +125,6 @@ internal fun LazyListScope.discoverCharts(
                     onMore = { vm.songMenu(entry) },
                     showSeparator = !last,
                     startPadding = 0.dp,
-                    artworkSize = 48.dp,
                     highestRank = preview.size,
                     modifier = modifier,
                 )
@@ -121,14 +140,18 @@ internal fun LazyListScope.discoverCharts(
         item(key = "dc_artists", contentType = "dc_artist_shelf") {
             val shown = remember(artists) { artists.take(ARTIST_SHELF).withIndex().toList() }
             LaunchedEffect(artists) { vm.ensureArtists(artists.take(ARTIST_SHELF)) }
-            Shelf(items = shown, key = { it.value.key }, gap = 14.dp) { (index, artist) ->
-                ArtistTile(
-                    artist = artist,
-                    rank = index + 1,
-                    photo = artistItems[artist.key],
-                    busy = busy == vm.artistKey(artist),
-                    onClick = { vm.openArtist(artist) },
-                )
+            BoxWithConstraints {
+                val width = peekWidth(maxWidth, visible = 3.4f, gap = 14.dp, min = 84.dp, max = 128.dp)
+                Shelf(items = shown, key = { it.value.key }, gap = 14.dp) { (index, artist) ->
+                    ArtistTile(
+                        artist = artist,
+                        rank = index + 1,
+                        photo = artistItems[artist.key],
+                        busy = busy == vm.artistKey(artist),
+                        onClick = { vm.openArtist(artist) },
+                        width = width,
+                    )
+                }
             }
         }
     }
@@ -139,12 +162,16 @@ internal fun LazyListScope.discoverCharts(
             DiscoverHeader(title = stringResource(R.string.discover_top_albums), onSeeAll = { ui.navigate(DISCOVER_ALBUMS) })
         }
         item(key = "dc_albums", contentType = "dc_album_shelf") {
-            Shelf(items = albums, key = { it.id }) { entry ->
-                AlbumTile(
-                    entry = entry,
-                    busy = busy == vm.albumKey(entry),
-                    onClick = { vm.openAlbum(entry) },
-                )
+            BoxWithConstraints {
+                val width = peekWidth(maxWidth, visible = 2.4f, gap = ShelfGap, min = 128.dp, max = 196.dp)
+                Shelf(items = albums, key = { it.id }) { entry ->
+                    AlbumTile(
+                        entry = entry,
+                        busy = busy == vm.albumKey(entry),
+                        onClick = { vm.openAlbum(entry) },
+                        width = width,
+                    )
+                }
             }
         }
     }
@@ -156,14 +183,18 @@ internal fun LazyListScope.discoverCharts(
         }
         item(key = "dc_videos", contentType = "dc_video_shelf") {
             val title = stringResource(R.string.discover_videos_queue_title, ChartRegions.name(region.storefront))
-            Shelf(items = videos, key = { it.id }) { entry ->
-                VideoCard(
-                    entry = entry,
-                    busy = busy == vm.songKey(entry),
-                    onPlay = { vm.playSong(entry, videos, title, ChartKind.Videos) },
-                    onMore = { vm.songMenu(entry, ChartKind.Videos) },
-                    modifier = Modifier.padding(bottom = 2.dp),
-                )
+            BoxWithConstraints {
+                val width = peekWidth(maxWidth, visible = 1.3f, gap = ShelfGap, min = 240.dp, max = 340.dp)
+                Shelf(items = videos, key = { it.id }) { entry ->
+                    VideoCard(
+                        entry = entry,
+                        busy = busy == vm.songKey(entry),
+                        onPlay = { vm.playSong(entry, videos, title, ChartKind.Videos) },
+                        onMore = { vm.songMenu(entry, ChartKind.Videos) },
+                        modifier = Modifier.padding(bottom = 2.dp),
+                        width = width,
+                    )
+                }
             }
         }
     }

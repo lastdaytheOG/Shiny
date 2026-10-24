@@ -114,8 +114,7 @@ class DiscoverViewModel @Inject constructor(
 
     val isRefreshing = MutableStateFlow(false)
 
-    var scrollIndex = 0
-    var scrollOffset = 0
+    val scroll = ListScroll()
 
     private val _busy = MutableStateFlow<String?>(null)
     val busy: StateFlow<String?> = _busy.asStateFlow()
@@ -154,8 +153,11 @@ class DiscoverViewModel @Inject constructor(
         }
     }
 
-    fun setVisible(isVisible: Boolean) {
-        visible.value = isVisible
+    private val viewers = mutableSetOf<Any>()
+
+    fun setVisible(viewer: Any, isVisible: Boolean) {
+        if (isVisible) viewers += viewer else viewers -= viewer
+        visible.value = viewers.isNotEmpty()
     }
 
     fun refresh() {

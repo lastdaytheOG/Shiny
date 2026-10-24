@@ -1,12 +1,10 @@
 package com.shiny.music.ui.liquid.screens
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,7 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.LibraryMusic
@@ -33,15 +30,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -67,17 +60,19 @@ import com.shiny.music.ui.liquid.LiquidTypography
 import com.shiny.music.ui.liquid.MediaTile
 import com.shiny.music.ui.liquid.MoreButton
 import com.shiny.music.ui.liquid.PageMargin
-import com.shiny.music.ui.liquid.SectionHeader
 import com.shiny.music.ui.liquid.Shelf
 import com.shiny.music.ui.liquid.ShelfGap
+import com.shiny.music.ui.liquid.artworkRadius
 import com.shiny.music.ui.liquid.SkeletonShelf
+import com.shiny.music.ui.liquid.rememberListState
 import com.shiny.music.ui.liquid.rememberLiquidActions
 import com.shiny.music.ui.liquid.rememberRowHighlight
 import com.shiny.music.ui.liquid.subtitleText
 import com.shiny.music.ui.theme.pressScale
 import com.shiny.music.ui.utils.resize
-import com.shiny.music.ui.liquid.appearance.LocalShinyAppearance
-import com.shiny.music.ui.liquid.appearance.PageTransitions
+import com.shiny.music.ui.liquid.appearance.rememberReducedMotion
+import com.shiny.music.ui.liquid.discover.DiscoverEyebrow
+import com.shiny.music.ui.liquid.discover.DiscoverHeader
 import com.shiny.music.ui.liquid.discover.DiscoverEvents
 import com.shiny.music.ui.liquid.discover.DiscoverLifecycle
 import com.shiny.music.ui.liquid.discover.DiscoverNoticeHost
@@ -85,14 +80,13 @@ import com.shiny.music.ui.liquid.discover.discoverCharts
 import com.shiny.music.ui.liquid.discover.rememberDiscoverUi
 import com.shiny.music.viewmodels.DiscoverViewModel
 import com.shiny.music.viewmodels.NewViewModel
-import java.util.Locale
 
 /**
  * Discover: Apple's public charts for the chosen region (see [discoverCharts]), then what is
  * worth hearing that the listener has not heard.
  *
  * Three distances, each with its own shape, so the page has a rhythm rather than five
- * carousels — one release given the whole width, the listener's own artists as a list to
+ * carousels — one release set apart, the listener's own artists as a list to
  * read down, adjacent artists as a shelf to browse, the rest as a grid to scan, and the
  * Apple Music's current releases as a small discovery shelf.
  *
@@ -118,33 +112,27 @@ fun LiquidNewScreen(
     val notice by discover.notice.collectAsState()
     val artistItems by discover.artistItems.collectAsState()
     val chartsRefreshing by discover.isRefreshing.collectAsState()
-    val reduceMotion = LocalShinyAppearance.current.transitions == PageTransitions.Instant
-    val ui = rememberDiscoverUi(discover, actions, reduceMotion)
+    val reduceMotion = rememberReducedMotion()
+    val listState = rememberListState(discover.scroll)
+    val pullState = rememberPullToRefreshState()
+    val ui = rememberDiscoverUi(discover, actions, reduceMotion, listState)
     DiscoverLifecycle(discover)
     DiscoverEvents(discover, actions)
 
-    val listState = rememberLazyListState(discover.scrollIndex, discover.scrollOffset)
-    val pullState = rememberPullToRefreshState()
-    DisposableEffect(listState, discover) {
-        onDispose {
-            discover.scrollIndex = listState.firstVisibleItemIndex
-            discover.scrollOffset = listState.firstVisibleItemScrollOffset
-        }
-    }
-
     val lifecycleOwner = LocalLifecycleOwner.current
+    val viewer = remember { Any() }
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
-                Lifecycle.Event.ON_RESUME -> viewModel.setVisible(true)
-                Lifecycle.Event.ON_PAUSE -> viewModel.setVisible(false)
+                Lifecycle.Event.ON_RESUME -> viewModel.setVisible(viewer, true)
+                Lifecycle.Event.ON_PAUSE -> viewModel.setVisible(viewer, false)
                 else -> Unit
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
-            viewModel.setVisible(false)
+            viewModel.setVisible(viewer, false)
         }
     }
 
@@ -218,14 +206,14 @@ private fun LazyListScope.newSection(
         is FeaturedSection -> item(key = section.key) { FeaturedRelease(section.release, actions) }
 
         is YourArtistsSection -> {
-            item(key = "${section.key}_h") { SectionHeader(title = stringResource(R.string.liquid_new_from_your_artists)) }
+            item(key = "${section.key}_h") { DiscoverHeader(title = stringResource(R.string.liquid_new_from_your_artists), onSeeAll = null) }
             items(section.releases, key = { "ya_${it.album.id}" }) { release ->
                 ReleaseRow(release, actions)
             }
         }
 
         is AdjacentSection -> {
-            item(key = "${section.key}_h") { SectionHeader(title = stringResource(R.string.liquid_new_adjacent)) }
+            item(key = "${section.key}_h") { DiscoverHeader(title = stringResource(R.string.liquid_new_adjacent), onSeeAll = null) }
             item(key = section.key) {
                 Shelf(items = section.releases, key = { "adj_${it.album.id}" }) { release ->
                     val reason = release.reason
@@ -247,9 +235,9 @@ private fun LazyListScope.newSection(
 
         is FreshSection -> {
             item(key = "${section.key}_h") {
-                SectionHeader(
+                DiscoverHeader(
                     title = stringResource(R.string.liquid_new_fresh),
-                    onClick = { navController.navigate("new_release") },
+                    onSeeAll = { navController.navigate("new_release") },
                 )
             }
             items(section.albums.chunked(2), key = { "fresh_${it.first().id}" }) { row ->
@@ -279,7 +267,7 @@ private fun LazyListScope.newSection(
 
         is AppleSection -> {
             item(key = "${section.key}_h") {
-                SectionHeader(title = stringResource(R.string.liquid_new_from_apple))
+                DiscoverHeader(title = stringResource(R.string.liquid_new_from_apple), onSeeAll = null)
             }
             item(key = section.key) {
                 Shelf(items = section.albums, key = { "apple_${it.id}" }) { album ->
@@ -297,13 +285,6 @@ private fun LazyListScope.newSection(
     }
 }
 
-/**
- * The one release Shiny is recommending, given the whole width.
- *
- * Full bleed and set over the artwork rather than beside it: this is the only block on the
- * page that breaks the keyline, which is what makes it read as a lead rather than as the
- * first item of a list.
- */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun FeaturedRelease(release: NewRelease, actions: LiquidActions) {
@@ -322,86 +303,66 @@ private fun FeaturedRelease(release: NewRelease, actions: LiquidActions) {
     Column(
         Modifier
             .fillMaxWidth()
-            .padding(bottom = 6.dp)
-            .pressScale(interaction, 0.985f)
-            .combinedClickable(
-                interactionSource = interaction,
-                indication = null,
-                onClick = { actions.open(album) },
-                onLongClick = { actions.menu(album) },
-            ),
+            .padding(top = 6.dp, bottom = 6.dp),
     ) {
-        Text(
-            text = eyebrow.uppercase(Locale.getDefault()),
-            style = LiquidTypography.caption2.copy(fontWeight = FontWeight.Bold, letterSpacing = 0.6.sp),
-            color = colors.accent,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(horizontal = PageMargin),
-        )
-        Spacer(Modifier.height(10.dp))
-        BoxWithConstraints(Modifier.fillMaxWidth()) {
-            Box(Modifier.fillMaxWidth().height(maxWidth * 0.78f)) {
-                Artwork(
-                    model = album.thumbnail.resize(1080, 1080),
-                    shape = RoundedCornerShape(0.dp),
-                    hairline = false,
-                    modifier = Modifier.fillMaxSize(),
+        DiscoverEyebrow(eyebrow, colors.secondaryLabel, Modifier.padding(horizontal = PageMargin))
+        Spacer(Modifier.height(12.dp))
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .pressScale(interaction, 0.985f)
+                .combinedClickable(
+                    interactionSource = interaction,
+                    indication = null,
+                    onClick = { actions.open(album) },
+                    onLongClick = { actions.menu(album) },
                 )
-                // The title sits in the lower third, so the scrim has to be real by the time
-                // it gets there — a pale sleeve is the case that decides this, not a dark one
-                // — while the top third stays clear and the cover is still the cover.
-                Box(
-                    Modifier
-                        .fillMaxSize()
-                        .background(
-                            Brush.verticalGradient(
-                                0.30f to Color.Transparent,
-                                0.62f to Color.Black.copy(alpha = 0.34f),
-                                0.82f to Color.Black.copy(alpha = 0.64f),
-                                1f to Color.Black.copy(alpha = 0.86f),
-                            )
-                        )
+                .padding(horizontal = PageMargin),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Artwork(
+                model = album.thumbnail.resize(544, 544),
+                shape = RoundedCornerShape(artworkRadius(FeaturedArtwork)),
+                modifier = Modifier.size(FeaturedArtwork),
+            )
+            Column(
+                Modifier
+                    .weight(1f)
+                    .padding(start = 16.dp),
+            ) {
+                Text(
+                    text = album.title,
+                    style = LiquidTypography.title3.copy(fontWeight = FontWeight.Bold),
+                    color = colors.label,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
                 )
-                Column(
-                    Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(horizontal = PageMargin)
-                        .padding(bottom = 18.dp),
-                ) {
+                album.subtitleText()?.takeIf { it.isNotBlank() }?.let {
+                    Spacer(Modifier.height(2.dp))
                     Text(
-                        text = album.title,
-                        style = LiquidTypography.title1.copy(fontWeight = FontWeight.Bold),
-                        color = Color.White,
-                        maxLines = 2,
+                        text = it,
+                        style = LiquidTypography.subheadline,
+                        color = colors.secondaryLabel,
+                        maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    album.subtitleText()?.takeIf { it.isNotBlank() }?.let {
-                        Text(
-                            text = it,
-                            style = LiquidTypography.subheadline,
-                            color = Color.White.copy(alpha = 0.78f),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
+                }
+                if (detail != null) {
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        text = detail,
+                        style = LiquidTypography.footnote,
+                        color = colors.tertiaryLabel,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                 }
             }
         }
-        if (detail != null) {
-            Text(
-                text = detail,
-                style = LiquidTypography.footnote,
-                color = colors.secondaryLabel,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier
-                    .padding(horizontal = PageMargin)
-                    .padding(top = 8.dp),
-            )
-        }
     }
 }
+
+private val FeaturedArtwork = 132.dp
 
 /**
  * A release by somebody the listener plays: a row, not a tile, because the reason it is here

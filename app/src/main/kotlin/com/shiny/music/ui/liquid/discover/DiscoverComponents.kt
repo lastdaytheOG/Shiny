@@ -48,6 +48,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.pluralStringResource
@@ -86,8 +87,6 @@ import com.shiny.music.ui.liquid.PanelShape
 import com.shiny.music.ui.liquid.SkeletonBlock
 import com.shiny.music.ui.liquid.SongRow
 import com.shiny.music.ui.liquid.artworkRadius
-import com.shiny.music.ui.liquid.home.CoverFan
-import com.shiny.music.ui.liquid.home.Eyebrow
 import com.shiny.music.ui.liquid.home.OnColorButton
 import com.shiny.music.ui.liquid.rememberArtworkTones
 import com.shiny.music.ui.liquid.rememberRowHighlight
@@ -98,29 +97,53 @@ import com.shiny.music.viewmodels.DiscoverNotice
 import com.shiny.music.viewmodels.DiscoverViewModel
 import java.net.URLEncoder
 
-internal val ChartRankStyle = LiquidTypography.title2.copy(fontSize = 21.sp, textAlign = TextAlign.End)
+internal val ChartRankStyle = LiquidTypography.headline.copy(fontSize = 17.sp, fontFeatureSettings = "tnum", textAlign = TextAlign.End)
+internal val DiscoverSectionStyle = LiquidTypography.title1.copy(fontSize = 26.sp, lineHeight = 31.sp)
+internal val DiscoverHeroStyle = LiquidTypography.title1.copy(fontSize = 30.sp, lineHeight = 35.sp)
+internal val DiscoverEyebrowStyle = LiquidTypography.caption1.copy(fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp)
+
+internal val ChartArtwork = 52.dp
+internal val ChartRowHeight = ChartArtwork + 14.dp
+private val HeroArtwork = 92.dp
+private val AlbumTitleStyle = LiquidTypography.subheadline.copy(lineHeight = 19.sp, fontWeight = FontWeight.Medium)
 
 internal fun rankWidth(highest: Int): Dp = when {
-    highest >= 100 -> 50.dp
-    highest >= 10 -> 40.dp
-    else -> 30.dp
+    highest >= 100 -> 42.dp
+    highest >= 10 -> 34.dp
+    else -> 26.dp
+}
+
+internal fun peekWidth(available: Dp, visible: Float, gap: Dp, min: Dp, max: Dp): Dp =
+    ((available - PageMargin - gap * kotlin.math.floor(visible)) / visible).coerceIn(min, max)
+
+@Composable
+internal fun DiscoverEyebrow(text: String, color: Color, modifier: Modifier = Modifier) {
+    Text(
+        text = text.uppercase(),
+        style = DiscoverEyebrowStyle,
+        color = color,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier = modifier,
+    )
 }
 
 @Composable
 internal fun DiscoverLifecycle(viewModel: DiscoverViewModel) {
     val owner = LocalLifecycleOwner.current
+    val viewer = remember { Any() }
     DisposableEffect(owner, viewModel) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
-                Lifecycle.Event.ON_RESUME -> viewModel.setVisible(true)
-                Lifecycle.Event.ON_PAUSE -> viewModel.setVisible(false)
+                Lifecycle.Event.ON_RESUME -> viewModel.setVisible(viewer, true)
+                Lifecycle.Event.ON_PAUSE -> viewModel.setVisible(viewer, false)
                 else -> Unit
             }
         }
         owner.lifecycle.addObserver(observer)
         onDispose {
             owner.lifecycle.removeObserver(observer)
-            viewModel.setVisible(false)
+            viewModel.setVisible(viewer, false)
         }
     }
 }
@@ -148,24 +171,33 @@ internal fun DiscoverHeader(
 ) {
     val colors = Liquid.colors
     val interaction = remember { MutableInteractionSource() }
+    val seeAll = stringResource(R.string.liquid_see_all)
     Row(
         modifier
             .fillMaxWidth()
-            .padding(start = PageMargin, end = PageMargin, top = 30.dp, bottom = 12.dp)
+            .padding(top = 22.dp, bottom = 4.dp)
             .then(
                 if (onSeeAll != null) {
                     Modifier
                         .pressScale(interaction, 0.985f)
-                        .combinedClickable(interactionSource = interaction, indication = null, role = Role.Button, onClick = onSeeAll)
+                        .combinedClickable(
+                            interactionSource = interaction,
+                            indication = null,
+                            role = Role.Button,
+                            onClickLabel = seeAll,
+                            onClick = onSeeAll,
+                        )
                 } else {
                     Modifier
                 }
-            ),
+            )
+            .heightIn(min = 48.dp)
+            .padding(horizontal = PageMargin),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = title,
-            style = LiquidTypography.title2,
+            style = DiscoverSectionStyle,
             color = colors.label,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -191,62 +223,100 @@ internal fun DiscoverHeader(
 internal fun ChartHero(
     songs: List<ChartEntry>,
     region: ChartRegion,
-    reduceMotion: Boolean,
+    drift: (() -> Float)?,
     onPlay: () -> Unit,
     onShuffle: () -> Unit,
     onOpen: () -> Unit,
 ) {
     val density = LocalDensity.current
-    val coverPx = with(density) { 84.dp.roundToPx() }
-    val covers = remember(songs, coverPx) { songs.take(3).map { AppleArtwork.square(it.artwork, coverPx * 2) } }
-    val tones = rememberArtworkTones(covers.firstOrNull(), NeutralTones)
+    val lead = songs.firstOrNull() ?: return
+    val coverPx = with(density) { HeroArtwork.roundToPx() }
+    val cover = remember(lead.artwork, coverPx) { AppleArtwork.square(lead.artwork, coverPx * 2) }
+    val tones = rememberArtworkTones(cover, NeutralTones)
+    val ground = lerp(tones.deep, Color.Black, 0.22f)
+    val driftPx = with(density) { 14.dp.toPx() }
     val country = ChartRegions.name(region.storefront)
-    val lead = songs.firstOrNull()
     val interaction = remember { MutableInteractionSource() }
     val eyebrow = stringResource(R.string.discover_hero_eyebrow, country)
     val title = stringResource(R.string.discover_hero_title, country)
+    val numberOne = stringResource(R.string.discover_number_one)
     Column(
         Modifier
             .padding(horizontal = PageMargin)
-            .padding(top = 6.dp)
+            .padding(top = 8.dp)
             .fillMaxWidth()
             .pressScale(interaction, 0.985f)
             .clip(PanelShape)
-            .background(Brush.linearGradient(listOf(lerp(tones.vivid, tones.deep, 0.58f), tones.deep)))
+            .background(ground)
             .combinedClickable(interactionSource = interaction, indication = null, role = Role.Button, onClick = onOpen)
-            .semantics { contentDescription = "$eyebrow. $title" }
-            .padding(start = 18.dp, end = 12.dp, top = 18.dp, bottom = 18.dp),
+            .semantics { contentDescription = "$eyebrow. $title. $numberOne: ${lead.title}, ${lead.artist}" }
+            .padding(20.dp),
     ) {
+        DiscoverEyebrow(eyebrow, Color.White.copy(alpha = 0.66f))
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = title,
+            style = DiscoverHeroStyle,
+            color = Color.White,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.semantics { heading() },
+        )
+        Spacer(Modifier.height(18.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Eyebrow(eyebrow, Color.White.copy(alpha = 0.74f))
-                Spacer(Modifier.height(6.dp))
+            Artwork(
+                model = cover,
+                shape = RoundedCornerShape(10.dp),
+                hairline = false,
+                modifier = Modifier
+                    .size(HeroArtwork)
+                    .graphicsLayer {
+                        val t = drift?.invoke() ?: 0f
+                        translationY = t * driftPx
+                        val s = 1f - t * 0.04f
+                        scaleX = s
+                        scaleY = s
+                    },
+            )
+            Column(
+                Modifier
+                    .weight(1f)
+                    .padding(start = 16.dp),
+            ) {
+                DiscoverEyebrow(numberOne, Color.White.copy(alpha = 0.66f))
+                Spacer(Modifier.height(4.dp))
                 Text(
-                    text = title,
-                    style = LiquidTypography.title1.copy(fontSize = 26.sp, lineHeight = 31.sp),
+                    text = lead.title,
+                    style = LiquidTypography.headline.copy(fontSize = 18.sp, lineHeight = 23.sp),
                     color = Color.White,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
-                if (lead != null) {
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        text = stringResource(R.string.discover_hero_lead, "${lead.title} · ${lead.artist}"),
-                        style = LiquidTypography.footnote,
-                        color = Color.White.copy(alpha = 0.80f),
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-            }
-            if (covers.isNotEmpty()) {
-                CoverFan(covers, size = 78.dp, reduceMotion = reduceMotion, modifier = Modifier.padding(start = 4.dp))
+                Text(
+                    text = lead.artist,
+                    style = LiquidTypography.subheadline,
+                    color = Color.White.copy(alpha = 0.72f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
         }
-        Spacer(Modifier.height(16.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            OnColorButton(stringResource(R.string.liquid_play), Icons.Rounded.PlayArrow, primary = true, onClick = onPlay)
-            OnColorButton(stringResource(R.string.liquid_shuffle), Icons.Rounded.Shuffle, primary = false, onClick = onShuffle)
+        Spacer(Modifier.height(20.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            OnColorButton(
+                stringResource(R.string.liquid_play),
+                Icons.Rounded.PlayArrow,
+                primary = true,
+                onClick = onPlay,
+                modifier = Modifier.weight(1f),
+            )
+            OnColorButton(
+                stringResource(R.string.liquid_shuffle),
+                Icons.Rounded.Shuffle,
+                primary = false,
+                onClick = onShuffle,
+                modifier = Modifier.weight(1f),
+            )
         }
     }
 }
@@ -256,11 +326,41 @@ internal fun ChartHeroSkeleton() {
     SkeletonBlock(
         Modifier
             .padding(horizontal = PageMargin)
-            .padding(top = 6.dp)
+            .padding(top = 8.dp)
             .fillMaxWidth()
-            .height(176.dp),
+            .height(296.dp),
         shape = PanelShape,
     )
+}
+
+@Composable
+internal fun ChartGridSkeleton() {
+    Column(Modifier.fillMaxWidth()) {
+        SkeletonBlock(
+            Modifier
+                .padding(start = PageMargin, top = 34.dp, bottom = 12.dp)
+                .size(width = 150.dp, height = 24.dp),
+            shape = RoundedCornerShape(6.dp),
+        )
+        repeat(4) {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .height(ChartRowHeight)
+                    .padding(horizontal = PageMargin),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Spacer(Modifier.width(rankWidth(20)))
+                SkeletonBlock(Modifier.size(ChartArtwork), RoundedCornerShape(artworkRadius(ChartArtwork)))
+                Spacer(Modifier.width(13.dp))
+                Column {
+                    SkeletonBlock(Modifier.size(width = 170.dp, height = 14.dp), RoundedCornerShape(4.dp))
+                    Spacer(Modifier.height(6.dp))
+                    SkeletonBlock(Modifier.size(width = 110.dp, height = 12.dp), RoundedCornerShape(4.dp))
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -274,7 +374,7 @@ internal fun ChartSongRow(
     modifier: Modifier = Modifier,
     showSeparator: Boolean = true,
     startPadding: Dp = PageMargin,
-    artworkSize: Dp = 52.dp,
+    artworkSize: Dp = ChartArtwork,
     highestRank: Int = entry.position,
 ) {
     val colors = Liquid.colors
@@ -292,7 +392,7 @@ internal fun ChartSongRow(
         explicit = entry.explicit,
         leadingRank = entry.position,
         leadingRankStyle = ChartRankStyle,
-        leadingRankColor = if (entry.position <= 3) colors.label else colors.secondaryLabel,
+        leadingRankColor = colors.secondaryLabel,
         leadingRankWidth = rankWidth(highestRank),
         showSeparator = showSeparator,
         startPadding = startPadding,
@@ -353,10 +453,10 @@ internal fun ArtistTile(
             ArtistPhoto(artist.name, photo?.thumbnail, px, Modifier.fillMaxSize())
             if (busy) BusyVeil(CircleShape)
         }
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(10.dp))
         Text(
             text = artist.name,
-            style = LiquidTypography.footnote.copy(fontWeight = FontWeight.SemiBold),
+            style = LiquidTypography.subheadline.copy(fontSize = 14.sp, lineHeight = 19.sp, fontWeight = FontWeight.SemiBold),
             color = colors.label,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -364,7 +464,7 @@ internal fun ArtistTile(
         )
         Text(
             text = "$rank · " + pluralStringResource(R.plurals.discover_artist_songs_short, artist.songCount, artist.songCount),
-            style = LiquidTypography.caption1,
+            style = LiquidTypography.footnote,
             color = colors.secondaryLabel,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -413,7 +513,7 @@ internal fun AlbumTile(
         Row(verticalAlignment = Alignment.Top) {
             Text(
                 text = entry.position.toString(),
-                style = LiquidTypography.footnote.copy(fontWeight = FontWeight.Bold),
+                style = AlbumTitleStyle.copy(fontFeatureSettings = "tnum"),
                 color = colors.tertiaryLabel,
                 maxLines = 1,
                 modifier = Modifier.padding(end = 6.dp),
@@ -421,14 +521,14 @@ internal fun AlbumTile(
             Column(Modifier.weight(1f)) {
                 Text(
                     text = entry.title,
-                    style = LiquidTypography.footnote.copy(fontWeight = FontWeight.Medium),
+                    style = AlbumTitleStyle,
                     color = colors.label,
-                    maxLines = 2,
+                    maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
                     text = entry.artist,
-                    style = LiquidTypography.footnote,
+                    style = LiquidTypography.subheadline.copy(fontSize = 14.sp, lineHeight = 18.sp),
                     color = colors.secondaryLabel,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -483,7 +583,7 @@ internal fun VideoCard(
                 .align(Alignment.BottomStart)
                 .padding(horizontal = 14.dp, vertical = 12.dp),
         ) {
-            Eyebrow("No. ${entry.position}", Color.White.copy(alpha = 0.72f))
+            DiscoverEyebrow("No. ${entry.position}", Color.White.copy(alpha = 0.72f))
             Spacer(Modifier.height(2.dp))
             Text(
                 text = entry.title,

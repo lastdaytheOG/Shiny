@@ -66,8 +66,8 @@ import com.shiny.music.ui.liquid.LiquidTypography
 import com.shiny.music.ui.liquid.PageMargin
 import com.shiny.music.ui.liquid.ShelfGap
 import com.shiny.music.ui.liquid.SkeletonBlock
-import com.shiny.music.ui.liquid.appearance.LocalShinyAppearance
-import com.shiny.music.ui.liquid.appearance.PageTransitions
+import com.shiny.music.ui.liquid.artworkRadius
+import com.shiny.music.ui.liquid.appearance.rememberReducedMotion
 import com.shiny.music.ui.liquid.rememberLiquidActions
 import com.shiny.music.ui.liquid.rememberRowHighlight
 import com.shiny.music.ui.liquid.screens.RefreshIndicator
@@ -84,7 +84,7 @@ private fun DiscoverCollectionPage(
     content: LazyListScope.(DiscoverCharts, DiscoverUi) -> Unit,
 ) {
     val actions = rememberLiquidActions(navController) ?: return
-    val reduceMotion = LocalShinyAppearance.current.transitions == PageTransitions.Instant
+    val reduceMotion = rememberReducedMotion()
     val ui = rememberDiscoverUi(viewModel, actions, reduceMotion)
     val charts by viewModel.charts.collectAsState()
     val notice by viewModel.notice.collectAsState()
@@ -137,7 +137,7 @@ private fun RowSkeleton() {
             .padding(horizontal = PageMargin, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        SkeletonBlock(Modifier.size(52.dp), RoundedCornerShape(6.dp))
+        SkeletonBlock(Modifier.size(ChartArtwork), RoundedCornerShape(artworkRadius(ChartArtwork)))
         Spacer(Modifier.width(13.dp))
         Column {
             SkeletonBlock(Modifier.size(width = 180.dp, height = 13.dp), RoundedCornerShape(4.dp))
@@ -299,7 +299,7 @@ private fun ArtistRow(
             Text(
                 text = rank.toString(),
                 style = ChartRankStyle,
-                color = if (rank <= 3) colors.label else colors.secondaryLabel,
+                color = colors.secondaryLabel,
                 maxLines = 1,
                 modifier = Modifier
                     .width(rankColumn)
@@ -412,7 +412,7 @@ private fun VideoRow(
             Text(
                 text = entry.position.toString(),
                 style = ChartRankStyle,
-                color = if (entry.position <= 3) colors.label else colors.secondaryLabel,
+                color = colors.secondaryLabel,
                 maxLines = 1,
                 modifier = Modifier
                     .width(rankColumn)

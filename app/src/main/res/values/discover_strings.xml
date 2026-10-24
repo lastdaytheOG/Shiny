@@ -5,6 +5,7 @@
     <string name="discover_hero_eyebrow">Top 100 · %1$s</string>
     <string name="discover_hero_title">Most Played in %1$s</string>
     <string name="discover_hero_lead">No. 1 · %1$s</string>
+    <string name="discover_number_one">No. 1</string>
     <string name="discover_chart_queue_title">Top 100: %1$s</string>
     <string name="discover_videos_queue_title">Music Videos: %1$s</string>
 
