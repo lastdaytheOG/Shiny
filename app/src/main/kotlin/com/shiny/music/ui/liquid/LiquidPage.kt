@@ -26,9 +26,12 @@ import androidx.compose.material.icons.rounded.ChevronLeft
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -41,6 +44,8 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.shiny.music.ui.component.backdrop.Backdrop
 import com.shiny.music.ui.component.backdrop.backdrops.layerBackdrop
+import com.shiny.music.viewmodels.ListScroll
+import kotlinx.coroutines.launch
 
 /** Height of the navigation bar row that floats under the status bar. */
 val NavBarHeight = 52.dp
@@ -235,19 +240,35 @@ fun BoxScope.DetailTopBar(
     }
 }
 
+@Composable
+fun rememberListState(scroll: ListScroll): LazyListState {
+    val state = rememberLazyListState(scroll.index, scroll.offset)
+    DisposableEffect(state, scroll) {
+        onDispose {
+            scroll.index = state.firstVisibleItemIndex
+            scroll.offset = state.firstVisibleItemScrollOffset
+        }
+    }
+    return state
+}
+
 /** Scrolls [state] to the top when the current tab is re-selected in the tab bar. */
 @Composable
 fun ScrollToTopEffect(navController: NavController, state: LazyListState) {
     val entry by navController.currentBackStackEntryAsState()
     val flow = entry?.savedStateHandle?.getStateFlow("scrollToTop", false)
     val signal = flow?.collectAsState()
-    LaunchedEffect(signal?.value) {
-        if (signal?.value == true) {
-            state.animateScrollToItem(0)
+    val current = LocalPageIsCurrent.current
+    val scope = rememberCoroutineScope()
+    LaunchedEffect(signal?.value, current) {
+        if (signal?.value == true && current) {
             entry?.savedStateHandle?.set("scrollToTop", false)
+            scope.launch { state.animateScrollToItem(0) }
         }
     }
 }
+
+val LocalPageIsCurrent = compositionLocalOf { true }
 
 /** A glass back button for pages that draw their own bars. */
 @Composable

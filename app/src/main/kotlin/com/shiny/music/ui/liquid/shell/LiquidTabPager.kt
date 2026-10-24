@@ -7,6 +7,7 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
@@ -26,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
 import com.shiny.music.viewmodels.HomeViewModel
+import com.shiny.music.ui.liquid.LocalPageIsCurrent
 import com.shiny.music.ui.liquid.appearance.LocalShinyAppearance
 import com.shiny.music.ui.liquid.appearance.PageTransitions
 import com.shiny.music.ui.liquid.screens.LiquidHomeScreen
@@ -205,10 +207,12 @@ fun LiquidTopLevelPager(
                             translationX = (index - swipeState.progress) * size.width
                         },
                 ) {
-                    when (index) {
-                        0 -> LiquidHomeScreen(navController, homeViewModel)
-                        1 -> LiquidNewScreen(navController)
-                        2 -> LiquidLibraryScreen(navController)
+                    CompositionLocalProvider(LocalPageIsCurrent provides (index == selectedIndex)) {
+                        when (index) {
+                            0 -> LiquidHomeScreen(navController, homeViewModel)
+                            1 -> LiquidNewScreen(navController)
+                            2 -> LiquidLibraryScreen(navController)
+                        }
                     }
                 }
             }
