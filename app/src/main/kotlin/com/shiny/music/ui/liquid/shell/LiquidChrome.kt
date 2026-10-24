@@ -55,6 +55,10 @@ import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
@@ -62,6 +66,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 import com.shiny.music.LocalPlayerConnection
+import com.shiny.music.R
 import com.shiny.music.ui.component.backdrop.Backdrop
 import com.shiny.music.ui.liquid.Artwork
 import com.shiny.music.ui.liquid.GlassKind
@@ -368,8 +373,15 @@ private fun TabCapsule(
                     }
                 }
                 if (indicatorDragStart != null && indicatorDragDelta != null && indicatorDragEnd != null) {
+                    val selectedLabel = tabs.getOrNull(selectedIndex)?.label
                     Box(
                         Modifier
+                            .semantics {
+                                if (selectedLabel != null) {
+                                    contentDescription = selectedLabel
+                                    selected = true
+                                }
+                            }
                             .combinedClickable(
                                 interactionSource = indicatorInteraction,
                                 indication = null,
@@ -456,7 +468,7 @@ private fun SearchOrb(
     ) {
         Icon(
             Icons.Rounded.Search,
-            contentDescription = null,
+            contentDescription = stringResource(R.string.search),
             tint = if (selected) colors.accent else colors.label,
             modifier = Modifier.size(27.dp),
         )
@@ -561,6 +573,7 @@ fun MiniPlayerAccessory(
             }
             ChromeGlyphButton(
                 icon = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                label = stringResource(if (isPlaying) R.string.pause else R.string.play),
                 onClick = { playerConnection.togglePlayPause() },
                 size = 30.dp,
             )
@@ -572,6 +585,7 @@ fun MiniPlayerAccessory(
             ) {
                 ChromeGlyphButton(
                     icon = Icons.Rounded.FastForward,
+                    label = stringResource(R.string.next),
                     onClick = { playerConnection.seekToNext() },
                     size = 28.dp,
                     enabled = canSkipNext,
@@ -585,6 +599,7 @@ fun MiniPlayerAccessory(
 @Composable
 private fun ChromeGlyphButton(
     icon: ImageVector,
+    label: String,
     onClick: () -> Unit,
     size: Dp,
     enabled: Boolean = true,
@@ -593,12 +608,12 @@ private fun ChromeGlyphButton(
     val interaction = remember { MutableInteractionSource() }
     Box(
         modifier = Modifier
-            .size(44.dp)
+            .size(48.dp)
             .pressScale(interaction, 0.8f)
             .combinedClickable(interactionSource = interaction, indication = null, enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, null, tint = if (enabled) tint else tint.copy(alpha = 0.3f), modifier = Modifier.size(size))
+        Icon(icon, label, tint = if (enabled) tint else tint.copy(alpha = 0.3f), modifier = Modifier.size(size))
     }
 }
 
