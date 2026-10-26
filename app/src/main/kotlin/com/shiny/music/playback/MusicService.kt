@@ -86,6 +86,7 @@ import com.shiny.music.constants.CrossfadeGaplessKey
 import com.shiny.music.constants.DisableLoadMoreWhenRepeatAllKey
 import android.os.Handler
 import android.os.Looper
+import android.os.PowerManager
 import android.widget.Toast
 import com.shiny.music.constants.DiscordActivityNameKey
 import com.shiny.music.constants.DiscordActivityTypeKey
@@ -1198,20 +1199,14 @@ class MusicService :
 
         
         scope.launch {
+            var savedPosition = -1L
             while (isActive) {
                 delay(30.seconds)
-                if (cachedPersistentQueue) {
+                if (!cachedPersistentQueue) continue
+                val position = player.currentPosition
+                if (player.isPlaying || position != savedPosition) {
                     saveQueueToDisk()
-                }
-            }
-        }
-
-        
-        scope.launch {
-            while (isActive) {
-                delay(10.seconds)
-                if (cachedPersistentQueue && player.isPlaying) {
-                    saveQueueToDisk()
+                    savedPosition = position
                 }
             }
         }
@@ -4158,7 +4153,7 @@ class MusicService :
     }
 
     
-    private fun updateWidgetUI(isPlaying: Boolean) {
+    private fun updateWidgetUI(isPlaying: Boolean, progressOnly: Boolean = false) {
         scope.launch {
             try {
                 val songData = currentSong.value
@@ -4174,7 +4169,8 @@ class MusicService :
                     isPlaying = isPlaying,
                     isLiked = isLiked,
                     duration = if (player.duration != C.TIME_UNSET) player.duration else 0,
-                    currentPosition = player.currentPosition
+                    currentPosition = player.currentPosition,
+                    progressOnly = progressOnly,
                 )
             } catch (e: Exception) {
                 
@@ -4186,12 +4182,11 @@ class MusicService :
 
     private fun startWidgetUpdates() {
         widgetUpdateJob?.cancel()
+        val power = getSystemService(Context.POWER_SERVICE) as PowerManager
         widgetUpdateJob = scope.launch {
             while (isActive) {
-                if (player.isPlaying) {
-                    updateWidgetUI(true)
-                }
-                delay(200)
+                delay(1_000)
+                if (player.isPlaying && power.isInteractive) updateWidgetUI(true, progressOnly = true)
             }
         }
     }

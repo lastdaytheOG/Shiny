@@ -56,9 +56,13 @@ class ShinyWidgetManager @Inject constructor(
         isPlaying: Boolean,
         isLiked: Boolean,
         duration: Long = 0,
-        currentPosition: Long = 0
+        currentPosition: Long = 0,
+        progressOnly: Boolean = false,
     ) {
         val appWidgetManager = AppWidgetManager.getInstance(context)
+        val widgetIds = appWidgetManager.getAppWidgetIds(ComponentName(context, MusicWidgetReceiver::class.java))
+        val turntableWidgetIds = if (progressOnly) IntArray(0)
+            else appWidgetManager.getAppWidgetIds(ComponentName(context, TurntableWidgetReceiver::class.java))
 
         // Use cached album art if URI hasn't changed, otherwise load new one
         val albumArt: Bitmap?
@@ -67,6 +71,9 @@ class ShinyWidgetManager @Inject constructor(
         if (artworkUri != null && artworkUri == cachedArtworkUri && cachedAlbumArt != null) {
             albumArt = cachedAlbumArt
             circularAlbumArt = cachedCircularAlbumArt
+        } else if (widgetIds.isEmpty() && turntableWidgetIds.isEmpty()) {
+            albumArt = null
+            circularAlbumArt = null
         } else {
             albumArt = artworkUri?.let { loadAlbumArt(it, 300) }
             circularAlbumArt = albumArt?.let { getCircularBitmap(it) }
@@ -75,8 +82,6 @@ class ShinyWidgetManager @Inject constructor(
             cachedCircularAlbumArt = circularAlbumArt
         }
 
-        val componentName = ComponentName(context, MusicWidgetReceiver::class.java)
-        val widgetIds = appWidgetManager.getAppWidgetIds(componentName)
         if (widgetIds.isNotEmpty()) {
             widgetIds.forEach { widgetId ->
                 val options = appWidgetManager.getAppWidgetOptions(widgetId)
@@ -94,8 +99,6 @@ class ShinyWidgetManager @Inject constructor(
             }
         }
 
-        val turntableComponentName = ComponentName(context, TurntableWidgetReceiver::class.java)
-        val turntableWidgetIds = appWidgetManager.getAppWidgetIds(turntableComponentName)
         if (turntableWidgetIds.isNotEmpty()) {
             val turntableViews = createTurntableRemoteViews(
                 circularAlbumArt,
@@ -115,6 +118,7 @@ class ShinyWidgetManager @Inject constructor(
             isLiked = isLiked,
             duration = duration,
             currentPosition = currentPosition,
+            progressOnly = progressOnly,
         )
     }
 

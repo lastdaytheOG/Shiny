@@ -59,6 +59,7 @@ class PlaylistWidgetManager @Inject constructor(
         get() = context.imageLoader
     @Volatile
     private var cachedArtworkUri: String? = null
+    private var quickPicksCache: List<QuickPick>? = null
     @Volatile
     private var cachedAlbumArt: Bitmap? = null
     @Volatile
@@ -138,6 +139,7 @@ class PlaylistWidgetManager @Inject constructor(
         isLiked: Boolean,
         duration: Long = 0,
         currentPosition: Long = 0,
+        progressOnly: Boolean = false,
     ) {
         lastWidgetState = WidgetState(
             title = title,
@@ -155,7 +157,7 @@ class PlaylistWidgetManager @Inject constructor(
         if (widgetIds.isEmpty()) return
 
         val albumArt = getCachedAlbumArt(artworkUri)
-        val quickPicks = buildQuickPicks()
+        val quickPicks = quickPicksCache?.takeIf { progressOnly } ?: buildQuickPicks().also { quickPicksCache = it }
 
         widgetIds.forEach { widgetId ->
             val options = appWidgetManager.getAppWidgetOptions(widgetId)
