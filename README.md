@@ -36,7 +36,7 @@ No ads, no subscription, and no account needed.</p>
 <table align="center">
   <tr>
     <td align="center"><img src="assets/screenshots/home.webp" width="160" alt="Home"/><br/><sub>Home</sub></td>
-    <td align="center"><img src="assets/screenshots/new.webp" width="160" alt="New"/><br/><sub>New</sub></td>
+    <td align="center"><img src="assets/screenshots/discover.webp" width="160" alt="Discover"/><br/><sub>Discover</sub></td>
     <td align="center"><img src="assets/screenshots/now-playing.webp" width="160" alt="Now Playing"/><br/><sub>Now Playing</sub></td>
     <td align="center"><img src="assets/screenshots/queue.webp" width="160" alt="Up Next"/><br/><sub>Up Next</sub></td>
     <td align="center"><img src="assets/screenshots/together.webp" width="160" alt="Listen Together"/><br/><sub>Listen Together</sub></td>
