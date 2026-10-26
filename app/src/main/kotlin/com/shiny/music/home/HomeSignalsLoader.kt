@@ -32,7 +32,7 @@ class HomeSignalsLoader(private val database: MusicDatabase) {
         val daypartFrom = now - HomeRanking.DAYPART_WINDOW_DAYS * HOME_DAY_MS
         val hours = ctx.daypart.hours
 
-        val counts = database.homeLibraryCounts()
+        val counts = database.homeLibraryCounts(ctx.hideExplicit, ctx.hideVideoSongs)
         val pinned = database.speedDialDao.getAll().first()
         val pinnedPlaylists = pinned.filter { it.type == "PLAYLIST" }
             .mapNotNull { database.getPlaylistById(it.id) }

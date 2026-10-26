@@ -105,10 +105,12 @@ class HomeViewModel @Inject constructor(
     private data class SignalsKey(
         val moment: Moment,
         val nonce: Int,
-        val discoverFromLastSong: Boolean,
+        val prefs: SignalPrefs,
         val invalidation: String,
         val localNonce: Int,
     )
+
+    private data class SignalPrefs(val discoverFromLastSong: Boolean, val hideExplicit: Boolean, val hideVideoSongs: Boolean)
 
     private val loader = HomeSignalsLoader(database)
 
@@ -159,14 +161,17 @@ class HomeViewModel @Inject constructor(
     private val signals = combine(
         moment,
         refreshNonce,
-        prefs.map { it.discoverFromLastSong }.distinctUntilChanged(),
+        prefs.map { SignalPrefs(it.discoverFromLastSong, it.hideExplicit, it.hideVideoSongs) }.distinctUntilChanged(),
         database.homeInvalidation().distinctUntilChanged(),
         localNonce,
-    ) { m, nonce, fromLast, invalidation, local -> SignalsKey(m, nonce, fromLast, invalidation, local) }
+    ) { m, nonce, signalPrefs, invalidation, local -> SignalsKey(m, nonce, signalPrefs, invalidation, local) }
         .distinctUntilChanged()
         .mapLatest { key ->
             try {
-                loader.load(contextFor(key.moment, key.nonce, online = true, prefs = null, fromLast = key.discoverFromLastSong))
+                loader.load(
+                    contextFor(key.moment, key.nonce, online = true, prefs = null, fromLast = key.prefs.discoverFromLastSong)
+                        .copy(hideExplicit = key.prefs.hideExplicit, hideVideoSongs = key.prefs.hideVideoSongs)
+                )
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

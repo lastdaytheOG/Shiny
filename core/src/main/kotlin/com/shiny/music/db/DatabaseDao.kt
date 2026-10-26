@@ -191,12 +191,12 @@ interface DatabaseDao {
             (SELECT COUNT(1) FROM playlist WHERE bookmarkedAt IS NOT NULL) AS playlists,
             (SELECT COUNT(1) FROM artist WHERE bookmarkedAt IS NOT NULL) AS artists,
             (SELECT COUNT(1) FROM album WHERE bookmarkedAt IS NOT NULL) AS albums,
-            (SELECT COUNT(1) FROM song WHERE inLibrary IS NOT NULL) AS songs,
-            (SELECT COUNT(1) FROM song WHERE liked) AS liked,
-            (SELECT COUNT(1) FROM song WHERE isDownloaded = 1) AS downloaded
+            (SELECT COUNT(1) FROM song WHERE inLibrary IS NOT NULL AND NOT (:hideExplicit AND explicit) AND NOT (:hideVideos AND isVideo)) AS songs,
+            (SELECT COUNT(1) FROM song WHERE liked AND NOT (:hideExplicit AND explicit) AND NOT (:hideVideos AND isVideo)) AS liked,
+            (SELECT COUNT(1) FROM song WHERE isDownloaded = 1 AND NOT (:hideExplicit AND explicit) AND NOT (:hideVideos AND isVideo)) AS downloaded
         """
     )
-    fun libraryCounts(): Flow<LibraryCounts>
+    fun libraryCounts(hideExplicit: Boolean, hideVideos: Boolean): Flow<LibraryCounts>
 
     @Transaction
     @Query("SELECT song.* FROM song JOIN song_album_map ON song.id = song_album_map.songId WHERE song_album_map.albumId = :albumId")
@@ -1972,15 +1972,15 @@ interface DatabaseDao {
     @Query(
         """
         SELECT (SELECT COUNT(*) FROM song WHERE isLocal = 1) AS localSongs,
-               (SELECT COUNT(*) FROM song WHERE isDownloaded = 1) AS downloadedSongs,
-               (SELECT COUNT(*) FROM song WHERE liked = 1) AS likedSongs,
-               (SELECT COUNT(*) FROM song WHERE inLibrary IS NOT NULL) AS librarySongs,
+               (SELECT COUNT(*) FROM song WHERE isDownloaded = 1 AND NOT (:hideExplicit AND explicit) AND NOT (:hideVideos AND isVideo)) AS downloadedSongs,
+               (SELECT COUNT(*) FROM song WHERE liked = 1 AND NOT (:hideExplicit AND explicit) AND NOT (:hideVideos AND isVideo)) AS likedSongs,
+               (SELECT COUNT(*) FROM song WHERE inLibrary IS NOT NULL AND NOT (:hideExplicit AND explicit) AND NOT (:hideVideos AND isVideo)) AS librarySongs,
                (SELECT COUNT(*) FROM event) AS events,
                (SELECT COUNT(*) FROM playlist WHERE bookmarkedAt IS NOT NULL) AS playlists,
                (SELECT COUNT(*) FROM search_history) AS searches
         """
     )
-    suspend fun homeLibraryCounts(): HomeLibraryCounts
+    suspend fun homeLibraryCounts(hideExplicit: Boolean, hideVideos: Boolean): HomeLibraryCounts
 
     /**
      * Changes whenever something Home is built from changes: a counted play, a like, a
@@ -1991,9 +1991,11 @@ interface DatabaseDao {
         """
         SELECT (SELECT COUNT(*) FROM event) || ':' ||
                (SELECT COUNT(*) FROM song WHERE liked = 1) || ':' ||
-               (SELECT COUNT(*) FROM song WHERE isLocal = 1 OR isDownloaded = 1) || ':' ||
+               (SELECT COUNT(*) FROM song WHERE isLocal = 1) || ':' ||
+               (SELECT COUNT(*) FROM song WHERE isDownloaded = 1) || ':' ||
                (SELECT COUNT(*) FROM song WHERE inLibrary IS NOT NULL) || ':' ||
                (SELECT COUNT(*) FROM playlist WHERE bookmarkedAt IS NOT NULL) || ':' ||
+               (SELECT COUNT(*) FROM playlist_song_map) || ':' ||
                IFNULL((SELECT MAX(lastUpdateTime) FROM playlist WHERE bookmarkedAt IS NOT NULL), 0)
         """
     )
