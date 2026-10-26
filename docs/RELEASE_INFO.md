@@ -2,6 +2,24 @@
 
 The same notes appear in the app under *Settings → About → What's New*. APKs are on the [Releases](https://github.com/lastdaytheOG/Shiny/releases) page.
 
+## 1.2.8
+
+Downloads that keep their covers offline, Autoplay without a connection, and your full Top Songs list.
+
+**New**
+- Top Songs in Listening Stats opens the full list, with how many times you played each song.
+- Autoplay keeps going without a connection, using your downloaded and on-device songs, same artist first.
+
+**Improved**
+- Downloaded songs keep their covers, even offline and after a phone cleaner empties storage.
+- Less battery use while music plays with a Shiny widget on the home screen.
+- Simpler Settings: shorter text in Downloads & Storage, Library & Home, Now Playing and Playback, and Advanced is hidden.
+
+**Fixed**
+- Song counts on Home and in Library now match the Liked and Downloaded pages.
+- Signing in to YouTube no longer starts over on some phones.
+- Lists say "1 song" instead of "1 songs".
+
 ## 1.2.7
 
 A calmer, roomier queue, and playlists that play all the way through.

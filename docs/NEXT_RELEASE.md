@@ -1,7 +1,7 @@
-# Next release
+# Next release: 1.2.8
 
-Not published yet. When the next version goes out, copy the notes below into
-`ReleaseNotes.kt`, `docs/RELEASE_INFO.md` and the website's What's New, then clear this file.
+Version 1.2.8 (code 158), not published yet. The notes below are already in `ReleaseNotes.kt`
+and `docs/RELEASE_INFO.md`; the website's What's New still needs them when the release goes out.
 
 ## Release notes
 

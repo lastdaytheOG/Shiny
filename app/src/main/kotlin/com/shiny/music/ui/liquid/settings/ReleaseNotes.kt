@@ -18,6 +18,25 @@ data class Highlight(val title: String, val text: String)
  */
 val ShinyReleases: List<Release> = sortReleaseHistory(listOf(
     Release(
+        version = "1.2.8",
+        date = null,
+        summary = "Downloads that keep their covers offline, Autoplay without a connection, and your full Top Songs list.",
+        new = listOf(
+            "Top Songs in Listening Stats opens the full list, with how many times you played each song.",
+            "Autoplay keeps going without a connection, using your downloaded and on-device songs, same artist first.",
+        ),
+        improved = listOf(
+            "Downloaded songs keep their covers, even offline and after a phone cleaner empties storage.",
+            "Less battery use while music plays with a Shiny widget on the home screen.",
+            "Simpler Settings: shorter text in Downloads & Storage, Library & Home, Now Playing and Playback, and Advanced is hidden.",
+        ),
+        fixed = listOf(
+            "Song counts on Home and in Library now match the Liked and Downloaded pages.",
+            "Signing in to YouTube no longer starts over on some phones.",
+            "Lists say \"1 song\" instead of \"1 songs\".",
+        ),
+    ),
+    Release(
         version = "1.2.7",
         date = null,
         summary = "A calmer, roomier queue, and playlists that play all the way through.",
