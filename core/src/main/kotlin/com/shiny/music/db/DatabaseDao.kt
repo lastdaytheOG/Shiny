@@ -25,6 +25,7 @@ import com.shiny.music.constants.PlaylistSortType
 import com.shiny.music.constants.SongSortType
 import com.shiny.music.db.entities.Album
 import com.shiny.music.db.entities.LibraryCounts
+import com.shiny.music.db.entities.SongCover
 import com.shiny.music.db.entities.AlbumArtistMap
 import com.shiny.music.db.entities.AlbumEntity
 import com.shiny.music.db.entities.AlbumWithSongs
@@ -1113,6 +1114,9 @@ interface DatabaseDao {
 
     @Query("UPDATE song SET isDownloaded = :downloaded, dateDownload = :date WHERE id = :songId")
     fun updateDownloadedInfo(songId: String, downloaded: Boolean, date: LocalDateTime?)
+
+    @Query("SELECT id, thumbnailUrl FROM song WHERE isDownloaded = 1 AND isLocal = 0 AND thumbnailUrl IS NOT NULL")
+    suspend fun downloadedCovers(): List<SongCover>
 
     @Transaction
     @Query("SELECT * FROM song WHERE isUploaded = 1 ORDER BY dateDownload")

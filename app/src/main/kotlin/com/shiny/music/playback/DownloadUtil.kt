@@ -8,6 +8,7 @@ import coil3.request.ImageRequest
 
 import android.content.Context
 import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import androidx.core.content.getSystemService
 import androidx.core.net.toUri
 import androidx.media3.database.DatabaseProvider
@@ -32,6 +33,7 @@ import com.shiny.music.db.entities.FormatEntity
 import com.shiny.music.db.entities.SongEntity
 import com.shiny.music.di.DownloadCache
 import com.shiny.music.di.PlayerCache
+import com.shiny.music.downloads.DownloadCovers
 import com.shiny.music.downloads.DownloadFolderStore
 import com.shiny.music.ui.utils.resize
 import com.shiny.music.utils.YTPlayerUtils
@@ -43,6 +45,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
@@ -66,6 +69,7 @@ constructor(
     @PlayerCache val playerCache: SimpleCache,
     val folderStore: DownloadFolderStore,
 ) {
+    private val appContext = context.applicationContext
     private val connectivityManager = context.getSystemService<ConnectivityManager>()!!
     private val downloadQuality by enumPreference(context, com.shiny.music.constants.DownloadQualityKey, com.shiny.music.constants.DownloadQuality.YOUTUBE)
     private val ipVersion by enumPreference(context, IpVersionKey, IpVersion.AUTO)
@@ -201,6 +205,7 @@ constructor(
                             when (download.state) {
                                 Download.STATE_COMPLETED -> {
                                     database.updateDownloadedInfo(download.request.id, true, LocalDateTime.now())
+                                    DownloadCovers.save(appContext, download.request.id, database.getSongById(download.request.id)?.song?.thumbnailUrl)
                                     // Into the listener's download folder, if one is chosen; the
                                     // private copy stays, and plays, if that cannot happen.
                                     folderStore.adopt(download.request.id)
@@ -231,6 +236,13 @@ constructor(
             }
         }
         downloads.value = result
+        DownloadCovers.attach(database)
+        scope.launch {
+            delay(15_000)
+            val online = connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
+                ?.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) == true
+            DownloadCovers.sync(appContext, database, online)
+        }
     }
 
     fun getDownload(songId: String): Flow<Download?> = downloads.map { it[songId] }

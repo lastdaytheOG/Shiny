@@ -312,6 +312,7 @@ class App : Application(), SingletonImageLoader.Factory {
             components {
                 add(com.shiny.music.localmedia.LocalArtworkFetcher.Factory(this@App))
                 add(coil3.network.okhttp.OkHttpNetworkFetcherFactory(callFactory = { com.music.innertube.SharedHttp.client }))
+                add(com.shiny.music.downloads.DownloadCovers.Fallback(this@App))
             }
             crossfade(true)
             allowHardware(Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
