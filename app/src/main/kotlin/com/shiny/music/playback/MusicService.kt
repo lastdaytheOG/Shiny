@@ -1934,12 +1934,40 @@ class MusicService :
     private fun continueWhenRunningOut() {
         if (!playerInitialized.value || !canAutoplay(cachedAutoLoadMore, together.isFollowing, player.repeatMode)) return
         if (!player.playWhenReady) return
-        if (currentQueue.hasNextPage()) return
         val current = player.currentMetadata?.id ?: return
-        // A file on the phone has no radio, and offline there is nothing to ask.
-        if (current.isLocalMediaId() || !isNetworkConnected.value) return
+        val offline = current.isLocalMediaId() || !isNetworkConnected.value
+        if (currentQueue.hasNextPage() && !offline) return
         if (current == autoplayFoundNothingFor) return
-        if (upcomingInPlayOrder(AUTOPLAY_TOP_UP_BELOW) < AUTOPLAY_TOP_UP_BELOW) ensureUpNext()
+        if (upcomingInPlayOrder(AUTOPLAY_TOP_UP_BELOW) >= AUTOPLAY_TOP_UP_BELOW) return
+        if (offline) continueOffline() else ensureUpNext()
+    }
+
+    /** Autoplay with no radio to ask: a phone file, or no connection. Goes on with the songs that play offline, same artist first. */
+    private fun continueOffline(minimum: Int = 15) {
+        if (!playerInitialized.value || fillingUpNext || queueLoadsInFlight > 0) return
+        val current = player.currentMetadata ?: return
+        val requestVersion = autoplayRequestVersion
+        val generation = playQueueGeneration
+        fillingUpNext = true
+        scope.launch(SilentHandler) {
+            try {
+                val songs = withContext(Dispatchers.IO) { database.homeOfflineSongs(500) }
+                if (!isCurrentAutoplayRequest(cachedAutoLoadMore, requestVersion, autoplayRequestVersion) || together.isFollowing) return@launch
+                if (generation != playQueueGeneration || player.currentMetadata?.id != current.id) return@launch
+                val queued = queuedMediaIds()
+                val artists = current.artists.mapTo(HashSet()) { it.name }
+                val (same, rest) = songs
+                    .filter { it.id !in queued && !(cachedHideExplicit && it.song.explicit) && !(cachedHideVideoSongsEffective && it.song.isVideo) }
+                    .partition { song -> song.artists.any { it.name in artists } }
+                val fresh = (same.shuffled() + rest.shuffled()).take(minimum + 5 - upcomingInPlayOrder(minimum))
+                if (fresh.isNotEmpty()) {
+                    appendToQueue(fresh.map { it.toMediaItem() }, ShufflePlacement.End)
+                    updateQueuePageStatus()
+                }
+            } finally {
+                fillingUpNext = false
+            }
+        }
     }
 
     /**
@@ -1958,6 +1986,10 @@ class MusicService :
         // In play order: with shuffle on, the song at the last index can be the first to play.
         fun upcoming() = upcomingInPlayOrder(minimum)
         if (upcoming() >= minimum) return
+        if (current.id.isLocalMediaId() || !isNetworkConnected.value) {
+            continueOffline(minimum)
+            return
+        }
         fillingUpNext = true
         scope.launch(SilentHandler) {
             try {
