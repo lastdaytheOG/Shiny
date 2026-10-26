@@ -19,7 +19,7 @@ No ads, no subscription, and no account needed.</p>
 <a href="LICENSE"><img alt="License GPL-3.0" src="https://img.shields.io/badge/License-GPL--3.0-blue"/></a>
 <img alt="Android 8.0+" src="https://img.shields.io/badge/Android-8.0%2B-3DDC84?logo=android&logoColor=white"/>
 <img alt="Kotlin and Jetpack Compose" src="https://img.shields.io/badge/Kotlin-Jetpack%20Compose-7F52FF?logo=kotlin&logoColor=white"/>
-<a href="CONTRIBUTING.md"><img alt="PRs welcome" src="https://img.shields.io/badge/PRs-welcome-brightgreen"/></a>
+<a href=".github/CONTRIBUTING.md"><img alt="PRs welcome" src="https://img.shields.io/badge/PRs-welcome-brightgreen"/></a>
 </p>
 
 <p>
@@ -172,10 +172,10 @@ Shiny is built in the open and help is welcome, whether or not you write code.
 | :-- | :-- |
 | Report a bug | [Open a bug report](https://github.com/lastdaytheOG/Shiny/issues/new?template=bug_report.yml) |
 | Suggest an idea | [Open an idea](https://github.com/lastdaytheOG/Shiny/issues/new?template=feature_request.yml) |
-| Send a fix or a feature | [CONTRIBUTING.md](CONTRIBUTING.md), then [ARCHITECTURE.md](docs/ARCHITECTURE.md) for how the code is laid out |
-| Report a security problem | Privately, as described in [SECURITY.md](SECURITY.md) |
+| Send a fix or a feature | [CONTRIBUTING.md](.github/CONTRIBUTING.md), then [ARCHITECTURE.md](docs/ARCHITECTURE.md) for how the code is laid out |
+| Report a security problem | Privately, as described in [SECURITY.md](.github/SECURITY.md) |
 
-Everyone taking part is expected to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
+Everyone taking part is expected to follow the [Code of Conduct](.github/CODE_OF_CONDUCT.md).
 
 ---
 

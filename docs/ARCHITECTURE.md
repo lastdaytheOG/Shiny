@@ -22,19 +22,19 @@ A free Android music player (Kotlin, Jetpack Compose) that plays the YouTube Mus
 
 ## Layout
 
-| Module | Holds |
-| :-- | :-- |
-| `:app` | The application: UI, ViewModels, playback service, DI |
-| `:core` | Shared models, constants, the Room database, DataStore |
-| `:playback` | Media3 logic: queues, equaliser, data sources, sleep timer |
-| `:lyrics` | Lyrics orchestration and parsing |
-| `:youtube` | The YouTube Music client |
-| `:lyrics-kugou` `:lyrics-lrclib` `:lyrics-better` `:lyrics-youlyplus` `:lyrics-paxsenix` `:lyrics-simpmusic` | One lyrics source each |
-| `:recognition` | Song recognition |
-| `:artwork-motion` `:artwork-apple` | Animated artwork |
-| `:artwork-artist` | Artist videos |
-| `:lyrics-unison` | Shared lyrics utilities |
-| `:baselineprofile` | Baseline profile generation |
+| Module | Folder | Holds |
+| :-- | :-- | :-- |
+| `:app` | `app/` | The application: UI, ViewModels, playback service, DI |
+| `:core` | `core/` | Shared models, constants, the Room database, DataStore |
+| `:playback` | `playback/` | Media3 logic: queues, equaliser, data sources, sleep timer |
+| `:lyrics` | `lyrics/core/` | Lyrics orchestration and parsing |
+| `:youtube` | `youtube/` | The YouTube Music client |
+| `:lyrics-kugou` `:lyrics-lrclib` `:lyrics-better` `:lyrics-youlyplus` `:lyrics-paxsenix` `:lyrics-simpmusic` | `lyrics/<source>/` | One lyrics source each |
+| `:recognition` | `recognition/` | Song recognition |
+| `:artwork-motion` `:artwork-apple` | `artwork/motion/` `artwork/apple/` | Animated artwork |
+| `:artwork-artist` | `artwork/artist/` | Artist videos |
+| `:lyrics-unison` | `lyrics/unison/` | Shared lyrics utilities |
+| `:baselineprofile` | `baselineprofile/` | Baseline profile generation |
 
 Outside Gradle: `server/` is the Cloudflare Worker behind Listen Together, Shiny Social, shared links and shinymusic.in (`server/together/PROTOCOL.md` describes the session protocol).
 

@@ -37,6 +37,14 @@ include(
     ":baselineprofile"
 )
 
+project(":lyrics").projectDir = file("lyrics/core")
+listOf("better", "kugou", "lrclib", "paxsenix", "simpmusic", "unison", "youlyplus").forEach {
+    project(":lyrics-$it").projectDir = file("lyrics/$it")
+}
+listOf("apple", "artist", "motion").forEach {
+    project(":artwork-$it").projectDir = file("artwork/$it")
+}
+
 
 // Use a local copy of BravePipe Extractor.
 // We assume, that shinymusic and BravePipe Extractor have the same parent directory.

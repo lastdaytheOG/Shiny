@@ -84,4 +84,4 @@ A build signed with your key can't be installed over an official Shiny release; 
 | Out of memory | Close other apps, or lower `org.gradle.jvmargs` in `gradle.properties` |
 | Something stale after switching branches | `./gradlew clean`, then build again |
 
-Next: [CONTRIBUTING.md](CONTRIBUTING.md) if you plan to send a change.
+Next: [CONTRIBUTING.md](../.github/CONTRIBUTING.md) if you plan to send a change.
