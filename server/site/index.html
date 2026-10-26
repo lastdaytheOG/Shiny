@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Shiny · Free music app for Android</title>
-<meta name="description" content="Shiny is a free music app for Android. Millions of songs, artwork that fills the screen, lyrics word by word, offline downloads and Listen Together. No ads, and no account needed.">
-<meta name="theme-color" content="#07030d" id="theme-color">
-<meta name="color-scheme" content="dark">
+<meta name="description" content="Shiny is a free, open-source music app for Android. Millions of songs, synced lyrics, offline downloads and Listen Together. No ads, and no account needed.">
+<meta name="theme-color" content="#f5f5f7" id="theme-color">
+<meta name="color-scheme" content="light dark">
 <link rel="canonical" href="https://shinymusic.in/">
 <link rel="icon" href="/favicon.png" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -14,1710 +14,736 @@
 <meta property="og:site_name" content="Shiny">
 <meta property="og:url" content="https://shinymusic.in/">
 <meta property="og:title" content="Shiny · Free music app for Android">
-<meta property="og:description" content="Millions of songs. Not one ad. Artwork that fills the screen, lyrics word by word, offline downloads and Listen Together.">
+<meta property="og:description" content="Millions of songs, synced lyrics, offline downloads and Listen Together. No ads, no account, open source.">
 <meta property="og:image" content="https://shinymusic.in/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preconnect" href="https://github.com">
-<link rel="preconnect" href="https://release-assets.githubusercontent.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Bodoni+Moda:ital,opsz,wght@1,6..96,400..600&family=Inter:ital,opsz,wght@0,14..32,400..800;1,14..32,400..600&display=swap">
-<link rel="preload" as="image" href="/art/dove.webp" fetchpriority="high">
-<link rel="preload" as="image" href="/art/viva-la-vida.webp">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400..700&display=swap">
 <script>
-  // "reduce-motion" honours the system setting; ?motion previews the full animation anyway.
-  (function () {
-    var root = document.documentElement;
-    root.classList.add("js");
-    if (matchMedia("(prefers-reduced-motion: reduce)").matches && !/[?&]motion(=|&|$)/.test(location.search)) root.classList.add("reduce-motion");
-  })();
+(function () {
+  var saved = null;
+  try { saved = localStorage.getItem("theme"); } catch (e) {}
+  if (saved === "light" || saved === "dark") document.documentElement.setAttribute("data-theme", saved);
+})();
 </script>
-<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js" defer></script>
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"SoftwareApplication","name":"Shiny","operatingSystem":"Android 8.0 or later","applicationCategory":"MultimediaApplication","url":"https://shinymusic.in/","offers":{"@type":"Offer","price":"0","priceCurrency":"INR"}}
 </script>
 <style>
 :root {
+  --bg: #ffffff;
+  --stage-top: #f5f5f7;
+  --text: #1d1d1f;
+  --muted: #6e6e73;
+  --line: rgba(0, 0, 0, .09);
+  --fill: rgba(118, 118, 128, .12);
+  --link: #d1123f;
+  --glass: rgba(255, 255, 255, .68);
+  --glass-edge: rgba(0, 0, 0, .07);
+  --glass-rim: rgba(255, 255, 255, .95);
+  --chip-top: #3a3a3c;
+  --chip-bottom: #0b0b0c;
+  --chip-text: #ffffff;
+  --chip-rim: rgba(255, 255, 255, .22);
+  --thumb-top: #ffffff;
+  --thumb-bottom: #f2f2f4;
+  --thumb-rim: #ffffff;
+  --reflect: .15;
+  --floor: rgba(0, 0, 0, .07);
+  --drop: rgba(0, 0, 0, .28);
+  --font: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --gutter: clamp(16px, 4vw, 40px);
+  --ease: cubic-bezier(.22, 1, .36, 1);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #000000;
+    --stage-top: #121214;
+    --text: #f5f5f7;
+    --muted: #a1a1a6;
+    --line: rgba(255, 255, 255, .12);
+    --fill: rgba(118, 118, 128, .24);
+    --link: #ff5c7a;
+    --glass: rgba(30, 30, 32, .62);
+    --glass-edge: rgba(255, 255, 255, .1);
+    --glass-rim: rgba(255, 255, 255, .14);
+    --chip-top: #ffffff;
+    --chip-bottom: #dcdce0;
+    --chip-text: #000000;
+    --chip-rim: rgba(255, 255, 255, 1);
+    --thumb-top: #636366;
+    --thumb-bottom: #48484a;
+    --thumb-rim: rgba(255, 255, 255, .22);
+    --reflect: .26;
+    --floor: rgba(160, 120, 200, .16);
+    --drop: rgba(0, 0, 0, .6);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #000000;
+  --stage-top: #121214;
+  --text: #f5f5f7;
+  --muted: #a1a1a6;
+  --line: rgba(255, 255, 255, .12);
+  --fill: rgba(118, 118, 128, .24);
+  --link: #ff5c7a;
+  --glass: rgba(30, 30, 32, .62);
+  --glass-edge: rgba(255, 255, 255, .1);
+  --glass-rim: rgba(255, 255, 255, .14);
+  --chip-top: #ffffff;
+  --chip-bottom: #dcdce0;
+  --chip-text: #000000;
+  --chip-rim: rgba(255, 255, 255, 1);
+  --thumb-top: #636366;
+  --thumb-bottom: #48484a;
+  --thumb-rim: rgba(255, 255, 255, .22);
+  --reflect: .26;
+  --floor: rgba(160, 120, 200, .16);
+  --drop: rgba(0, 0, 0, .6);
   color-scheme: dark;
-  --label: #fff;
-  --secondary: rgb(240 238 245 / .7);
-  --tertiary: rgb(240 238 245 / .42);
-  --hairline: rgb(255 255 255 / .14);
-  --fill: rgb(255 255 255 / .12);
-  --rose: #ff375f;
-  --umber: 178 128 88;
-  --ease-out: cubic-bezier(.16, 1, .3, 1);
-  --ease-quart: cubic-bezier(.25, 1, .5, 1);
-  --page: min(1200px, 100% - 40px);
-  --display: "Archivo", "Inter", system-ui, sans-serif;
-  --serif: "Bodoni Moda", Georgia, "Times New Roman", serif;
-  --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
-  --z-flyer: 5;
-  --z-nav: 20;
-  --z-cursor: 30;
-  --z-grain: 40;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
-html { background: #07030d; -webkit-text-size-adjust: 100%; overflow-x: clip; }
-/* While the top of the page is daylight, the bit the browser shows past the edge matches it. */
-html.sky-day { background: #f6f3fc; }
-html.lenis, html.lenis body { height: auto; }
+html { -webkit-text-size-adjust: 100%; }
 body {
-  margin: 0; background: transparent; color: var(--label);
-  font: 400 17px/1.55 var(--font); font-optical-sizing: auto;
-  -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
-  overflow-x: clip;
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 400 16px/1.55 var(--font);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
-img, svg, canvas { display: block; }
-a { color: inherit; text-decoration: none; }
-button { font: inherit; color: inherit; }
-h1, h2, h3, p, ol, ul, figure { margin: 0; }
-:focus-visible { outline: 2px solid #fff; outline-offset: 3px; border-radius: 10px; }
-::selection { background: var(--rose); color: #fff; }
-.icon { width: 1em; height: 1em; flex: none; }
-.wrap { width: var(--page); margin-inline: auto; }
-[id] { scroll-margin-top: 90px; }
+a { color: inherit; }
+h1, h2, h3, p, ul { margin: 0; }
+ul { padding: 0; list-style: none; }
+h1, h2, h3 { text-wrap: balance; }
+p, li { text-wrap: pretty; }
+:focus-visible { outline: 2px solid var(--link); outline-offset: 3px; border-radius: 8px; }
 
-/* ---------- The sky under everything: daylight at the top of the page, night from there on ---------- */
-.liquid { position: fixed; left: 0; top: 0; width: 100%; height: 100lvh; z-index: -1; background: #07030d; }
-.no-gl .liquid { background: radial-gradient(60% 50% at 30% 30%, #2b1a72, transparent 70%), radial-gradient(50% 50% at 75% 70%, #4a1060, transparent 70%), #07030d; }
-.grain {
-  position: fixed; inset: 0; z-index: var(--z-grain); pointer-events: none; opacity: .07;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1.4 0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)'/%3E%3C/svg%3E");
+.top {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: 12px var(--gutter) 0;
+  pointer-events: none;
 }
-.cursor {
-  position: fixed; left: 0; top: 0; z-index: var(--z-cursor); pointer-events: none;
-  width: 38px; height: 38px; margin: -19px 0 0 -19px; border-radius: 50%;
-  border: 1.5px solid #fff; mix-blend-mode: difference; opacity: 0;
-  transition: width .35s var(--ease-out), height .35s var(--ease-out), margin .35s var(--ease-out), opacity .3s, background-color .3s;
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1120px;
+  height: 56px;
+  margin: 0 auto;
+  padding: 0 8px 0 10px;
+  border-radius: 999px;
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  box-shadow:
+    inset 0 0 0 1px var(--glass-edge),
+    inset 0 1px 0 var(--glass-rim),
+    0 8px 24px -12px rgba(0, 0, 0, .18);
+  pointer-events: auto;
 }
-.cursor.on { opacity: 1; }
-/* Only a mouse gets the halo; on touch screens it would just sit off the edge of the page. */
-.cursor { display: none; }
-@media (hover: hover) and (pointer: fine) { .cursor { display: block; } }
-.cursor.big { width: 76px; height: 76px; margin: -38px 0 0 -38px; background: #fff; }
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  font-size: 17px;
+  letter-spacing: -.01em;
+  text-decoration: none;
+}
+.brand img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--glass-edge), 0 2px 6px rgba(0, 0, 0, .18);
+}
+.bar-end { display: flex; align-items: center; gap: 8px; }
+.github {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 18px 0 14px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--chip-top), var(--chip-bottom));
+  color: var(--chip-text);
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow:
+    inset 0 1px 0 var(--chip-rim),
+    0 1px 2px rgba(0, 0, 0, .2),
+    0 6px 16px -8px rgba(0, 0, 0, .45);
+  transition: transform .2s var(--ease), box-shadow .2s var(--ease);
+}
+.github:hover { transform: translateY(-1px); }
+.github:active { transform: translateY(0) scale(.98); }
+.github svg { width: 18px; height: 18px; }
+.theme {
+  appearance: none;
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--fill);
+  color: var(--text);
+  cursor: pointer;
+  transition: background-color .2s;
+}
+.theme:hover { background: var(--line); }
+.theme svg { width: 18px; height: 18px; }
+.theme .sun { display: none; }
+:root[data-theme="dark"] .theme .sun { display: block; }
+:root[data-theme="dark"] .theme .moon { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .theme .sun { display: block; }
+  :root:not([data-theme="light"]) .theme .moon { display: none; }
+}
 
-/* ---------- Type ---------- */
-.display { font-family: var(--display); font-stretch: 112%; font-weight: 800; letter-spacing: -.025em; line-height: .94; text-wrap: balance; }
-.h2 { font-size: clamp(2.4rem, 1.1rem + 4.2vw, 5rem); }
-.body { font-size: clamp(1.0625rem, 1rem + .3vw, 1.25rem); line-height: 1.55; color: var(--secondary); max-width: 40ch; text-wrap: pretty; }
-.body strong { color: var(--label); font-weight: 600; }
-.fine { font-size: 14px; color: var(--secondary); }
-/* Movements: the page is a performance, numbered in order like a concert programme. */
-.movement { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
-.numeral { font-family: var(--serif); font-style: italic; font-weight: 500; font-size: 2.5rem; line-height: 1; color: var(--rose); }
-.mv-name { display: flex; align-items: center; gap: 12px; font-size: 15px; color: var(--secondary); }
-.mv-name::before { content: ""; width: 44px; height: 1px; background: rgb(255 255 255 / .35); }
-.mv-name i { font-family: var(--serif); font-size: 1.3em; font-weight: 500; color: #fff; }
-/* The movement's numeral again, enormous and faint, behind the section. */
-.ghost {
-  position: absolute; z-index: -1; top: clamp(40px, 7vh, 80px); right: max(12px, (100vw - 1200px) / 2); pointer-events: none; user-select: none;
-  font-family: var(--serif); font-style: italic; font-weight: 400; line-height: .8;
-  font-size: clamp(10rem, 4rem + 22vw, 26rem);
-  color: transparent; -webkit-text-stroke: 1px rgb(255 255 255 / .2);
+.hero {
+  --w: clamp(210px, (100vh - 110px) / 2.6, 300px);
+  --w: clamp(210px, (100svh - 110px) / 2.6, 300px);
+  position: relative;
+  overflow: hidden;
+  margin-top: -68px;
+  padding-top: 68px;
+  background: linear-gradient(180deg, var(--stage-top), var(--bg) 78%);
 }
-.together .h2, .privacy .h2 { font-size: clamp(2.3rem, 1rem + 3.3vw, 4.3rem); }
+.hero-inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  align-items: end;
+  gap: 32px;
+  max-width: 1120px;
+  min-height: calc(100vh - 68px);
+  min-height: calc(100svh - 68px);
+  margin: 0 auto;
+  padding: 24px var(--gutter) 0;
+}
+.copy { align-self: center; padding-bottom: calc(var(--w) * .45); }
+h1 {
+  font-size: clamp(40px, 4.6vw, 64px);
+  font-weight: 650;
+  line-height: 1.04;
+  letter-spacing: -.035em;
+}
+h1 span { display: block; }
+.lede {
+  max-width: 34ch;
+  margin-top: 20px;
+  color: var(--muted);
+  font-size: clamp(17px, 1.5vw, 20px);
+  line-height: 1.45;
+}
+.download {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 56px;
+  margin-top: 32px;
+  padding: 0 28px 0 24px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #ff5577 0%, #e3204b 50%, #c5163d 100%);
+  color: #fff;
+  font-size: 17px;
+  font-weight: 600;
+  text-decoration: none;
+  text-shadow: 0 1px 1px rgba(110, 0, 25, .35);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .5),
+    inset 0 -1px 0 rgba(90, 0, 20, .25),
+    0 1px 2px rgba(120, 0, 30, .3),
+    0 12px 28px -10px rgba(227, 32, 75, .75);
+  transition: transform .25s var(--ease), box-shadow .25s var(--ease);
+}
+.download::before {
+  content: "";
+  position: absolute;
+  inset: 1px 1px 52% 1px;
+  z-index: -1;
+  border-radius: 999px 999px 24px 24px / 999px 999px 12px 12px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .34), rgba(255, 255, 255, .04));
+}
+.download::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, .32) 50%, transparent 65%);
+  transform: translateX(-110%);
+}
+.download:hover { transform: translateY(-1px); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), inset 0 -1px 0 rgba(90, 0, 20, .25), 0 1px 2px rgba(120, 0, 30, .3), 0 16px 34px -10px rgba(227, 32, 75, .85); }
+.download:hover::after { transform: translateX(110%); transition: transform .9s var(--ease); }
+.download:active { transform: translateY(0) scale(.98); }
+.download svg { width: 20px; height: 20px; }
+.meta { margin-top: 16px; color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
 
-/* ---------- Buttons ---------- */
-.btn {
-  position: relative; isolation: isolate; overflow: hidden;
-  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
-  height: 60px; padding: 0 32px 0 28px; border-radius: 999px;
-  color: #fff; font-size: 17px; font-weight: 600; letter-spacing: -.01em;
-  background: linear-gradient(180deg, #ff6282, #ff2d55 52%, #e5244b);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / .5), inset 0 -1px 0 rgb(0 0 0 / .18), 0 0 0 .5px rgb(255 255 255 / .18), 0 18px 50px -14px rgb(255 45 85 / .9);
-  transition: transform .45s var(--ease-out), box-shadow .45s var(--ease-out);
-}
-.btn::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(105deg, transparent 30%, rgb(255 255 255 / .4) 50%, transparent 70%); transform: translateX(-130%); transition: transform 1s var(--ease-out); }
-.btn:hover::after { transform: translateX(130%); }
-.btn:active { transform: scale(.97); transition-duration: .12s; }
-.btn .icon { width: 21px; height: 21px; }
-
-/* ---------- Nav ---------- */
-.nav {
-  position: fixed; z-index: var(--z-nav);
-  top: calc(12px + env(safe-area-inset-top)); left: 0; right: 0; margin-inline: auto;
-  width: min(760px, 100% - 24px);
-  display: flex; align-items: center; gap: 4px; height: 54px; padding: 0 7px 0 12px; border-radius: 999px;
-  /* Dark enough to keep its white labels readable over the daylight at the top of the page. */
-  background: rgb(16 11 30 / .74);
-  -webkit-backdrop-filter: blur(22px) saturate(1.8); backdrop-filter: blur(22px) saturate(1.8);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / .16), inset 0 0 0 .5px rgb(255 255 255 / .12), 0 14px 40px -14px rgb(20 8 50 / .55);
-}
-.brand { display: flex; align-items: center; gap: 9px; margin-right: auto; min-width: 0; font-family: var(--display); font-stretch: 118%; font-size: 17px; font-weight: 800; letter-spacing: -.01em; }
-.brand img { width: 30px; height: 30px; border-radius: 8px; }
-.nav-links { display: flex; gap: 2px; }
-.nav-links a { padding: 8px 12px; border-radius: 999px; font-size: 14px; font-weight: 500; color: var(--secondary); transition: color .2s, background-color .2s; }
-.nav-links a:hover { color: #fff; background: rgb(255 255 255 / .1); }
-.nav-cta { flex: none; white-space: nowrap; display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 16px; margin-left: 6px; border-radius: 999px; background: var(--rose); color: #fff; font-size: 15px; font-weight: 600; box-shadow: inset 0 1px 0 rgb(255 255 255 / .4); }
-.nav-cta .icon { width: 16px; height: 16px; }
-
-/* ---------- Overture ---------- */
-/* Day and night share this screen, so anything that can sit on either is white ink blended as "difference":
-   it reads dark on the daylight and light on the night, and turns as the night passes over it.
-   Nothing between these elements and <body> may become a stacking context, or they stop seeing the sky. */
-.hero { position: relative; min-height: 100svh; display: flex; flex-direction: column; }
-.marks { mix-blend-mode: difference; }
-.marks i { position: absolute; width: 22px; height: 22px; pointer-events: none; }
-.marks i::before, .marks i::after { content: ""; position: absolute; background: rgb(255 255 255 / .55); }
-.marks i::before { left: 50%; top: 0; width: 1px; height: 100%; }
-.marks i::after { top: 50%; left: 0; height: 1px; width: 100%; }
-.marks i:nth-child(1) { left: 18px; bottom: 18px; }
-.marks i:nth-child(2) { right: 18px; bottom: 18px; }
-.hero-inner { position: relative; width: var(--page); margin: 0 auto; padding-top: calc(130px + env(safe-area-inset-top)); flex: 1; }
-.hero-copy { width: min(760px, 100%); }
-.statement {
-  /* "Millions of songs." is about 10em wide here: 9.4% of the column (at most 760px) keeps it on one line. */
-  font-size: clamp(2.2rem, 9.4vw - 3.76px, 4.465rem);
-  font-stretch: 100%; font-weight: 800; line-height: .95; letter-spacing: -.03em;
-}
-.statement > span { display: block; }
-.statement .rose { color: #f2254f; }
-/* "Difference" alone turns violet into lime. Each piece of ink therefore gets a twin laid exactly over it
-   (made in the script) that keeps the lightness underneath and repaints it violet: indigo by day, pale lilac by night. */
-.ink-stack, .statement > .ink-stack { display: grid; }
-.ink-stack > * { grid-area: 1 / 1; }
-.ink { mix-blend-mode: difference; }
-.ink.tint { mix-blend-mode: color; color: #b7a4f5; }
-.statement .w { display: inline-block; animation: word-in 1.2s var(--ease-out) both; animation-delay: calc(var(--i) * 80ms + 150ms); }
-@keyframes word-in { from { opacity: 0; filter: blur(16px); transform: translateY(.3em); } }
-@keyframes rise { from { opacity: 0; transform: translateY(22px); } }
-.cta-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 34px; animation: rise 1.1s var(--ease-out) .65s both; }
-.hero .fine { margin-top: 18px; color: rgb(255 255 255 / .8); mix-blend-mode: difference; animation: rise 1.1s var(--ease-out) .75s both; }
-/* The painting: Shiny's own dove, on black so that "screen" leaves only its light. It shows where the night is. */
-.dove {
-  position: absolute; right: max(-3vw, (100vw - 1760px) / 2); bottom: -3svh;
-  height: min(106svh, 58vw); width: auto; aspect-ratio: 1261 / 1245;
-  mix-blend-mode: screen; pointer-events: none; user-select: none; -webkit-user-select: none;
-  animation: dove-in 2.6s var(--ease-out) .1s both;
-}
-@keyframes dove-in { from { opacity: 0; transform: translate3d(2.5%, 3.5%, 0) scale(1.05); } }
-/* Feathers it left on the daylight side. */
-.plume {
-  position: absolute; left: var(--x); top: var(--y); width: var(--w); height: auto; pointer-events: none; user-select: none; -webkit-user-select: none;
-  rotate: var(--r, 0deg); animation: plume-in 2.2s var(--ease-out) both, sway var(--t, 11s) cubic-bezier(.45, 0, .55, 1) infinite alternate;
-  animation-delay: var(--d, .3s), calc(var(--d, .3s) - 6s);
-}
-@keyframes plume-in { from { opacity: 0; } }
-.plume.a { --x: 5%; --y: 47%; --w: clamp(96px, 11vw, 190px); --r: -8deg; --t: 12s; --d: .5s; }
-.plume.b { --x: 39%; --y: 27%; --w: clamp(120px, 15vw, 270px); --r: 6deg; --t: 15s; --d: .8s; }
-.plume.c { --x: 27%; --y: 60%; --w: clamp(40px, 4.4vw, 78px); --r: 14deg; --t: 9s; --d: 1.1s; }
-.plume.d { --x: 52%; --y: 13%; --w: clamp(34px, 3.6vw, 64px); --r: -20deg; --t: 10s; --d: 1.3s; }
-@keyframes sway { from { transform: translate3d(0, -10px, 0) rotate(-5deg); } to { transform: translate3d(14px, 12px, 0) rotate(7deg); } }
-.mega {
-  position: relative; margin: 0; padding: 0 0 .02em;
-  font-family: var(--display); font-stretch: 125%; font-weight: 900;
-  font-size: 22.6vw; line-height: .76; letter-spacing: -.035em; text-align: center; white-space: nowrap;
-  color: #fff; pointer-events: none; user-select: none;
-  animation: rise 1.6s var(--ease-out) .2s both;
-}
-.mega span { display: inline-block; transform-origin: 50% 100%; animation: pump 1.034s cubic-bezier(.45, 0, .55, 1) infinite alternate; }
-.mega span:nth-child(2) { animation-duration: .776s; animation-delay: -.2s; }
-.mega span:nth-child(3) { animation-duration: 1.293s; animation-delay: -.5s; }
-.mega span:nth-child(4) { animation-duration: .905s; animation-delay: -.35s; }
-.mega span:nth-child(5) { animation-duration: 1.164s; animation-delay: -.7s; }
-@keyframes pump { from { transform: scaleY(.9); } to { transform: scaleY(1.02); } }
-.pause {
-  position: absolute; right: 50px; bottom: 44px; z-index: 2;
-  display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border: 0; border-radius: 999px; cursor: pointer;
-  background: rgb(0 0 0 / .35); color: rgb(255 255 255 / .85); font-size: 13px; font-weight: 600;
-  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
-  box-shadow: inset 0 0 0 .5px rgb(255 255 255 / .2);
-}
-.pause .icon { width: 13px; height: 13px; }
-.pause .i-play { display: none; }
-.pause[aria-pressed="true"] .i-play { display: block; }
-.pause[aria-pressed="true"] .i-pause { display: none; }
-
-/* ---------- I. Liberty: the cover leaves the wall and the room fills with it ---------- */
-.art { position: relative; }
-.art-stage { position: relative; height: 100svh; min-height: 640px; overflow: hidden; }
-.js-morph .art { height: 330vh; }
-.js-morph .art-stage { position: sticky; top: 0; }
-.gallery-light { position: absolute; inset: 0; background: radial-gradient(ellipse 34% 64% at 50% 34%, rgb(255 236 214 / .1), transparent 70%); opacity: var(--wall, 0); pointer-events: none; }
-.wall {
-  position: absolute; top: calc(90px + 1svh); left: 50%; width: min(820px, 100% - 40px);
-  transform: translate(-50%, var(--wall-y, 0px)); text-align: center; opacity: var(--wall, 0);
-  display: flex; flex-direction: column; align-items: center;
-}
-.wall .movement { justify-content: center; }
-.wall .h2 { font-size: clamp(2.2rem, 1rem + 3.4vw, 4.2rem); }
-.wall .body { margin-top: 10px; }
-.painting { --s: min(40svh, 420px, 72vw); position: absolute; left: 50%; top: calc(62% - var(--s) / 2 + 40px); width: var(--s); height: var(--s); transform: translateX(-50%); }
-.frame-art { position: absolute; inset: 0; opacity: var(--frame, 0); box-shadow: 0 0 0 9px #111013, 0 0 0 10px #2b2a2e, 0 0 0 26px #ece7df, 0 0 0 27px #cfc8bd, 0 50px 90px -20px rgb(0 0 0 / .95); }
-.placard {
-  position: absolute; left: calc(100% + 58px); bottom: 0; width: 232px; padding: 16px 18px; border-radius: 3px;
-  background: #f4f1ec; color: #1b1a1d; text-align: left; font-size: 12.5px; line-height: 1.45;
-  box-shadow: 0 18px 40px -16px rgb(0 0 0 / .9); opacity: var(--placard, 0);
-}
-.placard strong { display: block; font-size: 14px; font-weight: 700; }
-.placard em { display: block; margin-top: 2px; font-style: italic; }
-.placard span { display: block; margin-top: 8px; color: #5d5a60; }
-.placard b { display: block; margin-top: 10px; font-weight: 600; color: #d91c45; font-size: 11.5px; letter-spacing: .02em; }
-.flyer { position: absolute; z-index: var(--z-flyer); display: none; object-fit: cover; transform-origin: 0 0; will-change: transform; box-shadow: 0 24px 60px -18px rgb(0 0 0 / .85); }
-.js-morph .flyer { display: block; }
-.js-morph .phone:not(.landed) .np-art { visibility: hidden; }
-.phone-wrap { position: absolute; left: 50%; top: 50%; z-index: 2; transform: translate(-50%, calc(-50% + var(--rise, 0px))); }
-.notes { position: absolute; inset: 0; pointer-events: none; opacity: var(--notes, 1); }
-.note { position: absolute; top: 50%; width: min(290px, 22vw); transform: translateY(-50%); }
-.note h3 { font-family: var(--display); font-stretch: 112%; font-size: 26px; line-height: 1.02; font-weight: 800; letter-spacing: -.02em; text-wrap: balance; }
-.note p { margin-top: 12px; font-size: 16px; line-height: 1.55; color: rgb(255 255 255 / .8); text-wrap: pretty; }
-.note-left { right: calc(50% + var(--pw) / 2 + 64px); text-align: right; }
-.note-right { left: calc(50% + var(--pw) / 2 + 64px); }
-
-/* ---------- Phone (a working Now Playing) ---------- */
-.art-stage { --pw: clamp(220px, min(70vw, (100svh - 150px) / 2.2), 318px); }
-.phone {
-  --w: clamp(220px, min(70vw, (100svh - 150px) / 2.2), 318px);
-  position: relative; width: var(--w); text-align: left;
-  padding: calc(var(--w) * .03); border-radius: calc(var(--w) * .165);
-  background: linear-gradient(150deg, #3a3a3f, #111113 32%, #1d1d20 70%, #2c2c30);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / .1), 0 0 0 1px rgb(0 0 0 / .6), 0 70px 130px -40px rgb(0 0 0 / .95);
-}
-.screen { container-type: inline-size; position: relative; isolation: isolate; overflow: hidden; aspect-ratio: 9 / 19.5; border-radius: calc(var(--w) * .135); background: #1a1512; display: flex; flex-direction: column; user-select: none; -webkit-user-select: none; }
-.np-field { position: absolute; left: 50%; top: 50%; width: 260cqw; height: 260cqw; margin: -130cqw 0 0 -130cqw; z-index: -2; background: url(/art/viva-room.webp) center / cover no-repeat; animation: drift 40s linear infinite; }
-@keyframes drift { from { transform: rotate(0deg) scale(1.15); } 50% { transform: rotate(180deg) scale(1.3); } to { transform: rotate(360deg) scale(1.15); } }
-.np-shade { position: absolute; inset: 0; z-index: -1; background: linear-gradient(to bottom, rgb(0 0 0 / .12), rgb(0 0 0 / .3) 55%, rgb(0 0 0 / .42)); }
-.phone[data-playing="false"] .np-field { animation-play-state: paused; }
-.punch { position: absolute; top: 3.5cqw; left: 50%; width: 3.6cqw; height: 3.6cqw; margin-left: -1.8cqw; border-radius: 50%; background: #050505; box-shadow: inset 0 0 0 .5cqw #151518; z-index: 3; }
-.ui { opacity: var(--ui, 1); }
-.status { display: flex; align-items: center; justify-content: space-between; height: 10.5cqw; padding: 1.4cqw 7.5cqw 0; font-size: 4.1cqw; font-weight: 600; }
-.status-icons { display: flex; align-items: center; gap: 1.6cqw; }
-.status-icons svg { height: 3.7cqw; width: auto; }
-.grabber { width: 10.5cqw; height: 1.5cqw; border-radius: 1cqw; margin: 2.2cqw auto 0; background: rgb(255 255 255 / .36); }
-.np-art { width: 84cqw; aspect-ratio: 1; margin: 7cqw auto 0; border-radius: 3.4cqw; overflow: hidden; box-shadow: 0 6cqw 14cqw -4cqw rgb(0 0 0 / .7), 0 0 0 .25cqw rgb(255 255 255 / .06); transition: transform .9s var(--ease-out); }
-.np-art img { width: 100%; height: 100%; object-fit: cover; }
-.phone[data-playing="false"] .np-art { transform: scale(.82); }
-.np-meta { display: flex; align-items: center; gap: 2.6cqw; margin: 9cqw 8cqw 0; }
-.np-titles { flex: 1; min-width: 0; }
-.np-titles p { font-size: 5.9cqw; line-height: 1.24; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.np-title { font-weight: 600; }
-.np-artist { color: rgb(255 255 255 / .62); }
-.glass-btn {
-  flex: none; padding: 0; border: 0; border-radius: 50%; display: grid; place-items: center; color: #fff; cursor: pointer;
-  background: rgb(255 255 255 / .14);
-  -webkit-backdrop-filter: blur(8px) saturate(1.6) brightness(1.1); backdrop-filter: blur(8px) saturate(1.6) brightness(1.1);
-  box-shadow: inset 0 .45cqw 0 rgb(255 255 255 / .22), inset 0 -.3cqw 0 rgb(0 0 0 / .12), inset 0 0 0 .3cqw rgb(255 255 255 / .07);
-  transition: transform .35s var(--ease-out);
-}
-.glass-btn:active { transform: scale(.9); }
-.orb { width: 10cqw; height: 10cqw; }
-.orb svg { width: 5.2cqw; height: 5.2cqw; }
-.orb .heart-fill { opacity: 0; transform: scale(.4); transform-origin: center; transform-box: fill-box; transition: opacity .2s, transform .45s var(--ease-out); }
-.orb[aria-pressed="true"] .heart-fill { opacity: 1; transform: none; }
-.np-scrub { margin: 8cqw 8cqw 0; }
-.np-track { height: 1.5cqw; border-radius: 1cqw; overflow: hidden; background: rgb(255 255 255 / .22); }
-.np-fill { height: 100%; background: rgb(255 255 255 / .9); transform-origin: 0 50%; transform: scaleX(.3); }
-.np-times { display: flex; justify-content: space-between; margin-top: 2.2cqw; font-size: 3.2cqw; font-weight: 500; color: rgb(255 255 255 / .55); font-variant-numeric: tabular-nums; }
-.np-transport { display: flex; align-items: center; justify-content: center; gap: 6cqw; margin-top: 5cqw; }
-.np-skip { width: 15.5cqw; height: 15.5cqw; }
-.np-skip svg { width: 7.4cqw; height: 7.4cqw; }
-.np-play { width: 21cqw; height: 21cqw; }
-.np-play svg { grid-area: 1 / 1; width: 9cqw; height: 9cqw; transition: opacity .2s, transform .45s var(--ease-out); }
-.phone[data-playing="true"] .np-play .i-play, .phone[data-playing="false"] .np-play .i-pause { opacity: 0; transform: scale(.5); }
-.np-volume { display: flex; align-items: center; gap: 2.8cqw; margin: 6cqw 8cqw 0; color: rgb(255 255 255 / .6); }
-.np-volume svg { width: 3.8cqw; height: 3.8cqw; }
-.np-volume span { position: relative; flex: 1; height: 1.3cqw; border-radius: 1cqw; background: rgb(255 255 255 / .22); overflow: hidden; }
-.np-volume span::before { content: ""; position: absolute; inset: 0 24% 0 0; background: rgb(255 255 255 / .85); }
-.np-tools { display: flex; justify-content: space-between; margin: auto 11cqw 0; padding-bottom: 8.5cqw; color: rgb(255 255 255 / .62); }
-.np-tools svg { width: 6.4cqw; height: 6.4cqw; }
-.home-pill { position: absolute; bottom: 2.2cqw; left: 50%; width: 34cqw; height: 1.4cqw; margin-left: -17cqw; border-radius: 1cqw; background: rgb(255 255 255 / .7); }
-
-/* ---------- II. Chorus ---------- */
-.chorus { position: relative; padding: clamp(110px, 16vh, 190px) 0 clamp(60px, 10vh, 120px); overflow-x: hidden; overflow-x: clip; }
-.chorus-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, .8fr); gap: 24px 64px; align-items: end; }
-.chorus-head .body { padding-bottom: .4em; }
 .stage {
-  position: relative; height: clamp(440px, 70vh, 640px); margin-top: clamp(24px, 5vh, 56px); overflow: hidden; container-type: inline-size;
-  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 14%, #000 70%, transparent); mask-image: linear-gradient(to bottom, transparent, #000 14%, #000 70%, transparent);
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  padding-bottom: calc(var(--w) * .45);
 }
-.roll { transition: transform 1s var(--ease-out); will-change: transform; }
-.line {
-  font-family: var(--display); font-stretch: 105%; font-weight: 800; letter-spacing: -.03em; line-height: 1.02;
-  font-size: clamp(2rem, 1rem + 4vw, 5.4rem);
-  font-size: clamp(2rem, 7.4cqw, 6rem);
-  padding: .16em 0; opacity: .26; transform: scale(.95); transform-origin: 0 50%;
-  filter: blur(calc(min(var(--d, 0), 4) * 1.4px));
-  transition: opacity .8s var(--ease-out), transform .8s var(--ease-out), filter .8s var(--ease-out);
-  cursor: pointer; text-wrap: balance;
+.stage::before {
+  content: "";
+  position: absolute;
+  left: -10%;
+  right: -10%;
+  bottom: calc(var(--w) * .45 - var(--w) * .3);
+  height: calc(var(--w) * .6);
+  background: radial-gradient(closest-side, var(--floor), transparent);
+  pointer-events: none;
 }
-.line.active { opacity: 1; transform: none; filter: none; transition: opacity 0s, transform .8s var(--ease-out), filter .8s var(--ease-out); }
-.line .w { color: #fff; }
-.line.active .w { color: rgb(255 255 255 / .3); }
-.line.active.sing .w { color: #fff; text-shadow: 0 0 30px rgb(255 255 255 / .55), 0 0 80px rgb(255 55 95 / .5); transition: color .38s linear, text-shadow .6s linear; transition-delay: var(--t); }
-.line .roman { display: block; margin-top: .2em; font-family: var(--font); font-size: .36em; font-weight: 600; letter-spacing: -.01em; color: rgb(255 255 255 / .62); }
-.line.dots { display: flex; gap: .3em; padding: .45em 0 .55em; }
-.line.dots .dot { width: .26em; height: .26em; border-radius: 50%; background: #fff; }
-.line.active.dots .dot { opacity: .35; transform: scale(.7); }
-.line.active.sing.dots .dot { opacity: 1; transform: none; transition: opacity .5s linear, transform .5s var(--ease-out); transition-delay: var(--t); }
-
-/* ---------- III. Portraits ---------- */
-.inside { position: relative; overflow: hidden; padding: clamp(110px, 16vh, 190px) 0 clamp(40px, 8vh, 96px); }
-.inside-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, .8fr); gap: 24px 64px; align-items: end; }
-.inside-head .body { padding-bottom: .4em; }
-.gallery { --w: clamp(196px, 17vw, 262px); --step: calc(var(--w) * .8); --turn: 15deg; margin-top: clamp(56px, 9vh, 104px); }
-.shots { position: relative; list-style: none; padding: 0; margin: 0; height: calc(var(--w) * 2.36 + 40px); perspective: 2200px; perspective-origin: 50% 40%; }
-.shot { position: absolute; top: 0; left: 50%; width: var(--w); margin-left: calc(var(--w) / -2); transform-style: preserve-3d; transform: translateX(calc(var(--k) * var(--step))) translateZ(calc(var(--a) * -130px)) rotateY(calc(var(--k) * var(--turn))); z-index: calc(3 - var(--a)); }
-.shot::before { content: ""; position: absolute; inset: -8% -42% 8%; background: var(--glow) center / 100% 100% no-repeat; -webkit-mask-image: radial-gradient(closest-side, #000 25%, transparent); mask-image: radial-gradient(closest-side, #000 25%, transparent); opacity: .85; filter: saturate(1.8) brightness(1.5); transform: translateZ(-80px); pointer-events: none; }
-.frame { position: relative; display: block; padding: calc(var(--w) * .028); border-radius: calc(var(--w) * .16); background: linear-gradient(150deg, #3a3a3f, #111113 32%, #1d1d20 70%, #2c2c30); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .1), 0 0 0 1px rgb(0 0 0 / .6), 0 40px 80px -30px rgb(0 0 0 / .9); transform: rotateX(calc(var(--py, 0) * -9deg)) rotateY(calc(var(--px, 0) * 11deg)) translateZ(var(--lift, 0px)); transition: transform .7s var(--ease-out); }
-.frame img { width: 100%; height: auto; aspect-ratio: 9 / 20; border-radius: calc(var(--w) * .135); background: #0a0a0b; }
-.frame .punch { top: calc(var(--w) * .052); width: calc(var(--w) * .036); height: calc(var(--w) * .036); margin-left: calc(var(--w) * -.018); box-shadow: inset 0 0 0 1px #151518; }
-.frame::after { content: ""; position: absolute; inset: calc(var(--w) * .028); border-radius: calc(var(--w) * .135); background: radial-gradient(60% 40% at calc(50% + var(--px, 0) * 90%) calc(30% + var(--py, 0) * 90%), rgb(255 255 255 / .2), transparent 70%), linear-gradient(115deg, rgb(255 255 255 / .1), transparent 38%); opacity: .5; pointer-events: none; transition: opacity .5s var(--ease-out); }
-.shot.hover { z-index: 4; }
-.shot.hover .frame { --lift: 60px; transition-duration: .35s; }
-.shot.hover .frame::after { opacity: 1; }
-.shot-label { display: none; }
-@keyframes fan { from { transform: translateX(calc(var(--k) * var(--step) * .14)) translateY(80px) translateZ(calc(var(--a) * -130px - 220px)) rotateY(0deg); } }
-@supports (animation-timeline: view()) {
-  @media (min-width: 881px) { html:not(.reduce-motion) .shot { animation: fan linear both; animation-timeline: view(); animation-range: entry 5% cover 48%; } }
+.device { position: relative; margin: 0; }
+.device::after {
+  content: "";
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: -6px;
+  height: 12px;
+  background: radial-gradient(closest-side, var(--drop), transparent);
+  pointer-events: none;
 }
-.fan-js .shot { transition: transform 1.5s var(--ease-out); transition-delay: calc(var(--a) * 90ms); }
-.fan-js:not(.open) .shot { transform: translateX(calc(var(--k) * var(--step) * .14)) translateY(80px) translateZ(calc(var(--a) * -130px - 220px)); }
-@keyframes focus { 0%, 100% { scale: .86; opacity: .5; } 50% { scale: 1; opacity: 1; } }
-
-/* ---------- IV. Together ---------- */
-.together { position: relative; padding: clamp(110px, 16vh, 190px) 0; overflow-x: hidden; overflow-x: clip; }
-.together-inner { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 460px); gap: clamp(40px, 8vw, 128px); align-items: center; }
-.together-copy .body { margin-top: 24px; }
-.pulse-art { position: relative; }
-.pulse-art::before, .pulse-art::after { content: ""; position: absolute; left: 50%; top: 50%; width: 130%; aspect-ratio: 1; border-radius: 50%; transform: translate(-50%, -50%) scale(.6); border: 1px solid rgb(120 255 240 / .35); animation: beat 2.07s var(--ease-out) infinite; pointer-events: none; }
-.pulse-art::after { animation-delay: 1.035s; }
-@keyframes beat { from { transform: translate(-50%, -50%) scale(.55); opacity: .9; } to { transform: translate(-50%, -50%) scale(1.15); opacity: 0; } }
-.session { --row: 68px; position: relative; padding: 22px 20px 12px; border-radius: 30px; background: rgb(10 22 26 / .72); -webkit-backdrop-filter: blur(24px) saturate(1.4); backdrop-filter: blur(24px) saturate(1.4); box-shadow: inset 0 .5px 0 rgb(255 255 255 / .16), 0 0 0 .5px rgb(255 255 255 / .08), 0 50px 100px -40px rgb(0 0 0 / .9); }
-.session-head { display: flex; align-items: center; gap: 14px; }
-.avatars { display: flex; }
-.avatars span { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-size: 14px; font-weight: 700; color: #fff; background: var(--c); box-shadow: 0 0 0 2.5px #0f1d21; }
-.avatars span + span { margin-left: -9px; }
-.session-head p { font-size: 15px; line-height: 1.3; }
-.session-head p strong { display: block; font-weight: 600; font-size: 16px; }
-.session-head p span { color: var(--secondary); }
-.live { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--secondary); }
-.live::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #30d158; animation: ping 2s var(--ease-out) infinite; }
-@keyframes ping { from { box-shadow: 0 0 0 0 rgb(48 209 88 / .6); } 70%, 100% { box-shadow: 0 0 0 8px rgb(48 209 88 / 0); } }
-.now-row { display: flex; align-items: center; gap: 12px; margin-top: 20px; padding: 12px; border-radius: 18px; background: rgb(255 255 255 / .06); }
-.now-row img { width: 52px; height: 52px; border-radius: 8px; object-fit: cover; }
-.now-row div { flex: 1; min-width: 0; }
-.now-row p { font-size: 15px; line-height: 1.3; }
-.now-row p:first-child { font-weight: 600; font-size: 16px; }
-.now-row p + p { color: var(--secondary); }
-.eq { display: flex; align-items: flex-end; gap: 2.5px; height: 16px; }
-.eq i { width: 3px; height: 100%; border-radius: 2px; background: var(--rose); transform-origin: bottom; animation: eq 1s var(--ease-quart) infinite alternate; }
-.eq i:nth-child(2) { animation-duration: .7s; animation-delay: -.3s; }
-.eq i:nth-child(3) { animation-duration: .9s; animation-delay: -.6s; }
-@keyframes eq { from { transform: scaleY(.25); } }
-.queue-label { margin: 22px 4px 4px; font-size: 13px; font-weight: 600; color: var(--secondary); }
-.queue { position: relative; list-style: none; padding: 0; height: calc(var(--row) * 3); transition: opacity .35s var(--ease-quart); }
-.queue.fade { opacity: 0; }
-.queue li { position: absolute; inset: 0 0 auto; height: var(--row); display: flex; align-items: center; gap: 12px; padding: 0 4px; transform: translateY(calc(var(--i, 0) * var(--row))); transition: transform .75s var(--ease-out); }
-.queue.still li { transition: none; }
-.queue img { width: 44px; height: 44px; border-radius: 6px; object-fit: cover; }
-.queue .meta { flex: 1; min-width: 0; }
-.queue .meta p { font-size: 15px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.queue .meta p:first-child { font-weight: 600; }
-.queue .meta p + p { color: var(--secondary); font-size: 14px; }
-.adder { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; background: var(--c); vertical-align: 1px; }
-.vote { flex: none; display: inline-flex; align-items: center; gap: 4px; height: 34px; min-width: 58px; padding: 0 12px 0 9px; border: 0; border-radius: 999px; background: var(--fill); color: var(--label); font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; cursor: pointer; transition: background-color .25s, transform .3s var(--ease-out); }
-.vote .icon { width: 16px; height: 16px; }
-.vote:active { transform: scale(.92); }
-.vote[aria-pressed="true"] { background: var(--rose); }
-.vote.bump { animation: bump .5s var(--ease-out); }
-@keyframes bump { 40% { transform: scale(1.14); background: rgb(255 55 95 / .5); } }
-
-/* ---------- V. Interlude ---------- */
-.features { position: relative; padding: clamp(110px, 16vh, 190px) 0 clamp(72px, 12vh, 140px); overflow-x: hidden; overflow-x: clip; }
-.bento { margin-top: clamp(44px, 6vw, 72px); display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px; }
-.tile { --mx: 50%; --my: -30%; position: relative; isolation: isolate; overflow: hidden; grid-column: span 2; display: flex; flex-direction: column; min-height: 340px; padding: 26px; border-radius: 28px; background: linear-gradient(180deg, rgb(18 18 22 / .86), rgb(8 8 10 / .9)); box-shadow: inset 0 0 0 .5px rgb(255 255 255 / .1); }
-.tile.wide { grid-column: span 3; }
-.tile.full { grid-column: span 6; min-height: 280px; }
-.tile::before { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: radial-gradient(520px circle at var(--mx) var(--my), rgb(255 255 255 / .07), transparent 45%); pointer-events: none; }
-.tile::after { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none; background: radial-gradient(320px circle at var(--mx) var(--my), rgb(255 55 95 / .7), transparent 55%); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
-.visual { position: relative; flex: 1; display: grid; place-items: center; min-height: 170px; margin-bottom: 22px; }
-.tile h3 { font-family: var(--display); font-stretch: 110%; font-size: 21px; line-height: 1.15; font-weight: 800; letter-spacing: -.015em; }
-.tile p { margin-top: 8px; font-size: 15.5px; line-height: 1.55; color: var(--secondary); max-width: 40ch; text-wrap: pretty; }
-.features:not(.in-view) .tile * { animation-play-state: paused !important; }
-.dl { position: relative; width: 132px; height: 132px; }
-.dl img { position: absolute; inset: 20px; width: 92px; height: 92px; border-radius: 12px; object-fit: cover; box-shadow: 0 16px 30px -10px rgb(0 0 0 / .8); }
-.dl svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
-.dl .track-ring { fill: none; stroke: rgb(255 255 255 / .1); stroke-width: 4; }
-.dl .ring { fill: none; stroke: var(--rose); stroke-width: 4; stroke-linecap: round; stroke-dasharray: 358; stroke-dashoffset: 358; animation: fill-ring 4.5s var(--ease-quart) infinite; }
-@keyframes fill-ring { 0% { stroke-dashoffset: 358; } 60%, 88% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: 0; opacity: 0; } }
-.dl .done { position: absolute; right: 4px; bottom: 4px; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--rose); box-shadow: 0 0 0 4px #0e0e10; animation: pop-done 4.5s var(--ease-out) infinite; }
-.dl .done svg { position: static; width: 18px; height: 18px; transform: none; }
-@keyframes pop-done { 0%, 58% { transform: scale(0); } 66%, 92% { transform: scale(1); } 100% { transform: scale(0); } }
-.rings { position: relative; width: 180px; height: 180px; display: grid; place-items: center; }
-.rings i { position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid rgb(255 55 95 / .8); animation: ripple 3s var(--ease-out) infinite; }
-.rings i:nth-child(2) { animation-delay: 1s; }
-.rings i:nth-child(3) { animation-delay: 2s; }
-@keyframes ripple { from { transform: scale(.3); opacity: 1; } to { transform: scale(1.15); opacity: 0; } }
-.rings b { position: relative; width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; background: linear-gradient(180deg, #ff6282, #e5244b); box-shadow: inset 0 1px 0 rgb(255 255 255 / .45), 0 12px 30px -8px rgb(255 45 85 / .8); }
-.rings b svg { width: 28px; height: 28px; }
-.deck { position: relative; width: 190px; height: 150px; }
-.deck span { position: absolute; left: 50%; bottom: 0; width: 96px; height: 124px; margin-left: -48px; border-radius: 14px; display: flex; flex-direction: column; gap: 8px; padding: 12px; background: linear-gradient(160deg, #2a2a2e, #18181a); box-shadow: inset 0 .5px 0 rgb(255 255 255 / .14), 0 20px 30px -14px rgb(0 0 0 / .9); font-size: 13px; font-weight: 700; letter-spacing: .02em; transform-origin: 50% 120%; transition: transform .7s var(--ease-out); }
-.deck span svg { width: 22px; height: 22px; color: var(--rose); }
-.deck span:nth-child(1) { transform: rotate(-16deg) translateX(-8px); }
-.deck span:nth-child(3) { transform: rotate(16deg) translateX(8px); }
-.tile:hover .deck span:nth-child(1) { transform: rotate(-26deg) translateX(-16px); }
-.tile:hover .deck span:nth-child(3) { transform: rotate(26deg) translateX(16px); }
-.flow { position: relative; width: 240px; height: 150px; }
-.flow .path { position: absolute; inset: 0; width: 100%; height: 100%; }
-.flow .path path { fill: none; stroke: rgb(255 255 255 / .16); stroke-width: 1.5; stroke-dasharray: 3 6; }
-.flow .src { position: absolute; left: 0; top: 50%; width: 52px; height: 52px; margin-top: -26px; border-radius: 12px; display: grid; place-items: center; background: #1db95422; box-shadow: inset 0 0 0 .5px #1db95466; color: #1ed760; font-size: 11px; font-weight: 700; }
-.flow .dst { position: absolute; right: 0; top: 50%; width: 56px; height: 56px; margin-top: -28px; border-radius: 14px; box-shadow: 0 0 0 .5px rgb(255 255 255 / .16), 0 12px 30px -10px rgb(255 55 95 / .7); }
-.flow .mover { position: absolute; left: 0; top: 0; width: 34px; height: 34px; border-radius: 7px; object-fit: cover; offset-path: path("M 26 75 C 90 -5, 150 155, 212 75"); offset-rotate: 0deg; animation: travel 3.6s var(--ease-quart) infinite; box-shadow: 0 8px 18px -6px rgb(0 0 0 / .8); }
-.flow .mover:nth-of-type(2) { animation-delay: 1.2s; }
-.flow .mover:nth-of-type(3) { animation-delay: 2.4s; }
-@keyframes travel { 0% { offset-distance: 0%; opacity: 0; transform: scale(.6); } 15% { opacity: 1; transform: none; } 85% { opacity: 1; transform: none; } 100% { offset-distance: 100%; opacity: 0; transform: scale(.6); } }
-.ambient { position: relative; width: 240px; aspect-ratio: 19.5 / 9; border-radius: 22px; padding: 6px; background: #1c1c1f; box-shadow: inset 0 0 0 1px rgb(255 255 255 / .1), 0 30px 50px -20px rgb(0 0 0 / .9); }
-.ambient div { position: relative; height: 100%; border-radius: 17px; overflow: hidden; display: flex; align-items: center; gap: 12px; padding: 0 16px; background: url(/art/viva-room.webp) center / cover; }
-.ambient div::before { content: ""; position: absolute; inset: 0; background: rgb(0 0 0 / .3); }
-.ambient img { position: relative; width: 58px; height: 58px; border-radius: 7px; object-fit: cover; }
-.ambient p { position: relative; margin: 0; font-size: 15px; font-weight: 800; line-height: 1.15; color: #fff; letter-spacing: -.02em; text-shadow: 0 0 18px rgb(255 255 255 / .5); }
-.skyline { display: flex; align-items: flex-end; gap: 5px; width: 100%; height: 150px; }
-.skyline i { flex: 1; height: var(--h); border-radius: 4px 4px 1px 1px; background: linear-gradient(180deg, var(--rose), rgb(255 55 95 / .15)); transform-origin: bottom; transform: scaleY(.08); transition: transform 1.2s var(--ease-out); transition-delay: calc(var(--n) * 22ms); }
-.features.in-view .skyline i { transform: none; }
-
-/* ---------- VI. Silence ---------- */
-.privacy { position: relative; padding: clamp(120px, 18vh, 210px) 0; overflow-x: hidden; overflow-x: clip; }
-.privacy-inner { display: grid; grid-template-columns: minmax(0, .95fr) minmax(0, 1.05fr); gap: clamp(40px, 8vw, 128px); align-items: center; }
-.privacy-copy .body { margin-top: 22px; }
-.cage { position: relative; width: min(280px, 78%); margin: 30px 0 0; }
-.cage::before { content: ""; position: absolute; inset: 20% -22% 10%; background: radial-gradient(closest-side, rgb(150 124 255 / .22), transparent); pointer-events: none; }
-.cage svg { position: relative; display: block; width: 100%; height: auto; overflow: visible; fill: none; stroke: #efe6ff; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
-.cage .back { opacity: .3; stroke-width: 1.1; }
-/* The door, swung out toward you: solid enough to hide the bars behind it, so it reads as open. */
-.cage .leaf { fill: rgb(6 5 11 / .92); stroke-width: 1.8; }
-/* It hangs from nothing, and the perch is still moving: whoever lived here has only just left. */
-.cage-body, .cage .swing { transform-box: fill-box; transform-origin: 50% 0; }
-.cage-body { animation: cage-sway 7s cubic-bezier(.45, 0, .55, 1) infinite alternate; }
-.cage .swing { animation: perch 2.6s cubic-bezier(.45, 0, .55, 1) infinite alternate; }
-@keyframes cage-sway { from { transform: rotate(-1.3deg); } to { transform: rotate(1.3deg); } }
-@keyframes perch { from { transform: rotate(-7deg); } to { transform: rotate(7deg); } }
-.cage figcaption { position: relative; margin-top: 14px; font-family: var(--serif); font-style: italic; font-size: 23px; line-height: 1.25; color: rgb(255 255 255 / .92); }
-.privacy:not(.in-view) .cage * { animation-play-state: paused; }
-.promises { list-style: none; padding: 0; display: grid; gap: 28px; }
-.promises li { padding-top: 20px; box-shadow: inset 0 .5px 0 var(--hairline); }
-.promises h3 { font-family: var(--display); font-stretch: 110%; font-size: 21px; line-height: 1.2; font-weight: 800; letter-spacing: -.015em; }
-.promises p { margin-top: 6px; font-size: 16px; line-height: 1.55; color: var(--secondary); max-width: 46ch; text-wrap: pretty; }
-
-/* ---------- VII. Encore ---------- */
-.get { position: relative; overflow: hidden; padding: clamp(120px, 18vh, 210px) 0 clamp(80px, 12vh, 140px); }
-.get-inner { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: clamp(48px, 8vw, 120px); align-items: center; }
-.vinyl { --rs: min(380px, 62vw); position: relative; width: calc(var(--rs) * 1.42); height: var(--rs); }
-.sleeve { position: absolute; left: 0; top: 0; z-index: 2; width: var(--rs); height: var(--rs); border-radius: 6px; overflow: hidden; background: #000; box-shadow: inset 0 0 0 .5px rgb(255 255 255 / .12), 0 40px 80px -30px rgb(0 0 0 / .95); }
-.sleeve img { width: 100%; height: 100%; object-fit: cover; }
-.sleeve::after { content: ""; position: absolute; inset: 0; background: linear-gradient(120deg, rgb(255 255 255 / .1), transparent 40%), linear-gradient(to top, rgb(0 0 0 / .6), transparent 34%); }
-.sleeve span { position: absolute; left: 18px; bottom: 16px; z-index: 1; font-size: 13px; line-height: 1.3; color: rgb(255 255 255 / .8); }
-.sleeve span strong { display: block; font-family: var(--display); font-stretch: 120%; font-size: 24px; font-weight: 900; letter-spacing: -.02em; color: #fff; }
-.record { position: absolute; top: 0; left: 0; z-index: 1; width: var(--rs); height: var(--rs); border-radius: 50%; transform: translateX(40%); transition: transform 1.1s var(--ease-out); box-shadow: 0 30px 70px -24px rgb(0 0 0 / .95); }
-.vinyl:hover .record { transform: translateX(52%); }
-.disc { position: absolute; inset: 0; border-radius: 50%; background: repeating-radial-gradient(circle at 50% 50%, #0c0c0d 0 1.4px, #1b1b1d 1.9px, #0c0c0d 2.8px); animation: spin 1.8s linear infinite; }
-.get:not(.in-view) .disc { animation-play-state: paused; }
-.sheen { position: absolute; inset: 0; border-radius: 50%; pointer-events: none; background: conic-gradient(from 30deg, transparent 0 8%, rgb(255 255 255 / .1) 13%, transparent 20% 52%, rgb(255 255 255 / .08) 60%, transparent 68%); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .05); }
-.label { position: absolute; inset: 31%; border-radius: 50%; background: var(--rose); display: grid; place-items: center; animation: spin 1.8s linear infinite; }
-.get:not(.in-view) .label { animation-play-state: paused; }
-.label svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.label svg text { font: 700 8.6px var(--font); letter-spacing: 2.4px; fill: rgb(255 255 255 / .9); }
-.label img { width: 44%; height: 44%; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px rgb(0 0 0 / .25); }
-.label::after { content: ""; position: absolute; left: 50%; top: 50%; width: 7%; height: 7%; margin: -3.5% 0 0 -3.5%; border-radius: 50%; background: #0a0a0a; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.get-copy .h2 { font-size: clamp(2.8rem, 1.4rem + 5vw, 5.6rem); }
-.get-copy .body { margin-top: 18px; }
-.get-copy .btn { margin-top: 32px; height: 62px; padding: 0 34px 0 30px; font-size: 18px; }
-.get-copy .fine { margin-top: 14px; }
-.steps { list-style: none; padding: 0; margin-top: 40px; display: grid; gap: 18px; counter-reset: step; max-width: 470px; }
-.steps li { display: flex; gap: 14px; }
-.steps li::before { counter-increment: step; content: counter(step); flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-size: 14px; font-weight: 700; background: var(--fill); }
-.steps p { font-size: 16px; line-height: 1.55; color: var(--secondary); padding-top: 3px; text-wrap: pretty; }
-.steps strong { color: var(--label); font-weight: 600; }
-.note-small { margin-top: 24px; max-width: 52ch; font-size: 14px; line-height: 1.6; color: var(--secondary); text-wrap: pretty; }
-
-/* ---------- Footer ---------- */
-.foot { position: relative; padding: 28px 0 calc(28px + env(safe-area-inset-bottom)); box-shadow: inset 0 .5px 0 var(--hairline); background: rgb(0 0 0 / .55); }
-.foot-inner { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; font-size: 13px; color: var(--secondary); }
-.foot-brand { display: flex; align-items: center; gap: 8px; color: var(--label); font-weight: 600; }
-.foot-brand img { width: 20px; height: 20px; border-radius: 5px; }
-
-/* ---------- Narrow screens ---------- */
-@media (max-width: 1100px) { .note { display: none; } }
-@media (max-width: 880px) {
-  .nav-links { display: none; }
-  .hero-inner { padding-top: calc(112px + env(safe-area-inset-top)); }
-  .hero > .ink-stack { display: none; }
-  .dove { right: -14vw; bottom: -6svh; width: auto; height: max(300px, min(126vw, (100svh - 310px) * 1.05)); }
-  .plume.a { --x: 6%; --y: 50%; --w: 84px; }
-  .plume.b { --x: 40%; --y: 39%; --w: 150px; }
-  .plume.c { --x: 26%; --y: 63%; --w: 40px; }
-  .plume.d { --x: 80%; --y: 43%; --w: 36px; }
-  .pause { position: relative; right: auto; bottom: auto; align-self: flex-start; margin: 14px 20px 22px; }
-  .marks { display: none; }
-  .placard { left: 50%; bottom: auto; top: calc(100% + 40px); transform: translateX(-50%); width: min(300px, 80vw); padding: 12px 14px; font-size: 12px; }
-  .painting { --s: min(32svh, 64vw); top: max(calc(50% - var(--s) / 2 + 20px), 250px); }
-  .chorus-head, .inside-head, .together-inner, .get-inner, .privacy-inner { grid-template-columns: 1fr; }
-  .stage { height: 460px; }
-  .gallery { --w: min(64vw, 270px); margin-top: 40px; }
-  .shots { display: flex; gap: 18px; height: auto; perspective: none; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; padding: 24px calc(50% - var(--w) / 2) 8px; scrollbar-width: none; }
-  .shots::-webkit-scrollbar { display: none; }
-  .shot, .fan-js .shot, .fan-js:not(.open) .shot { position: relative; left: auto; top: auto; flex: none; margin: 0; transform: none; transform-style: flat; transition: none; scroll-snap-align: center; }
-  .shot::before { transform: none; inset: 0 -30% 20%; opacity: .45; }
-  .frame { transform: none; }
-  .shot-label { display: block; margin-top: 16px; text-align: center; font-size: 15px; font-weight: 600; color: var(--secondary); }
-  @supports (animation-timeline: view()) { html:not(.reduce-motion) .shot { animation: focus linear both; animation-timeline: view(inline); } }
-  .bento { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .tile, .tile.wide { grid-column: span 1; }
-  .tile.full { grid-column: span 2; }
-  .get-inner { justify-items: center; }
-  .vinyl { --rs: min(300px, 58vw); }
-  .together-copy { order: -1; }
+.device-back {
+  z-index: 0;
+  margin-right: calc(var(--w) * -.36);
+  margin-bottom: calc(var(--w) * .07);
+  transform: scale(.9);
+  transform-origin: 50% 100%;
+  filter: brightness(.86);
 }
-@media (max-width: 600px) {
-  :root { --page: calc(100% - 32px); }
-  .nav { width: calc(100% - 32px); height: 52px; padding: 0 6px 0 10px; }
-  .brand { gap: 8px; font-size: 16px; }
-  .brand img { width: 28px; height: 28px; }
-  .nav-cta { height: 40px; padding: 0 14px; gap: 6px; font-size: 14.5px; }
-  /* "Millions of songs." is about 8.5em wide: 11.4% of the column keeps it on one line down to 320px. */
-  .statement { font-size: clamp(1.75rem, 11.4vw - 3.65px, 3rem); }
-  .pause { margin: 14px 16px 22px; }
-  .pulse-art::before, .pulse-art::after { width: 112%; }
-  .bento { grid-template-columns: 1fr; }
-  .tile, .tile.wide, .tile.full { grid-column: span 1; min-height: 0; }
-  .session { padding: 18px 14px 10px; border-radius: 26px; }
-  .stage { height: 420px; }
-  .btn { height: 56px; }
-  .cta-row .btn { flex: 1 1 100%; }
+.device-front { z-index: 1; }
+.phone {
+  position: relative;
+  width: var(--w);
+  padding: calc(var(--w) * .032);
+  border-radius: calc(var(--w) * .16);
+  background: linear-gradient(145deg, #55555b 0%, #1d1d20 20%, #0c0c0e 58%, #2c2c31 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, .16),
+    inset 0 1.5px 0 rgba(255, 255, 255, .24),
+    0 40px 60px -30px rgba(0, 0, 0, .5);
+}
+.screen {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 9 / 20;
+  border-radius: calc(var(--w) * .13);
+  background: #000;
+}
+.screen img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.screen::before {
+  content: "";
+  position: absolute;
+  top: calc(var(--w) * .03);
+  left: 50%;
+  width: calc(var(--w) * .042);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #2a2a33, #050506 70%);
+  transform: translateX(-50%);
+}
+.screen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(118deg, rgba(255, 255, 255, .14) 0%, rgba(255, 255, 255, .04) 36%, transparent 36.3%);
+  pointer-events: none;
+}
+.mirror {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  transform: scaleY(-1);
+  -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, var(--reflect)) 0%, transparent 21%);
+  mask-image: linear-gradient(to top, rgba(0, 0, 0, var(--reflect)) 0%, transparent 21%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .16);
+  pointer-events: none;
+}
+.mirror .screen::after { display: none; }
+
+.band { max-width: 1120px; margin: 0 auto; padding: 0 var(--gutter); }
+.band h2 {
+  font-size: clamp(30px, 3.4vw, 44px);
+  font-weight: 650;
+  line-height: 1.08;
+  letter-spacing: -.03em;
 }
 
-@media (max-height: 500px) and (orientation: landscape) {
-  .hero-inner { padding-top: calc(84px + env(safe-area-inset-top)); }
-  .statement { font-size: clamp(1.75rem, 5.2vw, 3rem); }
-  .cta-row { margin-top: 22px; }
-  .dove { right: -4vw; bottom: -6svh; height: 118svh; }
-  .plume.a, .plume.c { display: none; }
+.features { padding-top: clamp(72px, 10vw, 128px); }
+.features ul {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 40px 32px;
+  margin-top: 40px;
+}
+.features li { padding-top: 18px; border-top: 1px solid var(--line); }
+.features h3 { font-size: 17px; font-weight: 600; letter-spacing: -.01em; }
+.features p { margin-top: 4px; color: var(--muted); font-size: 15px; line-height: 1.5; }
+
+.news {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
+  gap: 32px 64px;
+  padding-top: clamp(88px, 12vw, 152px);
+  padding-bottom: clamp(88px, 12vw, 140px);
+}
+.news-head { align-self: start; position: sticky; top: 100px; }
+.seg {
+  position: relative;
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  margin-top: 28px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--fill);
+}
+.seg-thumb {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc((100% - 6px) / 4);
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--thumb-top), var(--thumb-bottom));
+  box-shadow:
+    inset 0 1px 0 var(--thumb-rim),
+    0 1px 2px rgba(0, 0, 0, .14),
+    0 4px 10px rgba(0, 0, 0, .08);
+  transform: translateX(calc(var(--i, 0) * 100%));
+}
+.seg.ready .seg-thumb { transition: transform .45s var(--ease); }
+.seg button {
+  position: relative;
+  appearance: none;
+  height: 38px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--muted);
+  font: 500 15px var(--font);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: color .2s;
+}
+.seg button:hover { color: var(--text); }
+.seg button[aria-selected="true"] { color: var(--text); font-weight: 600; }
+.all {
+  display: block;
+  width: max-content;
+  margin-top: 20px;
+  color: var(--link);
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+}
+.all:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+.release:not([hidden]) { animation: show .35s var(--ease); }
+@keyframes show { from { opacity: 0; transform: translateY(6px); } }
+.release-date { color: var(--muted); font-size: 15px; font-variant-numeric: tabular-nums; }
+.release-summary {
+  margin-top: 8px;
+  font-size: clamp(22px, 2vw, 26px);
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -.02em;
+}
+.release h3 { margin-top: 32px; font-size: 17px; font-weight: 600; }
+.release li {
+  position: relative;
+  margin-top: 10px;
+  padding-left: 20px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.release li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: .68em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--muted);
+  opacity: .55;
 }
 
-@media (max-width: 360px) {
-  .nav-cta { height: 38px; padding: 0 12px; font-size: 14px; }
-  .nav-cta .icon { width: 15px; height: 15px; }
+footer {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 24px var(--gutter) 32px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13px;
 }
+footer a { text-underline-offset: 3px; }
+footer a:hover { color: var(--text); }
 
-/* ---------- Reduced motion (html.reduce-motion) ---------- */
-html.reduce-motion { scroll-behavior: auto; }
-.reduce-motion *, .reduce-motion *::before, .reduce-motion *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; animation-delay: 0s !important; }
-.reduce-motion .np-field, .reduce-motion .eq i, .reduce-motion .disc, .reduce-motion .label, .reduce-motion .rings i, .reduce-motion .flow .mover, .reduce-motion .live::before, .reduce-motion .mega span, .reduce-motion .pulse-art::before, .reduce-motion .pulse-art::after, .reduce-motion .plume, .reduce-motion .dove, .reduce-motion .cage-body, .reduce-motion .cage .swing { animation: none !important; }
-.reduce-motion .roll, .reduce-motion .line, .reduce-motion .line .w, .reduce-motion .line .dot, .reduce-motion .queue li, .reduce-motion .np-art, .reduce-motion .skyline i, .reduce-motion .record { transition: none !important; }
-.reduce-motion .skyline i { transform: none; }
-.reduce-motion .cursor { display: none; }
+@media (max-width: 1000px) {
+  .features ul { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 860px) {
+  .hero { --w: min(52vw, 250px); }
+  .hero-inner { grid-template-columns: minmax(0, 1fr); gap: 48px; min-height: 0; padding-top: 48px; }
+  .copy { padding-bottom: 0; text-align: center; }
+  .lede { margin-left: auto; margin-right: auto; }
+  .news { grid-template-columns: minmax(0, 1fr); }
+  .news-head { position: static; }
+}
+@media (max-width: 520px) {
+  .bar { height: 52px; }
+  .brand img { width: 32px; height: 32px; }
+  .github { height: 38px; padding: 0 16px 0 12px; }
+  .theme { width: 38px; height: 38px; }
+  .hero { --w: min(56vw, 240px); }
+  .hero-inner { padding-top: 40px; }
+  .download { width: 100%; max-width: 340px; justify-content: center; }
+  .features ul { gap: 28px 20px; }
+  .features h3 { font-size: 16px; }
+  .features p { font-size: 14px; }
+  .seg { display: grid; }
+  .seg button { padding: 0 8px; }
+  footer { flex-direction: column; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .github, .download, .seg.ready .seg-thumb { transition: none; }
+  .download:hover::after { transform: translateX(-110%); transition: none; }
+  .release:not([hidden]) { animation: none; }
+}
 </style>
 </head>
 <body>
-<canvas class="liquid" id="liquid" aria-hidden="true"></canvas>
-<div class="grain" aria-hidden="true"></div>
-<div class="cursor" id="cursor" aria-hidden="true"></div>
-
-<svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <defs>
-    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3.5v11.25m0 0 4.75-4.75M12 14.75 7.25 10M4.5 16.5v1.25A2.75 2.75 0 0 0 7.25 20.5h9.5a2.75 2.75 0 0 0 2.75-2.75V16.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-    <symbol id="i-up" viewBox="0 0 24 24"><path d="M6.5 14.5 12 9l5.5 5.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5.5 12.5 4.2 4.2 8.8-9.4" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-    <symbol id="i-note" viewBox="0 0 24 24"><path d="M9 18.2V6.4l10-2.2v11.4M9 18.2a2.8 2.8 0 1 1-2.8-2.8A2.8 2.8 0 0 1 9 18.2Zm10-2.6a2.8 2.8 0 1 1-2.8-2.8 2.8 2.8 0 0 1 2.8 2.8Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
-    <symbol id="i-wave" viewBox="0 0 24 24"><path d="M4 10v4M8 6.5v11M12 3.5v17M16 7.5v9M20 10.5v3" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
-    <symbol id="i-play" viewBox="0 0 24 24"><path d="M7.5 4.9v14.2a1.1 1.1 0 0 0 1.68.93l11.1-7.1a1.1 1.1 0 0 0 0-1.86L9.18 3.97A1.1 1.1 0 0 0 7.5 4.9Z" fill="currentColor"/></symbol>
-    <symbol id="i-pause" viewBox="0 0 24 24"><rect x="5.5" y="4" width="4.6" height="16" rx="1.4" fill="currentColor"/><rect x="13.9" y="4" width="4.6" height="16" rx="1.4" fill="currentColor"/></symbol>
-    <symbol id="i-next" viewBox="0 0 24 24"><path d="M2.5 6.6v10.8a.95.95 0 0 0 1.46.8L12 13.05v4.35a.95.95 0 0 0 1.46.8l8.2-5.4a.95.95 0 0 0 0-1.6l-8.2-5.4a.95.95 0 0 0-1.46.8v4.35L3.96 5.8a.95.95 0 0 0-1.46.8Z" fill="currentColor"/></symbol>
-    <symbol id="i-prev" viewBox="0 0 24 24"><path transform="matrix(-1 0 0 1 24 0)" d="M2.5 6.6v10.8a.95.95 0 0 0 1.46.8L12 13.05v4.35a.95.95 0 0 0 1.46.8l8.2-5.4a.95.95 0 0 0 0-1.6l-8.2-5.4a.95.95 0 0 0-1.46.8v4.35L3.96 5.8a.95.95 0 0 0-1.46.8Z" fill="currentColor"/></symbol>
-    <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="1.9" fill="currentColor"/><circle cx="12" cy="12" r="1.9" fill="currentColor"/><circle cx="18.5" cy="12" r="1.9" fill="currentColor"/></symbol>
-    <symbol id="i-lyrics" viewBox="0 0 24 24"><path d="M6.5 3.8h11a2.7 2.7 0 0 1 2.7 2.7v7.8a2.7 2.7 0 0 1-2.7 2.7h-6.1l-4.3 3.4a.6.6 0 0 1-.97-.47V17h.37a2.7 2.7 0 0 1-2.7-2.7V6.5a2.7 2.7 0 0 1 2.7-2.7Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M9.2 8.6c-.9.3-1.4 1-1.4 2 0 .8.5 1.3 1.1 1.3.6 0 1-.4 1-1 0-.5-.4-.9-.9-.9M14.4 8.6c-.9.3-1.4 1-1.4 2 0 .8.5 1.3 1.1 1.3.6 0 1-.4 1-1 0-.5-.4-.9-.9-.9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
-    <symbol id="i-cast" viewBox="0 0 24 24"><path d="M6.5 17.5H5.2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h13.6a2 2 0 0 1 2 2v9.5a2 2 0 0 1-2 2h-1.3" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M12 13.8 16.6 20H7.4Z" fill="currentColor"/></symbol>
-    <symbol id="i-queue" viewBox="0 0 24 24"><path d="M8.5 6.5h12M8.5 12h12M8.5 17.5h12" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><circle cx="4.2" cy="6.5" r="1.3" fill="currentColor"/><circle cx="4.2" cy="12" r="1.3" fill="currentColor"/><circle cx="4.2" cy="17.5" r="1.3" fill="currentColor"/></symbol>
-    <symbol id="i-speaker" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4Z" fill="currentColor"/></symbol>
-    <symbol id="i-speaker-loud" viewBox="0 0 24 24"><path d="M3 9.5h3.5L11 5.5v13l-4.5-4H3Z" fill="currentColor"/><path d="M14.5 9a4 4 0 0 1 0 6M17.5 6.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
-  </defs>
-</svg>
-
-<header class="nav">
-  <a class="brand" href="/"><img src="/icon-256.webp" width="30" height="30" alt="">Shiny</a>
-  <nav class="nav-links" aria-label="Sections">
-    <a href="#art">Now Playing</a>
-    <a href="#lyrics">Lyrics</a>
-    <a href="#together">Together</a>
-    <a href="#privacy">Privacy</a>
+<header class="top">
+  <nav class="bar" aria-label="Main">
+    <a class="brand" href="/"><img src="/icon-256.webp" alt="" width="36" height="36">Shiny</a>
+    <div class="bar-end">
+      <a class="github" href="https://github.com/lastdaytheOG/Shiny" rel="noopener">
+        <svg viewBox="0 0 16 16" aria-hidden="true" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        GitHub
+      </a>
+      <button class="theme" type="button" aria-label="Switch between light and dark">
+        <svg class="moon" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M16.5 12.3A6.8 6.8 0 0 1 7.7 3.5a6.8 6.8 0 1 0 8.8 8.8Z"/></svg>
+        <svg class="sun" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="3.4"/><path d="M10 1.8v2M10 16.2v2M1.8 10h2M16.2 10h2M4.2 4.2l1.4 1.4M14.4 14.4l1.4 1.4M4.2 15.8l1.4-1.4M14.4 5.6l1.4-1.4"/></svg>
+      </button>
+    </div>
   </nav>
-  <a class="nav-cta" href="/download"><svg class="icon" aria-hidden="true"><use href="#i-download"/></svg>Download</a>
 </header>
 
 <main>
-  <section class="hero" data-palette="overture" aria-labelledby="hero-title">
-    <div class="marks" aria-hidden="true"><i></i><i></i></div>
+  <section class="hero" aria-labelledby="title">
     <div class="hero-inner">
-      <div class="hero-copy">
-        <h1 class="display statement" id="hero-title">
-          <span class="ink-stack"><span class="ink"><span class="w" style="--i:0">Millions</span> <span class="w" style="--i:1">of</span> <span class="w" style="--i:2">songs.</span></span></span>
-          <span class="rose"><span class="w" style="--i:3">Not</span> <span class="w" style="--i:4">one</span> <span class="w" style="--i:5">ad.</span></span>
-        </h1>
-        <div class="cta-row">
-          <a class="btn" href="/download"><svg class="icon" aria-hidden="true"><use href="#i-download"/></svg>Download APK</a>
-        </div>
-        <p class="fine">Free · Android 8.0 and up · No account needed</p>
+      <div class="copy">
+        <h1 id="title"><span>All your music.</span> <span>None of the ads.</span></h1>
+        <p class="lede">Stream millions of songs, follow the lyrics and listen with friends. Free, open source, no account.</p>
+        <a class="download" href="/download">
+          <svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3v10M5.5 8.5 10 13l4.5-4.5M4 16.5h12"/></svg>
+          Download APK
+        </a>
+        <p class="meta">Version <span data-version>1.2.6</span> · Android 8.0 or later</p>
       </div>
-    </div>
-    <div class="ink-stack" aria-hidden="true"><p class="mega ink"><span>S</span><span>H</span><span>I</span><span>N</span><span>Y</span></p></div>
-    <img class="dove" id="dove" src="/art/dove.webp" width="1261" height="1245" fetchpriority="high" alt="A white dove in flight, and a hand reaching up to it out of the dark, painted in violet light">
-    <div aria-hidden="true">
-      <img class="plume a" src="/art/feather-a.webp" width="280" height="280" alt="">
-      <img class="plume b" src="/art/feather-b.webp" width="410" height="310" alt="">
-      <img class="plume c" src="/art/feather-c.webp" width="130" height="170" alt="">
-      <img class="plume d" src="/art/feather-d.webp" width="120" height="110" alt="">
-    </div>
-    <button class="pause" type="button" id="pause" aria-pressed="false"><svg class="icon i-pause" aria-hidden="true"><use href="#i-pause"/></svg><svg class="icon i-play" aria-hidden="true"><use href="#i-play"/></svg><span>Pause the art</span></button>
-  </section>
 
-  <section class="art" id="art" data-palette="liberty" aria-labelledby="art-title">
-    <div class="art-stage" id="art-stage">
-      <div class="gallery-light" aria-hidden="true"></div>
-      <div class="wall">
-        <div class="movement"><span class="numeral" aria-hidden="true">I</span><span class="mv-name"><i>Liberty</i> · Now Playing</span></div>
-        <h2 class="display h2" id="art-title">Every cover is a work of art.</h2>
-        <p class="body">Shiny hangs it where it belongs.</p>
-      </div>
-      <div class="painting" id="painting">
-        <div class="frame-art" aria-hidden="true"></div>
-        <p class="placard">
-          <strong>Coldplay</strong>
-          <em>Viva la Vida or Death and All His Friends</em>
-          2008
-          <span>Cover after Eugène Delacroix, <i>Liberty Leading the People</i>, 1830. Oil on canvas.</span>
-          <b>Now playing in Shiny</b>
-        </p>
-      </div>
-      <img class="flyer" id="flyer" src="/art/viva-la-vida.webp" width="900" height="900" alt="" aria-hidden="true">
-      <div class="notes">
-        <div class="note note-left"><h3>The artwork becomes the room.</h3><p>Now Playing takes its colours from the cover and lets them drift while the song plays.</p></div>
-        <div class="note note-right"><h3>Glass you can see through.</h3><p>Controls float on Liquid Glass that bends the artwork behind them. Tap play and try it.</p></div>
-      </div>
-      <div class="phone-wrap" id="phone-wrap">
-        <div class="phone" id="phone" data-playing="true">
-          <div class="screen">
-            <div class="np-field" aria-hidden="true"></div>
-            <div class="np-shade" aria-hidden="true"></div>
-            <div class="punch" aria-hidden="true"></div>
-            <div class="status ui" aria-hidden="true">
-              <span>9:41</span>
-              <span class="status-icons">
-                <svg viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx=".8" fill="#fff"/><rect x="5" y="5.5" width="3" height="6.5" rx=".8" fill="#fff"/><rect x="10" y="3" width="3" height="9" rx=".8" fill="#fff"/><rect x="15" y="0" width="3" height="12" rx=".8" fill="#fff" opacity=".4"/></svg>
-                <svg viewBox="0 0 16 12"><path d="M8 11.6 10.7 8.3a4.3 4.3 0 0 0-5.4 0Zm0-11.2A12.4 12.4 0 0 0 0 3.3l1.6 2a9.8 9.8 0 0 1 12.8 0l1.6-2A12.4 12.4 0 0 0 8 .4Zm0 3.8a8.3 8.3 0 0 0-5.3 1.9l1.6 2a5.7 5.7 0 0 1 7.4 0l1.6-2A8.3 8.3 0 0 0 8 4.2Z" fill="#fff"/></svg>
-                <svg viewBox="0 0 26 12"><rect x=".6" y=".6" width="22" height="10.8" rx="3" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="1.2"/><rect x="2.4" y="2.4" width="15" height="7.2" rx="1.6" fill="#fff"/><rect x="23.8" y="4" width="1.8" height="4" rx=".9" fill="#fff" fill-opacity=".5"/></svg>
-              </span>
-            </div>
-            <div class="grabber ui" aria-hidden="true"></div>
-            <div class="np-art" id="np-art"><img src="/art/viva-la-vida.webp" width="900" height="900" alt="Cover art for Viva la Vida by Coldplay: Delacroix's painting Liberty Leading the People with the title brushed across it"></div>
-            <div class="np-meta ui">
-              <div class="np-titles"><p class="np-title">Viva la Vida</p><p class="np-artist">Coldplay</p></div>
-              <button class="glass-btn orb" type="button" id="np-like" aria-pressed="false" aria-label="Love Viva la Vida">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7.6-4.55-7.6-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.6 2.6C19.6 15.45 12 20 12 20Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path class="heart-fill" d="M12 20s-7.6-4.55-7.6-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.6 2.6C19.6 15.45 12 20 12 20Z" fill="#ff375f" stroke="#ff375f" stroke-width="2" stroke-linejoin="round"/></svg>
-              </button>
-              <span class="glass-btn orb" aria-hidden="true"><svg><use href="#i-more"/></svg></span>
-            </div>
-            <div class="np-scrub ui" aria-hidden="true">
-              <div class="np-track"><div class="np-fill" id="np-fill"></div></div>
-              <div class="np-times"><span id="np-elapsed">1:12</span><span id="np-remain">−2:49</span></div>
-            </div>
-            <div class="np-transport ui">
-              <span class="glass-btn np-skip" aria-hidden="true"><svg><use href="#i-prev"/></svg></span>
-              <button class="glass-btn np-play" type="button" id="np-play" aria-label="Pause the demo">
-                <svg class="i-pause" aria-hidden="true"><use href="#i-pause"/></svg>
-                <svg class="i-play" aria-hidden="true"><use href="#i-play"/></svg>
-              </button>
-              <span class="glass-btn np-skip" aria-hidden="true"><svg><use href="#i-next"/></svg></span>
-            </div>
-            <div class="np-volume ui" aria-hidden="true"><svg><use href="#i-speaker"/></svg><span></span><svg><use href="#i-speaker-loud"/></svg></div>
-            <div class="np-tools ui" aria-hidden="true"><svg><use href="#i-lyrics"/></svg><svg><use href="#i-cast"/></svg><svg><use href="#i-queue"/></svg></div>
-            <div class="home-pill" aria-hidden="true"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="chorus" id="lyrics" data-palette="chorus" aria-labelledby="lyrics-title">
-    <span class="ghost" aria-hidden="true">II</span>
-    <div class="wrap">
-      <div class="chorus-head">
-        <div>
-          <div class="movement"><span class="numeral" aria-hidden="true">II</span><span class="mv-name"><i>Chorus</i> · Lyrics</span></div>
-          <h2 class="display h2" id="lyrics-title">Every word, right on time.</h2>
-        </div>
-        <p class="body">Lines light up as they're sung. Tap one to jump there. Songs in <strong>Hindi, Punjabi, Japanese, Korean</strong> and more show how to say them, in English letters.</p>
-      </div>
-      <div class="stage" id="stage" aria-hidden="true"><div class="roll" id="roll"></div></div>
-    </div>
-  </section>
-
-  <section class="inside" id="screens" data-palette="portraits" aria-labelledby="inside-title">
-    <span class="ghost" aria-hidden="true">III</span>
-    <div class="wrap inside-head">
-      <div>
-        <div class="movement"><span class="numeral" aria-hidden="true">III</span><span class="mv-name"><i>Portraits</i> · Real screens</span></div>
-        <h2 class="display h2" id="inside-title">Beautiful on the inside.</h2>
-      </div>
-      <p class="body">Captured straight from the app. The queue is a tap away, Home fills up with mixes made from what you play, and New keeps up with the artists you love.</p>
-    </div>
-    <div class="gallery" id="gallery">
-      <ul class="shots" id="shots">
-        <li class="shot" style="--k:-2;--a:2;--glow:url(/screens/home-glow.webp)">
-          <div class="frame"><img src="/screens/home.webp" width="720" height="1600" loading="lazy" decoding="async" alt="Shiny's Home screen: a Daylight mix made from your listening, above this week's charts"><span class="punch" aria-hidden="true"></span></div>
-          <p class="shot-label">Home</p>
-        </li>
-        <li class="shot" style="--k:-1;--a:1;--glow:url(/screens/new-glow.webp)">
-          <div class="frame"><img src="/screens/new.webp" width="720" height="1600" loading="lazy" decoding="async" alt="The New tab: fresh releases from the artists you play"><span class="punch" aria-hidden="true"></span></div>
-          <p class="shot-label">New releases</p>
-        </li>
-        <li class="shot" style="--k:0;--a:0;--glow:url(/screens/now-playing-glow.webp)">
-          <div class="frame"><img src="/screens/now-playing.webp" width="720" height="1600" decoding="async" alt="Now Playing: the album artwork fills the screen, with the title, progress bar and playback controls below"><span class="punch" aria-hidden="true"></span></div>
-          <p class="shot-label">Now Playing</p>
-        </li>
-        <li class="shot" style="--k:1;--a:1;--glow:url(/screens/queue-glow.webp)">
-          <div class="frame"><img src="/screens/queue.webp" width="720" height="1600" loading="lazy" decoding="async" alt="The queue: songs playing next, with Shuffle, Repeat and Autoplay"><span class="punch" aria-hidden="true"></span></div>
-          <p class="shot-label">Up next</p>
-        </li>
-        <li class="shot" style="--k:2;--a:2;--glow:url(/screens/together-glow.webp)">
-          <div class="frame"><img src="/screens/together.webp" width="720" height="1600" loading="lazy" decoding="async" alt="Listen Together: start a session or join one with a code"><span class="punch" aria-hidden="true"></span></div>
-          <p class="shot-label">Listen Together</p>
-        </li>
-      </ul>
-    </div>
-  </section>
-
-  <section class="together" id="together" data-palette="together" aria-labelledby="together-title">
-    <span class="ghost" aria-hidden="true">IV</span>
-    <div class="wrap together-inner">
-      <div class="together-copy">
-        <div class="movement"><span class="numeral" aria-hidden="true">IV</span><span class="mv-name"><i>Together</i> · In sync</span></div>
-        <h2 class="display h2" id="together-title">Four phones. One heartbeat.</h2>
-        <p class="body">Start a session and send the link. Friends hear exactly what you hear at the same second, add their own songs, vote the best ones up and react as it plays. Across the room or across the country.</p>
-      </div>
-      <div class="pulse-art">
-        <div class="session">
-          <div class="session-head">
-            <div class="avatars" aria-hidden="true"><span style="--c:#ff375f">A</span><span style="--c:#0a84ff">M</span><span style="--c:#30b158">K</span><span style="--c:#ff9f0a">R</span></div>
-            <p><strong>Aarav's session</strong><span>4 listening</span></p>
-            <span class="live">Live</span>
-          </div>
-          <div class="now-row">
-            <img src="/art/viva-la-vida.webp" width="52" height="52" alt="">
-            <div><p>Viva la Vida</p><p>Coldplay · playing for everyone</p></div>
-            <span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>
-          </div>
-          <p class="queue-label" id="queue-label">Up next · Tap to vote</p>
-          <ol class="queue" id="queue" aria-labelledby="queue-label">
-            <li data-votes="3">
-              <img src="/art/heat-waves.webp" width="44" height="44" alt="">
-              <div class="meta"><p>Heat Waves</p><p><span class="adder" style="--c:#0a84ff"></span>Glass Animals · Meera</p></div>
-              <button class="vote" type="button" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#i-up"/></svg><span class="count">3</span></button>
-            </li>
-            <li data-votes="2">
-              <img src="/art/get-lucky.webp" width="44" height="44" alt="">
-              <div class="meta"><p>Get Lucky</p><p><span class="adder" style="--c:#30b158"></span>Daft Punk · Kabir</p></div>
-              <button class="vote" type="button" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#i-up"/></svg><span class="count">2</span></button>
-            </li>
-            <li data-votes="1">
-              <img src="/art/yellow.webp" width="44" height="44" alt="">
-              <div class="meta"><p>Yellow</p><p><span class="adder" style="--c:#ff9f0a"></span>Coldplay · Riya</p></div>
-              <button class="vote" type="button" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#i-up"/></svg><span class="count">1</span></button>
-            </li>
-          </ol>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="features" id="features" data-palette="interlude" aria-labelledby="features-title">
-    <span class="ghost" aria-hidden="true">V</span>
-    <div class="wrap">
-      <div class="movement"><span class="numeral" aria-hidden="true">V</span><span class="mv-name"><i>Interlude</i> · The details</span></div>
-      <h2 class="display h2" id="features-title">The small things, done properly.</h2>
-      <div class="bento" id="bento">
-        <article class="tile wide">
-          <div class="visual" aria-hidden="true">
-            <div class="dl">
-              <img src="/art/viva-la-vida.webp" width="92" height="92" alt="">
-              <svg viewBox="0 0 132 132"><circle class="track-ring" cx="66" cy="66" r="57"/><circle class="ring" cx="66" cy="66" r="57"/></svg>
-              <span class="done"><svg><use href="#i-check"/></svg></span>
-            </div>
-          </div>
-          <h3>Offline downloads</h3>
-          <p>Save songs, albums and playlists for flights, trains and bad signal.</p>
-        </article>
-        <article class="tile wide">
-          <div class="visual" aria-hidden="true"><div class="rings"><i></i><i></i><i></i><b><svg><use href="#i-wave"/></svg></b></div></div>
-          <h3>Name that song</h3>
-          <p>Hear something good nearby? Shiny recognizes it and plays it in one tap.</p>
-        </article>
-        <article class="tile">
-          <div class="visual" aria-hidden="true">
-            <div class="deck"><span><svg><use href="#i-note"/></svg>FLAC</span><span><svg><use href="#i-note"/></svg>MP3</span><span><svg><use href="#i-note"/></svg>M4A</span></div>
-          </div>
-          <h3>Songs on your phone</h3>
-          <p>Music files you already have play right alongside everything else.</p>
-        </article>
-        <article class="tile">
-          <div class="visual" aria-hidden="true">
-            <div class="flow">
-              <svg class="path" viewBox="0 0 240 150"><path d="M 26 75 C 90 -5, 150 155, 212 75"/></svg>
-              <span class="src">Spotify</span>
-              <img class="mover" src="/art/heat-waves.webp" width="34" height="34" alt="">
-              <img class="mover" src="/art/get-lucky.webp" width="34" height="34" alt="">
-              <img class="mover" src="/art/yellow.webp" width="34" height="34" alt="">
-              <img class="dst" src="/icon-256.webp" width="56" height="56" alt="">
-            </div>
-          </div>
-          <h3>Import from Spotify</h3>
-          <p>Bring your playlists over, and Home starts learning your taste from day one.</p>
-        </article>
-        <article class="tile">
-          <div class="visual" aria-hidden="true"><div class="ambient"><div><img src="/art/viva-la-vida.webp" width="58" height="58" alt=""><p>Every word<br>lights up</p></div></div></div>
-          <h3>Ambient Mode</h3>
-          <p>Prop your phone up and the artwork and lyrics fill the whole screen.</p>
-        </article>
-        <article class="tile full">
-          <div class="visual" aria-hidden="true"><div class="skyline" id="skyline"></div></div>
-          <h3>Your listening, in numbers</h3>
-          <p>Minutes, top songs, artists and albums for any week, month or year.</p>
-        </article>
-      </div>
-    </div>
-  </section>
-
-  <section class="privacy" id="privacy" data-palette="silence" aria-labelledby="privacy-title">
-    <span class="ghost" aria-hidden="true">VI</span>
-    <div class="wrap privacy-inner">
-      <div class="privacy-copy">
-        <div class="movement"><span class="numeral" aria-hidden="true">VI</span><span class="mv-name"><i>Silence</i> · Privacy</span></div>
-        <h2 class="display h2" id="privacy-title">Your music stays yours.</h2>
-        <p class="body">No ads, nothing sold, and no account to start. What you listen to is your business.</p>
-        <figure class="cage">
-          <svg viewBox="0 -70 300 432" aria-hidden="true" focusable="false">
-            <defs><linearGradient id="thread" x1="0" y1="-70" x2="0" y2="19" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#efe6ff" stop-opacity="0"/><stop offset="1" stop-color="#efe6ff" stop-opacity=".85"/></linearGradient></defs>
-            <g class="cage-body">
-              <path d="M150 -70V19" stroke="url(#thread)"/>
-              <circle cx="150" cy="30" r="11"/>
-              <path d="M150 41v15"/>
-              <g class="back">
-                <path d="M50 150A100 14 0 0 1 250 150M46 320a104 17 0 0 1 208 0"/>
-                <path d="M134.4 302V136Q134.4 70 150 58M165.6 302V136Q165.6 70 150 58M104.6 304V137.5Q104.6 70 150 58M195.4 304V137.5Q195.4 70 150 58M79.3 307V140Q79.3 70 150 58M220.7 307V140Q220.7 70 150 58M60.9 311V143.6Q60.9 70 150 58M239.1 311V143.6Q239.1 70 150 58"/>
-              </g>
-              <g class="swing"><path d="M141 82 135 226M159 82 165 226M127 226h46"/></g>
-              <path d="M50 320V150Q50 74 150 58Q250 74 250 150V320M54.9 325V154.3Q54.9 74 150 58Q245.1 74 245.1 154.3V325M69.1 330V158.2Q69.1 74 150 58Q230.9 74 230.9 158.2V330M91.2 334V161.3Q91.2 74 150 58Q208.8 74 208.8 161.3V334M119.1 336V163.3Q119.1 74 150 58Q180.9 74 180.9 163.3V336M150 58V196"/>
-              <path d="M50 150A100 14 0 0 0 250 150"/>
-              <path d="M46 320a104 17 0 0 0 208 0M46 320v15a104 17 0 0 0 208 0v-15"/>
-              <path d="M119.1 214Q119.1 196 150 196Q180.9 196 180.9 214"/>
-              <path class="leaf" d="M180.9 334 236 357V217Q236 190 209 193 182 196 180.9 216Z"/>
-              <path d="M199 198.5V341.5M217.5 195V349"/>
-            </g>
-          </svg>
-          <img class="plume" src="/art/feather-n1.webp" width="330" height="270" alt="" loading="lazy" style="--x:86%;--y:58%;--w:96px;--r:38deg;--t:9s;--d:0s">
-          <figcaption>The door is always open.</figcaption>
+      <div class="stage">
+        <figure class="device device-back">
+          <div class="phone"><div class="screen"><img src="/screens/album.webp" alt="An album page in Shiny" width="720" height="1600"></div></div>
+          <div class="phone mirror" aria-hidden="true"><div class="screen"><img src="/screens/album.webp" alt="" width="720" height="1600"></div></div>
+        </figure>
+        <figure class="device device-front">
+          <div class="phone"><div class="screen"><img src="/screens/now-playing.webp" alt="Shiny's Now Playing screen" width="720" height="1600" fetchpriority="high"></div></div>
+          <div class="phone mirror" aria-hidden="true"><div class="screen"><img src="/screens/now-playing.webp" alt="" width="720" height="1600"></div></div>
         </figure>
       </div>
-      <ul class="promises">
-        <li><h3>No ads, ever</h3><p>Shiny has no ads to show you, so there's nothing to target and no reason to profile you.</p></li>
-        <li><h3>Never sold</h3><p>We don't sell your data to anyone. Not to advertisers, not to data brokers.</p></li>
-        <li><h3>Kept on your phone</h3><p>Your history, playlists, likes and downloads live on your device, not on our servers.</p></li>
-        <li><h3>No account needed</h3><p>Start listening without signing up. Sign in only if you want friends and a profile.</p></li>
-        <li><h3>Anonymous diagnostics only</h3><p>Crash reports and basic app stats are anonymous, and never include what you play or search.</p></li>
-      </ul>
     </div>
   </section>
 
-  <section class="get" id="get" data-palette="encore" aria-labelledby="get-title">
-    <span class="ghost" aria-hidden="true">VII</span>
-    <img class="plume" src="/art/feather-n1.webp" width="330" height="270" alt="" loading="lazy" style="--x:max(6px,calc(50% - 640px));--y:9%;--w:clamp(90px,10vw,170px);--r:-14deg;--t:13s;--d:0s">
-    <div class="wrap get-inner">
-      <div class="vinyl" aria-hidden="true">
-        <div class="record">
-          <div class="disc"></div>
-          <div class="sheen"></div>
-          <div class="label">
-            <svg viewBox="0 0 100 100"><defs><path id="label-ring" d="M50 50 m-38 0 a38 38 0 1 1 76 0 a38 38 0 1 1 -76 0"/></defs><text><textPath href="#label-ring">SHINY · FREE MUSIC FOR ANDROID · SIDE A ·</textPath></text></svg>
-            <img src="/icon-256.webp" width="64" height="64" alt="">
-          </div>
-        </div>
-        <div class="sleeve"><img src="/icon-512.webp" width="512" height="512" alt=""><span><strong>Shiny</strong>Free music for Android</span></div>
+  <section class="band features" aria-labelledby="features-title">
+    <h2 id="features-title">What's inside</h2>
+    <ul>
+      <li><h3>Millions of songs</h3><p>Search, browse and see the charts for your country.</p></li>
+      <li><h3>Lyrics in time</h3><p>Synced lyrics that follow the song, even after you seek.</p></li>
+      <li><h3>Offline downloads</h3><p>Keep songs, albums and playlists for no signal.</p></li>
+      <li><h3>Listen Together</h3><p>Play the same song with friends, in sync.</p></li>
+      <li><h3>Spotify import</h3><p>Bring your playlists over in a few taps.</p></li>
+      <li><h3>Your own files</h3><p>FLAC, MP3 and M4A on your phone, in one library.</p></li>
+      <li><h3>Name that song</h3><p>Hear something nearby and play it in one tap.</p></li>
+      <li><h3>Equaliser</h3><p>Bass, reverb, Slowed and 8D, all built in.</p></li>
+    </ul>
+  </section>
+
+  <section class="band news" id="whats-new" aria-labelledby="log-title">
+    <div class="news-head">
+      <h2 id="log-title">What's new</h2>
+      <div class="seg" role="tablist" aria-label="Versions">
+        <span class="seg-thumb" aria-hidden="true"></span>
+        <button role="tab" id="tab-127" aria-controls="v127" aria-selected="true">1.2.7</button>
+        <button role="tab" id="tab-126" aria-controls="v126" aria-selected="false" tabindex="-1">1.2.6</button>
+        <button role="tab" id="tab-125" aria-controls="v125" aria-selected="false" tabindex="-1">1.2.5</button>
+        <button role="tab" id="tab-124" aria-controls="v124" aria-selected="false" tabindex="-1">1.2.4</button>
       </div>
-      <div class="get-copy">
-        <div class="movement"><span class="numeral" aria-hidden="true">VII</span><span class="mv-name"><i>Encore</i> · Download</span></div>
-        <h2 class="display h2" id="get-title">Take it home.</h2>
-        <p class="body">Shiny is free, forever. No ads, and no account needed to start listening.</p>
-        <a class="btn" href="/download"><svg class="icon" aria-hidden="true"><use href="#i-download"/></svg>Download APK</a>
-        <p class="fine">For Android 8.0 and up</p>
-        <ol class="steps">
-          <li><p><strong>Download the APK</strong> with the button above.</p></li>
-          <li><p><strong>Open it</strong> from your notifications or Downloads. If Android asks, allow installs from your browser.</p></li>
-          <li><p><strong>Tap Install</strong>, then open Shiny and press play.</p></li>
-        </ol>
-        <p class="note-small">Shiny isn't on the Play Store, so Android asks for permission the first time you install an app from your browser. You only do it once.</p>
-      </div>
+      <a class="all" href="https://github.com/lastdaytheOG/Shiny/releases" rel="noopener">All releases on GitHub</a>
+    </div>
+
+    <div class="releases">
+      <article class="release" id="v127" role="tabpanel" aria-labelledby="tab-127">
+        <p class="release-date">Version 1.2.7 · October 2026</p>
+        <p class="release-summary">A calmer queue, and playlists that play all the way through.</p>
+        <h3>New</h3>
+        <ul>
+          <li>Up Next is one list: what you played, what's playing and what's next.</li>
+          <li>Queue mode gives the list the whole screen on a dark background.</li>
+          <li>Every song in the queue has Play Next, Remove and Clear, with undo.</li>
+        </ul>
+        <h3>Improved</h3>
+        <ul>
+          <li>Long playlists load in full, even with Autoplay off.</li>
+          <li>Shuffle keeps its order as songs are added or load.</li>
+          <li>Shuffle, Repeat and Autoplay sit together at the top of the queue.</li>
+          <li>Long-press and drag to reorder songs.</li>
+        </ul>
+        <h3>Fixed</h3>
+        <ul>
+          <li>Songs were sometimes skipped or played twice when a playlist started while still loading.</li>
+          <li>The queue could show the same songs twice for a moment.</li>
+        </ul>
+      </article>
+
+      <article class="release" id="v126" role="tabpanel" aria-labelledby="tab-126" hidden>
+        <p class="release-date">Version 1.2.6 · 22 October 2026</p>
+        <p class="release-summary">A cleaner Home and more dependable playback controls.</p>
+        <h3>New</h3>
+        <ul>
+          <li>Hold and drag along the tab bar to move between tabs.</li>
+        </ul>
+        <h3>Improved</h3>
+        <ul>
+          <li>Home is cleaner: Your Week, Surprise Me and the mood picker are gone.</li>
+          <li>Shuffle, Repeat and Autoplay behave the same every time and stay in sync with the queue.</li>
+          <li>What's New no longer pops up after an update. It's in Settings → About.</li>
+        </ul>
+        <h3>Fixed</h3>
+        <ul>
+          <li>A crash in the lyrics view.</li>
+          <li>A crash when adding a song whose artist name has unusual characters to a playlist.</li>
+        </ul>
+      </article>
+
+      <article class="release" id="v125" role="tabpanel" aria-labelledby="tab-125" hidden>
+        <p class="release-date">Version 1.2.5 · 10 October 2026</p>
+        <p class="release-summary">A small fix so Shiny can update itself again.</p>
+        <h3>Fixed</h3>
+        <ul>
+          <li>The in-app update checker finds new versions again.</li>
+        </ul>
+        <h3>Improved</h3>
+        <ul>
+          <li>Faster APK downloads from this site.</li>
+        </ul>
+      </article>
+
+      <article class="release" id="v124" role="tabpanel" aria-labelledby="tab-124" hidden>
+        <p class="release-date">Version 1.2.4 · 10 October 2026</p>
+        <p class="release-summary">A rebuilt Shiny: a new design on every screen, friends and Discord, and an appearance you can make your own.</p>
+        <h3>New</h3>
+        <ul>
+          <li>Home, Library, Search, Now Playing and Settings rebuilt with one design.</li>
+          <li>Add friends, see what they're playing and let people listen along from Discord.</li>
+          <li>Appearance settings with a live preview: accent colour, glow, material and size.</li>
+          <li>A new panel to choose where music plays, including Bluetooth devices.</li>
+          <li>Charts follow your country, and Home learns from your very first play.</li>
+          <li>Smart Shuffle, a download folder you choose, and export to MP3.</li>
+          <li>Tap the time in the player to switch between time left and song length.</li>
+        </ul>
+        <h3>Improved</h3>
+        <ul>
+          <li>Shiny opens faster, and songs start playing sooner.</li>
+          <li>Crossfade waits until the next song is ready.</li>
+          <li>Update notifications open straight into Shiny.</li>
+        </ul>
+        <h3>Fixed</h3>
+        <ul>
+          <li>Lyrics stay in time after you seek.</li>
+          <li>Songs on your phone no longer skip when Shiny can't read them. It asks for access instead.</li>
+          <li>Sharing some playlists and albums no longer crashes the app.</li>
+          <li>Songs opened from another app no longer get replaced by your old queue.</li>
+        </ul>
+      </article>
     </div>
   </section>
 </main>
 
-<footer class="foot">
-  <div class="wrap foot-inner">
-    <span class="foot-brand"><img src="/favicon.png" width="20" height="20" alt="">Shiny</span>
-    <span>No ads. We never sell your data. Shiny plays music from YouTube Music and isn't affiliated with YouTube, Google or Spotify. Album artwork belongs to its owners.</span>
-  </div>
+<footer>
+  <span>No ads. Your history and playlists stay on your phone. Crash reports are anonymous.</span>
+  <span>Open source under <a href="https://github.com/lastdaytheOG/Shiny/blob/main/LICENSE" rel="noopener">GPL-3.0</a></span>
 </footer>
 
 <script>
-(() => {
-  const root = document.documentElement;
-  const reduce = root.classList.contains("reduce-motion");
-  const $ = (selector) => document.querySelector(selector);
-  const clamp = (value, min = 0, max = 1) => Math.min(max, Math.max(min, value));
-  const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a)); return t * t * (3 - 2 * t); };
-  const lerp = (a, b, t) => a + (b - a) * t;
-  const finePointer = matchMedia("(hover: hover) and (pointer: fine)").matches;
+(function () {
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('[role="tab"]'));
+  var seg = document.querySelector(".seg");
 
-  // Every piece of two-tone ink gets its violet twin (see .ink.tint).
-  for (const ink of document.querySelectorAll(".ink-stack > .ink")) {
-    const twin = ink.cloneNode(true);
-    twin.classList.add("tint");
-    twin.setAttribute("aria-hidden", "true");
-    ink.after(twin);
-  }
-
-  /** Calls back with true/false as the element enters and leaves the viewport. */
-  function watch(element, callback, threshold = 0.2, rootMargin = "0px") {
-    new IntersectionObserver(([entry]) => callback(entry.isIntersecting), { threshold, rootMargin }).observe(element);
-  }
-
-  // ---- Liquid: one painting under the whole page. Each movement retunes its colours, weight and pace.
-  const liquid = (() => {
-    const canvas = $("#liquid");
-    const gl = canvas.getContext("webgl", { antialias: false, alpha: false, depth: false, stencil: false, premultipliedAlpha: false, powerPreference: "high-performance" });
-    if (!gl) { root.classList.add("no-gl"); return null; }
-    const vertex = "attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}";
-    const fragment = `
-#ifdef GL_FRAGMENT_PRECISION_HIGH
-precision highp float;
-#else
-precision mediump float;
-#endif
-uniform vec2 uRes;
-uniform float uTime;
-uniform vec2 uMouse;
-uniform float uMouseAmt;
-uniform vec3 uC0;
-uniform vec3 uC1;
-uniform vec3 uC2;
-uniform vec3 uC3;
-uniform float uDim;
-uniform float uIri;
-uniform float uNight;
-uniform vec4 uEdge;
-uniform vec4 uPlanet;
-uniform vec3 uRim;
-uniform float uStars;
-float hash(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
-float noise(vec2 p) {
-  vec2 i = floor(p);
-  vec2 f = fract(p);
-  vec2 u = f * f * (3.0 - 2.0 * f);
-  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);
-}
-float fbm(vec2 p) {
-  float v = 0.0;
-  float a = 0.5;
-  mat2 r = mat2(0.8, 0.6, -0.6, 0.8);
-  for (int i = 0; i < 5; i++) { v += a * noise(p); p = r * p * 2.03 + 11.7; a *= 0.5; }
-  return v;
-}
-float fbm3(vec2 p) {
-  float v = 0.0;
-  float a = 0.5;
-  mat2 r = mat2(0.8, 0.6, -0.6, 0.8);
-  for (int i = 0; i < 3; i++) { v += a * noise(p); p = r * p * 2.03 + 11.7; a *= 0.5; }
-  return v * 1.14;
-}
-float stars(vec2 p, float t) {
-  vec2 g = floor(p);
-  float h = hash(g);
-  vec2 o = vec2(hash(g + 3.1), hash(g + 7.7)) - 0.5;
-  float d = length(fract(p) - 0.5 - o * 0.7);
-  float twinkle = 0.62 + 0.38 * sin(t * (0.5 + h * 1.6) + h * 40.0);
-  return smoothstep(0.12, 0.0, d) * step(0.8, h) * twinkle * (0.35 + 0.65 * hash(g + 1.7));
-}
-void main() {
-  vec2 uv = (gl_FragCoord.xy - 0.5 * uRes) / uRes.y;
-  float aspect = uRes.x / uRes.y;
-  vec2 m = (uMouse - 0.5 * uRes) / uRes.y;
-  float t = uTime;
-  // The pointer stirs the paint.
-  vec2 d = uv - m;
-  float twist = exp(-dot(d, d) * 6.0) * uMouseAmt * 1.7;
-  vec2 w = m + mat2(cos(twist), -sin(twist), sin(twist), cos(twist)) * d;
-
-  // Where night begins: a diagonal across the screen, torn like the edge of a brush stroke.
-  // uNight slides it; past 1.45 the whole sky is night and none of this is worked out.
-  float core = 1.0;
-  float haze = 1.0;
-  float n = 1.0;
-  float e2 = 0.5;
-  if (uNight < 1.45) {
-    float e1 = fbm3(w * 1.5 + vec2(0.0, 0.02 * t));
-    e2 = fbm(w * 5.0 + 3.0 * e1 - vec2(0.015 * t, 0.0));
-    n = dot(w, uEdge.xy) * uEdge.z + uNight + ((e1 - 0.5) * 0.6 + (e2 - 0.5) * 0.24) * uEdge.w;
-    core = smoothstep(-0.03, 0.05, n + (noise(w * 46.0) - 0.5) * 0.08);
-    haze = smoothstep(-0.34 * uEdge.w, 0.04, n);
-  }
-
-  vec3 col = vec3(0.0);
-  if (core < 0.999) {
-    // Daylight: a high, pale sky with washes of lilac drifting through it.
-    float w1 = fbm3(w * vec2(1.0, 1.7) + vec2(0.025 * t, 0.0));
-    float w2 = fbm3(w * vec2(2.1, 3.2) + 2.5 * w1 + vec2(-0.02 * t, 0.012 * t));
-    vec3 day = mix(vec3(0.972, 0.962, 0.992), vec3(0.878, 0.842, 0.968), smoothstep(0.36, 0.86, w2) * 0.75);
-    day = mix(day, vec3(1.0), smoothstep(0.52, 0.9, w1) * 0.6);
-    // The mist the night pushes ahead of itself.
-    vec3 mist = mix(vec3(0.82, 0.76, 0.98), vec3(0.52, 0.39, 0.87), smoothstep(-0.1, 0.03, n));
-    col = mix(day, mist, haze * (0.5 + 0.5 * e2));
-  }
-  if (core > 0.001) {
-    vec2 p = w * 1.3;
-    vec2 q = vec2(fbm(p + 0.07 * t), fbm(p + vec2(5.2, 1.3) - 0.06 * t));
-    vec2 r = vec2(fbm(p + 3.4 * q + vec2(1.7, 9.2) + 0.09 * t), fbm(p + 3.4 * q + vec2(8.3, 2.8) - 0.07 * t));
-    float f = fbm(p + 2.8 * r);
-    float x = clamp(f * f * 1.9 + 0.38 * length(q) - 0.16, 0.0, 1.0);
-    vec3 night = mix(uC0, uC1, smoothstep(0.0, 0.42, x));
-    night = mix(night, uC2, smoothstep(0.36, 0.78, x));
-    night = mix(night, uC3, smoothstep(0.82, 1.0, x));
-    float ridge = 1.0 - abs(sin(f * 11.0 + r.x * 5.0 - t * 0.15));
-    night += uC3 * pow(ridge, 12.0) * 0.32 * smoothstep(0.18, 0.7, x);
-    vec3 iri = 0.5 + 0.5 * cos(6.2831 * (vec3(0.0, 0.33, 0.67) + f * 1.7 + r.y * 0.9 + t * 0.02));
-    night = mix(night, night * 0.45 + iri * 0.62, uIri * pow(ridge, 3.0) * 0.55 * smoothstep(0.1, 0.6, x));
-    night *= 1.0 - uDim;
-    // Stars, thinned out where the paint is thick.
-    float st = stars(uv * 34.0, t) + 0.7 * stars(uv * 61.0 + 13.0, t * 1.3);
-    night += vec3(0.93, 0.89, 1.0) * st * uStars * (1.0 - 0.6 * uDim) * (1.0 - 0.8 * smoothstep(0.25, 0.75, x));
-    // The planet: a dark body, lit only along the edge that faces the light.
-    if (uPlanet.w > 0.004) {
-      vec2 dv = uv - vec2((uPlanet.x - 0.5) * aspect, uPlanet.y - 0.5);
-      float pd = length(dv);
-      float pr = uPlanet.z;
-      float body = smoothstep(pr + 1.5 / uRes.y, pr - 1.5 / uRes.y, pd);
-      float facing = dot(dv / max(pd, 0.0001), vec2(cos(uRim.x), sin(uRim.x)));
-      float lit = mix(smoothstep(-0.45, 1.0, facing), 1.0, uRim.y);
-      lit *= lit;
-      if (body > 0.0) {
-        vec2 sp = dv / pr;
-        float z = sqrt(max(0.0, 1.0 - dot(sp, sp)));
-        float mottle = fbm3(sp * 2.6 + 9.0 + vec2(0.012 * t, 0.0));
-        vec3 surface = mix(uC0 * 0.7, uC1 * 0.42 + uC0 * 0.6, mottle) * (0.3 + 0.7 * z);
-        float limb = pow(1.0 - z, 2.4);
-        surface += uC3 * limb * lit * 0.9 + uC2 * limb * 0.1;
-        night = mix(night, surface, body * uPlanet.w);
-      }
-      float line = exp(-abs(pd - pr) * uRes.y * 0.7);
-      float halo = exp(-max(pd - pr, 0.0) / (0.012 + uRim.z * 0.2)) * (1.0 - body);
-      night += (uC3 * line * 0.85 + mix(uC3, uC2, 0.35) * halo * (0.16 + 0.55 * uRim.z)) * lit * uPlanet.w;
-    }
-    night *= mix(0.5, 1.0, smoothstep(1.45, 0.3, length(uv * vec2(0.72, 1.0))));
-    // A seam of wet violet where the night meets the mist.
-    night = mix(vec3(0.24, 0.13, 0.55), night, smoothstep(-0.02, 0.26, n));
-    col = mix(col, night, core);
-  }
-  gl_FragColor = vec4(col, 1.0);
-}`;
-    function shader(type, source) {
-      const s = gl.createShader(type);
-      gl.shaderSource(s, source);
-      gl.compileShader(s);
-      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
-      return s;
-    }
-    let program;
-    try {
-      program = gl.createProgram();
-      gl.attachShader(program, shader(gl.VERTEX_SHADER, vertex));
-      gl.attachShader(program, shader(gl.FRAGMENT_SHADER, fragment));
-      gl.linkProgram(program);
-      if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(program));
-    } catch (error) {
-      console.warn("Liquid off:", error);
-      root.classList.add("no-gl");
-      return null;
-    }
-    gl.useProgram(program);
-    const buffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
-    const position = gl.getAttribLocation(program, "p");
-    gl.enableVertexAttribArray(position);
-    gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
-    const u = {};
-    for (const name of ["uRes", "uTime", "uMouse", "uMouseAmt", "uC0", "uC1", "uC2", "uC3", "uDim", "uIri", "uNight", "uEdge", "uPlanet", "uRim", "uStars"]) u[name] = gl.getUniformLocation(program, name);
-
-    const hex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255);
-    // Four colours, then: dim, iridescence, pace, the planet (x, y, radius, presence), where its light comes from
-    // (radians), how far the lit edge wraps into a full ring, how wide it glows, and how many stars are out.
-    const palette = (c0, c1, c2, c3, dim, iri, speed, planet, light, stars) => [...hex(c0), ...hex(c1), ...hex(c2), ...hex(c3), dim, iri, speed, ...planet, ...light, stars];
-    const wide = matchMedia("(min-width: 881px)").matches;
-    const PALETTES = {
-      overture: palette("#070416", "#2b1a72", "#7a5ae6", "#efe4ff", 0.2, 0.2, 1, wide ? [0.905, 0.86, 0.085, 1] : [0.86, 0.5, 0.07, 1], [3.6, 0, 0.12], 1),
-      liberty: palette("#080504", "#4a2814", "#c2873a", "#f6e7c8", 0.08, 0.22, 0.8, wide ? [0.905, 0.86, 0.085, 0] : [0.86, 0.5, 0.07, 0], [3.6, 0, 0.12], 0.5),
-      chorus: palette("#0a0310", "#4a1060", "#ff375f", "#ffd0dc", 0.46, 0.4, 0.9, wide ? [1.0, 0.36, 0.42, 1] : [1.28, 0.2, 0.36, 0.85], [3.05, 0, 0.2], 0.9),
-      portraits: palette("#04040e", "#1d2470", "#7a5cff", "#d9e2ff", 0.44, 0.5, 0.8, [0.5, -0.44, 0.8, 1], [1.571, 0.15, 0.4], 0.9),
-      together: palette("#020a0c", "#0b4656", "#2cc8c4", "#dcfff6", 0.4, 0.4, 1, wide ? [0.1, 0.8, 0.06, 1] : [0.84, 0.9, 0.05, 1], [-0.7, 0, 0.14], 1),
-      interlude: palette("#050507", "#1b1b26", "#444459", "#cfd0e0", 0.5, 0.25, 0.6, [0.1, 0.8, 0.06, 0], [-0.7, 0, 0.14], 0.7),
-      silence: palette("#010102", "#08080d", "#16161f", "#5c5c72", 0.4, 0.1, 0.15, [0.5, wide ? -0.78 : -0.86, 0.9, 0], [1.571, 0.2, 0.5], 0.55),
-      encore: palette("#0b0208", "#4a0c2a", "#e0325c", "#ffd2a6", wide ? 0.36 : 0.52, 0.4, 1, [0.5, wide ? -0.78 : -0.86, 0.9, 1], [1.571, 0.2, wide ? 0.62 : 0.4], 0.7),
-    };
-    const current = PALETTES.overture.slice();
-    let target = PALETTES.overture;
-    let targetName = "overture";
-    let extraDim = 0;
-    const small = matchMedia("(max-width: 720px)").matches;
-    const scale = small ? 0.42 : 0.48;
-    const mouse = { x: 0, y: 0, tx: 0, ty: 0, amt: 0, tamt: 0, seen: false };
-    let width = 0;
-    let height = 0;
-    let time = 7.3;
-    let last = 0;
-    let paused = false;
-    let frame = 0;
-    // Night starts as a torn diagonal in the lower right and takes the whole sky as the first screen scrolls away.
-    const hero = $(".hero");
-    const words = $(".hero .fine");
-    const headline = $("#hero-title");
-    const themeColor = $("#theme-color");
-    const dove = reduce ? null : $("#dove");
-    let heroHeight = 1;
-    let nightRest = -0.14;
-    let night = -0.14;
-    const edge = [0.7071, -0.7071, 0.9, 1];
-    let isDay = null;
-    function nightfall() {
-      const gone = clamp(scrollY / (heroHeight * 0.82));
-      night = lerp(nightRest, 1.6, gone * gone * (3 - 2 * gone));
-      const day = gone < 0.5;
-      if (day !== isDay) {
-        isDay = day;
-        root.classList.toggle("sky-day", day);
-        themeColor.content = day ? "#f6f3fc" : "#07030d";
-      }
-      // The painting falls behind a little, so the dove is the last thing to leave.
-      if (dove && gone < 1) dove.style.translate = "0 " + (scrollY * 0.16).toFixed(1) + "px";
-    }
-
-    function resize() {
-      const w = Math.max(2, Math.round(canvas.clientWidth * scale));
-      const h = Math.max(2, Math.round(canvas.clientHeight * scale));
-      if (w === width && h === height) return;
-      width = canvas.width = w;
-      height = canvas.height = h;
-      gl.viewport(0, 0, w, h);
-      if (!mouse.seen) { mouse.x = mouse.tx = w * 0.7; mouse.y = mouse.ty = h * 0.45; }
-    }
-    // The edge of night runs corner to corner on a wide screen and nearly level on a tall one, and wanders less
-    // there. It rests a little right of centre (wide) or just above the middle (tall), but always clear of the
-    // headline and the small print, wherever the screen's shape has put them.
-    function settle() {
-      const w = canvas.clientWidth || 1;
-      const h = canvas.clientHeight || 1;
-      const aspect = w / h;
-      heroHeight = hero.offsetHeight || h;
-      const t = smooth(0.7, 1.4, aspect);
-      const length = Math.hypot(lerp(0.35, 1, t), 1);
-      edge[0] = lerp(0.35, 1, t) / length;
-      edge[1] = -1 / length;
-      edge[2] = 1 / (0.5 * (aspect * edge[0] - edge[1]));
-      edge[3] = lerp(0.45, 1, t);
-      // How far into the night a point of the first screen is, before the edge is slid anywhere.
-      const at = (x, y) => (((x - w / 2) / h) * edge[0] + (0.5 - y / h) * edge[1]) * edge[2];
-      nightRest = -at(w * lerp(0.5, 0.545, t), h * lerp(0.455, 0.5, t));
-      for (const [right, bottom] of copyCorners()) nightRest = Math.min(nightRest, -0.2 * edge[3] - at(right + 24, bottom));
-      nightfall();
-    }
-    // The bottom right corner of the headline and of the small print, as laid out (their entrance animations aside).
-    function copyCorners() {
-      const pageBottom = (element) => {
-        let y = element.offsetHeight;
-        for (let node = element; node; node = node.offsetParent) y += node.offsetTop;
-        return y;
-      };
-      const range = document.createRange();
-      range.selectNodeContents(words);
-      const wordRights = [...headline.querySelectorAll(".w")].map((word) => word.getBoundingClientRect().right);
-      return [[Math.max(...wordRights), pageBottom(headline)], [range.getBoundingClientRect().right, pageBottom(words)]];
-    }
-    function draw() {
-      gl.uniform2f(u.uRes, width, height);
-      gl.uniform1f(u.uTime, time);
-      gl.uniform2f(u.uMouse, mouse.x, mouse.y);
-      gl.uniform1f(u.uMouseAmt, mouse.amt);
-      gl.uniform3f(u.uC0, current[0], current[1], current[2]);
-      gl.uniform3f(u.uC1, current[3], current[4], current[5]);
-      gl.uniform3f(u.uC2, current[6], current[7], current[8]);
-      gl.uniform3f(u.uC3, current[9], current[10], current[11]);
-      gl.uniform1f(u.uDim, clamp(current[12]));
-      gl.uniform1f(u.uIri, current[13]);
-      gl.uniform1f(u.uNight, night);
-      gl.uniform4f(u.uEdge, edge[0], edge[1], edge[2], edge[3]);
-      gl.uniform4f(u.uPlanet, current[15], current[16], current[17], current[18]);
-      gl.uniform3f(u.uRim, current[19], current[20], current[21]);
-      gl.uniform1f(u.uStars, current[22]);
-      gl.drawArrays(gl.TRIANGLES, 0, 3);
-    }
-    function step(now) {
-      const dt = last ? Math.min(0.05, (now - last) / 1000) : 0.016;
-      last = now;
-      const k = 1 - Math.exp(-dt * 2.4);
-      for (let i = 0; i < current.length; i++) {
-        let goal = target[i];
-        if (i === 12 && targetName === "liberty") goal += extraDim;
-        current[i] += (goal - current[i]) * k;
-      }
-      if (!mouse.seen) {
-        const s = now / 1000;
-        mouse.tx = width * (0.55 + 0.25 * Math.sin(s * 0.13));
-        mouse.ty = height * (0.5 + 0.22 * Math.sin(s * 0.19 + 1));
-        mouse.tamt = 0.55;
-      }
-      mouse.x += (mouse.tx - mouse.x) * 0.06;
-      mouse.y += (mouse.ty - mouse.y) * 0.06;
-      mouse.amt += (mouse.tamt - mouse.amt) * 0.04;
-      time += dt * current[14] * (reduce ? 0.18 : 1);
-      nightfall();
-      draw();
-      frame = requestAnimationFrame(step);
-    }
-    function run() {
-      cancelAnimationFrame(frame);
-      last = 0;
-      if (!paused && !document.hidden) frame = requestAnimationFrame(step);
-    }
-    addEventListener("pointermove", (event) => {
-      if (event.pointerType !== "mouse") return;
-      mouse.seen = true;
-      mouse.tx = event.clientX * scale;
-      mouse.ty = (canvas.clientHeight - event.clientY) * scale;
-      mouse.tamt = 1;
-    }, { passive: true });
-    document.documentElement.addEventListener("mouseleave", () => { mouse.tamt = 0.3; });
-    addEventListener("resize", () => { resize(); settle(); draw(); }, { passive: true });
-    if (document.fonts) document.fonts.ready.then(() => { settle(); draw(); });
-    addEventListener("scroll", () => { if (paused) { nightfall(); draw(); } }, { passive: true });
-    document.addEventListener("visibilitychange", run);
-    resize();
-    settle();
-    draw();
-    run();
-
-    // Each movement takes over the painting as it crosses the middle of the screen.
-    const sections = [...document.querySelectorAll("[data-palette]")];
-    const observer = new IntersectionObserver((entries) => {
-      for (const entry of entries) {
-        if (!entry.isIntersecting) continue;
-        targetName = entry.target.dataset.palette;
-        target = PALETTES[targetName] || PALETTES.overture;
-      }
-    }, { rootMargin: "-50% 0px -50% 0px" });
-    sections.forEach((section) => observer.observe(section));
-
-    const api = {
-      setExtraDim(value) { extraDim = value; },
-      setPaused(value) { paused = value; run(); if (paused) draw(); },
-      /** Jumps straight to a movement's palette and draws one frame (for checking the palettes). */
-      preview(name, dim = 0) {
-        const p = PALETTES[name];
-        for (let i = 0; i < current.length; i++) current[i] = p[i];
-        current[12] += dim;
-        draw();
-      },
-    };
-    window.shinyLiquid = api;
-    return api;
-  })();
-
-  // The pause button stops the painting and everything else that loops.
-  const pause = $("#pause");
-  pause.addEventListener("click", () => {
-    const paused = pause.getAttribute("aria-pressed") !== "true";
-    pause.setAttribute("aria-pressed", String(paused));
-    pause.querySelector("span").textContent = paused ? "Play the art" : "Pause the art";
-    root.classList.toggle("paused-art", paused);
-    document.querySelectorAll(".mega span").forEach((span) => { span.style.animationPlayState = paused ? "paused" : ""; });
-    if (liquid) liquid.setPaused(paused);
-  });
-
-  // ---- Smooth scrolling and the cursor halo, on a mouse.
-  addEventListener("load", () => {
-    if (reduce || !window.Lenis || !finePointer) return;
-    const lenis = new window.Lenis({ duration: 1.15, easing: (t) => 1 - Math.pow(1 - t, 4), smoothWheel: true });
-    window.shinyScroller = lenis;
-    const raf = (time) => { lenis.raf(time); requestAnimationFrame(raf); };
-    requestAnimationFrame(raf);
-    document.querySelectorAll('a[href^="#"]').forEach((link) => link.addEventListener("click", (event) => {
-      const target = document.querySelector(link.getAttribute("href"));
-      if (!target) return;
-      event.preventDefault();
-      lenis.scrollTo(target, { offset: -20 });
-    }));
-  });
-  if (finePointer && !reduce) {
-    const cursor = $("#cursor");
-    let x = innerWidth / 2;
-    let y = innerHeight / 2;
-    let cx = x;
-    let cy = y;
-    addEventListener("pointermove", (event) => {
-      x = event.clientX;
-      y = event.clientY;
-      cursor.classList.add("on");
-      cursor.classList.toggle("big", !!event.target.closest("a, button"));
-    }, { passive: true });
-    document.documentElement.addEventListener("mouseleave", () => cursor.classList.remove("on"));
-    const follow = () => {
-      cx += (x - cx) * 0.2;
-      cy += (y - cy) * 0.2;
-      cursor.style.transform = "translate3d(" + cx.toFixed(1) + "px," + cy.toFixed(1) + "px,0)";
-      requestAnimationFrame(follow);
-    };
-    requestAnimationFrame(follow);
-  }
-
-  // ---- Phone: a Now Playing screen that actually plays.
-  const phone = $("#phone");
-  const fill = $("#np-fill");
-  const elapsed = $("#np-elapsed");
-  const remain = $("#np-remain");
-  const playButton = $("#np-play");
-  const LENGTH = 241;
-  let position = 72;
-  let playing = true;
-  let phoneVisible = false;
-  let lastFrame = 0;
-  let lastSecond = -1;
-  let phoneFrame = 0;
-  const clock = (seconds) => Math.floor(seconds / 60) + ":" + String(Math.floor(seconds % 60)).padStart(2, "0");
-  function paintPhone() {
-    fill.style.transform = "scaleX(" + (position / LENGTH).toFixed(4) + ")";
-    const second = Math.floor(position);
-    if (second !== lastSecond) {
-      lastSecond = second;
-      elapsed.textContent = clock(position);
-      remain.textContent = "−" + clock(LENGTH - position);
-    }
-  }
-  function phoneTick(now) {
-    if (lastFrame) {
-      position += (now - lastFrame) / 1000;
-      if (position >= LENGTH) position = 0;
-    }
-    lastFrame = now;
-    paintPhone();
-    phoneFrame = requestAnimationFrame(phoneTick);
-  }
-  function runPhone() {
-    cancelAnimationFrame(phoneFrame);
-    lastFrame = 0;
-    if (playing && phoneVisible && !document.hidden) phoneFrame = requestAnimationFrame(phoneTick);
-  }
-  playButton.addEventListener("click", () => {
-    playing = !playing;
-    phone.dataset.playing = String(playing);
-    playButton.setAttribute("aria-label", playing ? "Pause the demo" : "Play the demo");
-    runPhone();
-  });
-  const like = $("#np-like");
-  like.addEventListener("click", () => like.setAttribute("aria-pressed", String(like.getAttribute("aria-pressed") !== "true")));
-  watch(phone, (on) => { phoneVisible = on; runPhone(); }, 0);
-  document.addEventListener("visibilitychange", runPhone);
-  paintPhone();
-
-  // ---- I. Liberty: scrolling lifts the cover off a dark gallery wall, the painting behind the page
-  //      floods the room with its colours, and the cover lands in Now Playing.
-  (() => {
-    const section = $("#art");
-    const stage = $("#art-stage");
-    if (reduce) { liquid && liquid.setExtraDim(0); return; }
-    root.classList.add("js-morph");
-    const painting = $("#painting");
-    const flyer = $("#flyer");
-    const wrap = $("#phone-wrap");
-    const art = $("#np-art");
-    let geometry = null;
-    let pending = 0;
-    function measure() {
-      const s = stage.getBoundingClientRect();
-      const a = painting.getBoundingClientRect();
-      wrap.style.setProperty("--rise", "0px");
-      const b = art.getBoundingClientRect();
-      geometry = {
-        x0: a.left - s.left, y0: a.top - s.top, w0: a.width,
-        x1: b.left - s.left, y1: b.top - s.top, w1: b.width,
-        r1: parseFloat(getComputedStyle(art).borderTopLeftRadius) || 12,
-        h: s.height,
-      };
-      flyer.style.left = geometry.x0 + "px";
-      flyer.style.top = geometry.y0 + "px";
-      flyer.style.width = flyer.style.height = geometry.w0 + "px";
-    }
-    function update() {
-      pending = 0;
-      if (!geometry) measure();
-      const box = section.getBoundingClientRect();
-      const p = clamp(-box.top / (box.height - innerHeight));
-      const g = geometry;
-      const fly = smooth(0.34, 0.8, p);
-      const scale = lerp(1, g.w1 / g.w0, fly);
-      flyer.style.transform = "translate3d(" + ((g.x1 - g.x0) * fly).toFixed(2) + "px," + ((g.y1 - g.y0) * fly).toFixed(2) + "px,0) scale(" + scale.toFixed(4) + ")";
-      flyer.style.borderRadius = (lerp(1, g.r1, fly) / scale).toFixed(2) + "px";
-      const landed = p > 0.985;
-      phone.classList.toggle("landed", landed);
-      flyer.style.visibility = landed ? "hidden" : "visible";
-      const room = smooth(0.36, 0.72, p);
-      stage.style.setProperty("--wall", (1 - smooth(0.14, 0.32, p)).toFixed(3));
-      stage.style.setProperty("--wall-y", (-60 * smooth(0.14, 0.32, p)).toFixed(1) + "px");
-      stage.style.setProperty("--frame", (1 - smooth(0.3, 0.42, p)).toFixed(3));
-      stage.style.setProperty("--placard", (1 - smooth(0.18, 0.34, p)).toFixed(3));
-      stage.style.setProperty("--notes", smooth(0.84, 0.98, p).toFixed(3));
-      wrap.style.setProperty("--rise", ((1 - smooth(0.4, 0.82, p)) * g.h * 0.95).toFixed(1) + "px");
-      phone.style.setProperty("--ui", smooth(0.76, 0.92, p).toFixed(3));
-      // A dark gallery at first; the room lights up as the cover leaves the wall.
-      if (liquid) liquid.setExtraDim((1 - room) * 0.82);
-    }
-    const schedule = () => { if (!pending) pending = requestAnimationFrame(update); };
-    addEventListener("scroll", schedule, { passive: true });
-    addEventListener("resize", () => { geometry = null; schedule(); }, { passive: true });
-    if (document.fonts) document.fonts.ready.then(() => { geometry = null; schedule(); });
-    flyer.addEventListener("load", schedule);
-    update();
-  })();
-
-  // ---- III. Portraits: the fan opens on scroll (CSS scroll timelines where supported); phones tilt toward the pointer.
-  (() => {
-    const gallery = $("#gallery");
-    const list = $("#shots");
-    if (!CSS.supports("animation-timeline: view()") && !reduce) {
-      gallery.classList.add("fan-js");
-      watch(gallery, (on) => { if (on) gallery.classList.add("open"); }, 0.25);
-    }
-    if (finePointer && matchMedia("(min-width: 881px)").matches && !reduce) {
-      for (const shot of list.children) {
-        const frame = shot.querySelector(".frame");
-        let x = 0;
-        let y = 0;
-        let pending = 0;
-        shot.addEventListener("pointerenter", () => shot.classList.add("hover"));
-        shot.addEventListener("pointermove", (event) => {
-          x = event.clientX;
-          y = event.clientY;
-          if (pending) return;
-          pending = requestAnimationFrame(() => {
-            pending = 0;
-            const box = shot.getBoundingClientRect();
-            frame.style.setProperty("--px", ((x - box.left) / box.width - 0.5).toFixed(3));
-            frame.style.setProperty("--py", ((y - box.top) / box.height - 0.5).toFixed(3));
-          });
-        });
-        shot.addEventListener("pointerleave", () => {
-          shot.classList.remove("hover");
-          frame.style.removeProperty("--px");
-          frame.style.removeProperty("--py");
-        });
-      }
-    }
-    const center = list.children[2];
-    if (list.scrollWidth > list.clientWidth) list.scrollLeft = center.offsetLeft - (list.clientWidth - center.offsetWidth) / 2;
-  })();
-
-  // ---- II. Chorus: lines that describe the feature while it happens to them.
-  (() => {
-    const SONG = [
-      ["Every word lights up", 2900],
-      ["the moment it's sung", 2900],
-      ["tap a line, jump right in", 3100],
-      [null, 2400],
-      ["हर शब्द, सही वक़्त पर", 3600, "har shabd, sahi waqt par"],
-      ["in the language it was written", 3200],
-      ["and how to say it, too", 4200],
-    ];
-    const stage = $("#stage");
-    const roll = $("#roll");
-    let current = 0;
-    let timer = 0;
-    let singing = false;
-    let inView = false;
-    const lines = SONG.map(([text, duration, roman], index) => {
-      const line = document.createElement("p");
-      const parts = text ? text.split(" ") : [0, 1, 2];
-      const step = (duration * 0.78) / parts.length;
-      line.className = text ? "line" : "line dots";
-      parts.forEach((word, i) => {
-        const span = document.createElement("span");
-        span.className = text ? "w" : "dot";
-        span.style.setProperty("--t", Math.round(step * i) + "ms");
-        span.textContent = text ? word + (i < parts.length - 1 ? " " : "") : "";
-        line.append(span);
-      });
-      if (roman) {
-        const sub = document.createElement("span");
-        sub.className = "roman";
-        sub.textContent = roman;
-        line.append(sub);
-      }
-      line.addEventListener("click", () => { current = index; show(true); schedule(); });
-      roll.append(line);
-      return line;
+  function select(tab, focus) {
+    tabs.forEach(function (t, i) {
+      var on = t === tab;
+      t.setAttribute("aria-selected", on);
+      t.tabIndex = on ? 0 : -1;
+      document.getElementById(t.getAttribute("aria-controls")).hidden = !on;
+      if (on) seg.style.setProperty("--i", i);
     });
-    function place() {
-      roll.style.transform = "translate3d(0," + Math.round(stage.clientHeight * 0.28 - lines[current].offsetTop) + "px,0)";
-    }
-    function show(sing) {
-      lines.forEach((line, i) => {
-        line.classList.toggle("active", i === current);
-        line.classList.remove("sing");
-        line.style.setProperty("--d", Math.abs(i - current));
-      });
-      place();
-      if (sing) {
-        const line = lines[current];
-        requestAnimationFrame(() => requestAnimationFrame(() => line.classList.add("sing")));
-      }
-    }
-    function schedule() {
-      clearTimeout(timer);
-      if (!singing) return;
-      timer = setTimeout(() => {
-        current = (current + 1) % lines.length;
-        show(true);
-        schedule();
-      }, SONG[current][1]);
-    }
-    function setSinging(on) {
-      on = on && !reduce && !document.hidden;
-      if (on === singing) return;
-      singing = on;
-      if (on) { show(true); schedule(); } else clearTimeout(timer);
-    }
-    watch(stage, (on) => { inView = on; setSinging(on); }, 0.35);
-    document.addEventListener("visibilitychange", () => setSinging(inView));
-    if (reduce) { current = 4; show(false); lines[4].classList.add("sing"); } else show(false);
-    addEventListener("resize", place, { passive: true });
-    if (document.fonts) document.fonts.ready.then(place);
-  })();
-
-  // ---- IV. Together: votes reorder the shared queue.
-  (() => {
-    const queue = $("#queue");
-    const items = [...queue.children].map((element, order) => ({
-      element, order,
-      start: Number(element.dataset.votes),
-      votes: Number(element.dataset.votes),
-      mine: false,
-      title: element.querySelector(".meta p").textContent,
-      button: element.querySelector(".vote"),
-    }));
-    function layout() {
-      const sorted = [...items].sort((a, b) => b.votes - a.votes || a.order - b.order);
-      sorted.forEach((item, i) => {
-        item.element.style.setProperty("--i", i);
-        queue.append(item.element);
-        item.button.querySelector(".count").textContent = item.votes;
-        item.button.setAttribute("aria-pressed", String(item.mine));
-        item.button.setAttribute("aria-label", (item.mine ? "Remove your vote for " : "Vote for ") + item.title + ", " + item.votes + (item.votes === 1 ? " vote" : " votes"));
-      });
-    }
-    function bump(item) {
-      item.button.classList.remove("bump");
-      void item.button.offsetWidth;
-      item.button.classList.add("bump");
-    }
-    let demoTimer = 0;
-    let demoStep = 0;
-    let userVoted = false;
-    let visible = false;
-    items.forEach((item) => item.button.addEventListener("click", () => {
-      userVoted = true;
-      clearTimeout(demoTimer);
-      item.mine = !item.mine;
-      item.votes += item.mine ? 1 : -1;
-      layout();
-    }));
-    // A friend keeps voting Yellow up until it plays next, then the queue starts over.
-    function demo() {
-      clearTimeout(demoTimer);
-      if (userVoted || reduce || !visible || document.hidden) return;
-      if (demoStep < 3) {
-        demoTimer = setTimeout(() => {
-          const pick = items[2];
-          pick.votes += 1;
-          bump(pick);
-          layout();
-          demoStep += 1;
-          demo();
-        }, demoStep === 0 ? 1400 : 2200);
-      } else {
-        demoTimer = setTimeout(() => {
-          queue.classList.add("fade");
-          setTimeout(() => {
-            queue.classList.add("still");
-            items.forEach((item) => { item.votes = item.start; });
-            layout();
-            void queue.offsetWidth;
-            queue.classList.remove("still", "fade");
-            demoStep = 0;
-            demo();
-          }, 380);
-        }, 3200);
-      }
-    }
-    watch(queue, (on) => { visible = on; demo(); }, 0.5);
-    document.addEventListener("visibilitychange", demo);
-    layout();
-  })();
-
-  // ---- V. Interlude: a light follows the pointer across the tiles; the pieces move only while in view.
-  (() => {
-    const section = $("#features");
-    const bento = $("#bento");
-    const skyline = $("#skyline");
-    const BARS = matchMedia("(max-width: 600px)").matches ? 26 : 52;
-    for (let n = 0; n < BARS; n++) {
-      const bar = document.createElement("i");
-      const wave = 0.5 + 0.28 * Math.sin(n * 0.42) + 0.16 * Math.sin(n * 1.7 + 1) + 0.06 * Math.cos(n * 3.1);
-      bar.style.setProperty("--h", Math.round(clamp(wave, 0.12, 1) * 100) + "%");
-      bar.style.setProperty("--n", n);
-      skyline.append(bar);
-    }
-    watch(section, (on) => section.classList.toggle("in-view", on), 0.15);
-    const tiles = [...bento.querySelectorAll(".tile")];
-    let x = 0;
-    let y = 0;
-    let pending = 0;
-    bento.addEventListener("pointermove", (event) => {
-      x = event.clientX;
-      y = event.clientY;
-      if (pending) return;
-      pending = requestAnimationFrame(() => {
-        pending = 0;
-        for (const tile of tiles) {
-          const box = tile.getBoundingClientRect();
-          tile.style.setProperty("--mx", Math.round(x - box.left) + "px");
-          tile.style.setProperty("--my", Math.round(y - box.top) + "px");
-        }
-      });
-    });
-  })();
-
-  // ---- VI & VII: the cage and the record move only while you can see them.
-  for (const id of ["#privacy", "#get"]) {
-    const section = $(id);
-    watch(section, (on) => section.classList.toggle("in-view", on), 0.1);
+    if (focus) tab.focus();
   }
+
+  tabs.forEach(function (tab, i) {
+    tab.addEventListener("click", function () { select(tab); });
+    tab.addEventListener("keydown", function (e) {
+      var step = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+      if (step) select(tabs[(i + step + tabs.length) % tabs.length], true);
+    });
+  });
+  requestAnimationFrame(function () { seg.classList.add("ready"); });
+
+  var root = document.documentElement;
+  var meta = document.getElementById("theme-color");
+  var dark = matchMedia("(prefers-color-scheme: dark)");
+  function current() { return root.getAttribute("data-theme") || (dark.matches ? "dark" : "light"); }
+  function paint() { meta.content = current() === "dark" ? "#121214" : "#f5f5f7"; }
+  paint();
+  dark.addEventListener("change", paint);
+  document.querySelector(".theme").addEventListener("click", function () {
+    var next = current() === "dark" ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    try { localStorage.setItem("theme", next); } catch (e) {}
+    paint();
+  });
+
+  fetch("/update.json", { cache: "no-store" })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (u) {
+      if (u && u.versionName) document.querySelector("[data-version]").textContent = u.versionName;
+    })
+    .catch(function () {});
 })();
 </script>
 </body>
