@@ -56,6 +56,7 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -610,7 +611,7 @@ private fun LocalResultRow(item: LocalItem, actions: LiquidActions, isActive: Bo
         subtitle = when (item) {
             is Song -> item.artists.joinToString { it.name }
             is Album -> item.artists.joinToString { it.name }
-            is Playlist -> stringResource(R.string.liquid_songs_count, item.songCount)
+            is Playlist -> pluralStringResource(R.plurals.liquid_songs_count, item.songCount, item.songCount)
             is Artist -> null
         },
         artwork = when (item) {

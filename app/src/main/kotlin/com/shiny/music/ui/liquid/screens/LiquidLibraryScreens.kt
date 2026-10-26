@@ -52,6 +52,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -171,7 +172,7 @@ fun LiquidLibraryScreen(
                                 title = item.title,
                                 subtitle = when (item) {
                                     is Album -> item.artists.joinToString { it.name }
-                                    is Playlist -> stringResource(R.string.liquid_songs_count, item.songCount)
+                                    is Playlist -> pluralStringResource(R.plurals.liquid_songs_count, item.songCount, item.songCount)
                                     else -> null
                                 },
                                 artwork = when (item) {
@@ -308,7 +309,7 @@ fun LiquidLibraryPlaylistsScreen(
             LibraryRow(
                 leading = { CoverThumb(playlist.thumbnails, Icons.AutoMirrored.Rounded.QueueMusic) },
                 title = playlist.playlist.name,
-                subtitle = stringResource(R.string.liquid_songs_count, playlist.songCount),
+                subtitle = pluralStringResource(R.plurals.liquid_songs_count, playlist.songCount, playlist.songCount),
                 onClick = { navController.navigate("local_playlist/${playlist.id}") },
                 onLongClick = { actions.menu(playlist) },
                 showSeparator = playlist != playlists.lastOrNull(),
@@ -443,7 +444,7 @@ fun LiquidLibraryArtistsScreen(
                     )
                 },
                 title = artist.title,
-                subtitle = artist.songCount.takeIf { it > 0 }?.let { stringResource(R.string.liquid_songs_count, it) },
+                subtitle = artist.songCount.takeIf { it > 0 }?.let { pluralStringResource(R.plurals.liquid_songs_count, it, it) },
                 chevron = true,
                 onClick = { navController.navigate("artist/${artist.id}") },
                 onLongClick = { actions.menu(artist) },

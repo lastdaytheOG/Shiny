@@ -17,6 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -91,7 +92,7 @@ fun LiquidAlbumScreen(
     val kind = if (songs.size <= 3) stringResource(R.string.liquid_single) else stringResource(R.string.liquid_album)
     val footer = listOfNotNull(
         album.album.year?.let { stringResource(R.string.liquid_released, it.toString()) },
-        stringResource(R.string.liquid_songs_minutes, songs.size, totalMinutes),
+        pluralStringResource(R.plurals.liquid_songs_minutes, songs.size, songs.size, totalMinutes),
     )
 
     LiquidCollectionPage(

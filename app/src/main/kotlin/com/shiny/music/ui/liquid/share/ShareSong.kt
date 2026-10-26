@@ -80,7 +80,7 @@ interface ShareDependencies {
 
 private fun Context.songList(name: String, songs: List<Song>) = buildString {
     append(name)
-    if (songs.isNotEmpty()) append(" · ").append(getString(R.string.liquid_songs_count, songs.size))
+    if (songs.isNotEmpty()) append(" · ").append(resources.getQuantityString(R.plurals.liquid_songs_count, songs.size, songs.size))
     songs.take(SHARED_SONG_LINES).forEach { song ->
         val artist = song.artists.joinToString { it.name }
         append('\n').append(if (artist.isBlank()) song.song.title else "${song.song.title} · $artist")

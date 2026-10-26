@@ -35,8 +35,14 @@
     <string name="liquid_liked_songs">Liked Songs</string>
     <string name="liquid_stats">Listening Stats</string>
     <string name="liquid_more_by">More by %1$s</string>
-    <string name="liquid_songs_minutes">%1$d songs, %2$d minutes</string>
-    <string name="liquid_songs_count">%1$d songs</string>
+    <plurals name="liquid_songs_minutes">
+        <item quantity="one">%1$d song, %2$d minutes</item>
+        <item quantity="other">%1$d songs, %2$d minutes</item>
+    </plurals>
+    <plurals name="liquid_songs_count">
+        <item quantity="one">%1$d song</item>
+        <item quantity="other">%1$d songs</item>
+    </plurals>
     <string name="liquid_queue_loading">Loading more songs…</string>
     <string name="liquid_queue_retry">Couldn\'t load more songs. Tap to retry.</string>
     <string name="liquid_queue_play_next">Play Next</string>

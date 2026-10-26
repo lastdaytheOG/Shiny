@@ -81,6 +81,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
@@ -281,7 +282,7 @@ fun LiquidQueuePane(
                 source = queueTitle?.takeIf { it.isNotBlank() && !compact }?.let { stringResource(R.string.liquid_from, it) },
                 summary = if (summary.count > 0) {
                     listOfNotNull(
-                        stringResource(R.string.liquid_songs_count, summary.count),
+                        pluralStringResource(R.plurals.liquid_songs_count, summary.count, summary.count),
                         summary.totalSeconds?.let { makeTimeString(it * 1000L) },
                     ).joinToString(" · ")
                 } else {

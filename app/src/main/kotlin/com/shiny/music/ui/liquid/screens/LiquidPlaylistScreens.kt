@@ -35,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -131,7 +132,7 @@ fun LiquidOnlinePlaylistScreen(
     }
 
     val saved = dbPlaylist?.playlist?.bookmarkedAt != null
-    val footerText = stringResource(R.string.liquid_songs_count, songs.size)
+    val footerText = pluralStringResource(R.plurals.liquid_songs_count, songs.size, songs.size)
 
     LiquidCollectionPage(
         title = current.title,
@@ -279,7 +280,7 @@ fun LiquidSharedPlaylistScreen(
     }
     val songs = current.songs
     val covers = remember(songs) { songs.map { it.thumbnail }.distinct().take(4) }
-    val footerText = stringResource(R.string.liquid_songs_count, songs.size)
+    val footerText = pluralStringResource(R.plurals.liquid_songs_count, songs.size, songs.size)
 
     LiquidCollectionPage(
         title = current.name,
@@ -427,12 +428,12 @@ fun LiquidLocalPlaylistScreen(
     val totalMinutes by remember { derivedStateOf { songs.sumOf { it.song.duration } / 60 } }
     val canReorder = current.playlist.isEditable && sortType == PlaylistSongSortType.CUSTOM
     val thumbs = current.thumbnails
-    val footerText = stringResource(R.string.liquid_songs_minutes, rows.size, totalMinutes)
+    val footerText = pluralStringResource(R.plurals.liquid_songs_minutes, rows.size, rows.size, totalMinutes)
 
     LiquidCollectionPage(
         title = current.playlist.name,
         subtitle = null,
-        meta = stringResource(R.string.liquid_songs_count, rows.size),
+        meta = pluralStringResource(R.plurals.liquid_songs_count, rows.size, rows.size),
         artwork = current.playlist.thumbnailUrl,
         collage = thumbs,
         toneSource = current.playlist.thumbnailUrl ?: thumbs.firstOrNull(),
@@ -689,12 +690,12 @@ private fun SongCollection(
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
     val thumbs = remember(songs) { songs.mapNotNull { it.thumbnailUrl }.distinct().take(4) }
     val totalMinutes = songs.sumOf { it.song.duration } / 60
-    val footerText = stringResource(R.string.liquid_songs_minutes, songs.size, totalMinutes)
+    val footerText = pluralStringResource(R.plurals.liquid_songs_minutes, songs.size, songs.size, totalMinutes)
 
     LiquidCollectionPage(
         title = title,
         subtitle = null,
-        meta = stringResource(R.string.liquid_songs_count, songs.size),
+        meta = pluralStringResource(R.plurals.liquid_songs_count, songs.size, songs.size),
         artwork = if (thumbs.size < 4) thumbs.firstOrNull() else null,
         collage = thumbs,
         toneSource = thumbs.firstOrNull(),

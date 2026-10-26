@@ -367,7 +367,7 @@ fun LiquidLocalSongsScreen(
             item(key = "footer") {
                 val minutes = visible.sumOf { it.song.duration.coerceAtLeast(0) } / 60
                 Text(
-                    text = stringResource(R.string.liquid_songs_minutes, visible.size, minutes),
+                    text = pluralStringResource(R.plurals.liquid_songs_minutes, visible.size, visible.size, minutes),
                     style = LiquidTypography.footnote,
                     color = colors.secondaryLabel,
                     modifier = Modifier.padding(horizontal = PageMargin, vertical = 14.dp),
