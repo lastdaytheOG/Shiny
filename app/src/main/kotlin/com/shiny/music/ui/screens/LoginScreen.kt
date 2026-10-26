@@ -5,6 +5,7 @@ import android.content.Intent
 import android.graphics.Color as AndroidColor
 import android.webkit.CookieManager
 import android.webkit.JavascriptInterface
+import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -35,10 +36,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -108,6 +111,9 @@ fun LoginScreen(navController: NavController) {
     var savedAccountsJson by rememberPreference(SavedAccountsKey, "[]")
 
     var webView by remember { mutableStateOf<WebView?>(null) }
+    var webKey by remember { mutableIntStateOf(0) }
+    var signInStarted by rememberSaveable { mutableStateOf(false) }
+    var lastUrl by rememberSaveable { mutableStateOf<String?>(null) }
     var progress by remember { mutableIntStateOf(0) }
     var host by remember { mutableStateOf("accounts.google.com") }
     var finishing by remember { mutableStateOf(false) }
@@ -236,71 +242,88 @@ fun LoginScreen(navController: NavController) {
                 color = colors.secondaryLabel,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
             )
-            AndroidView(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .clip(RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp)),
-                factory = { webContext ->
-                    WebView(webContext).apply {
-                        setBackgroundColor(if (colors.isDark) AndroidColor.BLACK else AndroidColor.WHITE)
-                        webViewClient = object : WebViewClient() {
-                            override fun onPageStarted(view: WebView, url: String?, favicon: android.graphics.Bitmap?) {
-                                url?.let { runCatching { android.net.Uri.parse(it).host }.getOrNull()?.let { h -> host = h } }
-                            }
+            key(webKey) {
+                AndroidView(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .clip(RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp)),
+                    factory = { webContext ->
+                        WebView(webContext).apply {
+                            setBackgroundColor(if (colors.isDark) AndroidColor.BLACK else AndroidColor.WHITE)
+                            webViewClient = object : WebViewClient() {
+                                override fun onPageStarted(view: WebView, url: String?, favicon: android.graphics.Bitmap?) {
+                                    url?.let { runCatching { android.net.Uri.parse(it).host }.getOrNull()?.let { h -> host = h } }
+                                    if (url != null && url.startsWith("https://")) lastUrl = url
+                                }
 
-                            override fun onPageFinished(view: WebView, url: String?) {
-                                loadUrl("javascript:Android.onRetrieveVisitorData(window.yt.config_.VISITOR_DATA)")
-                                loadUrl("javascript:Android.onRetrieveDataSyncId(window.yt.config_.DATASYNC_ID)")
-                                if (url == null || hasCompletedLogin) return
-                                val pageHost = android.net.Uri.parse(url).host.orEmpty()
-                                if (url.startsWith("https://music.youtube.com")) {
-                                    finish(url)
-                                } else if (
-                                    (pageHost == "youtube.com" || pageHost.endsWith(".youtube.com")) &&
-                                    CookieManager.getInstance().getCookie(url)?.contains("SAPISID=") == true
-                                ) {
-                                    // YouTube's sign-in hop sends a phone browser to m.youtube.com and
-                                    // forgets YouTube Music (phone, 2026-09-30). The session is already
-                                    // set for all of youtube.com, so carry on to YouTube Music.
-                                    view.loadUrl("https://music.youtube.com/")
+                                override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail?): Boolean {
+                                    if (webView === view) webView = null
+                                    (view.parent as? android.view.ViewGroup)?.removeView(view)
+                                    view.destroy()
+                                    webKey++
+                                    return true
+                                }
+
+                                override fun onPageFinished(view: WebView, url: String?) {
+                                    CookieManager.getInstance().flush()
+                                    loadUrl("javascript:Android.onRetrieveVisitorData(window.yt.config_.VISITOR_DATA)")
+                                    loadUrl("javascript:Android.onRetrieveDataSyncId(window.yt.config_.DATASYNC_ID)")
+                                    if (url == null || hasCompletedLogin) return
+                                    val pageHost = android.net.Uri.parse(url).host.orEmpty()
+                                    if (url.startsWith("https://music.youtube.com")) {
+                                        finish(url)
+                                    } else if (
+                                        (pageHost == "youtube.com" || pageHost.endsWith(".youtube.com")) &&
+                                        CookieManager.getInstance().getCookie(url)?.contains("SAPISID=") == true
+                                    ) {
+                                        // YouTube's sign-in hop sends a phone browser to m.youtube.com and
+                                        // forgets YouTube Music (phone, 2026-09-30). The session is already
+                                        // set for all of youtube.com, so carry on to YouTube Music.
+                                        view.loadUrl("https://music.youtube.com/")
+                                    }
+                                }
+                            }
+                            webChromeClient = object : WebChromeClient() {
+                                override fun onProgressChanged(view: WebView?, newProgress: Int) {
+                                    progress = newProgress
+                                }
+                            }
+                            settings.apply {
+                                javaScriptEnabled = true
+                                domStorageEnabled = true
+                                setSupportZoom(true)
+                                builtInZoomControls = true
+                                displayZoomControls = false
+                            }
+                            addJavascriptInterface(object {
+                                @JavascriptInterface
+                                fun onRetrieveVisitorData(newVisitorData: String?) {
+                                    if (newVisitorData != null) visitorData = newVisitorData
+                                }
+
+                                @JavascriptInterface
+                                fun onRetrieveDataSyncId(newDataSyncId: String?) {
+                                    if (newDataSyncId != null) pageDataSyncId = newDataSyncId.substringBefore("||")
+                                }
+                            }, "Android")
+                            webView = this
+                            CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
+                            if (signInStarted) {
+                                loadUrl(lastUrl ?: YouTubeSignInUrl)
+                            } else {
+                                signInStarted = true
+                                // Clearing is asynchronous: start the sign-in only once it is done, or it
+                                // can wipe the cookies Google sets on its first page.
+                                CookieManager.getInstance().removeAllCookies {
+                                    CookieManager.getInstance().flush()
+                                    loadUrl(YouTubeSignInUrl)
                                 }
                             }
                         }
-                        webChromeClient = object : WebChromeClient() {
-                            override fun onProgressChanged(view: WebView?, newProgress: Int) {
-                                progress = newProgress
-                            }
-                        }
-                        settings.apply {
-                            javaScriptEnabled = true
-                            domStorageEnabled = true
-                            setSupportZoom(true)
-                            builtInZoomControls = true
-                            displayZoomControls = false
-                        }
-                        addJavascriptInterface(object {
-                            @JavascriptInterface
-                            fun onRetrieveVisitorData(newVisitorData: String?) {
-                                if (newVisitorData != null) visitorData = newVisitorData
-                            }
-
-                            @JavascriptInterface
-                            fun onRetrieveDataSyncId(newDataSyncId: String?) {
-                                if (newDataSyncId != null) pageDataSyncId = newDataSyncId.substringBefore("||")
-                            }
-                        }, "Android")
-                        webView = this
-                        CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
-                        // Clearing is asynchronous: start the sign-in only once it is done, or it
-                        // can wipe the cookies Google sets on its first page.
-                        CookieManager.getInstance().removeAllCookies {
-                            CookieManager.getInstance().flush()
-                            loadUrl(YouTubeSignInUrl)
-                        }
-                    }
-                },
-            )
+                    },
+                )
+            }
         }
 
         // Google has handed back: reading the account, then a restart into it.
