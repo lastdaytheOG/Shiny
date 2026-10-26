@@ -40,6 +40,15 @@ constructor(
     val selectedOption = MutableStateFlow(OptionStats.CONTINUOUS)
     val indexChips = MutableStateFlow(0)
 
+    private var startApplied = false
+
+    fun startAt(index: Int) {
+        if (startApplied) return
+        startApplied = true
+        selectedOption.value = OptionStats.CONTINUOUS
+        indexChips.value = index
+    }
+
     val totalPlayTime =
         combine(
             selectedOption,

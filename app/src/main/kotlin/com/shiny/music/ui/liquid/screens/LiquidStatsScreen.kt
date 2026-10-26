@@ -131,14 +131,17 @@ fun LiquidStatsScreen(
 
         if (songs.isNotEmpty()) {
             item(key = "songs_header") {
-                SectionHeader(title = stringResource(R.string.liquid_top_songs), onClick = { actions.playSongs(title, songs) })
+                SectionHeader(
+                    title = stringResource(R.string.liquid_top_songs),
+                    onClick = { navController.navigate("stats/top_songs?range=${Ranges[selectedRange].second}") },
+                )
             }
             itemsIndexed(songs.take(10), key = { _, s -> "st_${s.id}" }) { i, song ->
                 val plays = playsById[song.id]
                 SongRow(
                     songId = song.id,
                     title = song.title,
-                    subtitle = listOfNotNull(song.artists.joinToString { it.name }.takeIf { it.isNotBlank() }, plays?.let { pluralStringResource(R.plurals.liquid_plays, it, it) }).joinToString(" · "),
+                    subtitle = listOfNotNull(plays?.let { pluralStringResource(R.plurals.liquid_plays, it, it) }, song.artists.joinToString { it.name }.takeIf { it.isNotBlank() }).joinToString(" · "),
                     artwork = song.thumbnailUrl,
                     leadingRank = i + 1,
                     isActive = song.id == mediaMetadata?.id,
@@ -180,6 +183,58 @@ fun LiquidStatsScreen(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun LiquidTopSongsScreen(
+    navController: NavController,
+    range: Int,
+    viewModel: StatsViewModel = hiltViewModel(),
+) {
+    val actions = rememberLiquidActions(navController) ?: return
+    remember(viewModel) { viewModel.startAt(range) }
+    val index by viewModel.indexChips.collectAsState()
+    val songStats by viewModel.mostPlayedSongsStats.collectAsState()
+    val songs by viewModel.mostPlayedSongs.collectAsState()
+    val mediaMetadata by actions.playerConnection.mediaMetadata.collectAsState()
+    val isPlaying by actions.playerConnection.isPlaying.collectAsState()
+    val playsById = remember(songStats) { songStats.associate { it.id to it.songCountListened } }
+    val title = stringResource(R.string.liquid_top_songs)
+
+    LargeTitlePage(
+        title = title,
+        navigationButton = { LiquidBackButton(onClick = { navController.navigateUp() }) },
+    ) {
+        item(key = "range") {
+            LiquidSegmentedControl(
+                items = Ranges.map { stringResource(it.first) },
+                selectedIndex = Ranges.indexOfFirst { it.second == index }.coerceAtLeast(0),
+                onSelect = { viewModel.indexChips.value = Ranges[it].second },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = PageMargin, vertical = 8.dp),
+            )
+        }
+        if (songs.isEmpty()) {
+            item(key = "empty") { EmptyState(icon = Icons.Rounded.BarChart, title = stringResource(R.string.liquid_stats_empty)) }
+        }
+        itemsIndexed(songs, key = { _, s -> "ts_${s.id}" }) { i, song ->
+            val plays = playsById[song.id]
+            SongRow(
+                songId = song.id,
+                title = song.title,
+                subtitle = listOfNotNull(plays?.let { pluralStringResource(R.plurals.liquid_plays, it, it) }, song.artists.joinToString { it.name }.takeIf { it.isNotBlank() }).joinToString(" · "),
+                artwork = song.thumbnailUrl,
+                leadingRank = i + 1,
+                isActive = song.id == mediaMetadata?.id,
+                isPlaying = isPlaying,
+                showSeparator = i != songs.lastIndex,
+                onClick = { actions.playSongs(title, songs, startIndex = i) },
+                onLongClick = { actions.menu(song) },
+                onMore = { actions.menu(song) },
+            )
         }
     }
 }

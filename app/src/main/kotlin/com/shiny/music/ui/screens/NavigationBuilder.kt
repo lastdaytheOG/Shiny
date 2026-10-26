@@ -147,6 +147,13 @@ fun NavGraphBuilder.navigationBuilder(
         com.shiny.music.ui.liquid.screens.LiquidStatsScreen(navController)
     }
 
+    screen(
+        route = "stats/top_songs?range={range}",
+        arguments = listOf(navArgument("range") { type = NavType.IntType; defaultValue = 0 }),
+    ) { entry ->
+        com.shiny.music.ui.liquid.screens.LiquidTopSongsScreen(navController, range = entry.arguments?.getInt("range") ?: 0)
+    }
+
     screen("mood_and_genres") {
         com.shiny.music.ui.liquid.screens.LiquidMoodAndGenresScreen(navController)
     }
