@@ -16,4 +16,7 @@ object SettingsVisibility {
 
     /** Content → Logs → Playback logs. Playback is still logged; only the viewer is hidden. */
     const val PLAYBACK_LOGS = false
+
+    /** The Advanced page (stream resolver, block screenshots). Both keep their saved values. */
+    const val ADVANCED = false
 }

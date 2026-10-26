@@ -25,6 +25,12 @@ class SettingsCatalogTest {
     }
 
     @Test
+    fun `hidden advanced page is not searchable`() {
+        if (SettingsVisibility.ADVANCED) return
+        assertTrue(catalog.none { it.route == "settings/advanced" })
+    }
+
+    @Test
     fun `the rest of Content is still searchable`() {
         assertTrue(catalog.search("proxy").any { it.route == "settings/content" })
     }

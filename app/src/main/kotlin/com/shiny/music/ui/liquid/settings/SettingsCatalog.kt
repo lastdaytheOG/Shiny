@@ -117,9 +117,7 @@ fun settingsCatalog(): List<SettingsEntry> = listOf(
     // Supported links
     SettingsEntry("Supported links", "Supported links", "settings/supported_links", "open by default youtube links deep link browser"),
 
-    // Advanced & About
-    SettingsEntry("Stream resolver", "Advanced", "settings/advanced", "playback engine newpipe decipher stream"),
-    SettingsEntry("Block screenshots", "Advanced", "settings/advanced", "screenshot secure privacy app switcher"),
+    // About
     SettingsEntry("Check for updates", "About", "settings/about", "update version upgrade"),
     SettingsEntry("Automatic updates", "About", "settings/about", "auto update check"),
     SettingsEntry("Update notifications", "About", "settings/about", "notify update"),
@@ -136,6 +134,13 @@ fun settingsCatalog(): List<SettingsEntry> = listOf(
     emptyList()
 } + if (SettingsVisibility.PLAYBACK_LOGS) {
     listOf(SettingsEntry("Playback logs", "Content", "settings/content", "logs debug"))
+} else {
+    emptyList()
+} + if (SettingsVisibility.ADVANCED) {
+    listOf(
+        SettingsEntry("Stream resolver", "Advanced", "settings/advanced", "playback engine newpipe decipher stream"),
+        SettingsEntry("Block screenshots", "Advanced", "settings/advanced", "screenshot secure privacy app switcher"),
+    )
 } else {
     emptyList()
 } + if (com.shiny.music.BuildConfig.DEBUG) {

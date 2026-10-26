@@ -251,13 +251,15 @@ fun SettingsHomeScreen(navController: NavController) {
                     plate = Plate.Green,
                     onClick = { navController.navigate("settings/privacy") },
                 )
-                IndexRow(
-                    title = "Advanced",
-                    subtitle = "Stream resolver, screenshots",
-                    glyph = painterResource(R.drawable.tune),
-                    plate = Plate.Blue,
-                    onClick = { navController.navigate("settings/advanced") },
-                )
+                if (SettingsVisibility.ADVANCED) {
+                    IndexRow(
+                        title = "Advanced",
+                        subtitle = "Stream resolver, screenshots",
+                        glyph = painterResource(R.drawable.tune),
+                        plate = Plate.Blue,
+                        onClick = { navController.navigate("settings/advanced") },
+                    )
+                }
                 IndexRow(
                     title = "Supported links",
                     subtitle = "YouTube and shared links that open in Shiny",
