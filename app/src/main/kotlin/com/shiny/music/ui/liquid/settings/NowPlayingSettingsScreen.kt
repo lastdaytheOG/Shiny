@@ -8,14 +8,6 @@ import com.shiny.music.constants.KeepScreenOn
 import com.shiny.music.ui.liquid.LiquidPrefs
 import com.shiny.music.utils.rememberPreference
 
-/**
- * How Now Playing behaves.
- *
- * How it *looks* — the atmosphere, the glow around the cover and how much the artwork
- * moves — lives in Appearance, next to the live preview that shows it. What stays here is
- * behaviour: whether a song's motion artwork is fetched and played, the controls, and
- * the lyrics (hidden while [SettingsVisibility.LYRICS] is off).
- */
 @Composable
 fun NowPlayingSettingsScreen(navController: NavController) {
     var motionCovers by rememberPreference(LiquidPrefs.MotionArtwork, true)
@@ -27,22 +19,17 @@ fun NowPlayingSettingsScreen(navController: NavController) {
         item(key = "motion") {
             SettingsSection(
                 title = "Artwork",
-                footer = "A song that arrives as a music video only has a frame of the video for " +
-                    "artwork; its real cover is looked up in Apple's catalogue by the song's name and " +
-                    "artist. Motion artwork is a short video some albums ship with. Both are kept " +
-                    "on this phone after the first time, and neither is fetched while Data Saver is on.",
+                footer = "Off while Data Saver is on.",
             ) {
-                // "Artwork, atmosphere and motion" is not repeated here: it all lives in
-                // Appearance (with the live preview), and the listener found the duplicate row confusing.
                 SettingsToggleRow(
                     title = "Official covers",
-                    subtitle = "Show the real cover, in full quality, for songs that only have a video still",
+                    subtitle = "Replace video stills with the album cover",
                     checked = appleCovers,
                     onCheckedChange = { appleCovers = it },
                 )
                 SettingsToggleRow(
                     title = "Animated covers",
-                    subtitle = "Play a song's motion artwork in place of the cover when it has one",
+                    subtitle = "When the album has one",
                     checked = motionCovers,
                     onCheckedChange = { motionCovers = it },
                     divider = false,
@@ -54,13 +41,12 @@ fun NowPlayingSettingsScreen(navController: NavController) {
             SettingsSection(title = "Controls") {
                 SettingsToggleRow(
                     title = "Volume slider",
-                    subtitle = "Show the system volume under the transport",
                     checked = showVolume,
                     onCheckedChange = { showVolume = it },
                 )
                 SettingsToggleRow(
                     title = "Keep the screen on",
-                    subtitle = "While Now Playing is open and music is playing",
+                    subtitle = "While playing",
                     checked = keepScreenOn,
                     onCheckedChange = { keepScreenOn = it },
                     divider = false,

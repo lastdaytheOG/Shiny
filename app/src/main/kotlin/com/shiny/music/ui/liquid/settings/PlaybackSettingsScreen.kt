@@ -28,13 +28,6 @@ import com.shiny.music.constants.StopMusicOnTaskClearKey
 import com.shiny.music.utils.rememberPreference
 import kotlin.math.roundToInt
 
-/**
- * Everything about how a song plays: the sound itself, how one track hands over to the
- * next, what the queue does, and what playback does when something happens to the phone.
- *
- * Every row here is read by `MusicService`. Several of them existed in the service for a
- * long time with no way to reach them; they are surfaced rather than invented.
- */
 @Composable
 fun PlaybackSettingsScreen(navController: NavController) {
     var dataSaver by rememberPreference(DataSaverEnabledKey, false)
@@ -62,21 +55,16 @@ fun PlaybackSettingsScreen(navController: NavController) {
     var skipOnError by rememberPreference(AutoSkipNextOnErrorKey, true)
     var pauseOnMute by rememberPreference(PauseOnMute, false)
     var resumeOnBluetooth by rememberPreference(ResumeOnBluetoothConnectKey, false)
-    // MainActivity reads this with `false` as its default; the old settings screen claimed
-    // `true`, so the switch and the behaviour disagreed for anyone who never touched it.
     var stopOnTaskClear by rememberPreference(StopMusicOnTaskClearKey, false)
 
     SettingsPage(title = "Playback", navController = navController) {
         item(key = "data_saver") {
             SettingsSection(
                 title = "Data",
-                footer = "Data Saver stops Shiny fetching lyrics ahead of time, preloading the next " +
-                    "song, downloading motion artwork and artist videos, and keeps video tracks out " +
-                    "of autoplay. Scrobbling to ListenBrainz pauses while it is on.",
+                footer = "Turns off preloading, animated covers and videos.",
             ) {
                 SettingsToggleRow(
                     title = "Data Saver",
-                    subtitle = "Use as little mobile data as Shiny can",
                     checked = dataSaver,
                     onCheckedChange = { dataSaver = it },
                     divider = false,
@@ -88,13 +76,12 @@ fun PlaybackSettingsScreen(navController: NavController) {
             SettingsSection(title = "Sound") {
                 SettingsToggleRow(
                     title = "Volume levelling",
-                    subtitle = "Hold every song at a similar loudness",
+                    subtitle = "Even loudness across songs",
                     checked = normalization,
                     onCheckedChange = { normalization = it },
                 )
                 SettingsToggleRow(
                     title = "Skip silence",
-                    subtitle = "Move through silent passages instead of playing them",
                     checked = skipSilence,
                     onCheckedChange = { skipSilence = it },
                     divider = skipSilence,
@@ -102,7 +89,6 @@ fun PlaybackSettingsScreen(navController: NavController) {
                 if (skipSilence) {
                     SettingsToggleRow(
                         title = "Skip silence instantly",
-                        subtitle = "Jump the gap rather than easing across it",
                         checked = skipSilenceInstant,
                         onCheckedChange = { skipSilenceInstant = it },
                         divider = false,
@@ -112,15 +98,9 @@ fun PlaybackSettingsScreen(navController: NavController) {
         }
 
         item(key = "transitions") {
-            SettingsSection(
-                title = "Transitions",
-                footer = if (crossfade) {
-                    "Crossfade runs two players at once, so hardware audio offload stays off while it is on."
-                } else null,
-            ) {
+            SettingsSection(title = "Transitions") {
                 SettingsToggleRow(
                     title = "Crossfade",
-                    subtitle = "Fade one song into the next",
                     checked = crossfade,
                     onCheckedChange = { crossfade = it },
                 )
@@ -135,18 +115,13 @@ fun PlaybackSettingsScreen(navController: NavController) {
                     )
                     SettingsToggleRow(
                         title = "Keep album tracks gapless",
-                        subtitle = "Songs recorded to run together still run together",
                         checked = crossfadeGapless,
                         onCheckedChange = { crossfadeGapless = it },
                     )
                 }
                 SettingsToggleRow(
                     title = "Audio offload",
-                    subtitle = if (crossfade) {
-                        "Unavailable while crossfade is on"
-                    } else {
-                        "Let the audio chip decode playback to save battery"
-                    },
+                    subtitle = if (crossfade) "Off during crossfade" else "Saves battery",
                     checked = offload && !crossfade,
                     enabled = !crossfade,
                     onCheckedChange = { offload = it },
@@ -159,7 +134,6 @@ fun PlaybackSettingsScreen(navController: NavController) {
             SettingsSection(title = "Up next") {
                 SettingsToggleRow(
                     title = "Prepare the next song",
-                    subtitle = "Buffer what is coming so it starts the moment it is due",
                     checked = preload,
                     onCheckedChange = { preload = it },
                     divider = preload && SettingsVisibility.LYRICS,
@@ -179,7 +153,6 @@ fun PlaybackSettingsScreen(navController: NavController) {
             SettingsSection(title = "Queue") {
                 SettingsToggleRow(
                     title = "Restore the queue",
-                    subtitle = "Pick up where you left off after Shiny is closed",
                     checked = persistentQueue,
                     onCheckedChange = { persistentQueue = it },
                 )
@@ -190,13 +163,12 @@ fun PlaybackSettingsScreen(navController: NavController) {
                 )
                 SettingsToggleRow(
                     title = "Keep shuffle on across queues",
-                    subtitle = "Starting something new stays shuffled",
                     checked = shuffleAcrossQueues,
                     onCheckedChange = { shuffleAcrossQueues = it },
                 )
                 SettingsToggleRow(
                     title = "Shuffle the whole playlist",
-                    subtitle = "Shuffling starts anywhere in it, not from the song you tapped",
+                    subtitle = "Not from the song you tapped",
                     checked = shufflePlaylistFirst,
                     onCheckedChange = { shufflePlaylistFirst = it },
                 )
@@ -207,13 +179,12 @@ fun PlaybackSettingsScreen(navController: NavController) {
                 )
                 SettingsToggleRow(
                     title = "Line up similar music",
-                    subtitle = "Keep playing in the same vein when an album or playlist ends",
+                    subtitle = "When an album or playlist ends",
                     checked = similarContent,
                     onCheckedChange = { similarContent = it },
                 )
                 SettingsToggleRow(
                     title = "Stop adding songs on Repeat All",
-                    subtitle = "Repeat the queue you have instead of extending it",
                     checked = stopLoadingOnRepeatAll,
                     onCheckedChange = { stopLoadingOnRepeatAll = it },
                     divider = false,
@@ -225,7 +196,6 @@ fun PlaybackSettingsScreen(navController: NavController) {
             SettingsSection(title = "Behaviour") {
                 SettingsToggleRow(
                     title = "Skip tracks that fail",
-                    subtitle = "Move on instead of stopping when a song cannot be played",
                     checked = skipOnError,
                     onCheckedChange = { skipOnError = it },
                 )
@@ -241,7 +211,6 @@ fun PlaybackSettingsScreen(navController: NavController) {
                 )
                 SettingsToggleRow(
                     title = "Stop when Shiny is swiped away",
-                    subtitle = "Closing the app from Recents also stops playback",
                     checked = stopOnTaskClear,
                     onCheckedChange = { stopOnTaskClear = it },
                     divider = false,
@@ -253,7 +222,6 @@ fun PlaybackSettingsScreen(navController: NavController) {
             SettingsSection(title = "Sound shaping") {
                 SettingsNavRow(
                     title = "Equaliser",
-                    subtitle = "Bands, presets and bass",
                     onClick = { navController.navigate("settings/equalizer") },
                     divider = false,
                 )

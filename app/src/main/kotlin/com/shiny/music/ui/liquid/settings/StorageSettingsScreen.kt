@@ -51,18 +51,9 @@ import kotlinx.coroutines.launch
 import okio.ByteString.Companion.encodeUtf8
 import timber.log.Timber
 
-/** The cache limits Shiny offers, in MB. `-1` is unlimited, `0` turns the cache off. */
 private val SongCacheSizes = listOf(0, 512, 1024, 2048, 4096, 8192, -1)
 private val ImageCacheSizes = listOf(0, 128, 256, 512, 1024, 2048)
 
-/**
- * Downloads and cache, kept apart on purpose.
- *
- * A download is something the listener asked Shiny to keep: it lives in the download folder
- * they chose and stays until they remove it. Cache is Shiny's own working space, filled as
- * they listen and trimmed on its own. The page never calls both "storage", because the one
- * question people bring here — "will this delete my music?" — depends on which one it is.
- */
 @OptIn(ExperimentalCoilApi::class, DelicateCoilApi::class)
 @Composable
 fun StorageSettingsScreen(navController: NavController) {
@@ -92,7 +83,6 @@ fun StorageSettingsScreen(navController: NavController) {
     var imageCacheSize by remember { mutableLongStateOf(0L) }
     var folderAccessible by remember { mutableStateOf(true) }
 
-    // One poll for the sizes, and only while this screen is composed.
     LaunchedEffect(playerCache, downloadCache, imageDiskCache, folder) {
         while (isActive) {
             privateDownloadSize = tryOrNull { downloadCache.cacheSpace } ?: 0L
@@ -121,8 +111,8 @@ fun StorageSettingsScreen(navController: NavController) {
         val result = lastMove ?: return@LaunchedEffect
         val message = when {
             result.failed == 0 -> "Moved ${songCount(result.moved)} to your download folder"
-            result.moved == 0 -> "Those downloads couldn't be moved. They're still playable where they are."
-            else -> "Moved ${songCount(result.moved)}. ${songCount(result.failed)} couldn't be moved and stayed where they were."
+            result.moved == 0 -> "Couldn't move those downloads. They still play."
+            else -> "Moved ${songCount(result.moved)}. ${songCount(result.failed)} couldn't be moved."
         }
         Toast.makeText(context, message, Toast.LENGTH_LONG).show()
         folderStore.consumeLastMove()
@@ -139,22 +129,19 @@ fun StorageSettingsScreen(navController: NavController) {
         }.onFailure { Timber.w(it, "Download folder permission refused") }.isSuccess
         if (granted) {
             folderStore.setFolder(uri)
-            // Everything already downloaded follows, so all offline songs live in one folder.
             moveEverythingHere = true
         } else {
-            Toast.makeText(context, "Shiny couldn't get access to that folder. Try another one.", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, "No access to that folder. Try another.", Toast.LENGTH_LONG).show()
         }
     }
     val chooseFolder: () -> Unit = {
-        // Android won't hand the Download folder itself to any app ("To protect your privacy,
-        // choose another folder"), only folders inside it. So Shiny makes Download/Shiny and
-        // opens the picker there: one tap on "Use this folder".
+        // Android refuses the Download folder itself, so the picker opens on Download/Shiny.
         val start = folder ?: run {
             val made = ensureShinyDownloadFolder(context)
             Toast.makeText(
                 context,
-                if (made) "Tap “Use this folder” to keep downloads in Download › Shiny"
-                else "Open Download, make a folder (like “Shiny”) and use that — Android won't allow Download itself",
+                if (made) "Tap “Use this folder”"
+                else "Make a folder inside Download and use it",
                 Toast.LENGTH_LONG,
             ).show()
             DocumentsContract.buildDocumentUri(
@@ -164,11 +151,10 @@ fun StorageSettingsScreen(navController: NavController) {
         }
         runCatching { folderPicker.launch(start) }.onFailure {
             Timber.e(it, "No folder picker")
-            Toast.makeText(context, "This device doesn't have a folder picker.", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, "No folder picker on this device.", Toast.LENGTH_LONG).show()
         }
     }
 
-    // What is downloaded, and where each download physically is.
     val completedIds = remember(downloads) {
         downloads.values.filter { it.state == Download.STATE_COMPLETED }.map { it.request.id }.toSet()
     }
@@ -193,13 +179,12 @@ fun StorageSettingsScreen(navController: NavController) {
         item(key = "downloads") {
             SettingsSection(
                 title = "Downloads",
-                footer = "Downloads are songs you asked Shiny to keep offline. They stay until you " +
-                    "remove them, and they're saved in Shiny's own format, so only Shiny plays them.",
+                footer = "Kept offline until you remove them. They play only in Shiny.",
             ) {
                 SettingsRow(
                     title = "Download folder",
                     subtitle = folder?.let { DownloadFolderStore.displayPath(it) }
-                        ?: "Shiny's storage on this device",
+                        ?: "On this device",
                     trailing = {
                         Text(
                             text = if (folder == null) "Choose" else "Change",
@@ -212,8 +197,7 @@ fun StorageSettingsScreen(navController: NavController) {
                 if (folder != null && !folderAccessible) {
                     SettingsRow(
                         title = "Folder unavailable",
-                        subtitle = "Shiny can't reach this folder any more, so new downloads stay in " +
-                            "Shiny's storage. Choose it again, or pick another.",
+                        subtitle = "Tap to choose it again",
                         destructive = true,
                         onClick = chooseFolder,
                     )
@@ -230,21 +214,13 @@ fun StorageSettingsScreen(navController: NavController) {
                         } else {
                             "Move ${songCount(notInFolder.size)} into this folder"
                         },
-                        subtitle = if (progress != null) {
-                            "Bringing your downloads into one folder. You can keep listening."
-                        } else {
-                            "${formatFileSize(notInFolderBytes)} still outside this folder — they play from " +
-                                "where they are. Tap to try moving them again."
-                        },
+                        subtitle = if (progress != null) null else "${formatFileSize(notInFolderBytes)} outside this folder",
                         enabled = progress == null && folderAccessible,
                         onClick = { folderStore.startMove(notInFolder) },
                     )
-                } else if (folder == null && completedIds.isEmpty()) {
-                    SettingsNote("Choose a folder so downloads are kept there instead of in Shiny's own storage.")
                 }
                 SettingsToggleRow(
                     title = "Download liked songs",
-                    subtitle = "Keep every song you like available offline",
                     checked = autoDownloadOnLike,
                     onCheckedChange = { autoDownloadOnLike = it },
                     divider = false,
@@ -255,17 +231,14 @@ fun StorageSettingsScreen(navController: NavController) {
         item(key = "cache") {
             SettingsSection(
                 title = "Cache",
-                footer = "Cache is temporary. Shiny fills it as you listen and clears the oldest items " +
-                    "on its own. Clearing it never removes a download.",
+                footer = "Clearing cache never removes downloads.",
             ) {
                 SettingsValueRow(
                     title = "Song cache",
-                    subtitle = "Songs you've played recently, so replays don't use data",
                     value = formatFileSize(songCacheSize),
                 )
                 SettingsValueRow(
                     title = "Artwork cache",
-                    subtitle = "Covers and artist photos",
                     value = formatFileSize(imageCacheSize),
                 )
                 SettingsActionRow(
@@ -275,7 +248,6 @@ fun StorageSettingsScreen(navController: NavController) {
                 )
                 SettingsActionRow(
                     title = "Clear artwork cache",
-                    subtitle = "Covers of downloaded songs are kept",
                     onClick = { confirmClearImageCache = true },
                     enabled = imageCacheSize > 0,
                     divider = false,
@@ -307,7 +279,7 @@ fun StorageSettingsScreen(navController: NavController) {
             SettingsSection(title = "Download management") {
                 SettingsActionRow(
                     title = "Remove all downloads",
-                    subtitle = if (inCurrentFolder > 0) "Deletes the files in your download folder too" else null,
+                    subtitle = if (inCurrentFolder > 0) "Includes your download folder" else null,
                     onClick = { confirmClearDownloads = true },
                     destructive = true,
                     enabled = completedIds.isNotEmpty() || downloadBytes > 0,
@@ -322,8 +294,7 @@ fun StorageSettingsScreen(navController: NavController) {
     if (confirmClearDownloads) {
         LiquidAlert(
             title = "Remove all downloads?",
-            message = "Every downloaded song is deleted from this device and from your download folder. " +
-                "Your library and playlists aren't changed.",
+            message = "Deletes every downloaded song from this device and your download folder. Playlists stay.",
             confirmLabel = "Remove",
             destructive = true,
             onConfirm = {
@@ -340,7 +311,7 @@ fun StorageSettingsScreen(navController: NavController) {
     if (confirmClearSongCache) {
         LiquidAlert(
             title = "Clear the song cache?",
-            message = "Songs you play again will be streamed once more. Downloads aren't affected.",
+            message = "Downloads aren't affected.",
             confirmLabel = "Clear",
             destructive = true,
             onConfirm = {
@@ -355,14 +326,12 @@ fun StorageSettingsScreen(navController: NavController) {
     if (confirmClearImageCache) {
         LiquidAlert(
             title = "Clear the artwork cache?",
-            message = "Covers are fetched again as you browse. Artwork for downloaded songs is kept.",
+            message = "Downloaded songs keep their covers.",
             confirmLabel = "Clear",
             destructive = true,
             onConfirm = {
                 confirmClearImageCache = false
                 scope.launch(Dispatchers.IO) {
-                    // Keep the covers of downloaded songs: they are the one case where a
-                    // cleared cache cannot be refilled offline.
                     val preserved = mutableSetOf<String>()
                     runCatching { database.downloadedSongsByNameAsc().first() }.getOrNull()?.forEach { song ->
                         song.thumbnailUrl?.let { preserved += it.encodeUtf8().sha256().hex() }
@@ -387,11 +356,6 @@ fun StorageSettingsScreen(navController: NavController) {
 
 private const val ShinyFolderName = "Shiny"
 
-/**
- * Makes Download/Shiny if it isn't there. A plain mkdirs works where the app may write to shared
- * storage; elsewhere (Android 10 and up) MediaStore creates the folder for a file placed in it,
- * and the file is removed again straight away.
- */
 private fun ensureShinyDownloadFolder(context: Context): Boolean {
     @Suppress("DEPRECATION")
     val dir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), ShinyFolderName)

@@ -26,7 +26,6 @@ import com.shiny.music.utils.rememberEnumPreference
 import com.shiny.music.utils.rememberPreference
 import kotlin.math.roundToInt
 
-/** The tab bar, what Home shows, and the gestures that act on a song row. */
 @Composable
 fun LibraryHomeSettingsScreen(navController: NavController) {
     var defaultTab by rememberEnumPreference(DefaultOpenTabKey, NavigationTab.HOME)
@@ -64,13 +63,9 @@ fun LibraryHomeSettingsScreen(navController: NavController) {
         }
 
         item(key = "tabs") {
-            SettingsSection(
-                title = "Tab bar",
-                footer = "Listen Together can have the fourth tab to itself, or sit inside Library.",
-            ) {
+            SettingsSection(title = "Tab bar") {
                 SettingsToggleRow(
                     title = "Listen Together tab",
-                    subtitle = "Give Together its own tab instead of Library",
                     checked = !togetherInLibrary,
                     onCheckedChange = { togetherInLibrary = !it },
                     divider = false,
@@ -82,34 +77,30 @@ fun LibraryHomeSettingsScreen(navController: NavController) {
             SettingsSection(title = "Home") {
                 SettingsToggleRow(
                     title = "Pinned shelf",
-                    subtitle = "Your pins first in Lately, at the top of Home",
+                    subtitle = "Pins first on Home",
                     checked = pinned,
                     onCheckedChange = { pinned = it },
                 )
                 SettingsNavRow(
                     title = "Charts",
-                    subtitle = if (chartsSetting == HomeCharts.AUTO) "From your location" else "Which country's charts Discover shows",
                     value = homeChartsLabel(chartsSetting, detectedCountry),
                     onClick = { navController.navigate("settings/library/charts") },
                 )
                 if (spotifySession.isNotBlank()) {
                     SettingsToggleRow(
                         title = stringResource(R.string.spotify_home_mixes),
-                        subtitle = stringResource(R.string.spotify_home_mixes_desc),
                         checked = spotifyMixes,
                         onCheckedChange = { spotifyMixes = it },
                     )
                 } else {
                     SettingsNavRow(
                         title = stringResource(R.string.spotify_home_mixes),
-                        subtitle = "Connect Spotify to bring your mixes to Home",
                         value = "Connect",
                         onClick = { navController.navigate("settings/spotify_import") },
                     )
                 }
                 SettingsSliderRow(
                     title = "Top list length",
-                    subtitle = "How far your most-played list runs",
                     value = topLength.toFloatOrNull() ?: 50f,
                     onValueChange = { topLength = it.roundToInt().toString() },
                     valueRange = 5f..100f,
@@ -131,7 +122,7 @@ fun LibraryHomeSettingsScreen(navController: NavController) {
                 )
                 SettingsToggleRow(
                     title = "Swipe a song row",
-                    subtitle = "Swipe left to queue a song, right to play it next",
+                    subtitle = "Left to queue, right to play next",
                     checked = swipeToQueue,
                     onCheckedChange = { swipeToQueue = it },
                     divider = false,
@@ -140,25 +131,21 @@ fun LibraryHomeSettingsScreen(navController: NavController) {
         }
 
         item(key = "device") {
-            SettingsSection(
-                title = "On this device",
-                footer = "Covers are looked up by the song's title and artist only. A file's name never leaves the phone.",
-            ) {
+            SettingsSection(title = "On this device") {
                 SettingsToggleRow(
                     title = "Show downloads with device songs",
-                    subtitle = "Downloaded songs appear in On This Device, and Downloaded is hidden from Library",
+                    subtitle = "Merges Downloaded into On This Device",
                     checked = combineDownloads,
                     onCheckedChange = { combineDownloads = it },
                 )
                 SettingsToggleRow(
                     title = "Find missing covers online",
-                    subtitle = "For songs whose file has no cover inside it",
                     checked = coversOnline,
                     onCheckedChange = { coversOnline = it },
                 )
                 SettingsNavRow(
                     title = "Music sources",
-                    subtitle = "What counts as music, and which folders to include",
+                    subtitle = "Folders and file types",
                     onClick = { navController.navigate("settings/library/sources") },
                     divider = false,
                 )
