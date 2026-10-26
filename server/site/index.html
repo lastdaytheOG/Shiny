@@ -406,12 +406,12 @@ h1 span { display: block; }
   padding-bottom: clamp(88px, 12vw, 140px);
 }
 .news-head { align-self: start; position: sticky; top: 100px; }
+.versions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 28px; }
 .seg {
   position: relative;
   display: inline-grid;
   grid-auto-flow: column;
   grid-auto-columns: 1fr;
-  margin-top: 28px;
   padding: 3px;
   border-radius: 999px;
   background: var(--fill);
@@ -430,7 +430,8 @@ h1 span { display: block; }
     0 4px 10px rgba(0, 0, 0, .08);
   transform: translateX(calc(var(--i, 0) * 100%));
 }
-.seg.ready .seg-thumb { transition: transform .45s var(--ease); }
+.seg.ready .seg-thumb { transition: transform .45s var(--ease), opacity .2s; }
+.seg.off .seg-thumb { opacity: 0; }
 .seg button {
   position: relative;
   appearance: none;
@@ -447,6 +448,45 @@ h1 span { display: block; }
 }
 .seg button:hover { color: var(--text); }
 .seg button[aria-selected="true"] { color: var(--text); font-weight: 600; }
+.older { position: relative; display: inline-flex; }
+.older select {
+  appearance: none;
+  -webkit-appearance: none;
+  height: 44px;
+  padding: 0 36px 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--fill);
+  color: var(--muted);
+  font: 500 15px var(--font);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: color .2s;
+}
+.older select:hover { color: var(--text); }
+.older::after {
+  content: "";
+  position: absolute;
+  right: 17px;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  margin-top: -6px;
+  border-right: 1.6px solid var(--muted);
+  border-bottom: 1.6px solid var(--muted);
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+.older.active select {
+  color: var(--text);
+  font-weight: 600;
+  background: linear-gradient(180deg, var(--thumb-top), var(--thumb-bottom));
+  box-shadow:
+    inset 0 1px 0 var(--thumb-rim),
+    0 1px 2px rgba(0, 0, 0, .14),
+    0 4px 10px rgba(0, 0, 0, .08);
+}
+.older.active::after { border-color: var(--text); }
 .all {
   display: block;
   width: max-content;
@@ -525,8 +565,10 @@ footer a:hover { color: var(--text); }
   .features ul { gap: 28px 20px; }
   .features h3 { font-size: 16px; }
   .features p { font-size: 14px; }
-  .seg { display: grid; }
+  .seg { display: grid; flex: 1; }
   .seg button { padding: 0 8px; }
+  .older select { padding: 0 32px 0 14px; }
+  .older::after { right: 14px; }
   footer { flex-direction: column; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -596,18 +638,48 @@ footer a:hover { color: var(--text); }
   <section class="band news" id="whats-new" aria-labelledby="log-title">
     <div class="news-head">
       <h2 id="log-title">What's new</h2>
-      <div class="seg" role="tablist" aria-label="Versions">
-        <span class="seg-thumb" aria-hidden="true"></span>
-        <button role="tab" id="tab-127" aria-controls="v127" aria-selected="true">1.2.7</button>
-        <button role="tab" id="tab-126" aria-controls="v126" aria-selected="false" tabindex="-1">1.2.6</button>
-        <button role="tab" id="tab-125" aria-controls="v125" aria-selected="false" tabindex="-1">1.2.5</button>
-        <button role="tab" id="tab-124" aria-controls="v124" aria-selected="false" tabindex="-1">1.2.4</button>
+      <div class="versions">
+        <div class="seg" role="tablist" aria-label="Versions">
+          <span class="seg-thumb" aria-hidden="true"></span>
+          <button role="tab" id="tab-128" aria-controls="v128" aria-selected="true">1.2.8</button>
+          <button role="tab" id="tab-127" aria-controls="v127" aria-selected="false" tabindex="-1">1.2.7</button>
+          <button role="tab" id="tab-126" aria-controls="v126" aria-selected="false" tabindex="-1">1.2.6</button>
+          <button role="tab" id="tab-125" aria-controls="v125" aria-selected="false" tabindex="-1">1.2.5</button>
+        </div>
+        <label class="older">
+          <select aria-label="Older versions">
+            <option value="" selected disabled hidden>Older</option>
+            <option value="v124">1.2.4</option>
+          </select>
+        </label>
       </div>
       <a class="all" href="https://github.com/lastdaytheOG/Shiny/releases" rel="noopener">All releases on GitHub</a>
     </div>
 
     <div class="releases">
-      <article class="release" id="v127" role="tabpanel" aria-labelledby="tab-127">
+      <article class="release" id="v128" role="tabpanel" aria-labelledby="tab-128">
+        <p class="release-date">Version 1.2.8 · October 2026</p>
+        <p class="release-summary">Downloads that keep their covers offline, Autoplay without a connection, and your full Top Songs list.</p>
+        <h3>New</h3>
+        <ul>
+          <li>Top Songs in Listening Stats opens the full list, with play counts.</li>
+          <li>Autoplay keeps going offline with your downloaded and on-device songs.</li>
+        </ul>
+        <h3>Improved</h3>
+        <ul>
+          <li>Downloaded songs keep their covers, even offline.</li>
+          <li>Less battery use with a Shiny widget on the home screen.</li>
+          <li>Shorter, simpler Settings, and Advanced is hidden.</li>
+        </ul>
+        <h3>Fixed</h3>
+        <ul>
+          <li>Song counts on Home and in Library now match their pages.</li>
+          <li>Signing in to YouTube no longer starts over on some phones.</li>
+          <li>Lists say “1 song” instead of “1 songs”.</li>
+        </ul>
+      </article>
+
+      <article class="release" id="v127" role="tabpanel" aria-labelledby="tab-127" hidden>
         <p class="release-date">Version 1.2.7 · October 2026</p>
         <p class="release-summary">A calmer queue, and playlists that play all the way through.</p>
         <h3>New</h3>
@@ -663,7 +735,7 @@ footer a:hover { color: var(--text); }
         </ul>
       </article>
 
-      <article class="release" id="v124" role="tabpanel" aria-labelledby="tab-124" hidden>
+      <article class="release" id="v124" aria-label="Version 1.2.4" hidden>
         <p class="release-date">Version 1.2.4 · 10 October 2026</p>
         <p class="release-summary">A rebuilt Shiny: a new design on every screen, friends and Discord, and an appearance you can make your own.</p>
         <h3>New</h3>
@@ -703,17 +775,38 @@ footer a:hover { color: var(--text); }
 (function () {
   var tabs = Array.prototype.slice.call(document.querySelectorAll('[role="tab"]'));
   var seg = document.querySelector(".seg");
+  var older = document.querySelector(".older");
+  var olderSelect = older.querySelector("select");
+  var panels = Array.prototype.slice.call(document.querySelectorAll(".release"));
+
+  function show(id) {
+    panels.forEach(function (p) { p.hidden = p.id !== id; });
+  }
 
   function select(tab, focus) {
     tabs.forEach(function (t, i) {
       var on = t === tab;
       t.setAttribute("aria-selected", on);
       t.tabIndex = on ? 0 : -1;
-      document.getElementById(t.getAttribute("aria-controls")).hidden = !on;
       if (on) seg.style.setProperty("--i", i);
     });
+    show(tab.getAttribute("aria-controls"));
+    seg.classList.remove("off");
+    older.classList.remove("active");
+    olderSelect.value = "";
     if (focus) tab.focus();
   }
+
+  olderSelect.addEventListener("change", function () {
+    if (!olderSelect.value) return;
+    tabs.forEach(function (t, i) {
+      t.setAttribute("aria-selected", "false");
+      t.tabIndex = i === 0 ? 0 : -1;
+    });
+    show(olderSelect.value);
+    seg.classList.add("off");
+    older.classList.add("active");
+  });
 
   tabs.forEach(function (tab, i) {
     tab.addEventListener("click", function () { select(tab); });
