@@ -1087,7 +1087,8 @@ class MainActivity : ComponentActivity() {
                     currentRoute == "ambient_mode" ||
                     currentRoute == "uptime" ||
                     currentRoute == "recognition"
-                val showLiquidAccessory = hasMedia && !chromeHidden
+                val inSettings = currentRoute == "settings" || currentRoute?.startsWith("settings/") == true
+                val showLiquidAccessory = hasMedia && !chromeHidden && !inSettings
                 val liquidChromeState = rememberLiquidChromeState()
                 val liquidSwipeRoutes = remember {
                     listOf(Screens.Home.route, Screens.Explore.route, Screens.Library.route)
