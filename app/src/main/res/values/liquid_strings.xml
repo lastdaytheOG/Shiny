@@ -93,6 +93,12 @@
     <string name="liquid_search_offline_body">Your library is still searchable while you are offline.</string>
     <string name="liquid_browse_offline">Browse needs a connection.</string>
     <string name="liquid_search_start_title">Search Shiny</string>
+    <string name="liquid_top_result">Top Result</string>
+    <string name="liquid_song">Song</string>
+    <string name="liquid_artist">Artist</string>
+    <string name="liquid_music_video">Music Video</string>
+    <string name="liquid_video">Video</string>
+    <string name="liquid_videos">Videos</string>
 
     <!-- New -->
     <string name="liquid_new_featured">Worth Hearing</string>

@@ -15,10 +15,12 @@ import com.shiny.music.constants.HideExplicitKey
 import com.shiny.music.constants.HideVideoSongsKey
 import com.shiny.music.db.MusicDatabase
 import com.shiny.music.db.entities.SearchHistory
+import com.shiny.music.search.SearchResults
 import com.shiny.music.utils.dataStore
 import com.shiny.music.utils.get
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,6 +28,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -60,6 +63,17 @@ constructor(
                         val result = if (parsedUrl != null) null else YouTube.searchSuggestions(query).getOrNull()
                         val hideExplicit = context.dataStore.get(HideExplicitKey, false)
                         val hideVideoSongs = context.dataStore.get(HideVideoSongsKey, false)
+                        val recommended = result
+                            ?.recommendedItems
+                            ?.filter { it.id != parsedItem?.id }
+                            ?.filterExplicit(hideExplicit)
+                            ?.filterVideoSongs(hideVideoSongs)
+                            ?.let { items ->
+                                withContext(Dispatchers.Default) { SearchResults.suggestions(query, items) }
+                                    .also { SearchResults.log(it.report) }
+                                    .items
+                            }
+                            .orEmpty()
 
                         database
                             .searchHistory(query)
@@ -73,14 +87,7 @@ constructor(
                                         ?.filter { suggestionQuery ->
                                             history.none { it.query == suggestionQuery }
                                         }.orEmpty(),
-                                    items = listOfNotNull(parsedItem) +
-                                    result
-                                        ?.recommendedItems
-                                        ?.distinctBy { it.id }
-                                        ?.filter { it.id != parsedItem?.id }
-                                        ?.filterExplicit(hideExplicit)
-                                        ?.filterVideoSongs(hideVideoSongs)
-                                        .orEmpty(),
+                                    items = listOfNotNull(parsedItem) + recommended,
                                     isFromLink = parsedUrl != null
                                 )
                             }

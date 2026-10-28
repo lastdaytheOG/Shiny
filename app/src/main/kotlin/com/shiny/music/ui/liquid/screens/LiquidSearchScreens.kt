@@ -64,9 +64,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.music.innertube.YouTube
-import com.music.innertube.models.AlbumItem
 import com.music.innertube.models.ArtistItem
-import com.music.innertube.models.PlaylistItem
 import com.music.innertube.models.SongItem
 import com.music.innertube.models.WatchEndpoint
 import com.music.innertube.models.YTItem
@@ -82,6 +80,9 @@ import com.shiny.music.db.entities.Playlist
 import com.shiny.music.db.entities.SearchHistory
 import com.shiny.music.db.entities.Song
 import com.shiny.music.playback.queues.YouTubeQueue
+import com.shiny.music.search.SearchKind
+import com.shiny.music.search.SearchShelf
+import com.shiny.music.search.searchKind
 import com.shiny.music.ui.liquid.ActivityIndicator
 import com.shiny.music.ui.liquid.Artwork
 import com.shiny.music.ui.liquid.EmptyState
@@ -577,14 +578,16 @@ private fun SuggestionRow(
 /** A YouTube result: the right artwork shape and subtitle for what it is. */
 @Composable
 internal fun ResultRow(item: YTItem, actions: LiquidActions, isActive: Boolean, isPlaying: Boolean) {
-    val kind = when (item) {
-        is SongItem -> stringResource(R.string.songs).trimEnd('s')
-        is AlbumItem -> stringResource(R.string.liquid_album)
-        is ArtistItem -> stringResource(R.string.artists).trimEnd('s')
-        is PlaylistItem -> stringResource(R.string.liquid_playlist)
+    val kind = when (item.searchKind()) {
+        SearchKind.Song -> stringResource(R.string.liquid_song)
+        SearchKind.MusicVideo -> stringResource(R.string.liquid_music_video)
+        SearchKind.Video, SearchKind.Unsupported -> stringResource(R.string.liquid_video)
+        SearchKind.Album -> stringResource(R.string.liquid_album)
+        SearchKind.Artist -> stringResource(R.string.liquid_artist)
+        SearchKind.Playlist -> stringResource(R.string.liquid_playlist)
     }
     SongRow(
-        songId = (item as? com.music.innertube.models.SongItem)?.id,
+        songId = (item as? SongItem)?.id,
         title = item.title,
         subtitle = listOfNotNull(kind, item.subtitleText()?.takeIf { it.isNotBlank() }).joinToString(" · "),
         artwork = item.thumbnail?.resize(240, 240),
@@ -629,12 +632,21 @@ private fun LocalResultRow(item: LocalItem, actions: LiquidActions, isActive: Bo
 
 private data class Scope(val label: String, val filter: YouTube.SearchFilter?)
 
+@Composable
+private fun shelfTitle(shelf: SearchShelf) = when (shelf) {
+    SearchShelf.Songs -> stringResource(R.string.songs)
+    SearchShelf.Videos -> stringResource(R.string.liquid_videos)
+    SearchShelf.Albums -> stringResource(R.string.albums)
+    SearchShelf.Artists -> stringResource(R.string.artists)
+    SearchShelf.Playlists -> stringResource(R.string.playlists)
+}
+
 /**
  * The results page.
  *
- * The catalogue answers in YouTube's own order, but the listener's own music is put above it
- * whenever any of it matches: a search that started online is still a search, and hiding a
- * song already on the phone behind a scope switch is the wrong answer.
+ * The catalogue is ranked by how closely it matches the query, and the listener's own music is
+ * put above it whenever any of it matches: a search that started online is still a search, and
+ * hiding a song already on the phone behind a scope switch is the wrong answer.
  */
 @Composable
 fun LiquidSearchResultScreen(
@@ -657,7 +669,7 @@ fun LiquidSearchResultScreen(
         Scope(stringResource(R.string.albums), YouTube.SearchFilter.FILTER_ALBUM),
         Scope(stringResource(R.string.artists), YouTube.SearchFilter.FILTER_ARTIST),
         Scope(stringResource(R.string.playlists), YouTube.SearchFilter.FILTER_COMMUNITY_PLAYLIST),
-        Scope("Videos", YouTube.SearchFilter.FILTER_VIDEO),
+        Scope(stringResource(R.string.liquid_videos), YouTube.SearchFilter.FILTER_VIDEO),
     )
 
     LaunchedEffect(listState, filter) {
@@ -700,13 +712,14 @@ fun LiquidSearchResultScreen(
                 }
             }
 
-            val summary = viewModel.summaryPage
+            val summary = viewModel.summary
+            val top = summary?.top
             when {
                 summary == null -> item(key = "loading") {
                     Box(Modifier.fillMaxWidth().padding(48.dp), contentAlignment = Alignment.Center) { ActivityIndicator() }
                 }
 
-                summary.summaries.all { it.items.isEmpty() } -> if (libraryHits.isEmpty()) {
+                top == null -> if (libraryHits.isEmpty()) {
                     item(key = "empty") {
                         EmptyState(
                             icon = Icons.Rounded.Search,
@@ -717,25 +730,13 @@ fun LiquidSearchResultScreen(
                 }
 
                 else -> {
-                    // YouTube's first section is its single best guess, so it gets the card.
-                    // Songs follow it — a search for a name is usually a search for a song —
-                    // and everything after that keeps YouTube's own order.
-                    val sections = summary.summaries.filter { it.items.isNotEmpty() }
-                    val head = sections.firstOrNull()
-                    val rest = sections.drop(1).sortedBy { if (it.items.firstOrNull() is SongItem) 0 else 1 }
-
-                    if (head != null) {
-                        item(key = "top_card") {
-                            SectionHeader(title = head.title)
-                            TopResultCard(head.items.first(), actions)
-                        }
-                        items(head.items.drop(1), key = { "tr_${it.id}" }) { item ->
-                            ResultRow(item, actions, isActive = item.id == mediaMetadata?.id, isPlaying = isPlaying)
-                        }
+                    item(key = "top_card") {
+                        SectionHeader(title = stringResource(R.string.liquid_top_result))
+                        TopResultCard(top, actions)
                     }
-                    rest.forEachIndexed { index, section ->
-                        item(key = "sum_header_$index") { SectionHeader(title = section.title) }
-                        items(section.items, key = { "sum_${index}_${it.id}" }) { item ->
+                    summary.sections.forEach { section ->
+                        item(key = "sum_header_${section.shelf}") { SectionHeader(title = shelfTitle(section.shelf)) }
+                        items(section.items, key = { "sum_${section.shelf}_${it.id.ifBlank { "t:${it.title}" }}" }) { item ->
                             ResultRow(item, actions, isActive = item.id == mediaMetadata?.id, isPlaying = isPlaying)
                         }
                     }
