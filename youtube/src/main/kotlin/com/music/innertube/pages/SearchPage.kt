@@ -15,6 +15,7 @@ import com.music.innertube.utils.parseTime
 data class SearchResult(
     val items: List<YTItem>,
     val continuation: String? = null,
+    val correctedQuery: String? = null,
 )
 
 object SearchPage {

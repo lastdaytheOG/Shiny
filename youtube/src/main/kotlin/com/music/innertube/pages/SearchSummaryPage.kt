@@ -7,6 +7,7 @@ import com.music.innertube.models.ArtistItem
 import com.music.innertube.models.MusicCardShelfRenderer
 import com.music.innertube.models.MusicResponsiveListItemRenderer
 import com.music.innertube.models.PlaylistItem
+import com.music.innertube.models.SectionListRenderer
 import com.music.innertube.models.SongItem
 import com.music.innertube.models.YTItem
 import com.music.innertube.models.clean
@@ -24,11 +25,12 @@ data class SearchSummary(
 
 data class SearchSummaryPage(
     val summaries: List<SearchSummary>,
+    val correctedQuery: String? = null,
 ) {
     fun filterExplicit(enabled: Boolean) =
         if (enabled) {
-            SearchSummaryPage(
-                summaries.mapNotNull { s ->
+            copy(
+                summaries = summaries.mapNotNull { s ->
                     SearchSummary(
                         title = s.title,
                         items =
@@ -44,8 +46,8 @@ data class SearchSummaryPage(
 
     fun filterVideoSongs(disableVideos: Boolean) =
         if (disableVideos) {
-            SearchSummaryPage(
-                summaries.mapNotNull { s ->
+            copy(
+                summaries = summaries.mapNotNull { s ->
                     if (s.title == "Videos") s
                     else {
                         val filteredItems = s.items.filterVideoSongs(true).ifEmpty {
@@ -61,8 +63,8 @@ data class SearchSummaryPage(
 
     fun filterYoutubeShorts(enabled: Boolean = false) =
         if (enabled) {
-            SearchSummaryPage(
-                summaries.mapNotNull { s ->
+            copy(
+                summaries = summaries.mapNotNull { s ->
                     SearchSummary(
                         title = s.title,
                         items =
@@ -77,6 +79,13 @@ data class SearchSummaryPage(
         }
 
     companion object {
+        fun correctedQuery(contents: List<SectionListRenderer.Content>): String? =
+            contents.asSequence()
+                .flatMap { it.itemSectionRenderer?.contents.orEmpty() }
+                .mapNotNull { (it.showingResultsForRenderer ?: it.didYouMeanRenderer)?.correctedQuery?.runs }
+                .map { runs -> runs.joinToString(separator = "") { it.text }.trim() }
+                .firstOrNull { it.isNotEmpty() }
+
         fun fromMusicCardShelfRenderer(renderer: MusicCardShelfRenderer): YTItem? {
             val subtitle = renderer.subtitle.runs?.splitBySeparator()
             return when {

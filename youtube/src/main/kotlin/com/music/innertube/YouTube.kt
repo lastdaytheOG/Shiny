@@ -217,21 +217,24 @@ object YouTube {
         }
 
         SearchSummaryPage(
-            summaries = shelfSummaries + groupedSummaries
+            summaries = shelfSummaries + groupedSummaries,
+            correctedQuery = SearchSummaryPage.correctedQuery(contents),
         )
     }
 
     suspend fun search(query: String, filter: SearchFilter): Result<SearchResult> = runCatching {
         val response = innerTube.search(WEB_REMIX, query, filter.value).body<SearchResponse>()
-        val musicShelfRenderer = response.contents?.tabbedSearchResultsRenderer?.tabs?.firstOrNull()
-            ?.tabRenderer?.content?.sectionListRenderer?.contents
-            ?.mapNotNull { it.musicShelfRenderer }
-            ?.firstOrNull()
+        val contents = response.contents?.tabbedSearchResultsRenderer?.tabs?.firstOrNull()
+            ?.tabRenderer?.content?.sectionListRenderer?.contents.orEmpty()
+        val musicShelfRenderer = contents
+            .mapNotNull { it.musicShelfRenderer }
+            .firstOrNull()
         SearchResult(
             items = musicShelfRenderer?.contents?.getItems()?.mapNotNull {
                 SearchPage.toYTItem(it)
             }.orEmpty(),
-            continuation = musicShelfRenderer?.continuations?.getContinuation()
+            continuation = musicShelfRenderer?.continuations?.getContinuation(),
+            correctedQuery = SearchSummaryPage.correctedQuery(contents),
         )
     }
 

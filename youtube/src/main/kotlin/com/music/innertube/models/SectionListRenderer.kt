@@ -58,5 +58,12 @@ data class ItemSectionRenderer(
     @Serializable
     data class Content(
         val musicResponsiveListItemRenderer: MusicResponsiveListItemRenderer?,
+        val didYouMeanRenderer: QueryCorrection? = null,
+        val showingResultsForRenderer: QueryCorrection? = null,
+    )
+
+    @Serializable
+    data class QueryCorrection(
+        val correctedQuery: Runs? = null,
     )
 }
