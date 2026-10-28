@@ -36,7 +36,7 @@ object ChartMatcher {
     const val CONFIDENT = 0.86
     const val PARTIAL = 0.55
 
-    private val HARD_TAGS = listOf(
+    internal val HARD_TAGS = listOf(
         "remix", "rmx", "mix", "cover", "karaoke", "instrumental", "acoustic", "sped up", "speed up",
         "slowed", "reverb", "lofi", "lo fi", "8d", "nightcore", "reprise", "mashup", "tribute",
         "originally performed", "in the style of", "bass boosted", "female version", "male version", "demo",
@@ -44,7 +44,7 @@ object ChartMatcher {
         "taylors version", "chopped", "screwed", "backing track", "minus one", "tutorial", "reaction", "lesson",
         "long version", "short version", "take",
     )
-    private val PERFORMANCE_TAGS = listOf("live", "sessions", "session", "unplugged", "in concert", "concert", "tour", "performance")
+    internal val PERFORMANCE_TAGS = listOf("live", "sessions", "session", "unplugged", "in concert", "concert", "tour", "performance")
     private val SOFT_TAGS = listOf(
         "original mix", "album version", "album ver", "single version", "radio version", "radio edit", "original version",
         "original ver", "explicit version", "clean version", "deluxe version", "remastered", "remaster", "deluxe",
