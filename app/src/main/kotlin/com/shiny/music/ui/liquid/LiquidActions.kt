@@ -24,7 +24,9 @@ import com.shiny.music.db.entities.Song
 import com.shiny.music.extensions.toMediaItem
 import com.shiny.music.models.toMediaMetadata
 import com.shiny.music.playback.PlayerConnection
+import com.shiny.music.db.entities.RecSurface
 import com.shiny.music.playback.queues.ListQueue
+import com.shiny.music.playback.queues.PlaybackOrigin
 import com.shiny.music.playback.queues.YouTubeQueue
 import com.shiny.music.ui.component.LocalMenuState
 import com.shiny.music.ui.component.MenuState
@@ -109,11 +111,11 @@ class LiquidActions internal constructor(
     }
 
     /** Plays [songs] as a list, starting at [startIndex]. */
-    fun playSongs(title: String?, songs: List<Song>, startIndex: Int = 0, shuffle: Boolean = false) {
+    fun playSongs(title: String?, songs: List<Song>, startIndex: Int = 0, shuffle: Boolean = false, origin: PlaybackOrigin? = null) {
         if (songs.isEmpty()) return
         val ordered = if (shuffle) songs.shuffled() else songs
         playerConnection.playQueue(
-            ListQueue(title = title, items = ordered.map { it.toMediaItem() }, startIndex = if (shuffle) 0 else startIndex)
+            ListQueue(title = title, items = ordered.map { it.toMediaItem() }, startIndex = if (shuffle) 0 else startIndex, origin = origin)
         )
     }
 
@@ -121,7 +123,7 @@ class LiquidActions internal constructor(
     fun playPreShuffled(title: String?, ordered: List<Song>) {
         if (ordered.isEmpty()) return
         playerConnection.playQueue(
-            ListQueue(title = title, items = ordered.map { it.toMediaItem() }, preShuffled = true)
+            ListQueue(title = title, items = ordered.map { it.toMediaItem() }, preShuffled = true, origin = PlaybackOrigin(RecSurface.SmartShuffle))
         )
     }
 
@@ -129,7 +131,7 @@ class LiquidActions internal constructor(
     fun playPreShuffledItems(title: String?, ordered: List<SongItem>) {
         if (ordered.isEmpty()) return
         playerConnection.playQueue(
-            ListQueue(title = title, items = ordered.map { it.toMediaMetadata().toMediaItem() }, preShuffled = true)
+            ListQueue(title = title, items = ordered.map { it.toMediaMetadata().toMediaItem() }, preShuffled = true, origin = PlaybackOrigin(RecSurface.SmartShuffle))
         )
     }
 

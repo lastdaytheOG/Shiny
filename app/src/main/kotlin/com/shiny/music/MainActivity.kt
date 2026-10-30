@@ -305,6 +305,9 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var database: MusicDatabase
 
+    @Inject
+    lateinit var intelligence: com.shiny.music.intelligence.IntelligenceRepository
+
     /**
      * Lazy, and started on a background thread from [onCreate]. Its constructor opens both
      * media caches, builds the DownloadManager and reads the whole download index from SQLite;
@@ -1418,6 +1421,7 @@ class MainActivity : ComponentActivity() {
 
                 CompositionLocalProvider(
                     LocalDatabase provides database,
+                    LocalIntelligence provides intelligence,
                     LocalContentColor provides if (pureBlack) Color.White else contentColorFor(MaterialTheme.colorScheme.surface),
                     LocalPlayerConnection provides playerConnection,
                     LocalPlayerAwareWindowInsets provides playerAwareWindowInsets,
@@ -2060,6 +2064,8 @@ class MainActivity : ComponentActivity() {
 val LocalSharedTransitionScope = staticCompositionLocalOf<SharedTransitionScope?> { null }
 
 val LocalDatabase = staticCompositionLocalOf<MusicDatabase> { error("No database provided") }
+
+val LocalIntelligence = staticCompositionLocalOf<com.shiny.music.intelligence.IntelligenceRepository> { error("No intelligence provided") }
 
 val LocalPlayerConnection = staticCompositionLocalOf<PlayerConnection?> { error("No PlayerConnection provided") }
 

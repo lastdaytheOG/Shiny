@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reason_similar">Similar to %1$s</string>
+    <string name="reason_through">From %1$s, by way of %2$s</string>
+    <string name="reason_connects">Connects %1$s and %2$s</string>
+    <string name="reason_your_artist">You play %1$s</string>
+    <string name="reason_you_chose">You picked %1$s</string>
+
+    <string name="insight_rising">You keep coming back to %1$s lately</string>
+    <string name="insight_loyal">%1$s stays with you: %2$d plays across %3$d songs</string>
+    <plurals name="insight_exploring">
+        <item quantity="one">%1$d new song stuck with you this month</item>
+        <item quantity="other">%1$d new songs stuck with you this month</item>
+    </plurals>
+    <string name="insight_bridge">%1$s sits between %2$s and %3$s</string>
+    <string name="insight_unexplored">%1$d saved songs by %2$s, none played yet</string>
+    <string name="insight_tempo">Most of what you play sits around %1$d to %2$d BPM, from %3$d measured songs</string>
+
+    <string name="style_balanced">Balanced</string>
+    <string name="style_balanced_body">Favourites and new music, in the mix your listening suggests</string>
+    <string name="style_comfort">Comfort</string>
+    <string name="style_comfort_body">Mostly what you already love</string>
+    <string name="style_discovery">Discovery</string>
+    <string name="style_discovery_body">New artists close to what you play</string>
+    <string name="style_adventure">Adventure</string>
+    <string name="style_adventure_body">Further from your usual, with bigger leaps</string>
+    <string name="style_deep">Deep Listening</string>
+    <string name="style_deep_body">Stays with an artist and a sound for longer</string>
+    <string name="style_choose">Recommendation style</string>
+
+    <string name="pick_artists_title">Who do you love?</string>
+    <string name="pick_artists_body">Pick a few artists and Home starts from them. You can skip this.</string>
+    <string name="pick_artists_action">Choose artists</string>
+    <string name="not_now">Not now</string>
+    <string name="pick_artists_search">Search artists</string>
+    <string name="pick_artists_suggested">From the charts</string>
+    <string name="pick_artists_yours">From your music</string>
+    <string name="pick_artists_results">Results</string>
+    <string name="pick_artists_page">Artists you love</string>
+
+    <string name="feedback_title">Recommendations</string>
+    <string name="feedback_row_body">Not interested, less like this, more</string>
+    <string name="feedback_not_interested">Not interested</string>
+    <string name="feedback_less_like_this">Less like this</string>
+    <string name="feedback_more_from_artist">More from %1$s</string>
+    <string name="feedback_hide_artist">Hide %1$s</string>
+    <string name="feedback_block_song">Don\'t recommend this song</string>
+    <string name="feedback_save_later">Save for later</string>
+    <string name="feedback_explore_more">Explore more like this</string>
+    <string name="feedback_saved">Done. Undo it in Settings, Recommendations.</string>
+    <string name="saved_for_later_playlist">Saved for later</string>
+
+    <string name="new_to_you">New to you</string>
+    <string name="new_to_you_subtitle">Artists you haven\'t played, connected to ones you have</string>
+</resources>

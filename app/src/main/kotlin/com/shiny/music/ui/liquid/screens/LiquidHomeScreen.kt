@@ -51,6 +51,7 @@ import com.shiny.music.R
 import com.shiny.music.constants.InnerTubeCookieKey
 import com.shiny.music.db.entities.Artist
 import com.shiny.music.db.entities.LocalItem
+import com.shiny.music.db.entities.RecSurface
 import com.shiny.music.db.entities.Playlist
 import com.shiny.music.home.AlbumsInProgressSection
 import com.shiny.music.home.AroundNowSection
@@ -62,6 +63,14 @@ import com.shiny.music.home.HeroMixSection
 import com.shiny.music.home.HomeInterest
 import com.shiny.music.home.HomeSection
 import com.shiny.music.home.LatelySection
+import com.shiny.music.home.PickArtistsSection
+import com.shiny.music.home.TasteNoteSection
+import com.shiny.music.playback.queues.PlaybackOrigin
+import com.shiny.music.ui.component.LocalMenuState
+import com.shiny.music.ui.liquid.home.PickArtistsCard
+import com.shiny.music.ui.liquid.home.RecommendationStyleSheet
+import com.shiny.music.ui.liquid.home.TasteNoteCard
+import kotlinx.coroutines.delay
 import com.shiny.music.home.OfflineNoticeSection
 import com.shiny.music.home.ReadyOfflineSection
 import com.shiny.music.home.RecentlyAddedSection
@@ -121,6 +130,7 @@ fun LiquidHomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val actions = rememberLiquidActions(navController) ?: return
+    val menuState = LocalMenuState.current
     val playerConnection = actions.playerConnection
     val isPlaying by playerConnection.isPlaying.collectAsState()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
@@ -235,6 +245,10 @@ fun LiquidHomeScreen(
                 .filterNot { it is com.shiny.music.home.InsightsSection || it is com.shiny.music.home.SurpriseSection || it is com.shiny.music.home.MoodsSection }
                 .forEach { section ->
                 item(key = section.key, contentType = section.contentType()) {
+                    LaunchedEffect(section) {
+                        delay(IMPRESSION_DELAY_MS)
+                        viewModel.noteShown(section)
+                    }
                     HomeItem(reduceMotion) {
                         HomeSectionContent(
                             section = section,
@@ -244,6 +258,13 @@ fun LiquidHomeScreen(
                             compactHero = resumeVisible && live != null,
                             reduceMotion = reduceMotion,
                             onNote = ::note,
+                            onChooseStyle = {
+                                menuState.show {
+                                    RecommendationStyleSheet(viewModel.intelligence, onDone = menuState::dismiss)
+                                }
+                            },
+                            onPickArtists = { navController.navigate("settings/recommendations/artists") },
+                            onDismissPickArtists = viewModel::dismissPickArtists,
                         )
                     }
                 }
@@ -255,6 +276,9 @@ fun LiquidHomeScreen(
 }
 
 private fun HomeSection.contentType(): String = this::class.simpleName ?: "section"
+
+private const val IMPRESSION_DELAY_MS = 1_000L
+private val HomeMixOrigin = PlaybackOrigin(RecSurface.HomeMix)
 
 /** Sections fade in and slide into place when the feed changes; still when motion is reduced. */
 @Composable
@@ -285,6 +309,9 @@ private fun HomeSectionContent(
     compactHero: Boolean,
     reduceMotion: Boolean,
     onNote: (HomeInterest.Kind) -> Unit,
+    onChooseStyle: () -> Unit,
+    onPickArtists: () -> Unit,
+    onDismissPickArtists: () -> Unit,
 ) {
     when (section) {
         is OfflineNoticeSection -> OfflineNotice(section)
@@ -293,9 +320,10 @@ private fun HomeSectionContent(
             HeroMixCard(
                 section = section,
                 reduceMotion = reduceMotion,
-                onPlay = { actions.playSongs(title, section.songs) },
-                onShuffle = { actions.playSongs(title, section.songs, shuffle = true) },
+                onPlay = { actions.playSongs(title, section.songs, origin = HomeMixOrigin) },
+                onShuffle = { actions.playSongs(title, section.songs, shuffle = true, origin = HomeMixOrigin) },
                 compact = compactHero,
+                onStyle = onChooseStyle,
             )
         }
         is StartHereSection -> {
@@ -324,6 +352,8 @@ private fun HomeSectionContent(
         is AlbumsInProgressSection -> AlbumsInProgressShelf(section, actions)
         is RecentlyAddedSection -> RecentlyAddedGrid(section, activeId, isPlaying, actions)
         is ReadyOfflineSection -> ReadyOfflineCard(section, actions)
+        is TasteNoteSection -> TasteNoteCard(section) { route -> actions.navController.navigate(route) }
+        PickArtistsSection -> PickArtistsCard(onPick = onPickArtists, onDismiss = onDismissPickArtists)
         else -> Unit
     }
 }

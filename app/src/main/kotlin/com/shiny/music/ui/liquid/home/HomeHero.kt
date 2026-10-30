@@ -25,6 +25,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CloudOff
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Shuffle
+import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -255,6 +256,7 @@ private fun OpeningHead(
     onPlay: () -> Unit,
     onShuffle: () -> Unit,
     shuffleLabel: String = stringResource(R.string.liquid_shuffle),
+    onStyle: (() -> Unit)? = null,
 ) {
     Column(Modifier.padding(horizontal = PageMargin)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -288,7 +290,27 @@ private fun OpeningHead(
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             OnColorButton(stringResource(R.string.liquid_play), Icons.Rounded.PlayArrow, primary = true, onClick = onPlay)
             OnColorButton(shuffleLabel, Icons.Rounded.Shuffle, primary = false, onClick = onShuffle)
+            if (onStyle != null) StyleDisc(onStyle)
         }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun StyleDisc(onClick: () -> Unit) {
+    val interaction = remember { MutableInteractionSource() }
+    val label = stringResource(R.string.style_choose)
+    Box(
+        modifier = Modifier
+            .size(44.dp)
+            .pressScale(interaction, 0.9f)
+            .clip(CircleShape)
+            .background(Color.White.copy(alpha = 0.18f))
+            .combinedClickable(interactionSource = interaction, indication = null, role = Role.Button, onClick = onClick)
+            .semantics { contentDescription = label },
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(Icons.Rounded.Tune, null, tint = Color.White, modifier = Modifier.size(20.dp))
     }
 }
 
@@ -309,6 +331,7 @@ internal fun HeroMixCard(
     onPlay: () -> Unit,
     onShuffle: () -> Unit,
     compact: Boolean,
+    onStyle: (() -> Unit)? = null,
 ) {
     val covers = remember(section.songs) {
         section.songs.mapNotNull { it.thumbnailUrl }.distinct().take(3).map { it.resize(360, 360) }
@@ -353,6 +376,7 @@ internal fun HeroMixCard(
             reduceMotion = reduceMotion,
             onPlay = onPlay,
             onShuffle = onShuffle,
+            onStyle = onStyle,
         )
     }
 }
