@@ -69,6 +69,7 @@ object SequenceBuilder {
         val learned = from.artistIds.maxOfOrNull { a -> to.artistIds.maxOfOrNull { b -> context.badTransitions["$a>$b"] ?: 0.0 } ?: 0.0 } ?: 0.0
         value -= learned * 0.6
         value += tempoFit(from, to, taste) * (0.15 + plan.abruptPenalty * 0.25)
+        value += energyFit(from, to, taste) * (0.05 + plan.abruptPenalty * 0.15)
         value += keyFit(from, to, taste) * 0.08
         value += eraFit(from, to) * 0.06
         if (from.albumId != null && from.albumId == to.albumId) value += plan.sameArtistBonus * 0.5
@@ -86,6 +87,12 @@ object SequenceBuilder {
         val b = taste.features[to.songId]?.takeIf { it.confidence >= 0.3f }?.bpm?.toDouble() ?: return 0.0
         val gap = minOf(abs(a - b), abs(a * 2 - b), abs(a - b * 2))
         return exp(-gap / TEMPO_TOLERANCE) * 2.0 - 1.0
+    }
+
+    private fun energyFit(from: Candidate, to: Candidate, taste: TasteProfile): Double {
+        val a = taste.features[from.songId]?.energy ?: return 0.0
+        val b = taste.features[to.songId]?.energy ?: return 0.0
+        return exp(-abs(a - b) / 0.15) * 2.0 - 1.0
     }
 
     private fun keyFit(from: Candidate, to: Candidate, taste: TasteProfile): Double {

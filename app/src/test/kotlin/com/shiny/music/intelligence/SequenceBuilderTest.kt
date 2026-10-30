@@ -93,6 +93,21 @@ class SequenceBuilderTest {
     }
 
     @Test
+    fun `measured energy keeps the mood steady, and unknown energy changes nothing`() {
+        fun feature(id: String, energy: Float?) = SongFeature(id, 0f, 0f, energy, null, null, null, null)
+        val taste = empty.copy(
+            features = listOf(feature("now", 0.7f), feature("close", 0.72f), feature("far", 0.1f), feature("unknown", null)).associateBy { it.songId },
+        )
+        val context = RankContext()
+        val current = candidate("now", "x")
+        val close = SequenceBuilder.transition(current, candidate("close", "y"), 1, 0, taste, context)
+        val far = SequenceBuilder.transition(current, candidate("far", "y"), 1, 0, taste, context)
+        val unknown = SequenceBuilder.transition(current, candidate("unknown", "y"), 1, 0, taste, context)
+        assertTrue(close > unknown)
+        assertTrue(far < unknown)
+    }
+
+    @Test
     fun `half time counts as the same tempo`() {
         val taste = empty.copy(
             features = listOf(
