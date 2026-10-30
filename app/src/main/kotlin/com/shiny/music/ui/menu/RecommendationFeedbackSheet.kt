@@ -33,6 +33,7 @@ import com.shiny.music.playback.queues.YouTubeQueue
 import com.shiny.music.ui.component.Material3MenuGroup
 import com.shiny.music.ui.component.Material3MenuItemData
 import com.shiny.music.ui.component.MenuGlyphs
+import com.shiny.music.utils.isLocalMediaId
 import java.time.LocalDateTime
 
 const val SAVED_FOR_LATER_PLAYLIST_ID = "LP_SAVED_FOR_LATER"
@@ -83,7 +84,7 @@ fun RecommendationFeedbackSheet(target: FeedbackTarget, onDone: () -> Unit) {
                 add(
                     row({ stringResource(R.string.feedback_explore_more) }, Icons.Rounded.AutoAwesome) {
                         intelligence.setFeedback(FeedbackKind.ExploreMore, target.songId, target.title)
-                        target.metadata?.let { metadata ->
+                        target.metadata?.takeUnless { it.id.isLocalMediaId() }?.let { metadata ->
                             playerConnection?.playQueue(YouTubeQueue.radio(metadata, PlaybackOrigin(RecSurface.ExploreMore)))
                         }
                         onDone()
@@ -93,6 +94,7 @@ fun RecommendationFeedbackSheet(target: FeedbackTarget, onDone: () -> Unit) {
                     row({ stringResource(R.string.feedback_save_later) }, Icons.Rounded.BookmarkAdd) {
                         intelligence.setFeedback(FeedbackKind.SaveForLater, target.songId, target.title)
                         database.query {
+                            target.metadata?.let { insert(it) }
                             val existing = getPlaylistByIdBlocking(SAVED_FOR_LATER_PLAYLIST_ID)
                             if (existing == null) {
                                 insert(
