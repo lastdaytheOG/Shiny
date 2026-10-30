@@ -126,6 +126,7 @@ class App : Application(), SingletonImageLoader.Factory {
 
         applicationScope.launch(Dispatchers.IO) {
             runCatching { com.shiny.music.shinymusic.updater.UpdateCheckScheduler.sync(this@App) }
+            runCatching { com.shiny.music.intelligence.AudioAnalysisWorker.schedule(this@App) }
         }
 
         // HTTP/3 for streams on the Play build; streams use OkHttp until (and unless) it is ready.
