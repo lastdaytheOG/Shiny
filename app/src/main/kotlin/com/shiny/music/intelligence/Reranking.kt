@@ -128,9 +128,9 @@ object SequenceBuilder {
             for (index in remaining.indices) {
                 val item = remaining[index]
                 val artist = item.candidate.leadArtist
-                val echo = memory.indexOf(artist).let { if (it < 0) 0.0 else (ARTIST_MEMORY - it).toDouble() / ARTIST_MEMORY }
+                val lately = memory.indexOf(artist).let { if (it < 0) 0.0 else (ARTIST_MEMORY - it).toDouble() / ARTIST_MEMORY }
                 val flow = previous?.let { transition(it, item.candidate, run, sinceFamiliar, taste, context) } ?: 0.0
-                val value = item.score + flow - echo * plan.diversity * if (previous?.leadArtist == artist) 0.0 else 1.0
+                val value = item.score + flow - lately * plan.diversity * if (previous?.leadArtist == artist) 0.0 else 1.0
                 if (value > bestValue) {
                     bestValue = value
                     bestIndex = index
