@@ -23,7 +23,7 @@ Shiny works out what to recommend on your phone. To do that it keeps, in the sam
 - which recommendations it showed you and whether you played them
 - the feedback you give, such as hiding an artist or asking for less like a song
 - how artists relate, from your listening and from what YouTube lists as related
-- the tempo, energy and key of audio files on your phone, measured on the phone while it charges
+- the tempo, energy and key of songs already on your phone (your files, downloads and what Shiny has cached), measured on the phone while it charges
 
 None of this is uploaded, and no analytics event carries a song or an artist. A backup you create includes it, because a backup is a copy of Shiny's storage.
 

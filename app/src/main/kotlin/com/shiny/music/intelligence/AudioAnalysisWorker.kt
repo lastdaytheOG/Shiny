@@ -2,9 +2,19 @@ package com.shiny.music.intelligence
 
 import android.content.Context
 import android.media.MediaCodec
+import android.media.MediaDataSource
 import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.net.Uri
+import androidx.core.net.toUri
+import androidx.media3.common.C
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.DataSource
+import androidx.media3.datasource.DataSpec
+import androidx.media3.datasource.PlaceholderDataSource
+import androidx.media3.datasource.cache.CacheDataSource
+import androidx.media3.datasource.cache.ContentMetadata
+import androidx.media3.datasource.cache.SimpleCache
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -14,6 +24,10 @@ import androidx.work.WorkerParameters
 import com.shiny.music.constants.AudioAnalysisEnabledKey
 import com.shiny.music.db.MusicDatabase
 import com.shiny.music.db.entities.BeatInfoEntity
+import com.shiny.music.di.DownloadCache
+import com.shiny.music.di.PlayerCache
+import com.shiny.music.downloads.DownloadFolderStore
+import com.shiny.music.downloads.OfflineFileDataSource
 import com.shiny.music.utils.dataStore
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
@@ -32,18 +46,31 @@ import kotlin.coroutines.coroutineContext
 @InstallIn(SingletonComponent::class)
 interface AudioAnalysisEntryPoint {
     fun database(): MusicDatabase
+
+    fun folderStore(): DownloadFolderStore
+
+    @DownloadCache
+    fun downloadCache(): SimpleCache
+
+    @PlayerCache
+    fun playerCache(): SimpleCache
 }
 
+@androidx.annotation.OptIn(UnstableApi::class)
 class AudioAnalysisWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result = withContext(Dispatchers.Default) {
         if (applicationContext.dataStore.data.first()[AudioAnalysisEnabledKey] == false) return@withContext Result.success()
-        val dao = EntryPointAccessors.fromApplication(applicationContext, AudioAnalysisEntryPoint::class.java).database().intelligenceDao
-        val songs = dao.songsAwaitingAnalysis(BATCH)
+        val deps = EntryPointAccessors.fromApplication(applicationContext, AudioAnalysisEntryPoint::class.java)
+        val dao = deps.database().intelligenceDao
+        val songs = dao.songsAwaitingAnalysis(CHECKED)
         var measured = 0
         for (song in songs) {
-            if (!coroutineContext.isActive) break
-            val audio = runCatching { AudioDecoder.decode(applicationContext, Uri.parse(song.songId)) }
+            if (!coroutineContext.isActive || measured >= BATCH) break
+            val stored = if (song.isLocal) null else storedCopy(deps, song.songId) ?: continue
+            val audio = runCatching {
+                if (stored != null) AudioDecoder.decode(stored) else AudioDecoder.decode(applicationContext, Uri.parse(song.songId))
+            }
                 .onFailure { Timber.tag(IntelligenceRepository.TAG).d(it, "not decoded: %s", song.songId) }
                 .getOrNull()
                 ?.let { AudioFeatures.analyse(it, AudioDecoder.TARGET_RATE) }
@@ -62,12 +89,36 @@ class AudioAnalysisWorker(context: Context, params: WorkerParameters) : Coroutin
             )
             if (audio != null) measured++
         }
-        Timber.tag(IntelligenceRepository.TAG).d("audio analysis: %d of %d measured", measured, songs.size)
+        Timber.tag(IntelligenceRepository.TAG).d("audio analysis: %d measured, %d looked at", measured, songs.size)
         Result.success()
+    }
+
+    private fun storedCopy(deps: AudioAnalysisEntryPoint, id: String): MediaDataSource? {
+        val store = deps.folderStore()
+        if (store.readableDocument(id) != null) {
+            val uri = DownloadFolderStore.playbackUri(id)
+            val source = OfflineFileDataSource(applicationContext, store, PlaceholderDataSource.INSTANCE)
+            val length = runCatching {
+                try {
+                    source.open(DataSpec.Builder().setUri(uri).setKey(id).build())
+                } finally {
+                    source.close()
+                }
+            }.getOrDefault(C.LENGTH_UNSET.toLong())
+            if (length > 0) return DataSourceAudio(source, uri, id, length)
+        }
+        for (cache in listOf(deps.downloadCache(), deps.playerCache())) {
+            val length = runCatching { ContentMetadata.getContentLength(cache.getContentMetadata(id)) }
+                .getOrDefault(C.LENGTH_UNSET.toLong())
+            if (length <= 0 || !runCatching { cache.isCached(id, 0, length) }.getOrDefault(false)) continue
+            return DataSourceAudio(CacheDataSource(cache, null), "shiny-analysis://$id".toUri(), id, length)
+        }
+        return null
     }
 
     companion object {
         private const val BATCH = 25
+        private const val CHECKED = 200
         private const val NAME = "audio_analysis"
 
         fun schedule(context: Context) {
@@ -85,15 +136,51 @@ class AudioAnalysisWorker(context: Context, params: WorkerParameters) : Coroutin
     }
 }
 
+@androidx.annotation.OptIn(UnstableApi::class)
+class DataSourceAudio(
+    private val source: DataSource,
+    private val uri: Uri,
+    private val key: String,
+    private val length: Long,
+) : MediaDataSource() {
+    private var opened = false
+    private var cursor = 0L
+
+    override fun getSize(): Long = length
+
+    override fun readAt(position: Long, buffer: ByteArray, offset: Int, size: Int): Int {
+        if (position >= length) return -1
+        if (!opened || position != cursor) {
+            if (opened) source.close()
+            source.open(DataSpec.Builder().setUri(uri).setKey(key).setPosition(position).build())
+            opened = true
+            cursor = position
+        }
+        val read = source.read(buffer, offset, size)
+        if (read == C.RESULT_END_OF_INPUT) return -1
+        cursor += read
+        return read
+    }
+
+    override fun close() {
+        if (opened) source.close()
+        opened = false
+    }
+}
+
 object AudioDecoder {
     const val TARGET_RATE = 11_025
     private const val SECONDS = 45
     private const val TIMEOUT_US = 10_000L
 
-    fun decode(context: Context, uri: Uri): FloatArray? {
+    fun decode(context: Context, uri: Uri): FloatArray? = decode { it.setDataSource(context, uri, null) }
+
+    fun decode(source: MediaDataSource): FloatArray? = decode { it.setDataSource(source) }
+
+    private fun decode(open: (MediaExtractor) -> Unit): FloatArray? {
         val extractor = MediaExtractor()
         try {
-            extractor.setDataSource(context, uri, null)
+            open(extractor)
             val track = (0 until extractor.trackCount).firstOrNull {
                 extractor.getTrackFormat(it).getString(MediaFormat.KEY_MIME)?.startsWith("audio/") == true
             } ?: return null

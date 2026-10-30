@@ -57,6 +57,23 @@ class AudioDecoderTest {
     }
 
     @Test
+    @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+    fun aStoredSongIsReadThroughADataSourceIncludingTheSeekIntoALongTrack() {
+        val file = clickTrackWav(100.0, 100)
+        try {
+            val source = androidx.media3.datasource.FileDataSource()
+            val audio = AudioDecoder.decode(DataSourceAudio(source, Uri.fromFile(file), "song", file.length()))
+            assertNotNull(audio)
+            val measured = AudioFeatures.analyse(audio!!, AudioDecoder.TARGET_RATE)
+            assertNotNull(measured)
+            val closest = listOf(measured!!.bpm / 2.0, measured.bpm.toDouble(), measured.bpm * 2.0).minBy { abs(it - 100.0) }
+            assertEquals("measured ${measured.bpm}", 100.0, closest, 3.0)
+        } finally {
+            file.delete()
+        }
+    }
+
+    @Test
     fun aFileThatIsNotAudioGivesNothing() {
         val file = File(context.cacheDir, "not-audio.bin").apply { writeBytes(ByteArray(4096) { it.toByte() }) }
         try {

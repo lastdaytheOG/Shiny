@@ -143,7 +143,7 @@ Rules:
 - Never add skip rows to `event`: `homeSongStats` counts every row as a play. Skips belong in `listen_outcome`.
 - `event.timestamp` is wall time stored as UTC. `listen_outcome.startedAt` is real UTC with `zoneOffsetMinutes` beside it.
 - Personalisation is a slope, not a door. Scale with `confidence`, never with a play-count threshold.
-- A song's audio traits are known only if `beat_info` holds a measurement. Do not infer them.
+- A song's audio traits are known only if `beat_info` holds a measurement. Do not infer them. `AudioAnalysisWorker` measures device files, downloads and fully cached songs, never over the network, and only while charging and idle.
 - Song-level data stays on the phone. Do not add it to `Telemetry`.
 - Spotify and YouTube stay in separate rows on Home. The engine ranks songs, not those rows.
 

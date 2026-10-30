@@ -116,7 +116,7 @@ fun RecommendationSettingsScreen(navController: NavController) {
             SettingsSection(title = "Sound") {
                 SettingsToggleRow(
                     title = "Measure songs on this device",
-                    subtitle = "Tempo, energy and key of files on your phone, while charging",
+                    subtitle = "Tempo, energy and key of songs already on your phone, while charging",
                     checked = analysis,
                     onCheckedChange = { analysis = it },
                     divider = false,

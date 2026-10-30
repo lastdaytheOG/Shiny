@@ -347,7 +347,7 @@ interface IntelligenceDao {
     @Query(
         """
         SELECT id AS songId, isLocal AS isLocal FROM song
-        WHERE isLocal = 1 AND id NOT IN (SELECT songId FROM beat_info)
+        WHERE (isLocal = 1 OR isDownloaded = 1 OR totalPlayTime > 0) AND id NOT IN (SELECT songId FROM beat_info)
         ORDER BY totalPlayTime DESC
         LIMIT :limit
         """,

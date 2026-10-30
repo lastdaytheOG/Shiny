@@ -151,6 +151,7 @@ class IntelligenceRepository @Inject constructor(
                 confidence = confidence,
                 songStats = songStats,
                 artistStats = artistStats,
+                albumStats = if (counts.events > 0) database.homeAlbumStats(limit = 60) else emptyList(),
                 savedSongs = saved,
                 savedArtists = savedArtists,
                 songOutcomes = dao.songOutcomeBuckets(now, bucketMs, TasteProfileBuilder.MAX_BUCKET),
