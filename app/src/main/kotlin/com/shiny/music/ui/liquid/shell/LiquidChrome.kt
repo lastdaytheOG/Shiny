@@ -86,6 +86,7 @@ import kotlin.math.roundToInt
 val TabBarHeight = 62.dp
 val AccessoryHeight = 54.dp
 val ChromeGap = 8.dp
+private val TabLabelGap = 2.dp
 
 @Immutable
 data class LiquidTab(
@@ -357,9 +358,13 @@ private fun TabCapsule(
                                 imageVector = tab.icon,
                                 contentDescription = tab.label,
                                 tint = if (selected) colors.accent else colors.label,
-                                modifier = Modifier.size(25.dp),
+                                modifier = Modifier
+                                    .size(25.dp)
+                                    .graphicsLayer {
+                                        translationY = collapse() * (TabLabelGap.toPx() + LiquidTypography.tabLabel.lineHeight.toPx()) / 2f
+                                    },
                             )
-                            Spacer(Modifier.height(2.dp))
+                            Spacer(Modifier.height(TabLabelGap))
                             Text(
                                 text = tab.label,
                                 style = LiquidTypography.tabLabel,
