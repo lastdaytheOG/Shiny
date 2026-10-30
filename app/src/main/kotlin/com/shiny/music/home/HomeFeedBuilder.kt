@@ -329,6 +329,7 @@ object HomeFeedBuilder {
             fresh = freshPicks.size,
             offlineOnly = !ctx.online,
             confidence = confidence,
+            styleable = intel.enabled,
         )
     }
 

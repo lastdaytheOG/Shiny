@@ -323,7 +323,7 @@ private fun HomeSectionContent(
                 onPlay = { actions.playSongs(title, section.songs, origin = HomeMixOrigin) },
                 onShuffle = { actions.playSongs(title, section.songs, shuffle = true, origin = HomeMixOrigin) },
                 compact = compactHero,
-                onStyle = onChooseStyle,
+                onStyle = onChooseStyle.takeIf { section.styleable },
             )
         }
         is StartHereSection -> {

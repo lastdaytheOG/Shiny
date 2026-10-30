@@ -217,6 +217,16 @@ class HomeIntelligenceTest {
     }
 
     @Test
+    fun `the style button belongs to a personalised mix only`() {
+        val songs = (0 until 24).map { song("s$it") }
+        val stats = songs.map { stat(it.id) }
+        fun hero(intelligence: IntelligenceSnapshot) = HomeFeedBuilder.build(signals(songs, stats, intelligence), null, ctx)
+            .sections.filterIsInstance<HeroMixSection>().single()
+        assertTrue(hero(snapshot()).styleable)
+        assertFalse(hero(IntelligenceSnapshot.Neutral).styleable)
+    }
+
+    @Test
     fun `the taste note appears only with evidence, and only when personalised`() {
         val songs = (0 until 4).map { song("s$it") }
         val stats = songs.map { stat(it.id) }

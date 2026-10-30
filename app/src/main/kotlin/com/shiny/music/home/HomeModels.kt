@@ -317,6 +317,7 @@ data class HeroMixSection(
     val offlineOnly: Boolean,
     /** [HomeTasteProfile.confidence] when the mix was built: how much of it is really theirs. */
     val confidence: Double = 0.0,
+    val styleable: Boolean = false,
 ) : HomeSection {
     override val key get() = "hero_mix"
 
