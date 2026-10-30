@@ -278,6 +278,8 @@ constructor(
                 moveEvents(fromId, toId)
                 movePlayCounts(fromId, toId)
                 addTotalPlayTimeFrom(fromId, toId)
+                database.intelligenceDao.moveOutcomes(fromId, toId)
+                database.intelligenceDao.moveImpressions(fromId, toId)
             }
             if (moves.isNotEmpty()) Timber.tag(TAG).d("Moved the history of %d relocated files", moves.size)
             removedIds.chunked(SqlBatchSize).forEach(::deleteSongsByIds)
