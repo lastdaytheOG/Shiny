@@ -10,6 +10,10 @@ import com.shiny.music.db.InternalDatabase
 import com.shiny.music.db.MusicDatabase
 import com.shiny.music.db.entities.CandidateSource
 import com.shiny.music.db.entities.RecSurface
+import com.shiny.music.home.Daypart
+import com.shiny.music.home.HomeContext
+import com.shiny.music.home.HomeSignalsLoader
+import com.shiny.music.home.homeWallNowMs
 import com.shiny.music.utils.dataStore
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -62,6 +66,44 @@ class IntelligenceScaleTest {
         } finally {
             db.endTransaction()
         }
+    }
+
+    private suspend fun compareHomeLoads(label: String, database: MusicDatabase) {
+        val ctx = HomeContext(nowMs = homeWallNowMs(), daypart = Daypart.of(java.time.LocalDateTime.now().hour), online = true, seed = 1L)
+        suspend fun ms(block: suspend () -> Unit): Long {
+            val started = System.nanoTime()
+            block()
+            return (System.nanoTime() - started) / 1_000_000
+        }
+        val plain = mutableListOf<Long>()
+        val cold = mutableListOf<Long>()
+        val cached = mutableListOf<Long>()
+        repeat(6) {
+            plain += ms { HomeSignalsLoader(database).load(ctx) }
+            val loader = HomeSignalsLoader(database, IntelligenceRepository(context, database))
+            cold += ms { loader.load(ctx) }
+            cached += ms { loader.load(ctx) }
+        }
+        fun List<Long>.middle() = drop(1).sorted()[(size - 1) / 2]
+        Log.i("IntelligenceScale", "$label home off=${plain.middle()} on cold=${cold.middle()} on cached=${cached.middle()} ms, runs off=$plain cold=$cold cached=$cached")
+    }
+
+    @Test
+    fun homeLoadWithAndWithoutPersonalisation() = runBlocking {
+        context.dataStore.edit { it[PersonalisedRecommendationsKey] = true }
+        context.deleteDatabase(name)
+        val room = Room.databaseBuilder(context, InternalDatabase::class.java, name).build().also { internal = it }
+        val database = MusicDatabase(room)
+        fill(database, songs = 300, artists = 60, events = 1_500, outcomes = 800, related = 1_500)
+        compareHomeLoads("typical", database)
+        fill2(database)
+        compareHomeLoads("heavy", database)
+    }
+
+    private fun fill2(database: MusicDatabase) {
+        val db = database.openHelper.writableDatabase
+        for (table in listOf("related_song_map", "listen_outcome", "event", "song_artist_map", "song", "artist")) db.execSQL("DELETE FROM $table")
+        fill(database, songs = 4_000, artists = 600, events = 60_000, outcomes = 40_000, related = 40_000)
     }
 
     @Test
