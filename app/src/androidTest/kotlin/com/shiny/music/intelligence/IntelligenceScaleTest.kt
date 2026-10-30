@@ -1,13 +1,16 @@
 package com.shiny.music.intelligence
 
 import android.util.Log
+import androidx.datastore.preferences.core.edit
 import androidx.room.Room
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.shiny.music.constants.PersonalisedRecommendationsKey
 import com.shiny.music.db.InternalDatabase
 import com.shiny.music.db.MusicDatabase
 import com.shiny.music.db.entities.CandidateSource
 import com.shiny.music.db.entities.RecSurface
+import com.shiny.music.utils.dataStore
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertTrue
@@ -63,6 +66,7 @@ class IntelligenceScaleTest {
 
     @Test
     fun aHeavyListenerStaysFast() = runBlocking {
+        context.dataStore.edit { it[PersonalisedRecommendationsKey] = true }
         context.deleteDatabase(name)
         val room = Room.databaseBuilder(context, InternalDatabase::class.java, name).build().also { internal = it }
         val database = MusicDatabase(room)
