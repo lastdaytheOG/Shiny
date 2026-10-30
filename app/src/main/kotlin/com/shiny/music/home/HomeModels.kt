@@ -16,6 +16,11 @@ import com.shiny.music.db.entities.HomeSongStat
 import com.shiny.music.db.entities.Playlist
 import com.shiny.music.db.entities.Song
 import com.shiny.music.db.entities.SpeedDialItem
+import com.shiny.music.db.entities.CandidateSource
+import com.shiny.music.intelligence.IntelligenceSnapshot
+import com.shiny.music.intelligence.Reason
+import com.shiny.music.intelligence.Recommendation
+import com.shiny.music.intelligence.TasteInsight
 import kotlinx.serialization.Serializable
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -81,6 +86,7 @@ data class HomeContext(
      * YouTube Music row. Signed out, the likes are Shiny's own and stay a Lately tile.
      */
     val youtubeSignedIn: Boolean = false,
+    val pickArtistsDismissed: Boolean = true,
 )
 
 /**
@@ -132,6 +138,9 @@ data class HomeSignals(
     val likedCovers: List<String> = emptyList(),
     /** The imported Spotify Liked Songs; null when the listener never imported them. */
     val spotifyLiked: Playlist? = null,
+    val intelligence: IntelligenceSnapshot = IntelligenceSnapshot.Neutral,
+    val recommendations: Map<String, Recommendation> = emptyMap(),
+    val insights: List<TasteInsight> = emptyList(),
 ) {
     val monthPlays: Int get() = songStats.values.sumOf { it.monthPlays }
 
@@ -454,7 +463,20 @@ data class MoodsSection(
     override val key get() = "moods"
 }
 
-data class DiscoverPick(val song: Song, val because: Song)
+data class DiscoverPick(
+    val song: Song,
+    val because: Song?,
+    val reason: Reason? = null,
+    val source: CandidateSource? = null,
+)
+
+data class TasteNoteSection(val insight: TasteInsight) : HomeSection {
+    override val key get() = "taste_note"
+}
+
+data object PickArtistsSection : HomeSection {
+    override val key get() = "pick_artists"
+}
 
 /**
  * Songs the listener has never played, each tied to one they have.

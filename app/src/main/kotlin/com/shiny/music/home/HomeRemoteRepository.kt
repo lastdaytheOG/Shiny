@@ -67,6 +67,7 @@ class HomeRemoteRepository(
         }
 
         const val MAX_YOUTUBE_MIXES = 8
+        const val MAX_ARTIST_SONGS = 10
 
         /** The "Mixed for you" shelf's own page, which its "More" button opens. */
         private const val MIXED_FOR_YOU = "FEmusic_mixed_for_you"
@@ -257,6 +258,20 @@ class HomeRemoteRepository(
                             insert(RelatedSongMap(songId = seedId, relatedSongId = song.id))
                         }
                     }
+                    true
+                }
+            }.awaitAll().count { it }
+        }
+    }
+
+    suspend fun fetchArtistSongs(artistIds: List<String>): Int = withContext(Dispatchers.IO) {
+        supervisorScope {
+            artistIds.map { artistId ->
+                async {
+                    val page = YouTube.artist(artistId).getOrNull() ?: return@async false
+                    val songs = page.sections.flatMap { it.items.filterIsInstance<SongItem>() }.distinctBy { it.id }.take(MAX_ARTIST_SONGS)
+                    if (songs.isEmpty()) return@async false
+                    database.withTransaction { songs.forEach { insert(it.toMediaMetadata()) } }
                     true
                 }
             }.awaitAll().count { it }

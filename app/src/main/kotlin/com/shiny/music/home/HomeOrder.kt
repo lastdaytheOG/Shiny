@@ -20,6 +20,8 @@ enum class HomeSlot {
     ReadyOffline,
     Insights,
     Surprise,
+    TasteNote,
+    PickArtists,
 }
 
 /**
@@ -56,7 +58,7 @@ object HomeOrder {
 
     private fun band(slot: HomeSlot, taste: HomeTasteProfile): Band = when (slot) {
         HomeSlot.OfflineNotice, HomeSlot.Opening -> Band.Opening
-        HomeSlot.Lately, HomeSlot.Continue -> Band.Immediate
+        HomeSlot.Lately, HomeSlot.Continue, HomeSlot.PickArtists -> Band.Immediate
         HomeSlot.Rotation, HomeSlot.AroundNow, HomeSlot.Moods, HomeSlot.Discover,
         HomeSlot.DeepDive, HomeSlot.Charts, HomeSlot.Spotify, HomeSlot.YouTube,
         -> Band.Core
@@ -65,7 +67,7 @@ object HomeOrder {
         // plays them, and a footnote for everyone else.
         HomeSlot.ReadyOffline -> if (taste.offlineLean >= 0.55) Band.Core else Band.Library
         HomeSlot.Rediscover, HomeSlot.AlbumsInProgress, HomeSlot.RecentlyAdded -> Band.Library
-        HomeSlot.Insights, HomeSlot.Surprise -> Band.Closing
+        HomeSlot.Insights, HomeSlot.Surprise, HomeSlot.TasteNote -> Band.Closing
     }
 
     /**
@@ -84,6 +86,7 @@ object HomeOrder {
             HomeSlot.Opening -> 90.0
             HomeSlot.Continue -> 60.0
             HomeSlot.Lately -> 50.0
+            HomeSlot.PickArtists -> 40.0
 
             // ---- Core: the handover ----------------------------------------------------
             // What the listener keeps returning to, once there is such a thing.
@@ -112,6 +115,7 @@ object HomeOrder {
 
             HomeSlot.Insights -> 40.0 + 20.0 * taste.activeLean
             HomeSlot.Surprise -> 30.0 + 30.0 * taste.discoveryLean
+            HomeSlot.TasteNote -> 50.0 + 10.0 * c
         }
         return base + daypart + jitter(slot, ctx.seed)
     }

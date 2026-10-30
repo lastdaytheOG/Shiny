@@ -67,6 +67,7 @@ class NewViewModel @Inject constructor(
     @ApplicationContext val context: Context,
     val database: MusicDatabase,
     private val remote: HomeRemoteRepository,
+    intelligence: com.shiny.music.intelligence.IntelligenceRepository,
 ) : ViewModel() {
     private companion object {
         /** Failsafe ceiling on a pull to refresh; a healthy one finishes far inside it. */
@@ -82,7 +83,7 @@ class NewViewModel @Inject constructor(
 
     private data class Moment(val epochDay: Long, val daypart: Daypart)
 
-    private val loader = HomeSignalsLoader(database)
+    private val loader = HomeSignalsLoader(database, intelligence)
 
     val isRefreshing = MutableStateFlow(false)
 

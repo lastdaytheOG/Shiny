@@ -133,7 +133,14 @@ object NewFeedBuilder {
 
         val yours = releases.asSequence()
             .filter { it.reason is NewReason.Plays && it.album.id !in used }
-            .sortedByDescending { (it.reason as NewReason.Plays).plays }
+            .sortedByDescending { release ->
+                val affinity = if (signals.intelligence.enabled) {
+                    release.album.artists.orEmpty().maxOfOrNull { a -> a.id?.let { signals.intelligence.taste.artist(it)?.strength } ?: 0.0 } ?: 0.0
+                } else {
+                    0.0
+                }
+                affinity * 1000.0 + (release.reason as NewReason.Plays).plays
+            }
             .take(MAX_YOURS)
             .toList()
         if (yours.isNotEmpty()) {
@@ -143,6 +150,9 @@ object NewFeedBuilder {
 
         val adjacent = releases.asSequence()
             .filter { it.reason is NewReason.Like && it.album.id !in used }
+            .sortedByDescending { release ->
+                release.album.artists.orEmpty().maxOfOrNull { a -> a.id?.let { signals.intelligence.reach[it]?.score } ?: 0.0 } ?: 0.0
+            }
             .take(MAX_ADJACENT)
             .toList()
         if (adjacent.isNotEmpty()) {
@@ -153,6 +163,7 @@ object NewFeedBuilder {
         val apple = appleReleases.asSequence()
             .filter { !(ctx.hideExplicit && it.explicit) }
             .filter { it.id !in used }
+            .filterNot { album -> album.artists.orEmpty().any { a -> a.id in signals.intelligence.taste.hiddenArtists } }
             .take(MAX_APPLE)
             .toList()
         if (apple.isNotEmpty()) {
@@ -205,8 +216,15 @@ object NewFeedBuilder {
                 adjacentByName.putIfAbsent(related.title.lowercase(), digest.name)
             }
         }
+        val intel = signals.intelligence
+        intel.reach.values.forEach { reach ->
+            if (reach.artistId in listened) return@forEach
+            val seed = reach.seeds.firstOrNull()?.let { intel.graph.names[it] } ?: return@forEach
+            adjacentById.putIfAbsent(reach.artistId, seed)
+        }
 
-        fun showable(album: AlbumItem) = album.id !in heardAlbums && !(ctx.hideExplicit && album.explicit)
+        fun showable(album: AlbumItem) = album.id !in heardAlbums && !(ctx.hideExplicit && album.explicit) &&
+            album.artists.orEmpty().none { a -> a.id in intel.taste.hiddenArtists }
 
         fun reasonFor(album: AlbumItem): NewReason {
             album.artists.orEmpty().forEach { a ->

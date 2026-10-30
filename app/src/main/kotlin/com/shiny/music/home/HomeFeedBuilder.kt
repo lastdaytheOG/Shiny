@@ -7,6 +7,10 @@ import com.shiny.music.home.HomeRanking.capPerArtist
 import com.shiny.music.home.HomeRanking.primaryArtistKey
 import com.shiny.music.home.HomeRanking.rotateHead
 import com.shiny.music.home.HomeRanking.spreadArtists
+import com.shiny.music.intelligence.DiscoveryMix
+import com.shiny.music.intelligence.IntelligenceSnapshot
+import com.shiny.music.intelligence.RecommendationEngine
+import com.shiny.music.intelligence.TasteInsights
 import java.time.ZoneOffset
 import kotlin.math.ln
 import kotlin.math.roundToInt
@@ -57,6 +61,8 @@ object HomeFeedBuilder {
 
     /** Above this the listener has better sections than "more of what you just played". */
     const val CONTINUE_RETIRES_AT = 0.45
+    const val PICK_ARTISTS_BELOW = 0.2
+    const val MIN_SEED_ARTISTS = 3
 
     /**
      * A name for the whole listener, derived from the same weights everything else uses.
@@ -83,9 +89,11 @@ object HomeFeedBuilder {
         val profile = profileOf(taste, signals)
         val stats = signals.songStats
         val now = ctx.nowMs
+        val intel = signals.intelligence
 
         fun playable(song: Song) = ctx.online || song.song.isLocal || song.song.isDownloaded
-        fun allowed(song: Song) = !(ctx.hideVideoSongs && song.song.isVideo) && playable(song)
+        fun rejected(song: Song) = intel.isRejected(song.id, song.artists.map { it.id })
+        fun allowed(song: Song) = !(ctx.hideVideoSongs && song.song.isVideo) && playable(song) && !rejected(song)
         fun resolve(ids: List<String>) = ids.mapNotNull { signals.songs[it] }.filter(::allowed)
         fun ranked(song: Song) = stats[song.id].let {
             RankedSong(song, it?.plays ?: 0, it?.monthPlays ?: 0, it?.weekPlays ?: 0, it?.lastPlayed ?: 0L)
@@ -94,7 +102,8 @@ object HomeFeedBuilder {
         val rotationSongs = resolve(signals.rotationIds)
             .sortedByDescending { song ->
                 val st = stats.getValue(song.id)
-                HomeRanking.rotationScore(st) * HomeRanking.completionFactor(song, st)
+                HomeRanking.rotationScore(st) * HomeRanking.completionFactor(song, st) *
+                    RecommendationEngine.rankingFactor(song.id, song.artists.map { it.id }, intel)
             }
             .let { capPerArtist(it, 2, ::primaryArtistKey) }
         val rotation = rotationSongs.take(10).map(::ranked)
@@ -110,6 +119,7 @@ object HomeFeedBuilder {
         }
 
         val rediscoverAll = resolve(signals.rediscoverIds)
+            .filterNot { intel.taste.song(it.id)?.fadedOut == true }
             .let { rotateHead(it, 24, ctx.seed) }
             .let { capPerArtist(it, 2, ::primaryArtistKey) }
         val rediscover = rediscoverAll.take(10)
@@ -117,10 +127,12 @@ object HomeFeedBuilder {
         val discoverAll = if (!ctx.online) emptyList() else {
             signals.discovery.mapNotNull { link ->
                 val song = signals.songs[link.songId] ?: return@mapNotNull null
-                val because = signals.songs[link.seedId] ?: return@mapNotNull null
-                DiscoverPick(song, because)
+                val because = signals.songs[link.seedId]
+                val recommendation = signals.recommendations[link.songId]
+                if (because == null && recommendation == null) return@mapNotNull null
+                DiscoverPick(song, because, recommendation?.reason, recommendation?.source)
             }.filter {
-                !(ctx.hideVideoSongs && it.song.song.isVideo) && !(ctx.hideExplicit && it.song.song.explicit)
+                !(ctx.hideVideoSongs && it.song.song.isVideo) && !(ctx.hideExplicit && it.song.song.explicit) && !rejected(it.song)
             }
         }
 
@@ -142,6 +154,7 @@ object HomeFeedBuilder {
         val hero = buildHero(
             ctx = ctx,
             confidence = confidence,
+            intel = intel,
             rotation = rotationSongs,
             daypart = daypartSongs,
             rediscover = rediscoverAll,
@@ -174,6 +187,15 @@ object HomeFeedBuilder {
 
         continueSection?.let { sections[HomeSlot.Continue] = it }
 
+        if (!ctx.pickArtistsDismissed && ctx.online && confidence < PICK_ARTISTS_BELOW &&
+            intel.taste.seedArtists.size < MIN_SEED_ARTISTS
+        ) {
+            sections[HomeSlot.PickArtists] = PickArtistsSection
+        }
+        if (intel.enabled) {
+            TasteInsights.pickForToday(signals.insights, ctx.seed)?.let { sections[HomeSlot.TasteNote] = TasteNoteSection(it) }
+        }
+
         // ---- Each connected service's own row: its liked songs, then its mixes -----------
         // Everything in them streams from YouTube, so like the charts they need the network.
         val spotify = if (ctx.online) spotifySection(signals, spotifyMixes) else null
@@ -203,7 +225,7 @@ object HomeFeedBuilder {
         }
 
         if (ctx.online && remote != null) {
-            deepDive(signals, remote, ctx, taste)?.let { sections[HomeSlot.DeepDive] = it }
+            deepDive(signals, remote, ctx, taste, intel)?.let { sections[HomeSlot.DeepDive] = it }
         }
 
         spotify?.let { sections[HomeSlot.Spotify] = it }
@@ -251,6 +273,7 @@ object HomeFeedBuilder {
     private fun buildHero(
         ctx: HomeContext,
         confidence: Double,
+        intel: IntelligenceSnapshot,
         rotation: List<Song>,
         daypart: List<Song>,
         rediscover: List<Song>,
@@ -278,7 +301,9 @@ object HomeFeedBuilder {
             Daypart.Night -> 0.2
         }
         // Knowing less is a reason to offer more, not less (see HomeTaste.freshShare).
-        val freshShare = HomeTaste.freshShare(daypartShare, confidence)
+        val freshShare = HomeTaste.freshShare(daypartShare, confidence).let { share ->
+            if (intel.enabled) DiscoveryMix.freshShare(share, intel.style, intel.taste) else share
+        }
         val freshPool = fresh.filterNot { f -> familiarPool.any { it.id == f.id } }
         val freshCount = (HERO_SIZE * freshShare).roundToInt().coerceAtMost(freshPool.size)
         val familiar = rotateHead(familiarPool, familiarPool.size, ctx.seed).take(HERO_SIZE - freshCount)
@@ -348,7 +373,7 @@ object HomeFeedBuilder {
             )
         }
 
-        val related = discoverAll.filter { it.because.id == seed.id }.map { it.song }
+        val related = discoverAll.filter { it.because?.id == seed.id }.map { it.song }
             .let { capPerArtist(it, 2, ::primaryArtistKey) }
             .take(12)
         if (related.size >= MIN_CONTINUE) {
@@ -366,14 +391,15 @@ object HomeFeedBuilder {
 
     /** The shelf, plus the one song or artist most of it came from, when there is one. */
     private fun discoverSection(picks: List<DiscoverPick>): DiscoverSection {
-        val bySeed = picks.groupingBy { it.because.id }.eachCount()
+        val seeds = picks.mapNotNull { it.because }
+        val bySeed = seeds.groupingBy { it.id }.eachCount()
         val dominant = bySeed.maxByOrNull { it.value }
             ?.takeIf { it.value * 2 >= picks.size }
-            ?.let { entry -> picks.first { it.because.id == entry.key }.because }
-        val byArtist = picks.groupingBy { primaryArtistKey(it.because) }.eachCount()
+            ?.let { entry -> seeds.first { it.id == entry.key } }
+        val byArtist = seeds.groupingBy { primaryArtistKey(it) }.eachCount()
         val dominantArtist = byArtist.maxByOrNull { it.value }
             ?.takeIf { it.value * 2 >= picks.size }
-            ?.let { entry -> picks.first { primaryArtistKey(it.because) == entry.key }.because.artists.firstOrNull()?.name }
+            ?.let { entry -> seeds.first { primaryArtistKey(it) == entry.key }.artists.firstOrNull()?.name }
         return DiscoverSection(picks, lead = dominant, leadArtist = dominantArtist)
     }
 
@@ -451,12 +477,13 @@ object HomeFeedBuilder {
         remote: HomeRemote,
         ctx: HomeContext,
         taste: HomeTasteProfile,
+        intel: IntelligenceSnapshot,
     ): DeepDiveSection? {
         // Not a permanent fixture: it skips mornings and one daypart in three.
         if (ctx.daypart == Daypart.Morning || Math.floorMod(ctx.seed, 3L) == 2L) return null
         // An artist heard once is not one to build a whole section around. Below Warming,
         // "keep listening" says the same thing without claiming a preference.
-        val strong = taste.favourites.map { it.artistId }.toSet()
+        val strong = taste.favourites.map { it.artistId }.toSet() - intel.taste.hiddenArtists
         val candidates = topArtists(signals, artistIds = remote.artistIds)
             .filter { it.artistId in strong }
             .mapNotNull { st -> remote.artists[st.artistId]?.let { st to it } }
@@ -469,7 +496,7 @@ object HomeFeedBuilder {
             .distinctBy { it.id }
             .filter { it.id !in heardAlbums && !(ctx.hideExplicit && it.explicit) }
             .take(8)
-        val related = digest.related.filter { it.id !in listened }.take(10)
+        val related = digest.related.filter { it.id !in listened && it.id !in intel.taste.hiddenArtists }.take(10)
         if (albums.size + related.size < 4) return null
         return DeepDiveSection(digest, st.plays, st.songs, albums, related, fromLibrary = st.plays == 0)
     }

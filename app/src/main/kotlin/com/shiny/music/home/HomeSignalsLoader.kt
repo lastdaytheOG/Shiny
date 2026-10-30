@@ -1,7 +1,14 @@
 package com.shiny.music.home
 
 import com.shiny.music.db.MusicDatabase
+import com.shiny.music.db.entities.HomeRelatedLink
+import com.shiny.music.db.entities.HomeSavedArtist
 import com.shiny.music.db.entities.HomeSongStat
+import com.shiny.music.intelligence.FeedbackKind
+import com.shiny.music.intelligence.IntelligenceRepository
+import com.shiny.music.intelligence.IntelligenceSnapshot
+import com.shiny.music.intelligence.Recommendation
+import com.shiny.music.intelligence.RecommendationEngine
 import com.shiny.music.spotifyimport.SpotifyImportRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -15,13 +22,17 @@ import kotlinx.coroutines.withContext
  * can actually appear. A listener with 100 000 counted plays costs a handful of GROUP BY
  * scans, not 100 000 relation loads.
  */
-class HomeSignalsLoader(private val database: MusicDatabase) {
+class HomeSignalsLoader(
+    private val database: MusicDatabase,
+    private val intelligence: IntelligenceRepository? = null,
+) {
     private companion object {
         /** Saved songs read per load; the strongest 25 seeds are drawn from these. */
         const val SAVED_SEED_POOL = 200
 
         /** Covers on the Liked Songs tile. */
         const val LIKED_COVERS = 4
+        const val DISCOVERY_LIMIT = 60
     }
 
 
@@ -46,9 +57,11 @@ class HomeSignalsLoader(private val database: MusicDatabase) {
         // Read before the first-launch check, since a Spotify or YouTube import can bring
         // playlists and nothing else.
         val saved = database.homeSavedSongs(limit = SAVED_SEED_POOL)
+        val snapshot = intelligence?.snapshot() ?: IntelligenceSnapshot.Neutral
 
         if (counts.events == 0 && counts.localSongs == 0 && counts.downloadedSongs == 0 &&
-            counts.librarySongs == 0 && counts.likedSongs == 0 && saved.isEmpty()
+            counts.librarySongs == 0 && counts.likedSongs == 0 && saved.isEmpty() &&
+            snapshot.taste.seedArtists.isEmpty()
         ) {
             // A first launch: nothing to aggregate.
             return@withContext HomeSignals.Empty.copy(
@@ -58,6 +71,7 @@ class HomeSignalsLoader(private val database: MusicDatabase) {
                 playlists = playlists,
                 likedCovers = likedCovers,
                 spotifyLiked = spotifyLiked,
+                intelligence = snapshot,
             )
         }
 
@@ -69,14 +83,25 @@ class HomeSignalsLoader(private val database: MusicDatabase) {
         val monthOfflinePlays = if (counts.events > 0) database.homeOfflinePlays(monthFrom) else 0
 
         val savedSeeds = HomeRanking.savedSeedWeights(saved)
-        val savedArtists = database.homeSavedArtists(limit = 40)
+        val feedback = if (snapshot.enabled) database.intelligenceDao.activeFeedback(System.currentTimeMillis()) else emptyList()
+        val chosenArtists = feedback.filter { it.kind == FeedbackKind.SeedArtist.name }
+            .map { HomeSavedArtist(it.targetId, it.label.orEmpty(), songs = 3, liked = 1) }
+        val savedArtists = (database.homeSavedArtists(limit = 40) + chosenArtists).distinctBy { it.artistId }
         val seeds = HomeRanking.mergeSeeds(HomeRanking.seedWeights(statList), savedSeeds)
 
         val rotationIds = HomeRanking.rotation(statList, now)
         val daypartIds = HomeRanking.daypart(statList)
         val rediscoverIds = HomeRanking.rediscover(statList, now)
         val recentIds = HomeRanking.recent(statList)
-        val discovery = discovery(statList, seeds, ctx).filterNot { it.songId in savedSeeds }
+        val heuristic = discovery(statList, seeds, ctx).filterNot { it.songId in savedSeeds }
+        val recommendations = recommend(snapshot, seeds, statList, savedSeeds.keys, heuristic, ctx)
+        val discovery = if (recommendations.isEmpty()) {
+            heuristic
+        } else {
+            recommendations.map { rec ->
+                HomeRelatedLink(seedId = rec.song.bestHitVia(), songId = rec.song.songId)
+            }
+        }
         val replayedId = statList.filter { it.weekPlays >= 3 }.maxByOrNull { it.weekPlays }?.songId
 
         val songIds = buildSet {
@@ -124,7 +149,33 @@ class HomeSignalsLoader(private val database: MusicDatabase) {
             savedArtists = savedArtists,
             likedCovers = likedCovers,
             spotifyLiked = spotifyLiked,
+            intelligence = snapshot,
+            recommendations = recommendations.associateBy { it.song.songId },
+            insights = if (snapshot.enabled) intelligence?.insights().orEmpty() else emptyList(),
         )
+    }
+
+    private suspend fun recommend(
+        snapshot: IntelligenceSnapshot,
+        seeds: Map<String, Double>,
+        stats: List<HomeSongStat>,
+        savedIds: Set<String>,
+        heuristic: List<HomeRelatedLink>,
+        ctx: HomeContext,
+    ): List<Recommendation> {
+        val repository = intelligence ?: return emptyList()
+        if (!snapshot.enabled) return emptyList()
+        val focus = if (ctx.discoverFromLastSong) {
+            HomeRanking.lastPlayed(stats)?.songId?.takeIf(HomeRanking::isStreamableId)
+                ?.takeIf { last -> heuristic.count { it.seedId == last } >= 6 }
+                ?.let { mapOf(it to 1.0) }
+        } else {
+            null
+        }
+        val heard = stats.mapTo(HashSet()) { it.songId }
+        val (candidates, titles) = repository.discoveryCandidates(snapshot, focus ?: seeds, heard + savedIds)
+        if (candidates.isEmpty()) return emptyList()
+        return RecommendationEngine.discover(candidates, snapshot, titles, DISCOVERY_LIMIT)
     }
 
     /**

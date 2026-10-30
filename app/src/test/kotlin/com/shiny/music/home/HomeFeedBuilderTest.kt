@@ -441,7 +441,7 @@ class HomeFeedBuilderTest {
         val discover = feed.find<DiscoverSection>()!!
 
         assertTrue(discover.picks.none { it.song.id in played })
-        assertTrue(discover.picks.all { it.because.id in played })
+        assertTrue(discover.picks.all { it.because?.id in played })
         val perArtist = discover.picks.groupingBy { it.song.artists.first().id }.eachCount()
         assertTrue("breadth first", perArtist.values.all { it <= 2 })
     }

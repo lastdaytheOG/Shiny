@@ -5,7 +5,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.music.innertube.YouTube
 import com.music.innertube.utils.parseCookieString
+import androidx.datastore.preferences.core.edit
 import com.shiny.music.constants.HideExplicitKey
+import com.shiny.music.constants.PersonalisedRecommendationsKey
+import com.shiny.music.constants.PickArtistsDismissedKey
+import com.shiny.music.constants.RecommendationStyleKey
 import com.shiny.music.constants.HideVideoSongsKey
 import com.shiny.music.constants.HomeChartsCountryKey
 import com.shiny.music.constants.HomeChartsGlobalKey
@@ -22,7 +26,10 @@ import com.shiny.music.home.HomeFeed
 import com.shiny.music.home.HomeFeedBuilder
 import com.shiny.music.home.HomeInterest
 import com.shiny.music.home.HomeInterestStore
+import com.shiny.music.home.HomeImpressions
 import com.shiny.music.home.HomeRemoteRepository
+import com.shiny.music.home.HomeSection
+import com.shiny.music.intelligence.IntelligenceRepository
 import com.shiny.music.spotifyimport.SpotifyMixesRepository
 import com.shiny.music.constants.SpotifyHomeMixesKey
 import com.shiny.music.constants.SpotifySpDcKey
@@ -82,6 +89,7 @@ class HomeViewModel @Inject constructor(
     private val remote: HomeRemoteRepository,
     /** The listener's own Spotify mixes, when a Spotify account is connected. */
     private val spotifyMixes: SpotifyMixesRepository,
+    val intelligence: IntelligenceRepository,
 ) : ViewModel() {
     private companion object {
         /** Failsafe ceiling on a pull to refresh; a healthy one finishes far inside it. */
@@ -98,6 +106,7 @@ class HomeViewModel @Inject constructor(
         val accountKey: String?,
         /** A cookie that actually signs someone in, not merely a saved one. */
         val youtubeSignedIn: Boolean,
+        val pickArtistsDismissed: Boolean,
     )
 
     private data class Moment(val epochDay: Long, val daypart: Daypart)
@@ -110,9 +119,15 @@ class HomeViewModel @Inject constructor(
         val localNonce: Int,
     )
 
-    private data class SignalPrefs(val discoverFromLastSong: Boolean, val hideExplicit: Boolean, val hideVideoSongs: Boolean)
+    private data class SignalPrefs(
+        val discoverFromLastSong: Boolean,
+        val hideExplicit: Boolean,
+        val hideVideoSongs: Boolean,
+        val style: String?,
+        val personalised: Boolean,
+    )
 
-    private val loader = HomeSignalsLoader(database)
+    private val loader = HomeSignalsLoader(database, intelligence)
 
     /**
      * What the listener reaches for on Home. The listen history cannot see that someone
@@ -130,6 +145,7 @@ class HomeViewModel @Inject constructor(
     private val localNonce = MutableStateFlow(0)
     private val lastSignals = MutableStateFlow<HomeSignals?>(null)
     private val relatedAttempted = mutableSetOf<String>()
+    private val artistsAttempted = mutableSetOf<String>()
 
     /** Read once: the network and SIM country do not change under a running Home. */
     private val detectedCountry by lazy { HomeCharts.detectCountry(context) }
@@ -143,6 +159,17 @@ class HomeViewModel @Inject constructor(
             chartScopes = HomeCharts.scopes(p[HomeChartsCountryKey], p[HomeChartsGlobalKey] ?: true, detectedCountry),
             accountKey = p[InnerTubeCookieKey]?.takeIf { it.isNotEmpty() }?.hashCode()?.toString(),
             youtubeSignedIn = p[InnerTubeCookieKey]?.let { "SAPISID" in parseCookieString(it) } == true,
+            pickArtistsDismissed = p[PickArtistsDismissedKey] ?: false,
+        )
+    }.distinctUntilChanged()
+
+    private val signalPrefs = context.dataStore.data.map { p ->
+        SignalPrefs(
+            discoverFromLastSong = p[QuickPicksKey].toEnum(QuickPicks.QUICK_PICKS) == QuickPicks.LAST_LISTEN,
+            hideExplicit = p[HideExplicitKey] ?: false,
+            hideVideoSongs = p[HideVideoSongsKey] ?: false,
+            style = p[RecommendationStyleKey],
+            personalised = p[PersonalisedRecommendationsKey] ?: true,
         )
     }.distinctUntilChanged()
 
@@ -161,7 +188,7 @@ class HomeViewModel @Inject constructor(
     private val signals = combine(
         moment,
         refreshNonce,
-        prefs.map { SignalPrefs(it.discoverFromLastSong, it.hideExplicit, it.hideVideoSongs) }.distinctUntilChanged(),
+        signalPrefs,
         database.homeInvalidation().distinctUntilChanged(),
         localNonce,
     ) { m, nonce, signalPrefs, invalidation, local -> SignalsKey(m, nonce, signalPrefs, invalidation, local) }
@@ -222,6 +249,14 @@ class HomeViewModel @Inject constructor(
      */
     fun note(kind: HomeInterest.Kind) = interest.note(kind)
 
+    fun noteShown(section: HomeSection) {
+        HomeImpressions.of(section)?.let { (surface, items) -> intelligence.logImpressions(surface, items) }
+    }
+
+    fun dismissPickArtists() {
+        viewModelScope.launch { context.dataStore.edit { it[PickArtistsDismissedKey] = true } }
+    }
+
     private fun contextFor(m: Moment, nonce: Int, online: Boolean, prefs: Prefs?, fromLast: Boolean) = HomeContext(
         nowMs = homeWallNowMs(),
         daypart = m.daypart,
@@ -234,6 +269,7 @@ class HomeViewModel @Inject constructor(
         discoverFromLastSong = fromLast,
         chartScopes = prefs?.chartScopes,
         youtubeSignedIn = prefs?.youtubeSignedIn ?: false,
+        pickArtistsDismissed = prefs?.pickArtistsDismissed ?: true,
     )
 
     val scroll = ListScroll()
@@ -274,6 +310,9 @@ class HomeViewModel @Inject constructor(
                 val seeds = loader.seedsWithoutRelated(signals, limit = limit).filter { relatedAttempted.add(it) }
                 if (seeds.isNotEmpty() && remote.fetchRelated(seeds) > 0) localNonce.value++
             }
+            intelligence.refreshGraphFacts(remote.state.value?.artists?.values.orEmpty())
+            val artists = intelligence.artistsNeedingSongs(limit = 3).filter { artistsAttempted.add(it) }
+            if (artists.isNotEmpty() && remote.fetchArtistSongs(artists) > 0) localNonce.value++
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
