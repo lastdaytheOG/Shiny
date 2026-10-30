@@ -1,8 +1,11 @@
 package com.shiny.music.intelligence
 
+import androidx.datastore.preferences.core.edit
 import androidx.room.Room
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.shiny.music.constants.PauseListenHistoryKey
+import com.shiny.music.constants.PersonalisedRecommendationsKey
 import com.shiny.music.db.InternalDatabase
 import com.shiny.music.db.MusicDatabase
 import com.shiny.music.db.entities.CandidateSource
@@ -10,6 +13,7 @@ import com.shiny.music.db.entities.RecSurface
 import com.shiny.music.db.entities.RecommendationImpression
 import com.shiny.music.extensions.toMediaItem
 import com.shiny.music.models.MediaMetadata
+import com.shiny.music.utils.dataStore
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -31,8 +35,16 @@ class IntelligenceRepositoryTest {
     private lateinit var repository: IntelligenceRepository
     private val now = System.currentTimeMillis()
 
+    private fun setPrefs(personalised: Boolean, paused: Boolean) = runBlocking {
+        context.dataStore.edit {
+            it[PersonalisedRecommendationsKey] = personalised
+            it[PauseListenHistoryKey] = paused
+        }
+    }
+
     @Before
     fun open() {
+        setPrefs(personalised = true, paused = false)
         context.deleteDatabase(name)
         room = Room.databaseBuilder(context, InternalDatabase::class.java, name).build()
         database = MusicDatabase(room)
@@ -47,6 +59,7 @@ class IntelligenceRepositoryTest {
 
     @After
     fun close() {
+        setPrefs(personalised = true, paused = false)
         room.close()
         context.deleteDatabase(name)
     }
@@ -179,6 +192,46 @@ class IntelligenceRepositoryTest {
         repository.removeFeedback(FeedbackKind.HideArtist, "UCb")
         delay(200)
         assertEquals(4, repository.rerankUpNext(null, page, RecSurface.Radio).size)
+    }
+
+    private suspend fun shownCount() = database.intelligenceDao.surfaceMetrics(0).sumOf { it.shown }
+
+    @Test
+    fun reopeningTheAppDoesNotCountAsBeingShownAgain() = runBlocking {
+        val items = listOf("a", "b").map { ImpressionItem(it) }
+        repository.logImpressions(RecSurface.HomeMix, items)
+        delay(300)
+        assertEquals(2, shownCount())
+
+        IntelligenceRepository(context, database).logImpressions(RecSurface.HomeMix, items + ImpressionItem("c"))
+        delay(300)
+        assertEquals("only the new song is added", 3, shownCount())
+        assertEquals(1, database.intelligenceDao.recentlyShown(RecSurface.HomeMix.name, 0).count { it == "c" })
+
+        repository.logImpressions(RecSurface.HomeDiscover, items)
+        delay(300)
+        assertEquals("another surface counts separately", 5, shownCount())
+    }
+
+    @Test
+    fun pausingHistoryStopsImpressions() = runBlocking {
+        setPrefs(personalised = true, paused = true)
+        repository.logImpressions(RecSurface.HomeMix, listOf(ImpressionItem("a")))
+        delay(300)
+        assertEquals(0, shownCount())
+    }
+
+    @Test
+    fun turningPersonalisationOffKeepsTheProvidersOrderAndLogsNothing() = runBlocking {
+        repository.setFeedback(FeedbackKind.HideArtist, "UCb", "Artist b")
+        delay(200)
+        setPrefs(personalised = false, paused = false)
+        val page = listOf("a", "b", "c", "d").map(::item)
+        assertEquals(listOf("a", "b", "c", "d"), repository.rerankUpNext(null, page, RecSurface.Radio).map { it.item.mediaId })
+        repository.logImpressions(RecSurface.Radio, listOf(ImpressionItem("a")))
+        delay(300)
+        assertEquals(0, shownCount())
+        assertFalse(repository.snapshot().enabled)
     }
 
     @Test

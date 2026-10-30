@@ -41,7 +41,6 @@ import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.time.LocalDateTime
 import java.time.ZoneId
-import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.ln
@@ -74,7 +73,7 @@ class IntelligenceRepository @Inject constructor(
     private var cached: IntelligenceSnapshot? = null
     private var graphKey: String? = null
     private var graph: GraphBundle? = null
-    private val shownRecently = ConcurrentHashMap<String, Long>()
+    private val impressionLock = Mutex()
     @Volatile private var lastPositive: PositiveListen? = null
     private var pruned = false
     private var materializing = false
@@ -313,26 +312,21 @@ class IntelligenceRepository @Inject constructor(
             val prefs = context.dataStore.data.first()
             if (prefs[PauseListenHistoryKey] == true || prefs[PersonalisedRecommendationsKey] == false) return@launch
             val now = System.currentTimeMillis()
-            val fresh = items.withIndex().filter { (_, item) ->
-                val key = "${surface.name}:${item.songId}"
-                val last = shownRecently[key]
-                if (last != null && now - last < IMPRESSION_DEDUPE_MS) return@filter false
-                shownRecently[key] = now
-                true
+            impressionLock.withLock {
+                val seen = dao.recentlyShown(surface.name, now - IMPRESSION_DEDUPE_MS).toHashSet()
+                val rows = items.withIndex().filter { (_, item) -> item.songId !in seen }.map { (index, item) ->
+                    RecommendationImpression(
+                        songId = item.songId,
+                        surface = surface.name,
+                        shownAt = now,
+                        position = index,
+                        candidateSource = item.source?.name,
+                        reason = item.reason?.code,
+                        sessionId = now / IMPRESSION_SESSION_MS,
+                    )
+                }
+                if (rows.isNotEmpty()) dao.insertImpressions(rows)
             }
-            if (fresh.isEmpty()) return@launch
-            val rows = fresh.map { (index, item) ->
-                RecommendationImpression(
-                    songId = item.songId,
-                    surface = surface.name,
-                    shownAt = now,
-                    position = index,
-                    candidateSource = item.source?.name,
-                    reason = item.reason?.code,
-                    sessionId = now / IMPRESSION_SESSION_MS,
-                )
-            }
-            database.query { intelligenceDao.insertImpressions(rows) }
         }
     }
 
@@ -491,7 +485,6 @@ class IntelligenceRepository @Inject constructor(
             intelligenceDao.clearImpressions()
             intelligenceDao.clearRelations(listOf(RelationKind.CoListen.name, SKIP_AFTER))
         }
-        shownRecently.clear()
         lastPositive = null
     }
 

@@ -128,6 +128,9 @@ interface IntelligenceDao {
     @Insert
     fun insertImpressions(impressions: List<RecommendationImpression>)
 
+    @Query("SELECT DISTINCT songId FROM recommendation_impression WHERE surface = :surface AND shownAt > :from")
+    suspend fun recentlyShown(surface: String, from: Long): List<String>
+
     @Query("UPDATE recommendation_impression SET selectedAt = :at WHERE id = :id AND selectedAt IS NULL")
     fun markImpressionSelected(id: Long, at: Long)
 
