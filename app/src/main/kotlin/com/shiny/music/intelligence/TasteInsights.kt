@@ -52,7 +52,7 @@ object TasteInsights {
         val visible = taste.artists.values.filter { it.artistId !in taste.hiddenArtists }
 
         visible
-            .filter { it.shortTerm > it.longTerm + 0.12 && it.plays >= 2 }
+            .filter { it.shortTerm > it.longTerm + 0.12 && it.plays >= 4 }
             .maxByOrNull { it.shortTerm - it.longTerm }
             ?.let { artist ->
                 name(artist.artistId)?.let {

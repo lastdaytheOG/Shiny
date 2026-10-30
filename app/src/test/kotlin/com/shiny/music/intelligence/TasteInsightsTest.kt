@@ -40,6 +40,12 @@ class TasteInsightsTest {
     }
 
     @Test
+    fun `two plays are not coming back to someone`() {
+        val out = build(TasteInputs(nowMs = now, artistStats = listOf(HomeArtistStat("a", 2, 2, 2, now - day, 2))))
+        assertTrue(out.none { it is TasteInsight.Rising })
+    }
+
+    @Test
     fun `an artist without a known name is never mentioned`() {
         val out = build(TasteInputs(nowMs = now, artistStats = listOf(HomeArtistStat("nameless", 60, 0, 0, now - 40 * day, 12))))
         assertTrue(out.isEmpty())
