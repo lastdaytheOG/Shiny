@@ -1664,6 +1664,7 @@ class MusicService :
                         )
                     }
                     .forEach(::insert)
+                intelligenceDao.addSimilarArtists(mediaId, relatedPage.artists.map { it.id to it.title }, System.currentTimeMillis())
             }
         }
     }

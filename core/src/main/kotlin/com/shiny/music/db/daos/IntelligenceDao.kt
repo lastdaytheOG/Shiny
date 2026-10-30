@@ -236,6 +236,14 @@ interface IntelligenceDao {
         }
     }
 
+    @Transaction
+    fun addSimilarArtists(songId: String, artists: List<Pair<String, String>>, at: Long) {
+        val lead = leadArtist(songId) ?: return
+        artists.filter { it.first != lead }.forEach { (id, name) ->
+            insertRelationIfAbsent(MusicRelation(lead, id, "SimilarArtist", 2f, 1, name, at))
+        }
+    }
+
     @Query("SELECT fromId, toId, weight, kind, toName FROM music_relation WHERE kind IN (:kinds) ORDER BY updatedAt DESC LIMIT :limit")
     suspend fun relationEdges(kinds: List<String>, limit: Int): List<ArtistEdgeRow>
 

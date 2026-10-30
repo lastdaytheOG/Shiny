@@ -107,6 +107,17 @@ class IntelligenceRepositoryTest {
     }
 
     @Test
+    fun similarArtistsFromARelatedPageJoinTheGraphWithoutLoweringStrongerEdges() = runBlocking {
+        val dao = database.intelligenceDao
+        dao.upsertRelations(listOf(com.shiny.music.db.entities.MusicRelation("UCa", "UCb", "SimilarArtist", 4f, 1, "Artist b", now)))
+        dao.addSimilarArtists("a", listOf("UCb" to "Artist b", "UCc" to "Artist c", "UCa" to "Artist a"), now)
+        val edges = dao.relationEdges(listOf("SimilarArtist"), 10).associateBy { "${it.fromId}>${it.toId}" }
+        assertEquals(setOf("UCa>UCb", "UCa>UCc"), edges.keys)
+        assertEquals(4f, edges.getValue("UCa>UCb").weight)
+        assertEquals("Artist c", edges.getValue("UCa>UCc").toName)
+    }
+
+    @Test
     fun aDifferentSessionConnectsNothing() = runBlocking {
         recordAndWait(draft("a", ListenKind.Completed, session = 1), draft("b", ListenKind.Completed, session = 2))
         assertTrue(relations("CoListen").isEmpty())

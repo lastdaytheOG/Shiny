@@ -250,13 +250,15 @@ class HomeRemoteRepository(
                 async {
                     val endpoint = YouTube.next(WatchEndpoint(videoId = seedId)).getOrNull()?.relatedEndpoint
                         ?: return@async false
-                    val songs: List<SongItem> = YouTube.related(endpoint).getOrNull()?.songs.orEmpty()
+                    val page = YouTube.related(endpoint).getOrNull() ?: return@async false
+                    val songs: List<SongItem> = page.songs
                     if (songs.isEmpty()) return@async false
                     database.withTransaction {
                         songs.forEach { song ->
                             insert(song.toMediaMetadata())
                             insert(RelatedSongMap(songId = seedId, relatedSongId = song.id))
                         }
+                        intelligenceDao.addSimilarArtists(seedId, page.artists.map { it.id to it.title }, System.currentTimeMillis())
                     }
                     true
                 }
