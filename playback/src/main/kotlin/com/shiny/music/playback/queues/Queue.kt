@@ -3,11 +3,19 @@
 package com.shiny.music.playback.queues
 
 import androidx.media3.common.MediaItem
+import com.shiny.music.db.entities.RecSurface
 import com.shiny.music.extensions.metadata
 import com.shiny.music.models.MediaMetadata
 
+data class PlaybackOrigin(
+    val surface: RecSurface,
+    val sources: Map<String, String> = emptyMap(),
+)
+
 interface Queue {
     val preloadItem: MediaMetadata?
+
+    val origin: PlaybackOrigin? get() = null
 
     suspend fun getInitialStatus(): Status
 

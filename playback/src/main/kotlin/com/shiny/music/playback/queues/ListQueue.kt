@@ -12,6 +12,7 @@ class ListQueue(
     val position: Long = 0L,
     /** The items are already in a shuffle order (Smart Shuffle) that shuffle mode must keep. */
     val preShuffled: Boolean = false,
+    override val origin: PlaybackOrigin? = null,
 ) : Queue {
     override val preloadItem: MediaMetadata? = null
 

@@ -12,6 +12,7 @@ import kotlinx.coroutines.withContext
 class YouTubeQueue(
     private var endpoint: WatchEndpoint,
     override val preloadItem: MediaMetadata? = null,
+    override val origin: PlaybackOrigin? = null,
 ) : Queue {
     private var continuation: String? = null
     private var retryCount = 0
@@ -53,6 +54,9 @@ class YouTubeQueue(
 
     override fun hasNextPage(): Boolean = pendingAutomix.isNotEmpty() || continuation != null
 
+    val isRadio: Boolean
+        get() = endpoint.playlistId?.let { isRadioPlaylistId(it) } ?: true
+
     override val pagesAreSource: Boolean
         get() = pendingAutomix.isEmpty() && endpoint.playlistId?.let { !isRadioPlaylistId(it) } == true
 
@@ -93,10 +97,11 @@ class YouTubeQueue(
 
     companion object {
 
-        fun radio(song: MediaMetadata): YouTubeQueue {
+        fun radio(song: MediaMetadata, origin: PlaybackOrigin? = null): YouTubeQueue {
             return YouTubeQueue(
                 WatchEndpoint(videoId = song.id),
-                song
+                song,
+                origin,
             )
         }
 
