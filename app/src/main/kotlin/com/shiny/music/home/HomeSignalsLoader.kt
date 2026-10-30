@@ -97,6 +97,7 @@ class HomeSignalsLoader(
         val daypartIds = HomeRanking.daypart(statList)
         val rediscoverIds = HomeRanking.rediscover(statList, now)
         val recentIds = HomeRanking.recent(statList)
+        val pendingInsights = async { if (snapshot.enabled) intelligence?.insights().orEmpty() else emptyList() }
         val heuristic = discovery(statList, seeds, ctx).filterNot { it.songId in savedSeeds }
         val recommendations = recommend(snapshot, seeds, statList, savedSeeds.keys, heuristic, ctx)
         val discovery = if (recommendations.isEmpty()) {
@@ -155,7 +156,7 @@ class HomeSignalsLoader(
             spotifyLiked = spotifyLiked,
             intelligence = snapshot,
             recommendations = recommendations.associateBy { it.song.songId },
-            insights = if (snapshot.enabled) intelligence?.insights().orEmpty() else emptyList(),
+            insights = pendingInsights.await(),
         ).also {
             Timber.tag(IntelligenceRepository.TAG).d(
                 "home signals %d ms, personalised=%b",

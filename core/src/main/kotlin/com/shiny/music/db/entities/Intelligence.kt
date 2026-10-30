@@ -260,3 +260,8 @@ data class ArtistNameRow(
     val id: String,
     val name: String,
 )
+
+data class SongTitleRow(
+    val id: String,
+    val title: String,
+)

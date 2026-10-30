@@ -29,6 +29,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
@@ -346,40 +347,33 @@ class IntelligenceRepository @Inject constructor(
         }
 
         val seedIds = seeds.keys.toList()
-        val titles = HashMap<String, String>()
-        if (seedIds.isNotEmpty()) {
-            val links = database.homeRelatedLinks(seedIds)
-            val maxSeed = seeds.values.maxOrNull()?.takeIf { it > 0.0 } ?: 1.0
-            links.groupBy { it.songId }.forEach { (songId, edges) ->
-                val best = edges.maxBy { seeds[it.seedId] ?: 0.0 }
-                val total = edges.sumOf { seeds[it.seedId] ?: 0.0 }
-                hit(songId, SourceHit(CandidateSource.RelatedSong, (total / (maxSeed * 2.0)).coerceIn(0.05, 1.0), viaSong = best.seedId))
-            }
-            dao.playlistNeighbours(seedIds.take(10), PLAYLIST_NEIGHBOURS).forEach {
-                hit(it, SourceHit(CandidateSource.PlaylistNeighbour, 0.3))
-            }
-            database.getSongsByIds(seedIds).forEach { titles[it.id] = it.song.title }
-        }
-
         val reached = snapshot.reach.values
             .filter { snapshot.taste.artist(it.artistId)?.heard != true }
             .sortedByDescending { it.score }
             .take(GRAPH_ARTISTS)
         val graphByArtist = reached.associateBy { it.artistId }
-        if (reached.isNotEmpty()) {
-            dao.unheardSongsByArtistRows(reached.map { it.artistId }, GRAPH_SONGS).forEach { row ->
-                val reach = graphByArtist[row.artistId] ?: return@forEach
-                val (source, strength) = RecommendationEngine.graphSources(reach)
-                hit(row.songId, SourceHit(source, strength, viaArtist = reach.via))
-            }
-        }
-
         val chosenArtists = (snapshot.taste.seedArtists + snapshot.taste.boostedArtists).toList()
-        if (chosenArtists.isNotEmpty()) {
-            dao.unheardSongsByArtists(chosenArtists, CHOSEN_SONGS).forEach {
-                hit(it, SourceHit(CandidateSource.SeedArtist, 0.6))
-            }
+
+        val pendingLinks = async { if (seedIds.isEmpty()) emptyList() else database.homeRelatedLinks(seedIds) }
+        val pendingNeighbours = async { if (seedIds.isEmpty()) emptyList() else dao.playlistNeighbours(seedIds.take(10), PLAYLIST_NEIGHBOURS) }
+        val pendingTitles = async { if (seedIds.isEmpty()) emptyList() else dao.songTitles(seedIds) }
+        val pendingGraph = async { if (reached.isEmpty()) emptyList() else dao.unheardSongsByArtistRows(reached.map { it.artistId }, GRAPH_SONGS) }
+        val pendingChosen = async { if (chosenArtists.isEmpty()) emptyList() else dao.unheardSongsByArtists(chosenArtists, CHOSEN_SONGS) }
+
+        val maxSeed = seeds.values.maxOrNull()?.takeIf { it > 0.0 } ?: 1.0
+        pendingLinks.await().groupBy { it.songId }.forEach { (songId, edges) ->
+            val best = edges.maxBy { seeds[it.seedId] ?: 0.0 }
+            val total = edges.sumOf { seeds[it.seedId] ?: 0.0 }
+            hit(songId, SourceHit(CandidateSource.RelatedSong, (total / (maxSeed * 2.0)).coerceIn(0.05, 1.0), viaSong = best.seedId))
         }
+        pendingNeighbours.await().forEach { hit(it, SourceHit(CandidateSource.PlaylistNeighbour, 0.3)) }
+        val titles = pendingTitles.await().associate { it.id to it.title }
+        pendingGraph.await().forEach { row ->
+            val reach = graphByArtist[row.artistId] ?: return@forEach
+            val (source, strength) = RecommendationEngine.graphSources(reach)
+            hit(row.songId, SourceHit(source, strength, viaArtist = reach.via))
+        }
+        pendingChosen.await().forEach { hit(it, SourceHit(CandidateSource.SeedArtist, 0.6)) }
 
         val rows = hits.keys.chunked(400).flatMap { dao.candidateRows(it) }
         CandidateAdapters.fromRows(rows, hits) to titles

@@ -22,6 +22,7 @@ import com.shiny.music.db.entities.RecentListen
 import com.shiny.music.db.entities.RecommendationImpression
 import com.shiny.music.db.entities.SongFeature
 import com.shiny.music.db.entities.SongOutcomeBucket
+import com.shiny.music.db.entities.SongTitleRow
 import com.shiny.music.db.entities.SourceOutcomeStat
 import com.shiny.music.db.entities.SurfaceListenRow
 import com.shiny.music.db.entities.SurfaceMetricRow
@@ -308,6 +309,9 @@ interface IntelligenceDao {
         """,
     )
     suspend fun unheardSongsByArtistRows(artistIds: List<String>, limit: Int): List<ArtistSongRow>
+
+    @Query("SELECT id, title FROM song WHERE id IN (:ids)")
+    suspend fun songTitles(ids: List<String>): List<SongTitleRow>
 
     @Query("SELECT id, name FROM artist")
     suspend fun artistNames(): List<ArtistNameRow>
