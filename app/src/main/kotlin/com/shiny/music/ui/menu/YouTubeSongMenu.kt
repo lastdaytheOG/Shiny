@@ -525,6 +525,31 @@ fun YouTubeSongMenu(
 
         item { Spacer(modifier = Modifier.height(12.dp)) }
         item {
+            Material3MenuGroup(
+                glyphs = com.shiny.music.ui.component.MenuGlyphs.Leading,
+                items = listOf(
+                    recommendationsRow {
+                        bottomSheetPageState.show {
+                            RecommendationFeedbackSheet(
+                                target = FeedbackTarget(
+                                    songId = song.id,
+                                    title = song.title,
+                                    artistId = song.artists.firstOrNull()?.id,
+                                    artistName = song.artists.firstOrNull()?.name,
+                                    metadata = song.toMediaMetadata(),
+                                ),
+                                onDone = {
+                                    bottomSheetPageState.dismiss()
+                                    onDismiss()
+                                },
+                            )
+                        }
+                    },
+                ),
+            )
+        }
+        item { Spacer(modifier = Modifier.height(12.dp)) }
+        item {
             // Every song exports: files on this device directly, streamed songs from their
             // download or cache, or fetched fresh (see AudioExporter).
             val exportable = com.shiny.music.export.AudioExporter.isEligible(song.id)

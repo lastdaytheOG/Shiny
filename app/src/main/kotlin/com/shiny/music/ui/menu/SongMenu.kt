@@ -704,6 +704,33 @@ fun SongMenu(
 
         item {
             Material3MenuGroup(
+                glyphs = com.shiny.music.ui.component.MenuGlyphs.Leading,
+                items = listOf(
+                    recommendationsRow {
+                        bottomSheetPageState.show {
+                            RecommendationFeedbackSheet(
+                                target = FeedbackTarget(
+                                    songId = song.id,
+                                    title = song.song.title,
+                                    artistId = song.artists.firstOrNull()?.id,
+                                    artistName = song.artists.firstOrNull()?.name,
+                                    metadata = song.toMediaMetadata(),
+                                ),
+                                onDone = {
+                                    bottomSheetPageState.dismiss()
+                                    onDismiss()
+                                },
+                            )
+                        }
+                    },
+                ),
+            )
+        }
+
+        item { Spacer(modifier = Modifier.height(12.dp)) }
+
+        item {
+            Material3MenuGroup(
                 items = buildList {
                     add(
                         Material3MenuItemData(

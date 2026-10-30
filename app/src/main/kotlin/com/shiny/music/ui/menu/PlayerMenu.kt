@@ -635,6 +635,23 @@ fun PlayerMenu(
             Material3MenuGroup(
                 glyphs = MenuGlyphs.Leading,
                 items = listOf(
+                    recommendationsRow {
+                        bottomSheetPageState.show {
+                            RecommendationFeedbackSheet(
+                                target = FeedbackTarget(
+                                    songId = mediaMetadata.id,
+                                    title = mediaMetadata.title,
+                                    artistId = mediaMetadata.artists.firstOrNull()?.id,
+                                    artistName = mediaMetadata.artists.firstOrNull()?.name,
+                                    metadata = mediaMetadata,
+                                ),
+                                onDone = {
+                                    bottomSheetPageState.dismiss()
+                                    onDismiss()
+                                },
+                            )
+                        }
+                    },
                     Material3MenuItemData(
                         chevron = true,
                         title = { Text(text = stringResource(R.string.details)) },
