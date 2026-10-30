@@ -293,7 +293,7 @@
         <item quantity="other">%d songs you tend to play around this time</item>
     </plurals>
     <string name="home_discover">Fresh discoveries</string>
-    <string name="home_discover_subtitle">Never played, each connected to music you love</string>
+    <string name="home_discover_subtitle">Never played, connected to your music</string>
     <string name="home_discover_like_song">More like %1$s</string>
     <string name="home_discover_like_artist">If you like %1$s</string>
     <!-- Keep listening: the wording steps up only as the evidence does (AffinityTier). -->
