@@ -17,6 +17,9 @@ import com.music.innertube.models.PlaylistItem
 import com.music.innertube.models.SearchSuggestions
 import com.music.innertube.models.Run
 import com.music.innertube.models.SongItem
+import com.music.innertube.models.BrowseEndpoint.BrowseEndpointContextSupportedConfigs.BrowseEndpointContextMusicConfig.Companion.MUSIC_PAGE_TYPE_TRACK_LYRICS
+import com.music.innertube.models.BrowseEndpoint.BrowseEndpointContextSupportedConfigs.BrowseEndpointContextMusicConfig.Companion.MUSIC_PAGE_TYPE_TRACK_RELATED
+import com.music.innertube.models.endpointOfPage
 import com.music.innertube.models.WatchEndpoint
 import com.music.innertube.models.WatchEndpoint.WatchEndpointMusicSupportedConfigs.WatchEndpointMusicConfig.Companion.MUSIC_VIDEO_TYPE_ATV
 import com.music.innertube.models.YouTubeClient
@@ -1270,6 +1273,7 @@ object YouTube {
             ?: response.contents.singleColumnMusicWatchNextResultsRenderer?.tabbedRenderer
                 ?.watchNextTabbedResultsRenderer?.tabs?.get(0)?.tabRenderer?.content?.musicQueueRenderer
                 ?.content?.playlistPanelRenderer!!
+        val tabs = response.contents.singleColumnMusicWatchNextResultsRenderer?.tabbedRenderer?.watchNextTabbedResultsRenderer?.tabs
         val title = response.contents.singleColumnMusicWatchNextResultsRenderer?.tabbedRenderer
             ?.watchNextTabbedResultsRenderer?.tabs?.get(0)?.tabRenderer?.content?.musicQueueRenderer
             ?.header?.musicQueueHeaderRenderer?.subtitle?.runs?.firstOrNull()?.text
@@ -1286,8 +1290,8 @@ object YouTube {
                 result.copy(
                     title = title,
                     items = songs + result.items,
-                    lyricsEndpoint = response.contents.singleColumnMusicWatchNextResultsRenderer?.tabbedRenderer?.watchNextTabbedResultsRenderer?.tabs?.getOrNull(1)?.tabRenderer?.endpoint?.browseEndpoint,
-                    relatedEndpoint = response.contents.singleColumnMusicWatchNextResultsRenderer?.tabbedRenderer?.watchNextTabbedResultsRenderer?.tabs?.getOrNull(2)?.tabRenderer?.endpoint?.browseEndpoint,
+                    lyricsEndpoint = tabs?.endpointOfPage(MUSIC_PAGE_TYPE_TRACK_LYRICS),
+                    relatedEndpoint = tabs?.endpointOfPage(MUSIC_PAGE_TYPE_TRACK_RELATED),
                     currentIndex = currentIndex,
                     endpoint = watchPlaylistEndpoint,
                     automixStartIndex = songs.size,
@@ -1298,8 +1302,8 @@ object YouTube {
             title = title,
             items = songs,
             currentIndex = currentIndex,
-            lyricsEndpoint = response.contents.singleColumnMusicWatchNextResultsRenderer?.tabbedRenderer?.watchNextTabbedResultsRenderer?.tabs?.getOrNull(1)?.tabRenderer?.endpoint?.browseEndpoint,
-            relatedEndpoint = response.contents.singleColumnMusicWatchNextResultsRenderer?.tabbedRenderer?.watchNextTabbedResultsRenderer?.tabs?.getOrNull(2)?.tabRenderer?.endpoint?.browseEndpoint,
+            lyricsEndpoint = tabs?.endpointOfPage(MUSIC_PAGE_TYPE_TRACK_LYRICS),
+            relatedEndpoint = tabs?.endpointOfPage(MUSIC_PAGE_TYPE_TRACK_RELATED),
             continuation = playlistPanelRenderer.continuations?.getContinuation(),
             endpoint = endpoint
         )

@@ -24,3 +24,6 @@ data class Tabs(
         }
     }
 }
+
+fun List<Tabs.Tab>.endpointOfPage(pageType: String): BrowseEndpoint? =
+    firstNotNullOfOrNull { tab -> tab.tabRenderer.endpoint?.browseEndpoint?.takeIf { it.browseEndpointContextSupportedConfigs?.browseEndpointContextMusicConfig?.pageType == pageType } }
