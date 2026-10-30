@@ -356,10 +356,12 @@ internal fun HeroMixCard(
             eyebrow = eyebrow,
             title = title,
             reason = reason,
+            shortReason = if (section.fresh > 0) stringResource(R.string.home_mix_reason_short, section.familiar, section.fresh) else reason,
             covers = covers,
             tones = tones,
             reduceMotion = reduceMotion,
             onPlay = onPlay,
+            onStyle = onStyle,
         )
         return
     }
@@ -387,10 +389,12 @@ private fun CompactOpening(
     eyebrow: String,
     title: String,
     reason: String,
+    shortReason: String,
     covers: List<String?>,
     tones: ArtworkTones,
     reduceMotion: Boolean,
     onPlay: () -> Unit,
+    onStyle: (() -> Unit)?,
 ) {
     val interaction = remember { MutableInteractionSource() }
     Row(
@@ -411,15 +415,18 @@ private fun CompactOpening(
             .padding(14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        CoverFan(covers, size = 52.dp, reduceMotion = reduceMotion)
+        CoverFan(covers, size = 44.dp, reduceMotion = reduceMotion)
         Column(
             Modifier
                 .weight(1f)
                 .padding(horizontal = 10.dp),
         ) {
-            Eyebrow(eyebrow, Color.White.copy(alpha = 0.72f))
             Text(title, style = LiquidTypography.title3.copy(fontWeight = FontWeight.Bold), color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(reason, style = LiquidTypography.footnote, color = Color.White.copy(alpha = 0.78f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(shortReason, style = LiquidTypography.footnote, color = Color.White.copy(alpha = 0.78f), maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+        if (onStyle != null) {
+            StyleDisc(onStyle)
+            Spacer(Modifier.width(8.dp))
         }
         PlayDisc(onClick = onPlay, background = Color.White, tint = Color.Black)
     }

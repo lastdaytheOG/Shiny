@@ -234,6 +234,7 @@
     <string name="home_mix_night">Afterglow</string>
     <string name="home_mix_offline">Offline Mix</string>
     <string name="home_mix_reason_both">%1$d from your listening · %2$d new to you</string>
+    <string name="home_mix_reason_short">%1$d you know · %2$d new</string>
     <plurals name="home_mix_reason_familiar">
         <item quantity="one">%d song from your listening</item>
         <item quantity="other">%d songs from your listening</item>
