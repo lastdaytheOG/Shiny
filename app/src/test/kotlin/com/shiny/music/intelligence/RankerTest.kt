@@ -129,6 +129,14 @@ class RankerTest {
     }
 
     @Test
+    fun `an unheard song on an album they keep playing beats one elsewhere by the same artist`() {
+        val t = taste({
+            copy(albumStats = listOf(com.shiny.music.db.entities.HomeAlbumStat("loved", songsPlayed = 8, plays = 40, lastPlayed = now - day)))
+        })
+        assertEquals("a", ranked(listOf(candidate("a", "x", album = "loved"), candidate("b", "x", album = "other")), t).first())
+    }
+
+    @Test
     fun `an artist in the library is not a new artist, even unplayed`() {
         val t = taste({ copy(savedArtists = listOf(com.shiny.music.db.entities.HomeSavedArtist("saved", "Saved", 5, 0))) })
         assertEquals(0.0, Ranker.score(candidate("a", "saved"), t, RankContext()).breakdown.newArtist, 0.0)

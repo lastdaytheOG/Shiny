@@ -93,7 +93,8 @@ object Ranker {
         val affinity = (lead?.let { 0.6 * it.longTerm + 0.4 * it.shortTerm } ?: 0.0).let { base ->
             val boosted = if (candidate.artistIds.any { it in taste.boostedArtists }) base + 0.35 else base
             val saved = if (song?.saved == true) boosted + 0.2 else boosted
-            saved.coerceIn(0.0, 1.2)
+            val album = candidate.albumId?.let { taste.albums[it] } ?: 0.0
+            (saved + album * 0.25).coerceIn(0.0, 1.2)
         }
 
         val artistHeard = artists.any { it.heard }

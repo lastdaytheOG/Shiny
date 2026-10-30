@@ -65,6 +65,22 @@ class TasteProfileTest {
     }
 
     @Test
+    fun `an album heard often and lately counts for more than one that faded`() {
+        val taste = build(
+            TasteInputs(
+                nowMs = now,
+                albumStats = listOf(
+                    com.shiny.music.db.entities.HomeAlbumStat("lately", songsPlayed = 8, plays = 30, lastPlayed = now - day),
+                    com.shiny.music.db.entities.HomeAlbumStat("long ago", songsPlayed = 8, plays = 30, lastPlayed = now - 800 * day),
+                    com.shiny.music.db.entities.HomeAlbumStat("once", songsPlayed = 1, plays = 1, lastPlayed = now - day),
+                ),
+            ),
+        )
+        assertTrue(taste.albums.getValue("lately") > taste.albums.getValue("long ago"))
+        assertTrue(taste.albums.getValue("lately") > taste.albums.getValue("once"))
+    }
+
+    @Test
     fun `skips of an artist the listener rarely finishes make a rejection`() {
         val taste = build(
             TasteInputs(

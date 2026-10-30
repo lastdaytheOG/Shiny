@@ -4,6 +4,7 @@ import com.shiny.music.db.entities.ArtistDaypartStat
 import com.shiny.music.db.entities.ArtistOutcomeBucket
 import com.shiny.music.db.entities.CandidateSource
 import com.shiny.music.db.entities.DiscoveryOutcomeStat
+import com.shiny.music.db.entities.HomeAlbumStat
 import com.shiny.music.db.entities.HomeArtistStat
 import com.shiny.music.db.entities.HomeSavedArtist
 import com.shiny.music.db.entities.HomeSavedSong
@@ -84,6 +85,7 @@ data class TasteProfile(
     val confidence: Double,
     val artists: Map<String, ArtistTaste>,
     val songs: Map<String, SongTaste>,
+    val albums: Map<String, Double>,
     val discovery: DiscoveryPersonality,
     val sources: Map<String, Beta>,
     val hiddenArtists: Set<String>,
@@ -109,6 +111,7 @@ data class TasteProfile(
             confidence = 0.0,
             artists = emptyMap(),
             songs = emptyMap(),
+            albums = emptyMap(),
             discovery = DiscoveryPersonality(appetite = 0.5, noveltyAcceptance = 0.55, familiarShare = 0.5, evidence = 0),
             sources = emptyMap(),
             hiddenArtists = emptySet(),
@@ -131,6 +134,7 @@ data class TasteInputs(
     val confidence: Double = 0.0,
     val songStats: Collection<HomeSongStat> = emptyList(),
     val artistStats: Collection<HomeArtistStat> = emptyList(),
+    val albumStats: Collection<HomeAlbumStat> = emptyList(),
     val savedSongs: Collection<HomeSavedSong> = emptyList(),
     val savedArtists: Collection<HomeSavedArtist> = emptyList(),
     val songOutcomes: Collection<SongOutcomeBucket> = emptyList(),
@@ -255,6 +259,10 @@ object TasteProfileBuilder {
             confidence = input.confidence,
             artists = artists,
             songs = songs,
+            albums = input.albumStats.associate { album ->
+                val age = (wallNow - album.lastPlayed).toDouble() / DAY_MS
+                album.albumId to sat(album.plays.toDouble(), 8.0) * (0.4 + 0.6 * halfLife(age, LONG_HALF_LIFE_DAYS))
+            },
             discovery = discoveryPersonality(input.discovery),
             sources = input.sourceStats.associate { it.source to Beta(it.positive.toDouble(), it.negative.toDouble()) },
             hiddenArtists = hiddenArtists,
