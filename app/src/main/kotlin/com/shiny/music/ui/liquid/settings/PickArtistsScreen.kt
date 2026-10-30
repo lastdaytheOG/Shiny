@@ -1,5 +1,6 @@
 package com.shiny.music.ui.liquid.settings
 
+import android.content.Context
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -23,30 +24,48 @@ import androidx.navigation.NavController
 import com.music.innertube.YouTube
 import com.music.innertube.models.ArtistItem
 import com.shiny.music.R
+import com.shiny.music.constants.HomeChartsCountryKey
 import com.shiny.music.db.MusicDatabase
+import com.shiny.music.discover.AppleChartsRepository
+import com.shiny.music.discover.ChartArtistRanking
+import com.shiny.music.discover.ChartKind
+import com.shiny.music.discover.ChartRegions
+import com.shiny.music.discover.ChartResolver
+import com.shiny.music.discover.Resolution
 import com.shiny.music.home.HomeRanking
 import com.shiny.music.home.HomeRemoteRepository
 import com.shiny.music.intelligence.FeedbackKind
 import com.shiny.music.intelligence.IntelligenceRepository
 import com.shiny.music.ui.liquid.Liquid
+import com.shiny.music.utils.dataStore
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+private const val SUGGESTIONS = 15
+
 data class PickableArtist(val id: String, val name: String)
 
 @HiltViewModel
 class PickArtistsViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val intelligence: IntelligenceRepository,
     private val remote: HomeRemoteRepository,
     private val database: MusicDatabase,
+    private val charts: AppleChartsRepository,
+    private val resolver: ChartResolver,
 ) : ViewModel() {
     val chosen: StateFlow<Set<String>> = intelligence.feedback()
         .map { rows -> rows.filter { it.kind == FeedbackKind.SeedArtist.name }.mapTo(HashSet()) { it.targetId } }
@@ -63,12 +82,23 @@ class PickArtistsViewModel @Inject constructor(
             yours.value = database.homeSavedArtists(limit = 12)
                 .filter { HomeRanking.isStreamableId(it.artistId) && it.name.isNotBlank() }
                 .map { PickableArtist(it.artistId, it.name) }
-            suggested.value = remote.state.value?.charts.orEmpty()
-                .flatMap { chart -> chart.songs }
-                .flatMap { it.artists }
-                .mapNotNull { artist -> artist.id?.let { PickableArtist(it, artist.name) } }
+        }
+        viewModelScope.launch { suggested.value = chartArtists() }
+    }
+
+    private suspend fun chartArtists(): List<PickableArtist> {
+        val setting = context.dataStore.data.first()[HomeChartsCountryKey]
+        val region = ChartRegions.resolve(setting, ChartRegions.detect(ChartRegions.candidates(context)))
+        val chart = charts.cached(region.storefront, ChartKind.Songs)
+            ?: charts.get(region.storefront, ChartKind.Songs).chart
+            ?: return emptyList()
+        return coroutineScope {
+            ChartArtistRanking.rank(chart.entries).take(SUGGESTIONS)
+                .map { artist -> async { (resolver.artist(artist) as? Resolution.Found)?.item } }
+                .awaitAll()
+                .filterNotNull()
+                .map { PickableArtist(it.id, it.title) }
                 .distinctBy { it.id }
-                .take(20)
         }
     }
 
