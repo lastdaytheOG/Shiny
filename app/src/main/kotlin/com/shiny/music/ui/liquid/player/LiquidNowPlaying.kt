@@ -21,7 +21,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -105,8 +104,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.ui.composed
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -257,6 +254,7 @@ private fun NowPlaying(
 
     var mode by rememberSaveable { mutableStateOf(NowPlayingMode.Stage) }
     val modeProgress = remember { Animatable(if (mode == NowPlayingMode.Stage) 0f else 1f) }
+    val coverSwipe = rememberCoverSwipe()
     LaunchedEffect(mode) {
         modeProgress.animateTo(
             if (mode == NowPlayingMode.Stage) 0f else 1f,
@@ -762,10 +760,11 @@ private fun NowPlaying(
                 dissolve = poster || appleCover != null,
                 coverAlpha = { stageDip.value },
                 onTap = { if (mode != NowPlayingMode.Stage) mode = NowPlayingMode.Stage },
-                // On the stage only: in the lyrics and queue the cover is a small header
-                // whose tap must stay immediate, and whose row sits over scrolling content.
-                onSwipeRight = if (mode == NowPlayingMode.Stage && controlsEnabled) ({
-                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                swipe = coverSwipe,
+                onSwipeLeft = if (mode == NowPlayingMode.Stage && controlsEnabled && canSkipPrevious) ({
+                    playerConnection.seekToPrevious()
+                }) else null,
+                onSwipeRight = if (mode == NowPlayingMode.Stage && controlsEnabled && canSkipNext) ({
                     playerConnection.seekToNext()
                 }) else null,
                 onDoubleTap = if (mode == NowPlayingMode.Stage) ({
@@ -792,6 +791,7 @@ private fun NowPlaying(
                 Box(
                     Modifier
                         .fillMaxSize()
+                        .graphicsLayer { translationX = coverSwipe.value }
                         .drawWithCache {
                             val head = Brush.verticalGradient(
                                 0f to Color.Black.copy(alpha = topScrim),
@@ -800,7 +800,12 @@ private fun NowPlaying(
                             )
                             onDrawBehind {
                                 with(posterStage) { drawPosterVeil(posterVeilAlpha()) }
-                                drawRect(head, size = Size(size.width, headPx), alpha = stageAlpha())
+                                drawRect(
+                                    head,
+                                    topLeft = Offset(-size.width * 2f, 0f),
+                                    size = Size(size.width * 5f, headPx),
+                                    alpha = stageAlpha(),
+                                )
                             }
                         }
                 )
@@ -1093,34 +1098,6 @@ private fun HeaderIcon(icon: ImageVector, label: String, onClick: () -> Unit, st
  * relayouts one box per frame and recomposes nothing. On the stage it breathes with
  * playback — full size while playing, settling back when paused — like the Music app.
  */
-/** How far a rightward swipe on the cover travels before it plays the next song. */
-private val SwipeSkipDistance = 56.dp
-
-/**
- * A rightward swipe plays the next song the moment it has travelled [SwipeSkipDistance]: no
- * waiting for the finger to lift, once per swipe. Horizontal only, so a vertical drag still
- * reaches the sheet and closes the player. Nothing moves or redraws while it tracks.
- */
-private fun Modifier.swipeRightToSkip(onSwipeRight: () -> Unit): Modifier = composed {
-    val latest by rememberUpdatedState(onSwipeRight)
-    pointerInput(Unit) {
-        val threshold = SwipeSkipDistance.toPx()
-        var travelled = 0f
-        var fired = false
-        detectHorizontalDragGestures(
-            onDragStart = { travelled = 0f; fired = false },
-            onHorizontalDrag = { change, amount ->
-                change.consume()
-                travelled += amount
-                if (!fired && travelled > threshold) {
-                    fired = true
-                    latest()
-                }
-            },
-        )
-    }
-}
-
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun FlyingArtwork(
@@ -1144,6 +1121,8 @@ private fun FlyingArtwork(
     sharpPx: IntSize? = null,
     dissolve: Boolean = false,
     coverAlpha: () -> Float = { 1f },
+    swipe: CoverSwipe? = null,
+    onSwipeLeft: (() -> Unit)? = null,
     onSwipeRight: (() -> Unit)? = null,
     onDoubleTap: (() -> Unit)? = null,
 ) {
@@ -1161,6 +1140,22 @@ private fun FlyingArtwork(
         content = {
             Box(
                 Modifier
+                    .then(
+                        if (swipe != null) {
+                            Modifier
+                                .coverSwipe(swipe, onSwipeLeft, onSwipeRight)
+                                .graphicsLayer {
+                                    translationX = swipe.value
+                                    if (!bleed) {
+                                        val s = 1f - swipe.progress() * 0.07f
+                                        scaleX = s
+                                        scaleY = s
+                                    }
+                                }
+                        } else {
+                            Modifier
+                        }
+                    )
                     // Before the clipping layer, so the light spills past the cover's edge.
                     // It follows the cover's settle, dims with it on pause, and is gone
                     // by the time the cover reaches the lyrics / queue header.
@@ -1171,7 +1166,8 @@ private fun FlyingArtwork(
                                 strength = {
                                     (if (expansion?.isFlying() == true) 0f else glowStrength) *
                                         glowPauseFactor(restScale, PausedArtworkScale) *
-                                        (1f - progress() * 2.5f).coerceAtLeast(0f)
+                                        (1f - progress() * 2.5f).coerceAtLeast(0f) *
+                                        (1f - (swipe?.progress() ?: 0f) * 1.6f).coerceAtLeast(0f)
                                 },
                                 sizeFactor = { lerp(restScale, 1f, progress()) },
                             )
@@ -1211,7 +1207,6 @@ private fun FlyingArtwork(
                         cornerRadius = if (bleed) 0.dp else 12.dp,
                         followsSheet = true,
                     )
-                    .then(if (onSwipeRight != null) Modifier.swipeRightToSkip(onSwipeRight) else Modifier)
                     // Without onDoubleClick a tap fires at once; with it, only on the stage,
                     // where a single tap does nothing and so waiting for a second costs nothing.
                     .combinedClickable(
@@ -1236,6 +1231,7 @@ private fun FlyingArtwork(
             }
         },
     ) { measurables, constraints ->
+        swipe?.travel = constraints.maxWidth.toFloat()
         val s = stageRect
         val c = compactRect
         if (s == null) {
