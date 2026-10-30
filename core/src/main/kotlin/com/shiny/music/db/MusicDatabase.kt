@@ -18,6 +18,7 @@ import androidx.room.migration.AutoMigrationSpec
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteOpenHelper
+import com.shiny.music.db.daos.IntelligenceDao
 import com.shiny.music.db.daos.SpeedDialDao
 import com.shiny.music.db.entities.AlbumArtistMap
 import com.shiny.music.db.entities.AlbumEntity
@@ -25,12 +26,16 @@ import com.shiny.music.db.entities.ArtistEntity
 import com.shiny.music.db.entities.BeatInfoEntity
 import com.shiny.music.db.entities.Event
 import com.shiny.music.db.entities.FormatEntity
+import com.shiny.music.db.entities.ListenOutcome
 import com.shiny.music.db.entities.LyricsEntity
+import com.shiny.music.db.entities.MusicFeedback
+import com.shiny.music.db.entities.MusicRelation
 import com.shiny.music.db.entities.PlayCountEntity
 import com.shiny.music.db.entities.PlaylistEntity
 import com.shiny.music.db.entities.PlaylistSongMap
 import com.shiny.music.db.entities.PlaylistSongMapPreview
 import com.shiny.music.db.entities.RecognitionHistory
+import com.shiny.music.db.entities.RecommendationImpression
 import com.shiny.music.db.entities.RelatedSongMap
 import com.shiny.music.db.entities.SearchHistory
 import com.shiny.music.db.entities.SetVideoIdEntity
@@ -52,6 +57,9 @@ class MusicDatabase(
 ) : DatabaseDao by delegate.dao {
     val speedDialDao: SpeedDialDao
         get() = delegate.speedDialDao
+
+    val intelligenceDao: IntelligenceDao
+        get() = delegate.intelligenceDao
 
     val openHelper: SupportSQLiteOpenHelper
         get() = delegate.openHelper
@@ -105,14 +113,18 @@ class MusicDatabase(
         PlayCountEntity::class,
         RecognitionHistory::class,
         SpeedDialItem::class,
-        BeatInfoEntity::class
+        BeatInfoEntity::class,
+        ListenOutcome::class,
+        RecommendationImpression::class,
+        MusicFeedback::class,
+        MusicRelation::class,
     ],
     views = [
         SortedSongArtistMap::class,
         SortedSongAlbumMap::class,
         PlaylistSongMapPreview::class,
     ],
-    version = 45,
+    version = 46,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 2, to = 3),
@@ -154,6 +166,7 @@ class MusicDatabase(
 abstract class InternalDatabase : RoomDatabase() {
     abstract val dao: DatabaseDao
     abstract val speedDialDao: SpeedDialDao
+    abstract val intelligenceDao: IntelligenceDao
 
     companion object {
         const val DB_NAME = "song.db"
@@ -181,6 +194,7 @@ abstract class InternalDatabase : RoomDatabase() {
                             MIGRATION_42_43,
                             MIGRATION_43_44,
                             MIGRATION_44_45,
+                            MIGRATION_45_46,
                         )
                         .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
                         .setTransactionExecutor(java.util.concurrent.Executors.newFixedThreadPool(4))
@@ -1004,5 +1018,23 @@ val MIGRATION_44_45 = object : Migration(44, 45) {
             db.execSQL("ALTER TABLE `playlist` ADD COLUMN `isLocal` INTEGER NOT NULL DEFAULT 0")
             Timber.tag("MIGRATION_44_45").i("Added missing isLocal column to playlist")
         }
+    }
+}
+
+val MIGRATION_45_46 = object : Migration(45, 46) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS `listen_outcome` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `songId` TEXT NOT NULL, `sessionId` INTEGER NOT NULL, `startedAt` INTEGER NOT NULL, `endedAt` INTEGER NOT NULL, `zoneOffsetMinutes` INTEGER NOT NULL, `listenedMs` INTEGER NOT NULL, `durationMs` INTEGER NOT NULL, `completion` REAL NOT NULL, `endReason` TEXT NOT NULL, `kind` TEXT NOT NULL, `surface` TEXT NOT NULL, `pickSource` TEXT, `selection` TEXT NOT NULL, `queuePosition` INTEGER NOT NULL, `firstListen` INTEGER NOT NULL, `replayGapDays` INTEGER, `impressionId` INTEGER, FOREIGN KEY(`songId`) REFERENCES `song`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_listen_outcome_songId` ON `listen_outcome` (`songId`)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_listen_outcome_startedAt` ON `listen_outcome` (`startedAt`)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_listen_outcome_sessionId` ON `listen_outcome` (`sessionId`)")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `recommendation_impression` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `songId` TEXT NOT NULL, `surface` TEXT NOT NULL, `shownAt` INTEGER NOT NULL, `position` INTEGER NOT NULL, `candidateSource` TEXT, `reason` TEXT, `sessionId` INTEGER NOT NULL, `selectedAt` INTEGER, `playedAt` INTEGER, `outcomeKind` TEXT)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_recommendation_impression_songId` ON `recommendation_impression` (`songId`)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_recommendation_impression_shownAt` ON `recommendation_impression` (`shownAt`)")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `music_feedback` (`targetType` TEXT NOT NULL, `targetId` TEXT NOT NULL, `kind` TEXT NOT NULL, `label` TEXT, `createdAt` INTEGER NOT NULL, `expiresAt` INTEGER, PRIMARY KEY(`targetType`, `targetId`, `kind`))")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `music_relation` (`fromId` TEXT NOT NULL, `toId` TEXT NOT NULL, `kind` TEXT NOT NULL, `weight` REAL NOT NULL, `evidence` INTEGER NOT NULL, `toName` TEXT, `updatedAt` INTEGER NOT NULL, PRIMARY KEY(`fromId`, `toId`, `kind`))")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_music_relation_toId` ON `music_relation` (`toId`)")
+        if (!hasColumn(db, "beat_info", "energy")) db.execSQL("ALTER TABLE `beat_info` ADD COLUMN `energy` REAL DEFAULT NULL")
+        if (!hasColumn(db, "beat_info", "brightness")) db.execSQL("ALTER TABLE `beat_info` ADD COLUMN `brightness` REAL DEFAULT NULL")
+        if (!hasColumn(db, "beat_info", "dynamics")) db.execSQL("ALTER TABLE `beat_info` ADD COLUMN `dynamics` REAL DEFAULT NULL")
     }
 }

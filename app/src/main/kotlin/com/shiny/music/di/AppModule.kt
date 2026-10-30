@@ -113,6 +113,7 @@ object AppModule {
             com.shiny.music.db.MIGRATION_42_43,
             com.shiny.music.db.MIGRATION_43_44,
             com.shiny.music.db.MIGRATION_44_45,
+            com.shiny.music.db.MIGRATION_45_46,
         )
         .setJournalMode(androidx.room.RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
         .setTransactionExecutor(java.util.concurrent.Executors.newFixedThreadPool(4))

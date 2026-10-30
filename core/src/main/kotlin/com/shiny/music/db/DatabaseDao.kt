@@ -1996,6 +1996,7 @@ interface DatabaseDao {
                (SELECT COUNT(*) FROM song WHERE inLibrary IS NOT NULL) || ':' ||
                (SELECT COUNT(*) FROM playlist WHERE bookmarkedAt IS NOT NULL) || ':' ||
                (SELECT COUNT(*) FROM playlist_song_map) || ':' ||
+               (SELECT COUNT(*) FROM music_feedback) || ':' ||
                IFNULL((SELECT MAX(lastUpdateTime) FROM playlist WHERE bookmarkedAt IS NOT NULL), 0)
         """
     )

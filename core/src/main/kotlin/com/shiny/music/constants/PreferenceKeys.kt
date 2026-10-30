@@ -141,6 +141,11 @@ val ExportedSongIdsKey = stringPreferencesKey("exportedSongIds")
 val ExportProgressKey = stringPreferencesKey("exportProgress")
 
 val PauseListenHistoryKey = booleanPreferencesKey("pauseListenHistory")
+val PersonalisedRecommendationsKey = booleanPreferencesKey("personalisedRecommendations")
+val RecommendationStyleKey = stringPreferencesKey("recommendationStyle")
+val IntelligenceGraphAtKey = longPreferencesKey("intelligenceGraphAt")
+val PickArtistsDismissedKey = booleanPreferencesKey("pickArtistsDismissed")
+val AudioAnalysisEnabledKey = booleanPreferencesKey("audioAnalysisEnabled")
 val PauseSearchHistoryKey = booleanPreferencesKey("pauseSearchHistory")
 val DisableScreenshotKey = booleanPreferencesKey("disableScreenshot")
 
