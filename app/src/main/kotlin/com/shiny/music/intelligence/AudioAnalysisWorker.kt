@@ -1,6 +1,7 @@
 package com.shiny.music.intelligence
 
 import android.content.Context
+import android.media.AudioFormat
 import android.media.MediaCodec
 import android.media.MediaDataSource
 import android.media.MediaExtractor
@@ -38,6 +39,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import timber.log.Timber
+import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.coroutineContext
@@ -168,6 +170,31 @@ class DataSourceAudio(
     }
 }
 
+class PcmFrames(private val bytes: ByteBuffer, private val channels: Int, private val encoding: Int) {
+    private val width = when (encoding) {
+        AudioFormat.ENCODING_PCM_FLOAT, AudioFormat.ENCODING_PCM_32BIT -> 4
+        AudioFormat.ENCODING_PCM_24BIT_PACKED -> 3
+        else -> 2
+    }
+    private val start = bytes.position()
+
+    val count = bytes.remaining() / (width * channels.coerceAtLeast(1))
+
+    fun mono(frame: Int): Float {
+        var sum = 0f
+        for (c in 0 until channels) sum += sample(start + (frame * channels + c) * width)
+        return sum / channels
+    }
+
+    private fun sample(at: Int): Float = when (encoding) {
+        AudioFormat.ENCODING_PCM_FLOAT -> bytes.getFloat(at)
+        AudioFormat.ENCODING_PCM_32BIT -> bytes.getInt(at) / 2_147_483_648f
+        AudioFormat.ENCODING_PCM_24BIT_PACKED ->
+            ((bytes.get(at).toInt() and 0xff) or ((bytes.get(at + 1).toInt() and 0xff) shl 8) or (bytes.get(at + 2).toInt() shl 16)) / 8_388_608f
+        else -> bytes.getShort(at) / 32_768f
+    }
+}
+
 object AudioDecoder {
     const val TARGET_RATE = 11_025
     private const val SECONDS = 45
@@ -206,6 +233,7 @@ object AudioDecoder {
     private fun drain(extractor: MediaExtractor, codec: MediaCodec, input: MediaFormat): FloatArray? {
         var sourceRate = input.getInteger(MediaFormat.KEY_SAMPLE_RATE)
         var channels = input.getInteger(MediaFormat.KEY_CHANNEL_COUNT)
+        var encoding = AudioFormat.ENCODING_PCM_16BIT
         val output = FloatArray(TARGET_RATE * SECONDS)
         var written = 0
         var position = 0.0
@@ -230,19 +258,18 @@ object AudioDecoder {
                 out == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> {
                     sourceRate = codec.outputFormat.getInteger(MediaFormat.KEY_SAMPLE_RATE)
                     channels = codec.outputFormat.getInteger(MediaFormat.KEY_CHANNEL_COUNT)
+                    if (codec.outputFormat.containsKey(MediaFormat.KEY_PCM_ENCODING)) {
+                        encoding = codec.outputFormat.getInteger(MediaFormat.KEY_PCM_ENCODING)
+                    }
                 }
                 out >= 0 -> {
-                    val buffer = codec.getOutputBuffer(out)!!.order(ByteOrder.LITTLE_ENDIAN).asShortBuffer()
-                    val frames = buffer.remaining() / channels.coerceAtLeast(1)
+                    val frames = PcmFrames(codec.getOutputBuffer(out)!!.order(ByteOrder.LITTLE_ENDIAN), channels, encoding)
                     val step = sourceRate.toDouble() / TARGET_RATE
-                    while (position < frames && written < output.size) {
-                        val frame = position.toInt()
-                        var sum = 0f
-                        for (c in 0 until channels) sum += buffer.get(frame * channels + c) / 32768f
-                        output[written++] = sum / channels
+                    while (position < frames.count && written < output.size) {
+                        output[written++] = frames.mono(position.toInt())
                         position += step
                     }
-                    position -= frames
+                    position -= frames.count
                     codec.releaseOutputBuffer(out, false)
                     if (info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0) break
                 }
