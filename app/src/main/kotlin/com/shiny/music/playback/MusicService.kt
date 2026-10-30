@@ -159,7 +159,13 @@ import com.shiny.music.models.QueueData
 import com.shiny.music.models.QueueType
 import com.shiny.music.models.toMediaMetadata
 import com.shiny.music.playback.audio.SilenceDetectorAudioProcessor
+import com.shiny.music.db.entities.CandidateSource
+import com.shiny.music.db.entities.RecSurface
+import com.shiny.music.intelligence.EndReason
+import com.shiny.music.intelligence.ListenSessionTracker
+import com.shiny.music.intelligence.Selection
 import com.shiny.music.playback.queues.EmptyQueue
+import com.shiny.music.playback.queues.PlaybackOrigin
 import com.shiny.music.playback.queues.ListQueue
 import com.shiny.music.playback.queues.Queue
 import com.shiny.music.playback.queues.YouTubeQueue
@@ -273,6 +279,9 @@ class MusicService :
 
     @Inject
     lateinit var socialPresencePublisher: com.shiny.music.social.SocialPresencePublisher
+
+    @Inject
+    lateinit var intelligence: com.shiny.music.intelligence.IntelligenceRepository
     
 
     private lateinit var audioManager: AudioManager
@@ -450,6 +459,21 @@ class MusicService :
      * else, and was lost if the app was closed first. Main thread only.
      */
     private val listenCountedAtEnd = HashMap<String, Long>()
+
+    private data class UpNextOrigin(val surface: RecSurface, val source: String?)
+
+    private val upNextOrigins = HashMap<String, UpNextOrigin>()
+    private var queueOrigin: PlaybackOrigin? = null
+    private var queueHeadPending = false
+    private var autoplayRadio = false
+    private var lastListenIndex = C.INDEX_UNSET
+
+    private val listenTracker = ListenSessionTracker(
+        uptimeMs = android.os.SystemClock::elapsedRealtime,
+        wallTimeMs = System::currentTimeMillis,
+    ) { draft ->
+        if (!cachedPauseListenHistory && !together.isFollowing) intelligence.record(draft)
+    }
 
 
     private val instantSilenceSkipEnabled = MutableStateFlow(false)
@@ -1674,6 +1698,10 @@ class MusicService :
         queuePageStatus.value = QueuePageStatus()
         queueUndo.value = null
         queueIsPreShuffled = (queue as? ListQueue)?.preShuffled == true
+        queueOrigin = queue.origin
+        queueHeadPending = playWhenReady
+        autoplayRadio = false
+        upNextOrigins.clear()
         val generation = ++playQueueGeneration
         autoplayFoundNothingFor = null
         queueTitle = null
@@ -1698,7 +1726,7 @@ class MusicService :
                         queue.getInitialStatus()
                             .filterExplicit(cachedHideExplicit)
                             .filterVideoSongs(cachedHideVideoSongsEffective)
-                    }
+                    }.let { personaliseRadioHead(queue, it) }
                 // Another queue was started while this one loaded. Applying this one now would replace it:
                 // a deep link was overwritten by the queue restored at launch this way.
                 if (generation != playQueueGeneration) return@launch
@@ -1838,7 +1866,8 @@ class MusicService :
                 }
                 if (generation != playQueueGeneration || queue !== currentQueue) return@launch
                 if (source || autoplayAllowed()) {
-                    val items = if (source) page else page.filter { it.mediaId !in queuedMediaIds() }
+                    val items = if (source) page else personalise(page.filter { it.mediaId !in queuedMediaIds() }, upNextSurface())
+                    if (generation != playQueueGeneration || queue !== currentQueue) return@launch
                     appendToQueue(items, if (source) ShufflePlacement.Mixed else ShufflePlacement.End)
                     appended = items.isNotEmpty()
                 }
@@ -1950,12 +1979,11 @@ class MusicService :
                 if (!isCurrentAutoplayRequest(cachedAutoLoadMore, requestVersion, autoplayRequestVersion) || together.isFollowing) return@launch
                 if (generation != playQueueGeneration || player.currentMetadata?.id != current.id) return@launch
                 val queued = queuedMediaIds()
-                val artists = current.artists.mapTo(HashSet()) { it.name }
-                val (same, rest) = songs
-                    .filter { it.id !in queued && !(cachedHideExplicit && it.song.explicit) && !(cachedHideVideoSongsEffective && it.song.isVideo) }
-                    .partition { song -> song.artists.any { it.name in artists } }
-                val fresh = (same.shuffled() + rest.shuffled()).take(minimum + 5 - upcomingInPlayOrder(minimum))
+                val pool = songs.filter { !(cachedHideExplicit && it.song.explicit) && !(cachedHideVideoSongsEffective && it.song.isVideo) }
+                val fresh = intelligence.offlineNext(current, pool, queued, minimum + 5 - upcomingInPlayOrder(minimum))
+                if (generation != playQueueGeneration || player.currentMetadata?.id != current.id) return@launch
                 if (fresh.isNotEmpty()) {
+                    fresh.forEach { upNextOrigins[it.id] = UpNextOrigin(RecSurface.OfflineAutoplay, CandidateSource.OnDevice.name) }
                     appendToQueue(fresh.map { it.toMediaItem() }, ShufflePlacement.End)
                     updateQueuePageStatus()
                 }
@@ -2005,7 +2033,8 @@ class MusicService :
                         queue.nextPage().filterExplicit(hideExplicit).filterVideoSongs(hideVideos)
                     }
                     if (!requestIsCurrent() || generation != playQueueGeneration || queue !== currentQueue) return@launch
-                    val items = if (source) page else page.filter { it.mediaId !in queuedMediaIds() }
+                    val items = if (source) page else personalise(page.filter { it.mediaId !in queuedMediaIds() }, upNextSurface())
+                    if (!requestIsCurrent() || generation != playQueueGeneration || queue !== currentQueue) return@launch
                     if (items.isEmpty()) break
                     appendToQueue(items, if (source) ShufflePlacement.Mixed else ShufflePlacement.End)
                     updateQueuePageStatus()
@@ -2021,11 +2050,15 @@ class MusicService :
                     }
                     if (!requestIsCurrent() || generation != playQueueGeneration) return@launch
                     val queued = queuedMediaIds()
-                    val fresh = status.items.filter { it.mediaId !in queued }.take(minimum + 5 - upcoming())
+                    val fresh = personalise(status.items.filter { it.mediaId !in queued }, RecSurface.Autoplay, minimum + 5 - upcoming())
+                    if (!requestIsCurrent() || generation != playQueueGeneration) return@launch
                     if (fresh.isNotEmpty()) {
                         appendToQueue(fresh, ShufflePlacement.End)
                         // Later top-ups continue from the radio once the original queue is spent.
-                        if (!currentQueue.hasNextPage()) currentQueue = radio
+                        if (!currentQueue.hasNextPage()) {
+                            currentQueue = radio
+                            autoplayRadio = true
+                        }
                         updateQueuePageStatus()
                     } else {
                         autoplayFoundNothingFor = current.id
@@ -2089,9 +2122,10 @@ class MusicService :
                 }
 
                 
-                val radioItems = initialStatus.items.filter { item ->
-                    item.mediaId != currentMediaId
-                }
+                val radioItems = personalise(
+                    initialStatus.items.filter { item -> item.mediaId != currentMediaId },
+                    RecSurface.Radio,
+                )
 
                 if (radioItems.isNotEmpty()) {
                     val itemCount = player.mediaItemCount
@@ -2557,6 +2591,7 @@ class MusicService :
 
         lastPlaybackSpeed = -1.0f 
 
+        noteListenTransition(mediaItem, reason)
         preloadUpcomingItems()
         setupLoudnessEnhancer()
 
@@ -2589,6 +2624,7 @@ class MusicService :
                 player.play()
             } else {
                 countListenAtQueueEnd()
+                listenTracker.end(EndReason.Finished)
             }
         }
 
@@ -2604,6 +2640,8 @@ class MusicService :
             retryCount = 0
             waitingForNetworkConnection.value = false
             retryJob?.cancel()
+            if (listenTracker.current == null) beginListen(player.currentMediaItem)
+            player.duration.takeIf { it != C.TIME_UNSET }?.let(listenTracker::setDuration)
 
             
             player.currentMediaItem?.mediaId?.let { mediaId ->
@@ -2651,6 +2689,7 @@ class MusicService :
     // The next-song preload waits for audio. Started at the play request, it resolved the next song
     // alongside the one just tapped, and on a cold resume began before it.
     override fun onIsPlayingChanged(isPlaying: Boolean) {
+        listenTracker.setPlaying(isPlaying)
         if (isPlaying) {
             preloadUpcomingItems()
             // The queue restored at launch, played from its last song.
@@ -2927,6 +2966,7 @@ class MusicService :
         }
 
         val mediaId = player.currentMediaItem?.mediaId
+        listenTracker.end(EndReason.Failed)
         Timber.tag(TAG).w(error, "Player error occurred for $mediaId: errorCode=${error.errorCode}, message=${error.message}")
         // A resolve failure was already recorded, with its cascade, by resolveStream.
         val resolveFailure = PlaybackHealth.resolveFailureIn(error)
@@ -3717,6 +3757,68 @@ class MusicService :
         }
     }
 
+    private fun noteListenTransition(mediaItem: MediaItem?, reason: Int) {
+        val movedBack = lastListenIndex != C.INDEX_UNSET && player.nextMediaItemIndex == lastListenIndex
+        listenTracker.end(
+            when (reason) {
+                Player.MEDIA_ITEM_TRANSITION_REASON_AUTO -> EndReason.Finished
+                Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT -> EndReason.Repeated
+                Player.MEDIA_ITEM_TRANSITION_REASON_SEEK -> if (movedBack) EndReason.SkippedBack else EndReason.SkippedNext
+                else -> EndReason.Replaced
+            },
+        )
+        beginListen(mediaItem)
+    }
+
+    private fun beginListen(item: MediaItem?) {
+        val id = item?.mediaId ?: return
+        val head = queueHeadPending
+        queueHeadPending = false
+        lastListenIndex = player.currentMediaItemIndex
+        val picked = upNextOrigins[id]?.takeUnless { head }
+        val origin = queueOrigin
+        val surface = when {
+            picked != null -> picked.surface
+            origin != null -> origin.surface
+            head && currentQueue is YouTubeQueue -> RecSurface.Direct
+            (currentQueue as? YouTubeQueue)?.isRadio == true -> RecSurface.Radio
+            else -> RecSurface.Collection
+        }
+        listenTracker.start(
+            ListenSessionTracker.Track(
+                songId = id,
+                durationMs = item.metadata?.duration?.takeIf { it > 0 }?.times(1000L) ?: -1L,
+                surface = surface,
+                pickSource = picked?.source ?: origin?.sources?.get(id),
+                selection = when {
+                    head -> Selection.Manual
+                    picked != null -> Selection.Autoplay
+                    else -> Selection.QueueAdvance
+                },
+                queuePosition = player.currentMediaItemIndex,
+            ),
+            playing = player.isPlaying,
+        )
+    }
+
+    private fun upNextSurface() = if (autoplayRadio) RecSurface.Autoplay else RecSurface.Radio
+
+    private suspend fun personalise(items: List<MediaItem>, surface: RecSurface, limit: Int = items.size): List<MediaItem> {
+        if (items.isEmpty() || limit <= 0) return emptyList()
+        val picks = intelligence.rerankUpNext(player.currentMetadata, items, surface, limit)
+        picks.forEach { upNextOrigins[it.item.mediaId] = UpNextOrigin(surface, it.source?.name) }
+        return picks.map { it.item }
+    }
+
+    private suspend fun personaliseRadioHead(queue: Queue, status: Queue.Status): Queue.Status {
+        if ((queue as? YouTubeQueue)?.isRadio != true || status.items.size < 3) return status
+        val head = status.mediaItemIndex.coerceIn(0, status.items.lastIndex)
+        val tail = status.items.subList(head + 1, status.items.size)
+        val picks = intelligence.rerankUpNext(status.items[head].metadata, tail, RecSurface.Radio)
+        picks.forEach { upNextOrigins[it.item.mediaId] = UpNextOrigin(RecSurface.Radio, it.source?.name) }
+        return status.copy(items = status.items.subList(0, head + 1) + picks.map { it.item })
+    }
+
     /** Counts the song a queue just finished on, without waiting for its session to close. */
     private fun countListenAtQueueEnd() {
         val mediaId = player.currentMediaItem?.mediaId ?: return
@@ -3775,7 +3877,7 @@ class MusicService :
         }
 
         // Local files have no YouTube history to add to; asking only failed.
-        if (playTimeMs >= historyDurationMs && !mediaId.isLocalMediaId()) {
+        if (playTimeMs >= historyDurationMs && !mediaId.isLocalMediaId() && !cachedPauseListenHistory) {
             CoroutineScope(Dispatchers.IO).launch {
                 val playbackUrl = database.format(mediaId).first()?.playbackUrl
                     ?: YTPlayerUtils.playerResponseForMetadata(mediaId, null)
@@ -3961,6 +4063,7 @@ class MusicService :
             fadingLoudnessEnhancer = null
         }
         mediaSession.release()
+        listenTracker.end(EndReason.Stopped)
         player.removeListener(this)
         player.removeListener(sleepTimer)
         listenBrainz.release()
@@ -4525,6 +4628,9 @@ class MusicService :
         // the outgoing (soon-to-be-released) session, so the incoming track plays
         // without normalization/EQ.
         currentMediaMetadata.value = player.currentMetadata
+        listenTracker.end(EndReason.Finished)
+        beginListen(player.currentMediaItem)
+        listenTracker.setPlaying(true)
         val oldSessionId = fadingPlayer?.audioSessionId
         // Keep the current enhancer (still bound to the outgoing session) alive and attached
         // through the fade instead of releasing it, so the outgoing track stays normalized
