@@ -121,6 +121,34 @@ LRC `[offset:]` tag in the lyrics file (applied once at parse time in
 `parseLyrics`) or the per-song `SongEntity.lyricsOffset` the user sets. Never a
 hardcoded constant.
 
+## Recommendations: one shared core
+
+`app/.../intelligence` decides what is recommended everywhere: Home, New, New to you, radio, autoplay, offline autoplay and Smart Shuffle. Surfaces supply candidates and keep their own shape. They do not rank on their own.
+
+| Step | Where |
+| :-- | :-- |
+| Record how a listen ended | `ListenSessionTracker`, `ListenClassifier`, fed by `MusicService` |
+| Record what was shown | `IntelligenceRepository.logImpressions`, `HomeImpressions` |
+| Build the listener | `TasteProfileBuilder`, from `event`, `listen_outcome`, saved music and `music_feedback` |
+| Relate artists | `MusicGraph`, from `music_relation` (`CoListen`, `SimilarArtist`, `RelatedSong`, `Playlist`), each kind with its own reliability |
+| Gather candidates | `IntelligenceRepository.discoveryCandidates`, or the radio page being reranked |
+| Score | `Ranker`: named components in `ScoreBreakdown`, weights per `RecommendationStyle` |
+| Arrange | `DiversityReranker` for lists, `SequenceBuilder` for what plays next |
+| Explain | `Explainer`: says only what the data supports, or nothing |
+| Evaluate | `RecommendationMetrics` (Settings → Recommendations → How it's doing), `OfflineEvaluator` in tests |
+
+Rules:
+
+- `IntelligenceSnapshot.Neutral` means personalisation is off, and Home, New and the queue behave as they did before it existed. Tests depend on this.
+- Never add skip rows to `event`: `homeSongStats` counts every row as a play. Skips belong in `listen_outcome`.
+- `event.timestamp` is wall time stored as UTC. `listen_outcome.startedAt` is real UTC with `zoneOffsetMinutes` beside it.
+- Personalisation is a slope, not a door. Scale with `confidence`, never with a play-count threshold.
+- A song's audio traits are known only if `beat_info` holds a measurement. Do not infer them.
+- Song-level data stays on the phone. Do not add it to `Telemetry`.
+- Spotify and YouTube stay in separate rows on Home. The engine ranks songs, not those rows.
+
+`ArtistEmbeddings` exists for its benchmark only. In `OfflineBenchmarkTest` it moved NDCG from 0.717 to 0.720, so production passes `ArtistEmbeddings.Empty`.
+
 ## Storage: what is large on purpose
 
 Two dependencies dominate installed size. Both are load-bearing — check with
