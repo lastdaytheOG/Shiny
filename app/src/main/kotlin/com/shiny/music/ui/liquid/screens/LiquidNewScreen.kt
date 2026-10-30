@@ -154,6 +154,10 @@ fun LiquidNewScreen(
         ) {
             if (newToYou.isNotEmpty()) {
                 item(key = "new_to_you", contentType = "new_to_you") {
+                    androidx.compose.runtime.LaunchedEffect(newToYou) {
+                        kotlinx.coroutines.delay(1_000)
+                        discover.noteNewToYouShown(newToYou)
+                    }
                     com.shiny.music.ui.liquid.home.NewToYouShelf(newToYou, actions)
                 }
             }

@@ -74,7 +74,7 @@ class IntelligenceRepository @Inject constructor(
     private var graphKey: String? = null
     private var graph: GraphBundle? = null
     private val shownRecently = ConcurrentHashMap<String, Long>()
-    private var lastPositive: PositiveListen? = null
+    @Volatile private var lastPositive: PositiveListen? = null
     private var pruned = false
     private var materializing = false
 

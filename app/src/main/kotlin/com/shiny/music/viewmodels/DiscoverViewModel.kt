@@ -154,15 +154,17 @@ class DiscoverViewModel @Inject constructor(
 
     private fun loadNewToYou() {
         viewModelScope.launch {
-            val picks = runCatching { intelligence.newToYou(NEW_TO_YOU) }.getOrDefault(emptyList())
-            _newToYou.value = picks
-            intelligence.logImpressions(
-                RecSurface.Discover,
-                picks.take(HomeImpressions.VISIBLE_ON_A_SHELF).map {
-                    ImpressionItem(it.song.id, it.recommendation.source, it.recommendation.reason)
-                },
-            )
+            _newToYou.value = runCatching { intelligence.newToYou(NEW_TO_YOU) }.getOrDefault(emptyList())
         }
+    }
+
+    fun noteNewToYouShown(picks: List<NewToYouPick>) {
+        intelligence.logImpressions(
+            RecSurface.Discover,
+            picks.take(HomeImpressions.VISIBLE_ON_A_SHELF).map {
+                ImpressionItem(it.song.id, it.recommendation.source, it.recommendation.reason)
+            },
+        )
     }
 
     private var resolveJob: Job? = null
