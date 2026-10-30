@@ -1,7 +1,19 @@
 package com.shiny.music.intelligence
 
 import com.shiny.music.db.entities.CandidateSource
+import com.shiny.music.db.entities.HomeAlbumStat
+import com.shiny.music.db.entities.HomeArtistStat
+import com.shiny.music.db.entities.HomeSongStat
+import com.shiny.music.home.Daypart
 import kotlin.math.ln
+
+class HomeReads(
+    val daypart: Daypart,
+    val songStats: List<HomeSongStat>,
+    val artistStats: List<HomeArtistStat>,
+    val albumStats: List<HomeAlbumStat>,
+    val daypartDays: Int,
+)
 
 data class IntelligenceSnapshot(
     val enabled: Boolean,
@@ -12,6 +24,7 @@ data class IntelligenceSnapshot(
     val embeddings: ArtistEmbeddings,
     val tasteVector: FloatArray?,
     val badTransitions: Map<String, Double>,
+    val homeReads: HomeReads? = null,
 ) {
     fun rankContext(current: Candidate? = null, recentArtists: List<String> = emptyList()) = RankContext(
         style = style,

@@ -30,6 +30,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
@@ -124,17 +125,35 @@ class IntelligenceRepository @Inject constructor(
         }
     }
 
-    private suspend fun build(style: RecommendationStyle, now: Long, wallNow: Long, daypart: Daypart): IntelligenceSnapshot {
+    private suspend fun build(style: RecommendationStyle, now: Long, wallNow: Long, daypart: Daypart): IntelligenceSnapshot = coroutineScope {
         val weekFrom = wallNow - HomeRanking.WEEK_DAYS * HOME_DAY_MS
         val monthFrom = wallNow - HomeRanking.MONTH_DAYS * HOME_DAY_MS
         val daypartFrom = wallNow - HomeRanking.DAYPART_WINDOW_DAYS * HOME_DAY_MS
         val counts = database.homeLibraryCounts(hideExplicit = false, hideVideos = false)
-        val songStats = if (counts.events > 0) database.homeSongStats(weekFrom, monthFrom, daypartFrom, daypart.hours) else emptyList()
-        val artistStats = if (counts.events > 0) database.homeArtistStats(weekFrom, monthFrom, limit = 300) else emptyList()
-        val daypartDays = if (counts.events > 0) database.homeDaypartDays(daypartFrom, daypart.hours) else 0
-        val saved = database.homeSavedSongs(limit = SAVED_POOL)
-        val savedArtists = database.homeSavedArtists(limit = 60)
+        val played = counts.events > 0
         val bucketMs = TasteProfileBuilder.BUCKET_DAYS * HOME_DAY_MS
+        val pendingSongStats = async { if (played) database.homeSongStats(weekFrom, monthFrom, daypartFrom, daypart.hours) else emptyList() }
+        val pendingArtistStats = async { if (played) database.homeArtistStats(weekFrom, monthFrom, limit = 300) else emptyList() }
+        val pendingAlbumStats = async { if (played) database.homeAlbumStats(limit = 60) else emptyList() }
+        val pendingDaypartDays = async { if (played) database.homeDaypartDays(daypartFrom, daypart.hours) else 0 }
+        val pendingSaved = async { database.homeSavedSongs(limit = SAVED_POOL) }
+        val pendingSavedArtists = async { database.homeSavedArtists(limit = 60) }
+        val pendingSongOutcomes = async { dao.songOutcomeBuckets(now, bucketMs, TasteProfileBuilder.MAX_BUCKET) }
+        val pendingArtistOutcomes = async { dao.artistOutcomeBuckets(now, bucketMs, TasteProfileBuilder.MAX_BUCKET) }
+        val pendingSourceStats = async { dao.sourceOutcomeStats() }
+        val pendingDiscovery = async { dao.discoveryOutcomes(now - 30 * HOME_DAY_MS) }
+        val pendingFeedback = async { dao.activeFeedback(now) }
+        val pendingDaypart = async { if (played) dao.artistDaypartStats(daypartFrom, daypart.hours) else emptyList() }
+        val pendingImpressions = async { dao.impressionFatigue(now - 30 * HOME_DAY_MS) }
+        val pendingFeatures = async { dao.songFeatures() }
+        val pendingSearches = async { dao.recentSearches(limit = 8) }
+        val pendingBundle = async { graphBundle(now) }
+
+        val songStats = pendingSongStats.await()
+        val artistStats = pendingArtistStats.await()
+        val albumStats = pendingAlbumStats.await()
+        val daypartDays = pendingDaypartDays.await()
+        val saved = pendingSaved.await()
 
         val confidence = HomeTaste.confidence(
             HomeSignals.Empty.copy(
@@ -151,26 +170,26 @@ class IntelligenceRepository @Inject constructor(
                 confidence = confidence,
                 songStats = songStats,
                 artistStats = artistStats,
-                albumStats = if (counts.events > 0) database.homeAlbumStats(limit = 60) else emptyList(),
+                albumStats = albumStats,
                 savedSongs = saved,
-                savedArtists = savedArtists,
-                songOutcomes = dao.songOutcomeBuckets(now, bucketMs, TasteProfileBuilder.MAX_BUCKET),
-                artistOutcomes = dao.artistOutcomeBuckets(now, bucketMs, TasteProfileBuilder.MAX_BUCKET),
-                sourceStats = dao.sourceOutcomeStats(),
-                discovery = dao.discoveryOutcomes(now - 30 * HOME_DAY_MS),
-                feedback = dao.activeFeedback(now),
-                daypart = if (counts.events > 0) dao.artistDaypartStats(daypartFrom, daypart.hours) else emptyList(),
-                impressions = dao.impressionFatigue(now - 30 * HOME_DAY_MS),
-                features = dao.songFeatures(),
-                recentSearches = dao.recentSearches(limit = 8),
+                savedArtists = pendingSavedArtists.await(),
+                songOutcomes = pendingSongOutcomes.await(),
+                artistOutcomes = pendingArtistOutcomes.await(),
+                sourceStats = pendingSourceStats.await(),
+                discovery = pendingDiscovery.await(),
+                feedback = pendingFeedback.await(),
+                daypart = pendingDaypart.await(),
+                impressions = pendingImpressions.await(),
+                features = pendingFeatures.await(),
+                recentSearches = pendingSearches.await(),
                 nowMs = now,
                 wallNowMs = wallNow,
             ),
         )
-        val bundle = graphBundle(now)
+        val bundle = pendingBundle.await()
         val seeds = RecommendationEngine.seedWeights(taste)
         val plan = StylePlan.of(style)
-        return IntelligenceSnapshot(
+        IntelligenceSnapshot(
             enabled = true,
             style = style,
             taste = taste,
@@ -179,6 +198,7 @@ class IntelligenceRepository @Inject constructor(
             embeddings = ArtistEmbeddings.Empty,
             tasteVector = null,
             badTransitions = bundle.badTransitions,
+            homeReads = HomeReads(daypart, songStats, artistStats, albumStats, daypartDays),
         )
     }
 

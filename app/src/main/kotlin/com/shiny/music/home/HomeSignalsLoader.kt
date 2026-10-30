@@ -79,11 +79,12 @@ class HomeSignalsLoader(
             )
         }
 
-        val statList = if (counts.events > 0) database.homeSongStats(weekFrom, monthFrom, daypartFrom, hours) else emptyList()
+        val reads = snapshot.homeReads?.takeIf { it.daypart == ctx.daypart }
+        val statList = reads?.songStats ?: if (counts.events > 0) database.homeSongStats(weekFrom, monthFrom, daypartFrom, hours) else emptyList()
         val stats = statList.associateBy { it.songId }
-        val artistStats = if (counts.events > 0) database.homeArtistStats(weekFrom, monthFrom, limit = 300) else emptyList()
-        val albumStats = if (counts.events > 0) database.homeAlbumStats(limit = 60) else emptyList()
-        val daypartDays = if (counts.events > 0) database.homeDaypartDays(daypartFrom, hours) else 0
+        val artistStats = reads?.artistStats ?: if (counts.events > 0) database.homeArtistStats(weekFrom, monthFrom, limit = 300) else emptyList()
+        val albumStats = reads?.albumStats ?: if (counts.events > 0) database.homeAlbumStats(limit = 60) else emptyList()
+        val daypartDays = reads?.daypartDays ?: if (counts.events > 0) database.homeDaypartDays(daypartFrom, hours) else 0
         val monthOfflinePlays = if (counts.events > 0) database.homeOfflinePlays(monthFrom) else 0
 
         val savedSeeds = HomeRanking.savedSeedWeights(saved)
