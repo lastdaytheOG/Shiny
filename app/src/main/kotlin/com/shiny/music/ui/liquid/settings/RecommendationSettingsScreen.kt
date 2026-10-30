@@ -145,7 +145,7 @@ fun HiddenRecommendationsScreen(navController: NavController) {
     val rows by remember { intelligence.feedback() }.collectAsState(emptyList())
     var confirmClear by remember { mutableStateOf(false) }
     val kinds = remember { FeedbackKind.entries.associateBy { it.name } }
-    val shown = rows.filter { kinds[it.kind] != FeedbackKind.SeedArtist && kinds[it.kind] != FeedbackKind.ExploreMore }
+    val shown = rows.filter { kinds[it.kind] in UNDOABLE }
 
     SettingsPage(title = "Hidden and not interested", navController = navController) {
         if (shown.isEmpty()) {
@@ -192,13 +192,20 @@ fun HiddenRecommendationsScreen(navController: NavController) {
     }
 }
 
+private val UNDOABLE = setOf(
+    FeedbackKind.HideArtist,
+    FeedbackKind.BlockSong,
+    FeedbackKind.NotInterested,
+    FeedbackKind.LessLikeThis,
+    FeedbackKind.MoreFromArtist,
+)
+
 private fun feedbackLabel(row: MusicFeedback): String = when (row.kind) {
     FeedbackKind.HideArtist.name -> "Artist hidden"
     FeedbackKind.BlockSong.name -> "Won't be recommended"
     FeedbackKind.NotInterested.name -> "Not interested"
     FeedbackKind.LessLikeThis.name -> "Less like this"
     FeedbackKind.MoreFromArtist.name -> "More from this artist"
-    FeedbackKind.SaveForLater.name -> "Saved for later"
     else -> row.kind
 }
 
@@ -228,19 +235,24 @@ fun RecommendationQualityScreen(navController: NavController) {
 
 @Composable
 private fun SurfaceRows(report: SurfaceReport) {
-    fun percent(value: Double?) = value?.let { "${(it * 100).roundToInt()}%" } ?: "–"
+    fun percent(value: Double) = "${(value * 100).roundToInt()}%"
+    val rows = buildList {
+        if (report.impressions > 0) add("Shown" to report.impressions.toString())
+        if (report.surface in PICKED_BY_HAND) report.selectionRate?.let { add("Picked when shown" to percent(it)) }
+        if (report.listens > 0) add("Listens" to report.listens.toString())
+        report.meaningfulRate?.let { add("Listened properly" to percent(it)) }
+        report.skipRate?.let { add("Skipped" to percent(it)) }
+        report.discoverySuccess?.let { add("New songs that stuck" to percent(it)) }
+        if (report.distinctArtists > 0) add("Different artists" to report.distinctArtists.toString())
+    }
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(0.dp)) {
-        SettingsValueRow(title = "Shown", value = report.impressions.toString())
-        SettingsValueRow(title = "Picked when shown", value = percent(report.selectionRate))
-        SettingsValueRow(title = "Listens", value = report.listens.toString())
-        SettingsValueRow(title = "Listened properly", value = percent(report.meaningfulRate))
-        SettingsValueRow(title = "Played to the end", value = percent(report.completionRate))
-        SettingsValueRow(title = "Skipped", value = percent(report.skipRate))
-        SettingsValueRow(title = "New songs that stuck", value = percent(report.discoverySuccess))
-        SettingsValueRow(title = "Different artists", value = report.distinctArtists.toString())
-        SettingsValueRow(title = "Shown again", value = percent(report.repeatedRate))
+        rows.forEachIndexed { index, (title, value) ->
+            SettingsValueRow(title = title, value = value, divider = index < rows.lastIndex)
+        }
     }
 }
+
+private val PICKED_BY_HAND = setOf("HomeMix", "HomeDiscover", "HomeRotation", "HomeAroundNow", "HomeRediscover", "HomeContinue", "Discover")
 
 private fun surfaceLabel(surface: String): String = when (surface) {
     "Direct" -> "Songs you chose"
@@ -252,7 +264,6 @@ private fun surfaceLabel(surface: String): String = when (surface) {
     "HomeRediscover" -> "Home, rediscover"
     "HomeContinue" -> "Home, keep listening"
     "Discover" -> "New to you"
-    "NewReleases" -> "New releases"
     "Radio" -> "Radio"
     "Autoplay" -> "Autoplay"
     "SmartShuffle" -> "Smart Shuffle"

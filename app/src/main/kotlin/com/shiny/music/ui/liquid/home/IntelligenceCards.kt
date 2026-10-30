@@ -48,7 +48,6 @@ fun reasonLine(reason: Reason): String = when (reason) {
     is Reason.Connects -> stringResource(R.string.reason_connects, reason.first, reason.second)
     is Reason.YourArtist -> stringResource(R.string.reason_your_artist, reason.artist)
     is Reason.YouChose -> stringResource(R.string.reason_you_chose, reason.artist)
-    is Reason.OnChart -> reason.chart
 }
 
 @Composable

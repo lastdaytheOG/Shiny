@@ -9,7 +9,6 @@ import androidx.room.PrimaryKey
 enum class RecSurface {
     Direct,
     Collection,
-    Home,
     HomeMix,
     HomeDiscover,
     HomeRotation,
@@ -17,7 +16,6 @@ enum class RecSurface {
     HomeRediscover,
     HomeContinue,
     Discover,
-    NewReleases,
     Radio,
     Autoplay,
     SmartShuffle,

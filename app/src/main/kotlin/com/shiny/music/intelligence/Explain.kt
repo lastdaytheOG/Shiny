@@ -28,10 +28,6 @@ sealed interface Reason {
     data class YouChose(val artist: String) : Reason {
         override val code get() = "chose"
     }
-
-    data class OnChart(val chart: String) : Reason {
-        override val code get() = "chart"
-    }
 }
 
 data class Recommendation(
