@@ -202,6 +202,21 @@ class HomeIntelligenceTest {
     }
 
     @Test
+    fun `comfort with almost no history still gets a mix, so its style button stays`() {
+        val familiar = (0 until 2).map { song("f$it") }
+        val fresh = (0 until 24).map { song("n$it") }
+        val links = fresh.map { HomeRelatedLink(seedId = "f0", songId = it.id) }
+        val hero = HomeFeedBuilder.build(
+            signals(familiar + fresh, familiar.map { stat(it.id) }, snapshot(RecommendationStyle.Comfort), links),
+            null,
+            ctx,
+        ).sections.filterIsInstance<HeroMixSection>().singleOrNull()
+        assertNotNull(hero)
+        assertEquals(2, hero!!.familiar)
+        assertTrue(hero.songs.size >= HomeFeedBuilder.MIN_HERO_LOW)
+    }
+
+    @Test
     fun `the taste note appears only with evidence, and only when personalised`() {
         val songs = (0 until 4).map { song("s$it") }
         val stats = songs.map { stat(it.id) }

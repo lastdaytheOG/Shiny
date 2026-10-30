@@ -307,9 +307,10 @@ object HomeFeedBuilder {
         val freshPool = fresh.filterNot { f -> familiarPool.any { it.id == f.id } }
         val freshCount = (HERO_SIZE * freshShare).roundToInt().coerceAtMost(freshPool.size)
         val familiar = rotateHead(familiarPool, familiarPool.size, ctx.seed).take(HERO_SIZE - freshCount)
-        val freshPicks = rotateHead(freshPool, freshPool.size, ctx.seed + 1).take(freshCount)
-
         val minHero = HomeTaste.minimum(confidence, MIN_HERO_LOW, MIN_HERO_HIGH)
+        val freshWanted = if (intel.enabled) maxOf(freshCount, minHero - familiar.size) else freshCount
+        val freshPicks = rotateHead(freshPool, freshPool.size, ctx.seed + 1).take(freshWanted)
+
         // At least one song has to be theirs, or this is not a mix, it is a recommendation.
         if (familiar.isEmpty() || familiar.size + freshPicks.size < minHero) return null
 
