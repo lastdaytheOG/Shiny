@@ -182,7 +182,7 @@ class IntelligenceRepository @Inject constructor(
     }
 
     private suspend fun graphBundle(now: Long): GraphBundle {
-        val key = dao.relationKey()
+        val key = "${dao.relationCount() / GRAPH_REBUILD_EVERY}:${now / GRAPH_MAX_AGE_MS}"
         graph?.takeIf { graphKey == key }?.let { return it }
         val rows = dao.relationEdges(GRAPH_KINDS, GRAPH_EDGES)
         val names = dao.artistNames().associate { it.id to it.name }
@@ -231,6 +231,7 @@ class IntelligenceRepository @Inject constructor(
                     if (relations.isNotEmpty()) intelligenceDao.upsertRelations(relations)
                 }
                 context.dataStore.edit { it[IntelligenceGraphAtKey] = now }
+                graphKey = null
                 Timber.tag(TAG).d("graph facts: %d related, %d playlist", related.size, playlist.size)
             } catch (error: Exception) {
                 Timber.tag(TAG).w(error, "graph facts not refreshed")
@@ -540,6 +541,8 @@ class IntelligenceRepository @Inject constructor(
         private const val RECENT_LISTENS = 12
         private const val RECENT_WINDOW_MS = 2L * 60 * 60 * 1000
         private const val GRAPH_REFRESH_MS = 12L * 60 * 60 * 1000
+        private const val GRAPH_REBUILD_EVERY = 25
+        private const val GRAPH_MAX_AGE_MS = 6L * 60 * 60 * 1000
         private const val IMPRESSION_WINDOW_MS = 48L * 60 * 60 * 1000
         private const val IMPRESSION_DEDUPE_MS = 12L * 60 * 60 * 1000
         private const val IMPRESSION_SESSION_MS = 30L * 60 * 1000

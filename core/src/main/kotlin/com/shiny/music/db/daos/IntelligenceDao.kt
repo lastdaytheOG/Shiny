@@ -312,8 +312,8 @@ interface IntelligenceDao {
     @Query("SELECT id, name FROM artist")
     suspend fun artistNames(): List<ArtistNameRow>
 
-    @Query("SELECT COUNT(*) || ':' || IFNULL(MAX(updatedAt), 0) FROM music_relation")
-    suspend fun relationKey(): String
+    @Query("SELECT COUNT(*) FROM music_relation")
+    suspend fun relationCount(): Int
 
     @Query(
         """

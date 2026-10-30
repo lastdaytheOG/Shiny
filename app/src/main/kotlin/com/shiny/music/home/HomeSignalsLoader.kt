@@ -11,8 +11,10 @@ import com.shiny.music.intelligence.Recommendation
 import com.shiny.music.intelligence.RecommendationEngine
 import com.shiny.music.spotifyimport.SpotifyImportRepository
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 
 /**
  * Reads everything Home is built from in one pass on IO.
@@ -37,6 +39,8 @@ class HomeSignalsLoader(
 
 
     suspend fun load(ctx: HomeContext): HomeSignals = withContext(Dispatchers.IO) {
+        val started = System.nanoTime()
+        val pendingSnapshot = async { intelligence?.snapshot() ?: IntelligenceSnapshot.Neutral }
         val now = ctx.nowMs
         val weekFrom = now - HomeRanking.WEEK_DAYS * HOME_DAY_MS
         val monthFrom = now - HomeRanking.MONTH_DAYS * HOME_DAY_MS
@@ -57,8 +61,8 @@ class HomeSignalsLoader(
         // Read before the first-launch check, since a Spotify or YouTube import can bring
         // playlists and nothing else.
         val saved = database.homeSavedSongs(limit = SAVED_SEED_POOL)
-        val snapshot = intelligence?.snapshot() ?: IntelligenceSnapshot.Neutral
 
+        val snapshot = pendingSnapshot.await()
         if (counts.events == 0 && counts.localSongs == 0 && counts.downloadedSongs == 0 &&
             counts.librarySongs == 0 && counts.likedSongs == 0 && saved.isEmpty() &&
             snapshot.taste.seedArtists.isEmpty()
@@ -152,7 +156,13 @@ class HomeSignalsLoader(
             intelligence = snapshot,
             recommendations = recommendations.associateBy { it.song.songId },
             insights = if (snapshot.enabled) intelligence?.insights().orEmpty() else emptyList(),
-        )
+        ).also {
+            Timber.tag(IntelligenceRepository.TAG).d(
+                "home signals %d ms, personalised=%b",
+                (System.nanoTime() - started) / 1_000_000,
+                snapshot.enabled,
+            )
+        }
     }
 
     private suspend fun recommend(
