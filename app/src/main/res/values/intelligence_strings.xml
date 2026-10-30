@@ -51,5 +51,5 @@
     <string name="saved_for_later_playlist">Saved for later</string>
 
     <string name="new_to_you">New to you</string>
-    <string name="new_to_you_subtitle">Artists you haven\'t played, connected to ones you have</string>
+    <string name="new_to_you_subtitle">Connected to artists you play</string>
 </resources>
