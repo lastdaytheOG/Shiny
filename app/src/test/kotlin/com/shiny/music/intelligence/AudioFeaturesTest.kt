@@ -45,6 +45,14 @@ class AudioFeaturesTest {
     }
 
     @Test
+    fun `a tempo with no real peak is not trusted`() {
+        val swell = DoubleArray(1_200) { sin(2 * PI * it / 900.0) + 1.0 }
+        val (bpm, confidence) = AudioFeatures.tempo(swell, 43.0)
+        assertEquals(0.0, bpm, 0.0)
+        assertEquals(0.0, confidence, 0.0)
+    }
+
+    @Test
     fun `noise is brighter than a low tone`() {
         val low = AudioFeatures.analyse(tone(110.0, 15), rate)!!
         val bright = AudioFeatures.analyse(noise(15), rate)!!

@@ -91,9 +91,10 @@ object AudioFeatures {
             for (i in 0 until centred.size - lag) sum += centred[i] * centred[i + lag]
             scores[lag] = sum / zero
         }
-        var bestLag = minLag
+        var bestLag = -1
         var best = Double.NEGATIVE_INFINITY
-        for (lag in minLag..maxLag) {
+        for (lag in minLag + 1 until maxLag) {
+            if (scores[lag] < scores[lag - 1] || scores[lag] < scores[lag + 1]) continue
             val bpm = 60.0 * frameRate / lag
             val preference = 1.0 - 0.15 * abs(bpm - 110.0) / 110.0
             val value = scores[lag] * preference
@@ -102,16 +103,12 @@ object AudioFeatures {
                 bestLag = lag
             }
         }
-        val refined = if (bestLag in (minLag + 1) until maxLag) {
-            val a = scores[bestLag - 1]
-            val b = scores[bestLag]
-            val c = scores[bestLag + 1]
-            val shift = if (a - 2 * b + c != 0.0) 0.5 * (a - c) / (a - 2 * b + c) else 0.0
-            bestLag + shift.coerceIn(-0.5, 0.5)
-        } else {
-            bestLag.toDouble()
-        }
-        return (60.0 * frameRate / refined) to best.coerceIn(0.0, 1.0)
+        if (bestLag < 0) return 0.0 to 0.0
+        val a = scores[bestLag - 1]
+        val b = scores[bestLag]
+        val c = scores[bestLag + 1]
+        val shift = if (a - 2 * b + c != 0.0) 0.5 * (a - c) / (a - 2 * b + c) else 0.0
+        return (60.0 * frameRate / (bestLag + shift.coerceIn(-0.5, 0.5))) to best.coerceIn(0.0, 1.0)
     }
 
     private fun firstBeatMs(flux: DoubleArray, frameRate: Double): Long {
