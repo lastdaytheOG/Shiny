@@ -1,6 +1,6 @@
 # Privacy
 
-*Last updated: 8 October 2026*
+*Last updated: 30 October 2026*
 
 Shiny is a music player, not an advertising business. It has no ads and nothing to sell, so it has no reason to collect much. This page says what leaves your phone, when, and where it goes.
 
@@ -15,11 +15,27 @@ Shiny is a music player, not an advertising business. It has no ads and nothing 
 
 Playlists, liked songs, listening history and stats, downloads, lyrics, search history and every setting are stored in Shiny's own storage on your device. Uninstalling Shiny, or clearing its data in Android's settings, removes all of it. A backup is a file you create and keep yourself.
 
+### How recommendations learn
+
+Shiny works out what to recommend on your phone. To do that it keeps, in the same on-device storage:
+
+- how each listen went: how long you listened, whether you skipped, and where the song came from
+- which recommendations it showed you and whether you played them
+- the feedback you give, such as hiding an artist or asking for less like a song
+- how artists relate, from your listening and from what YouTube lists as related
+- the tempo, energy and key of audio files on your phone, measured on the phone while it charges
+
+None of this is uploaded, and no analytics event carries a song or an artist. A backup you create includes it, because a backup is a copy of Shiny's storage.
+
+*Settings → Privacy → Pause listening history* stops Shiny recording how you listen and stops it reporting plays to your YouTube Music account. *Clear listening history* deletes the record. *Settings → Recommendations* turns personalisation off, turns off measuring audio, and lets you see and undo your feedback.
+
 ## What Shiny sends, and to whom
 
 ### To play music
 
 Shiny is a client for YouTube Music. Searching, browsing and playing send requests from your phone straight to YouTube, as a browser would, and YouTube sees your IP address. If you sign in to your YouTube Music account, those requests carry your account, and [Google's privacy policy](https://policies.google.com/privacy) applies to what Google keeps.
+
+To fill recommendations, Shiny also asks YouTube for related songs and for the pages of artists you play or pick. YouTube can see those requests, as it can see any browsing. It doesn't get your history from them.
 
 ### To show lyrics and artwork
 
