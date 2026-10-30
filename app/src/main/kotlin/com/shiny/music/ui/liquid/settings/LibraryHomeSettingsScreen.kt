@@ -82,6 +82,11 @@ fun LibraryHomeSettingsScreen(navController: NavController) {
                     onCheckedChange = { pinned = it },
                 )
                 SettingsNavRow(
+                    title = "Recommendations",
+                    subtitle = "Style, feedback, what SHINY has noticed",
+                    onClick = { navController.navigate("settings/recommendations") },
+                )
+                SettingsNavRow(
                     title = "Charts",
                     value = homeChartsLabel(chartsSetting, detectedCountry),
                     onClick = { navController.navigate("settings/library/charts") },

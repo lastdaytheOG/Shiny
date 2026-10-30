@@ -33,6 +33,7 @@ import kotlin.math.roundToInt
 fun PrivacySettingsScreen(navController: NavController) {
     val context = LocalContext.current
     val database = LocalDatabase.current
+    val intelligence = com.shiny.music.LocalIntelligence.current
 
     var pauseListenHistory by rememberPreference(PauseListenHistoryKey, false)
     var pauseSearchHistory by rememberPreference(PauseSearchHistoryKey, false)
@@ -46,7 +47,7 @@ fun PrivacySettingsScreen(navController: NavController) {
         item(key = "intro") {
             SettingsIntro(
                 "SHINY uses your listening and search history for stats and recommendations. " +
-                    "You can pause or clear either at any time.",
+                    "It learns on this device and doesn't upload what you play. You can pause or clear either at any time.",
             )
         }
 
@@ -74,6 +75,17 @@ fun PrivacySettingsScreen(navController: NavController) {
                     divider = false,
                 )
                 PrivacyAside("Your YouTube Music account may keep its own playback history.")
+            }
+        }
+
+        item(key = "recommendations") {
+            SettingsSection(title = "Recommendations") {
+                SettingsNavRow(
+                    title = "Recommendation settings",
+                    subtitle = "Style, hidden artists, what SHINY has noticed",
+                    onClick = { navController.navigate("settings/recommendations") },
+                    divider = false,
+                )
             }
         }
 
@@ -106,6 +118,7 @@ fun PrivacySettingsScreen(navController: NavController) {
             onConfirm = {
                 confirmClearListens = false
                 database.query { clearListenHistory() }
+                intelligence.clearLearned()
                 Toast.makeText(context, "Listening history cleared", Toast.LENGTH_SHORT).show()
             },
             onDismiss = { confirmClearListens = false },

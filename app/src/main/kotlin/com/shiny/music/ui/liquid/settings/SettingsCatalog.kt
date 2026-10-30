@@ -68,6 +68,10 @@ fun settingsCatalog(): List<SettingsEntry> = listOf(
     // Library & Home
     SettingsEntry("Open Shiny on", "Library & Home", "settings/library", "default tab start home library"),
     SettingsEntry("Listen Together tab", "Library & Home", "settings/library", "tab bar together"),
+    SettingsEntry("Recommendations", "Library & Home", "settings/recommendations", "style discovery comfort adventure taste personal"),
+    SettingsEntry("Hidden and not interested", "Recommendations", "settings/recommendations/hidden", "hide artist block song undo feedback"),
+    SettingsEntry("Artists you love", "Recommendations", "settings/recommendations/artists", "pick choose favourite onboarding"),
+    SettingsEntry("How it's doing", "Recommendations", "settings/recommendations/quality", "metrics diagnostics skip rate"),
     SettingsEntry("Pinned shelf", "Library & Home", "settings/library", "home speed dial pinned"),
     SettingsEntry("Charts", "Library & Home", "settings/library/charts", "home charts country region location top 100 global youtube"),
     SettingsEntry("Global chart too", "Library & Home", "settings/library/charts", "home charts global worldwide"),

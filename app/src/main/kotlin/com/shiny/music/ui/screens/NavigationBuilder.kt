@@ -391,6 +391,22 @@ fun NavGraphBuilder.navigationBuilder(
         com.shiny.music.ui.liquid.settings.MusicSourcesSettingsScreen(navController)
     }
 
+    screen("settings/recommendations") {
+        com.shiny.music.ui.liquid.settings.RecommendationSettingsScreen(navController)
+    }
+
+    screen("settings/recommendations/hidden") {
+        com.shiny.music.ui.liquid.settings.HiddenRecommendationsScreen(navController)
+    }
+
+    screen("settings/recommendations/quality") {
+        com.shiny.music.ui.liquid.settings.RecommendationQualityScreen(navController)
+    }
+
+    screen("settings/recommendations/artists") {
+        com.shiny.music.ui.liquid.settings.PickArtistsScreen(navController)
+    }
+
     screen("settings/privacy") {
         PrivacySettingsScreen(navController)
     }
