@@ -36,6 +36,7 @@ object SmartShuffle {
         /** Counted plays, already aged with [agedPlays]. */
         val plays: Double,
         val lastPlayedMs: Long?,
+        val preference: Double = 1.0,
     )
 
     const val FREQUENCY_STRENGTH = 0.5
@@ -76,7 +77,7 @@ object SmartShuffle {
         if (unique.size <= 1) return unique.map { it.id }
 
         val count = unique.size
-        val pool = unique.mapTo(ArrayList(count)) { Candidate(it, cooldown(it.lastPlayedMs, nowMs), boost(it.plays)) }
+        val pool = unique.mapTo(ArrayList(count)) { Candidate(it, cooldown(it.lastPlayedMs, nowMs) * it.preference, boost(it.plays)) }
         val ranked = ArrayList<Track>(count)
         while (pool.isNotEmpty()) {
             val fade = 1.0 - ranked.size.toDouble() / count

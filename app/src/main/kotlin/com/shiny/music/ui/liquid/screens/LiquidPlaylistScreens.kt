@@ -612,6 +612,7 @@ private fun <T> rememberSmartShuffle(
     play: (List<T>) -> Unit,
 ): () -> Unit {
     val database = LocalDatabase.current
+    val intelligence = com.shiny.music.LocalIntelligence.current
     val playerConnection = com.shiny.music.LocalPlayerConnection.current
     val scope = rememberCoroutineScope()
     val latestItems by rememberUpdatedState(items)
@@ -628,6 +629,7 @@ private fun <T> rememberSmartShuffle(
                             database,
                             list.map { SmartShuffleDraw.Candidate(id(it), artist(it)) },
                             playingId = playerConnection?.mediaMetadata?.value?.id,
+                            intelligence = intelligence,
                         )
                         val byId = list.associateBy(id)
                         latestPlay(order.mapNotNull { byId[it] })

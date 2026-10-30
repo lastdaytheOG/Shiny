@@ -1,6 +1,10 @@
 package com.shiny.music.playback
 
 import com.shiny.music.db.MusicDatabase
+import com.shiny.music.db.entities.RecSurface
+import com.shiny.music.intelligence.ImpressionItem
+import com.shiny.music.intelligence.IntelligenceRepository
+import com.shiny.music.intelligence.RecommendationEngine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -16,16 +20,33 @@ import kotlin.random.Random
  * the draw, off the main thread, once per tap.
  */
 object SmartShuffleDraw {
+    private const val IMPRESSIONS = 20
+
     data class Candidate(val id: String, val artist: String?)
 
     /** [candidates] in Smart Shuffle order, as ids; the song [playingId] is not put first. */
-    suspend fun order(database: MusicDatabase, candidates: List<Candidate>, playingId: String?): List<String> {
+    suspend fun order(
+        database: MusicDatabase,
+        candidates: List<Candidate>,
+        playingId: String?,
+        intelligence: IntelligenceRepository? = null,
+    ): List<String> {
         val unique = candidates.distinctBy { it.id }
         if (unique.size < 2) return unique.map { it.id }
         val ids = unique.mapTo(HashSet()) { it.id }
         val (monthPlays, lastPlayed) = withContext(Dispatchers.IO) {
             database.songMonthPlays().filter { it.songId in ids }.groupBy { it.songId } to
                 database.songLastPlayed().filter { it.songId in ids }.associate { it.songId to it.lastPlayed }
+        }
+        val snapshot = intelligence?.snapshot()
+        val artistsBySong = if (snapshot?.enabled == true) {
+            withContext(Dispatchers.IO) {
+                ids.chunked(400).flatMap { database.intelligenceDao.candidateRows(it) }
+                    .groupBy({ it.songId }, { it.artistId })
+                    .mapValues { (_, artists) -> artists.filterNotNull() }
+            }
+        } else {
+            emptyMap()
         }
         return withContext(Dispatchers.Default) {
             val nowMs = System.currentTimeMillis()
@@ -46,6 +67,9 @@ object SmartShuffleDraw {
                         Instant.ofEpochMilli(wallClock).atOffset(ZoneOffset.UTC).toLocalDateTime()
                             .atZone(zone).toInstant().toEpochMilli()
                     },
+                    preference = snapshot?.let {
+                        RecommendationEngine.shufflePreference(candidate.id, artistsBySong[candidate.id].orEmpty(), it)
+                    } ?: 1.0,
                 )
             }
             val seed = Random.nextLong()
@@ -54,6 +78,7 @@ object SmartShuffleDraw {
                 "%d songs, %d with plays, seed %d",
                 tracks.size, tracks.count { it.plays > 0 }, seed,
             )
+            intelligence?.logImpressions(RecSurface.SmartShuffle, order.take(IMPRESSIONS).map { ImpressionItem(it) })
             order
         }
     }
