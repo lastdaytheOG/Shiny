@@ -1648,7 +1648,7 @@ class MusicService :
                 }
             }
         }
-        if (!isOfflinePlayback && !database.hasRelatedSongs(mediaId)) {
+        if (isNetworkConnected.value && !mediaId.isLocalMediaId() && !database.hasRelatedSongs(mediaId)) {
             val relatedEndpoint =
                 YouTube.next(WatchEndpoint(videoId = mediaId)).getOrNull()?.relatedEndpoint
                     ?: return
