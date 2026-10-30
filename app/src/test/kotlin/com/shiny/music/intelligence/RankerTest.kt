@@ -129,6 +129,13 @@ class RankerTest {
     }
 
     @Test
+    fun `an artist in the library is not a new artist, even unplayed`() {
+        val t = taste({ copy(savedArtists = listOf(com.shiny.music.db.entities.HomeSavedArtist("saved", "Saved", 5, 0))) })
+        assertEquals(0.0, Ranker.score(candidate("a", "saved"), t, RankContext()).breakdown.newArtist, 0.0)
+        assertEquals(1.0, Ranker.score(candidate("b", "stranger"), t, RankContext()).breakdown.newArtist, 0.0)
+    }
+
+    @Test
     fun `measured tempo counts only when it was measured`() {
         val t = taste({ copy(features = listOf(SongFeature("m", 120f, 0.8f, null, null, null, null, null))) })
         val unmeasured = Ranker.score(candidate("u", "x"), t, RankContext())

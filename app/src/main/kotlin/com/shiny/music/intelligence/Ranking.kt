@@ -97,6 +97,7 @@ object Ranker {
         }
 
         val artistHeard = artists.any { it.heard }
+        val artistKnown = artists.any { it.known || it.artistId in taste.seedArtists }
         val songHeard = song?.heard == true
         val novelty = when {
             songHeard -> 0.0
@@ -122,7 +123,7 @@ object Ranker {
             familiarity = (song?.familiarity ?: 0.0) * personal,
             satisfaction = predictedSatisfaction(candidate, taste) - 0.5,
             novelty = novelty,
-            newArtist = if (artistHeard || candidate.artists.isEmpty()) 0.0 else 1.0,
+            newArtist = if (artistKnown || candidate.artists.isEmpty()) 0.0 else 1.0,
             graph = graph,
             sourceQuality = source,
             sourceStrength = agreement * (1.0 - 0.4 * taste.confidence.coerceIn(0.0, 1.0)),

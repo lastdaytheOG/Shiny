@@ -187,7 +187,7 @@ object HomeFeedBuilder {
 
         continueSection?.let { sections[HomeSlot.Continue] = it }
 
-        if (!ctx.pickArtistsDismissed && ctx.online && confidence < PICK_ARTISTS_BELOW &&
+        if (intel.enabled && !ctx.pickArtistsDismissed && ctx.online && confidence < PICK_ARTISTS_BELOW &&
             intel.taste.seedArtists.size < MIN_SEED_ARTISTS
         ) {
             sections[HomeSlot.PickArtists] = PickArtistsSection

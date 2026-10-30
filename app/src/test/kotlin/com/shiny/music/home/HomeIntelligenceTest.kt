@@ -219,11 +219,13 @@ class HomeIntelligenceTest {
     @Test
     fun `the artist prompt is for a new listener only, and goes when dismissed`() {
         val asked = ctx.copy(pickArtistsDismissed = false)
-        assertTrue(HomeFeedBuilder.build(HomeSignals.Empty, null, asked).sections.contains(PickArtistsSection))
-        assertFalse(HomeFeedBuilder.build(HomeSignals.Empty, null, ctx).sections.contains(PickArtistsSection))
+        val fresh = HomeSignals.Empty.copy(intelligence = snapshot())
+        assertTrue(HomeFeedBuilder.build(fresh, null, asked).sections.contains(PickArtistsSection))
+        assertFalse(HomeFeedBuilder.build(fresh, null, ctx).sections.contains(PickArtistsSection))
+        assertFalse("not with personalisation off", HomeFeedBuilder.build(HomeSignals.Empty, null, asked).sections.contains(PickArtistsSection))
 
         val songs = (0 until 40).map { song("s$it") }
-        val busy = signals(songs, songs.map { stat(it.id) })
+        val busy = signals(songs, songs.map { stat(it.id) }, snapshot())
         assertFalse(HomeFeedBuilder.build(busy, null, asked).sections.contains(PickArtistsSection))
     }
 
