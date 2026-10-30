@@ -42,6 +42,13 @@ class ListenClassifierTest {
     }
 
     @Test
+    fun `leaving a song that was still buffering says nothing about the song`() {
+        assertEquals(ListenKind.Interrupted, kind(0, EndReason.SkippedNext))
+        assertEquals(ListenKind.Interrupted, kind(400, EndReason.SkippedNext, Selection.Autoplay))
+        assertEquals(ListenKind.Interrupted, kind(0, EndReason.Finished))
+    }
+
+    @Test
     fun `a song the listener tapped and left at once is a mis-tap, not a dislike`() {
         assertEquals(ListenKind.Accidental, kind(3_000, EndReason.SkippedNext, Selection.Manual))
     }

@@ -17,6 +17,7 @@ enum class ListenKind {
 enum class Selection { Manual, QueueAdvance, Autoplay }
 
 object ListenClassifier {
+    const val NEVER_HEARD_MS = 1_000L
     const val ACCIDENTAL_MS = 5_000L
     const val SKIP_BURST_MS = 8_000L
     const val SKIP_SHARE = 0.30
@@ -38,6 +39,7 @@ object ListenClassifier {
         val share = completion(listenedMs, durationMs)
         val userLeft = reason == EndReason.SkippedNext || reason == EndReason.SkippedBack
         return when {
+            listenedMs < NEVER_HEARD_MS -> ListenKind.Interrupted
             reason == EndReason.Finished && (share >= MEANINGFUL_SHARE || (durationMs <= 0L && listenedMs >= ACCIDENTAL_MS)) -> ListenKind.Completed
             reason == EndReason.Repeated && share >= MEANINGFUL_SHARE -> ListenKind.Completed
             share >= COMPLETED_SHARE -> ListenKind.Completed
