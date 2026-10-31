@@ -24,6 +24,7 @@ import com.shiny.music.home.HomeSignals
 import com.shiny.music.home.HomeTaste
 import com.shiny.music.home.homeWallNowMs
 import com.shiny.music.models.MediaMetadata
+import com.shiny.music.utils.PerfTrace
 import com.shiny.music.utils.dataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
@@ -110,7 +111,7 @@ class IntelligenceRepository @Inject constructor(
             cached?.takeIf { cachedKey == key }?.let { return@withLock it }
 
             val started = System.nanoTime()
-            val built = build(style, now, wallNow, daypart)
+            val built = PerfTrace.async(PerfTrace.SNAPSHOT_BUILD) { build(style, now, wallNow, daypart) }
             Timber.tag(TAG).d(
                 "snapshot %d ms: %d artists, %d songs, %d graph nodes",
                 (System.nanoTime() - started) / 1_000_000,

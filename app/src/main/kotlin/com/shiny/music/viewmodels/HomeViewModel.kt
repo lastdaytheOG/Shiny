@@ -37,6 +37,7 @@ import com.shiny.music.home.HomeSignals
 import com.shiny.music.home.HomeSignalsLoader
 import com.shiny.music.home.homeOnlineFlow
 import com.shiny.music.home.homeWallNowMs
+import com.shiny.music.utils.PerfTrace
 import com.shiny.music.utils.SyncUtils
 import com.shiny.music.utils.dataStore
 import com.shiny.music.utils.reportException
@@ -238,7 +239,9 @@ class HomeViewModel @Inject constructor(
         prefs,
         occasion,
     ) { signals, (remote, spotify), online, prefs, (m, nonce, interest) ->
-        HomeFeedBuilder.build(signals, remote, contextFor(m, nonce, online, prefs, prefs.discoverFromLastSong), interest, spotify)
+        PerfTrace.async(PerfTrace.FEED_BUILD) {
+            HomeFeedBuilder.build(signals, remote, contextFor(m, nonce, online, prefs, prefs.discoverFromLastSong), interest, spotify)
+        }
     }
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)

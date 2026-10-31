@@ -96,6 +96,7 @@ class App : Application(), SingletonImageLoader.Factory {
 
     override fun onCreate() {
         super.onCreate()
+        com.shiny.music.utils.PerfTrace.homeReadyBegin()
 
         if (isCrashProcess()) return
 

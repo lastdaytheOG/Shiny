@@ -10,6 +10,7 @@ import com.shiny.music.intelligence.IntelligenceSnapshot
 import com.shiny.music.intelligence.Recommendation
 import com.shiny.music.intelligence.RecommendationEngine
 import com.shiny.music.spotifyimport.SpotifyImportRepository
+import com.shiny.music.utils.PerfTrace
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
@@ -38,7 +39,9 @@ class HomeSignalsLoader(
     }
 
 
-    suspend fun load(ctx: HomeContext): HomeSignals = withContext(Dispatchers.IO) {
+    suspend fun load(ctx: HomeContext): HomeSignals = PerfTrace.async(PerfTrace.HOME_LOAD) { read(ctx) }
+
+    private suspend fun read(ctx: HomeContext): HomeSignals = withContext(Dispatchers.IO) {
         val started = System.nanoTime()
         val pendingSnapshot = async { intelligence?.snapshot() ?: IntelligenceSnapshot.Neutral }
         val now = ctx.nowMs

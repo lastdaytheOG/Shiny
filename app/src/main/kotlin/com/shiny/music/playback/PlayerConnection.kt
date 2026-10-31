@@ -293,6 +293,9 @@ class PlayerConnection(
         if (gate?.interceptTransport(TransportAction.Toggle) == true) return
         try {
             if (!player.playWhenReady) com.shiny.music.utils.PlaybackTrace.playRequested()
+            com.shiny.music.utils.PerfTrace.controlBegin(
+                if (player.playWhenReady) com.shiny.music.utils.PerfTrace.CONTROL_PAUSE else com.shiny.music.utils.PerfTrace.CONTROL_RESUME,
+            )
             player.togglePlayPause()
         } catch (e: Exception) {
             Timber.tag(TAG).e(e, "Error in togglePlayPause")
@@ -336,6 +339,7 @@ class PlayerConnection(
     fun seekToNext() {
         if (gate?.interceptTransport(TransportAction.Next) == true) return
         try {
+            com.shiny.music.utils.PerfTrace.controlBegin(com.shiny.music.utils.PerfTrace.CONTROL_NEXT)
             player.seekToNext()
             if (player.playbackState == Player.STATE_IDLE || player.playbackState == Player.STATE_ENDED) {
                 player.prepare()
@@ -380,6 +384,9 @@ class PlayerConnection(
         newPlayWhenReady: Boolean,
         reason: Int,
     ) {
+        com.shiny.music.utils.PerfTrace.controlEnd(
+            if (newPlayWhenReady) com.shiny.music.utils.PerfTrace.CONTROL_RESUME else com.shiny.music.utils.PerfTrace.CONTROL_PAUSE,
+        )
         playWhenReady.value = newPlayWhenReady
     }
 
@@ -387,6 +394,7 @@ class PlayerConnection(
         mediaItem: MediaItem?,
         reason: Int,
     ) {
+        com.shiny.music.utils.PerfTrace.controlEnd(com.shiny.music.utils.PerfTrace.CONTROL_NEXT)
         mediaMetadata.value = mediaItem?.metadata
         currentMediaItemIndex.value = player.currentMediaItemIndex
         currentWindowIndex.value = player.getCurrentQueueIndex()

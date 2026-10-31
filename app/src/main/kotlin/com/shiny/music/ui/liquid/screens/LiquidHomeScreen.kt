@@ -1,5 +1,6 @@
 package com.shiny.music.ui.liquid.screens
 
+import androidx.activity.compose.ReportDrawnWhen
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -112,6 +113,7 @@ import com.shiny.music.ui.liquid.statusBarHeight
 import com.shiny.music.ui.liquid.subtitleText
 import com.shiny.music.ui.theme.pressScale
 import com.shiny.music.ui.utils.resize
+import com.shiny.music.utils.PerfTrace
 import com.shiny.music.utils.rememberPreference
 import com.shiny.music.viewmodels.HomeViewModel
 
@@ -137,6 +139,9 @@ fun LiquidHomeScreen(
     val queueTitle by playerConnection.queueTitle.collectAsState()
 
     val feed by viewModel.feed.collectAsState()
+    ReportDrawnWhen {
+        (feed != null).also { ready -> if (ready) PerfTrace.homeReadyEnd() }
+    }
     val isRefreshing by viewModel.isRefreshing.collectAsState()
     val accountImageUrl by viewModel.accountImageUrl.collectAsState()
     val cookie by rememberPreference(InnerTubeCookieKey, "")
