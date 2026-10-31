@@ -15,6 +15,7 @@ import com.shiny.music.home.HomeContext
 import com.shiny.music.home.HomeSignalsLoader
 import com.shiny.music.home.homeWallNowMs
 import com.shiny.music.utils.dataStore
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertTrue
@@ -98,6 +99,90 @@ class IntelligenceScaleTest {
         compareHomeLoads("typical", database)
         fill2(database)
         compareHomeLoads("heavy", database)
+    }
+
+    @Test
+    fun queryProfile(): Unit = runBlocking {
+        context.dataStore.edit { it[PersonalisedRecommendationsKey] = true }
+        context.deleteDatabase(name)
+        val room = Room.databaseBuilder(context, InternalDatabase::class.java, name).build().also { internal = it }
+        val database = MusicDatabase(room)
+        fill(database, songs = 4_000, artists = 600, events = 60_000, outcomes = 40_000, related = 40_000)
+        val dao = database.intelligenceDao
+        val edges = dao.relatedArtistEdges(8_000)
+        dao.upsertRelations(edges.map { com.shiny.music.db.entities.MusicRelation(it.fromId, it.toId, it.kind, it.weight, it.weight.toInt(), it.toName, 1L) })
+        val now = System.currentTimeMillis()
+        val wall = homeWallNowMs()
+        val day = 86_400_000L
+        val hours = Daypart.of(java.time.LocalDateTime.now().hour).hours
+        val reads = listOf<Pair<String, suspend () -> Any?>>(
+            "tasteVersion" to { database.tasteVersion() },
+            "homeRelatedLinks" to { database.homeRelatedLinks((1..25).map { "v$it" }) },
+            "homeInvalidation" to { database.homeInvalidation().first() },
+            "homeLibraryCounts" to { database.homeLibraryCounts(false, false) },
+            "homeSongStats" to { database.homeSongStats(wall - 7 * day, wall - 30 * day, wall - 60 * day, hours) },
+            "homeArtistStats" to { database.homeArtistStats(wall - 7 * day, wall - 30 * day, 300) },
+            "homeAlbumStats" to { database.homeAlbumStats(60) },
+            "homeDaypartDays" to { database.homeDaypartDays(wall - 60 * day, hours) },
+            "homeSavedSongs" to { database.homeSavedSongs(200) },
+            "homeSavedArtists" to { database.homeSavedArtists(60) },
+            "songOutcomeBuckets" to { dao.songOutcomeBuckets(now, 14 * day, 26) },
+            "artistOutcomeBuckets" to { dao.artistOutcomeBuckets(now, 14 * day, 26) },
+            "sourceOutcomeStats" to { dao.sourceOutcomeStats() },
+            "discoveryOutcomes" to { dao.discoveryOutcomes(now - 30 * day) },
+            "activeFeedback" to { dao.activeFeedback(now) },
+            "artistDaypartStats" to { dao.artistDaypartStats(wall - 60 * day, hours) },
+            "impressionFatigue" to { dao.impressionFatigue(now - 30 * day) },
+            "songFeatures" to { dao.songFeatures() },
+            "recentSearches" to { dao.recentSearches(8) },
+            "relationCount" to { dao.relationCount() },
+            "relationEdges" to { dao.relationEdges(listOf("CoListen", "SimilarArtist", "RelatedSong", "Playlist"), 12_000) },
+            "artistNames" to { dao.artistNames() },
+            "homeRecentlyAdded" to { database.homeRecentlyAdded(24) },
+            "homeOfflineSongs" to { database.homeOfflineSongs(120) },
+            "homeUnexploredLibrary" to { database.homeUnexploredLibrary(7, 40) },
+            "homeOfflinePlays" to { database.homeOfflinePlays(wall - 30 * day) },
+        )
+        for (round in 0 until 3) {
+            for ((label, read) in reads) {
+                val started = System.nanoTime()
+                read()
+                Log.i("IntelligenceScale", "query round=$round $label ${(System.nanoTime() - started) / 1_000} us")
+            }
+        }
+        val db = database.openHelper.readableDatabase
+        listOf(
+            "SELECT songId, MIN((1 - startedAt) / 2, 26) AS bucket, SUM(kind IN ('Meaningful', 'Completed')), MAX(startedAt) FROM listen_outcome GROUP BY songId, bucket",
+            "SELECT sam.artistId, MIN((1 - o.startedAt) / 2, 26) AS bucket, COUNT(*) FROM listen_outcome o JOIN song_artist_map sam ON sam.songId = o.songId GROUP BY sam.artistId, bucket",
+            "SELECT songId, COUNT(*), SUM(playTime), MIN(timestamp), MAX(timestamp) FROM event GROUP BY songId",
+            "SELECT sam.artistId, COUNT(*), MAX(e.timestamp), COUNT(DISTINCT e.songId) FROM event e JOIN song_artist_map sam ON sam.songId = e.songId GROUP BY sam.artistId ORDER BY MAX(e.timestamp) DESC LIMIT 300",
+            "SELECT s.albumId, COUNT(DISTINCT e.songId), COUNT(*), MAX(e.timestamp) FROM event e JOIN song s ON s.id = e.songId WHERE s.albumId IS NOT NULL GROUP BY s.albumId ORDER BY MAX(e.timestamp) DESC LIMIT 60",
+            "SELECT (SELECT COUNT(*) FROM song WHERE liked = 1), (SELECT COUNT(*) FROM song WHERE isLocal = 1), (SELECT COUNT(*) FROM song WHERE inLibrary IS NOT NULL)",
+            "SELECT s.id FROM song s JOIN song_artist_map sam ON sam.songId = s.id WHERE sam.artistId IN ('UC1','UC2') AND sam.position = 0 AND s.id NOT IN (SELECT DISTINCT songId FROM event) ORDER BY s.rowid DESC LIMIT 80",
+        ).forEach { sql ->
+            db.query("EXPLAIN QUERY PLAN $sql").use { c ->
+                while (c.moveToNext()) Log.i("IntelligenceScale", "plan ${sql.take(48)} -> ${c.getString(3)}")
+            }
+        }
+        val repository = IntelligenceRepository(context, database)
+        repeat(5) {
+            val cold = IntelligenceRepository(context, database)
+            val started = System.nanoTime()
+            cold.snapshot()
+            Log.i("IntelligenceScale", "snapshot full ${(System.nanoTime() - started) / 1_000_000} ms")
+        }
+        repository.snapshot()
+        val before = System.nanoTime()
+        repository.record(
+            ListenDraft(
+                ListenSessionTracker.Track("v1", 200_000, RecSurface.Radio, null, Selection.Autoplay, 0),
+                sessionId = 1, startedAt = now - 100_000, endedAt = now, listenedMs = 100_000, completion = 0.5,
+                reason = EndReason.Finished, kind = ListenKind.Meaningful,
+            ),
+        )
+        kotlinx.coroutines.delay(300)
+        repository.snapshot()
+        Log.i("IntelligenceScale", "snapshot after one listen ${(System.nanoTime() - before) / 1_000_000 - 300} ms")
     }
 
     private fun fill2(database: MusicDatabase) {

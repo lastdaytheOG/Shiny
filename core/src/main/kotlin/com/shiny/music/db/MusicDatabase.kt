@@ -64,6 +64,17 @@ class MusicDatabase(
     val openHelper: SupportSQLiteOpenHelper
         get() = delegate.openHelper
 
+    @Volatile private var tasteVersionsInstalled = false
+
+    fun tasteVersion(): String {
+        val db = delegate.openHelper.writableDatabase
+        if (!tasteVersionsInstalled) {
+            TasteVersions.install(db)
+            tasteVersionsInstalled = true
+        }
+        return TasteVersions.read(db)
+    }
+
     fun query(block: MusicDatabase.() -> Unit) =
         with(delegate) {
             queryExecutor.execute {

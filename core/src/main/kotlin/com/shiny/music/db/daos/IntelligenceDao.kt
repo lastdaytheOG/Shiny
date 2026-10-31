@@ -362,19 +362,6 @@ interface IntelligenceDao {
     )
     suspend fun songsAwaitingAnalysis(limit: Int): List<AnalysisCandidate>
 
-    @Query(
-        """
-        SELECT (SELECT COUNT(*) FROM listen_outcome) || ':' ||
-               (SELECT COUNT(*) FROM event) || ':' ||
-               (SELECT COUNT(*) FROM music_feedback) || ':' ||
-               (SELECT COUNT(*) FROM music_relation) || ':' ||
-               (SELECT COUNT(*) FROM related_song_map) || ':' ||
-               (SELECT COUNT(*) FROM beat_info) || ':' ||
-               (SELECT COUNT(*) FROM song WHERE liked = 1)
-        """,
-    )
-    suspend fun snapshotKey(): String
-
     @Query("DELETE FROM listen_outcome")
     fun clearOutcomes()
 

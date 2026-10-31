@@ -107,7 +107,7 @@ class IntelligenceRepository @Inject constructor(
             val now = System.currentTimeMillis()
             val wallNow = homeWallNowMs()
             val daypart = Daypart.of(LocalDateTime.now().hour)
-            val key = "${dao.snapshotKey()}|$style|$daypart|${now / HOME_DAY_MS}"
+            val key = "${database.tasteVersion()}|$style|$daypart|${now / HOME_DAY_MS}"
             cached?.takeIf { cachedKey == key }?.let { return@withLock it }
 
             val started = System.nanoTime()
