@@ -26,7 +26,7 @@ data class Candidate(
     val playsOffline: Boolean = false,
     val hits: List<SourceHit> = emptyList(),
 ) {
-    val artistIds: List<String> get() = artists.map { it.id }
+    val artistIds: List<String> = artists.map { it.id }
     val leadArtist: String get() = artists.firstOrNull()?.let { it.id.ifBlank { it.name } } ?: (albumId ?: songId)
     val bestHit: SourceHit? get() = hits.maxByOrNull { it.strength }
     fun bestHitVia(): String = hits.sortedByDescending { it.strength }.firstOrNull { it.viaSong != null }?.viaSong.orEmpty()
