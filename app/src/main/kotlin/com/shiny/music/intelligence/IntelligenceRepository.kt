@@ -28,6 +28,7 @@ import com.shiny.music.utils.PerfTrace
 import com.shiny.music.utils.dataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
@@ -43,6 +44,8 @@ import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.time.LocalDateTime
 import java.time.ZoneId
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.ln
@@ -73,14 +76,16 @@ class IntelligenceRepository @Inject constructor(
     private val snapshotLock = Mutex()
     private var cachedKey: String? = null
     private var cached: IntelligenceSnapshot? = null
-    private var graphKey: String? = null
-    private var graph: GraphBundle? = null
+    private var buildingKey: String? = null
+    private var building: Deferred<IntelligenceSnapshot>? = null
+    @Volatile private var bundle: GraphBundle? = null
+    private val graphEpoch = AtomicInteger()
     private val impressionLock = Mutex()
     @Volatile private var lastPositive: PositiveListen? = null
     private var pruned = false
-    private var materializing = false
+    private val materializing = AtomicBoolean()
 
-    private class GraphBundle(val graph: MusicGraph, val badTransitions: Map<String, Double>)
+    private class GraphBundle(val key: String, val graph: MusicGraph, val badTransitions: Map<String, Double>)
 
     private data class PositiveListen(val sessionId: Long, val artistId: String)
 
@@ -100,29 +105,50 @@ class IntelligenceRepository @Inject constructor(
     }
 
     suspend fun snapshot(): IntelligenceSnapshot = withContext(Dispatchers.IO) {
-        snapshotLock.withLock {
+        val pending = snapshotLock.withLock {
             val prefs = context.dataStore.data.first()
-            if (prefs[PersonalisedRecommendationsKey] == false) return@withLock IntelligenceSnapshot.Neutral
+            if (prefs[PersonalisedRecommendationsKey] == false) return@withContext IntelligenceSnapshot.Neutral
             val style = styleOf(prefs[RecommendationStyleKey])
             val now = System.currentTimeMillis()
             val wallNow = homeWallNowMs()
             val daypart = Daypart.of(LocalDateTime.now().hour)
             val key = "${database.tasteVersion()}|$style|$daypart|${now / HOME_DAY_MS}"
-            cached?.takeIf { cachedKey == key }?.let { return@withLock it }
+            cached?.takeIf { cachedKey == key }?.let { return@withContext it }
+            building?.takeIf { buildingKey == key }
+                ?: scope.async { buildAndKeep(key, style, now, wallNow, daypart) }.also {
+                    building = it
+                    buildingKey = key
+                }
+        }
+        pending.await()
+    }
 
+    private suspend fun buildAndKeep(key: String, style: RecommendationStyle, now: Long, wallNow: Long, daypart: Daypart): IntelligenceSnapshot {
+        var built: IntelligenceSnapshot? = null
+        try {
             val started = System.nanoTime()
-            val built = PerfTrace.async(PerfTrace.SNAPSHOT_BUILD) { build(style, now, wallNow, daypart) }
-            Timber.tag(TAG).d(
-                "snapshot %d ms: %d artists, %d songs, %d graph nodes",
-                (System.nanoTime() - started) / 1_000_000,
-                built.taste.artists.size,
-                built.taste.songs.size,
-                built.graph.nodeCount,
-            )
-            cachedKey = key
-            cached = built
-            maintain(now)
-            built
+            return PerfTrace.async(PerfTrace.SNAPSHOT_BUILD) { build(style, now, wallNow, daypart) }.also {
+                built = it
+                Timber.tag(TAG).d(
+                    "snapshot %d ms: %d artists, %d songs, %d graph nodes",
+                    (System.nanoTime() - started) / 1_000_000,
+                    it.taste.artists.size,
+                    it.taste.songs.size,
+                    it.graph.nodeCount,
+                )
+            }
+        } finally {
+            snapshotLock.withLock {
+                if (buildingKey == key) {
+                    building = null
+                    buildingKey = null
+                    built?.let {
+                        cachedKey = key
+                        cached = it
+                        maintain(now)
+                    }
+                }
+            }
         }
     }
 
@@ -204,16 +230,13 @@ class IntelligenceRepository @Inject constructor(
     }
 
     private suspend fun graphBundle(now: Long): GraphBundle {
-        val key = "${dao.relationCount() / GRAPH_REBUILD_EVERY}:${now / GRAPH_MAX_AGE_MS}"
-        graph?.takeIf { graphKey == key }?.let { return it }
+        val key = "${graphEpoch.get()}:${dao.relationCount() / GRAPH_REBUILD_EVERY}:${now / GRAPH_MAX_AGE_MS}"
+        bundle?.takeIf { it.key == key }?.let { return it }
         val rows = dao.relationEdges(GRAPH_KINDS, GRAPH_EDGES)
         val names = dao.artistNames().associate { it.id to it.name }
         val bad = dao.relationEdges(listOf(SKIP_AFTER), BAD_TRANSITIONS)
             .associate { "${it.fromId}>${it.toId}" to (ln(1.0 + it.weight) / ln(5.0)).coerceIn(0.0, 1.0) }
-        val bundle = GraphBundle(MusicGraph.build(rows, names), bad)
-        graph = bundle
-        graphKey = key
-        return bundle
+        return GraphBundle(key, MusicGraph.build(rows, names), bad).also { bundle = it }
     }
 
     private fun maintain(now: Long) {
@@ -227,8 +250,7 @@ class IntelligenceRepository @Inject constructor(
     }
 
     fun refreshGraphFacts(digests: Collection<HomeArtistDigest>) {
-        if (materializing) return
-        materializing = true
+        if (!materializing.compareAndSet(false, true)) return
         scope.launch {
             try {
                 val now = System.currentTimeMillis()
@@ -253,12 +275,12 @@ class IntelligenceRepository @Inject constructor(
                     if (relations.isNotEmpty()) intelligenceDao.upsertRelations(relations)
                 }
                 context.dataStore.edit { it[IntelligenceGraphAtKey] = now }
-                graphKey = null
+                graphEpoch.incrementAndGet()
                 Timber.tag(TAG).d("graph facts: %d related, %d playlist", related.size, playlist.size)
             } catch (error: Exception) {
                 Timber.tag(TAG).w(error, "graph facts not refreshed")
             } finally {
-                materializing = false
+                materializing.set(false)
             }
         }
     }

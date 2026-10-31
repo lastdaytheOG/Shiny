@@ -11,6 +11,9 @@ import com.shiny.music.db.InternalDatabase
 import com.shiny.music.db.MusicDatabase
 import com.shiny.music.db.entities.MusicFeedback
 import com.shiny.music.utils.dataStore
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -92,6 +95,21 @@ class SnapshotFreshnessTest {
         db.execSQL("INSERT INTO playlist (id, name, isEditable, bookmarkedAt, isLocal, isAutoSync) VALUES ('p', 'P', 1, 1000, 0, 0)")
         db.execSQL("INSERT INTO playlist_song_map (playlistId, songId, position, setVideoId) VALUES ('p', 'c', 0, NULL)")
         assertTrue(repository.snapshot().taste.song("c")?.saved == true)
+    }
+
+    @Test
+    fun callersAtTheSameMomentShareOneBuild() = runBlocking {
+        val pending = List(4) { async(Dispatchers.IO) { repository.snapshot() } }
+        val results = pending.map { it.await() }
+        results.forEach { assertSame(results.first(), it) }
+    }
+
+    @Test
+    fun aCancelledCallerDoesNotThrowTheBuildAway() = runBlocking {
+        val first = launch(Dispatchers.IO) { repository.snapshot() }
+        first.cancel()
+        val second = repository.snapshot()
+        assertSame(second, repository.snapshot())
     }
 
     @Test
