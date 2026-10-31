@@ -84,6 +84,10 @@ class IntelligenceRepository @Inject constructor(
     @Volatile private var lastPositive: PositiveListen? = null
     private var pruned = false
     private val materializing = AtomicBoolean()
+    @Volatile private var lastSimilarArtists = 0
+
+    private fun List<MusicRelation>.hashCodeOfIdentity(): Int =
+        fold(size) { hash, row -> 31 * (31 * hash + row.fromId.hashCode()) + row.toId.hashCode() + row.toName.hashCode() }
 
     private class GraphBundle(val key: String, val graph: MusicGraph, val badTransitions: Map<String, Double>)
 
@@ -112,10 +116,11 @@ class IntelligenceRepository @Inject constructor(
             val now = System.currentTimeMillis()
             val wallNow = homeWallNowMs()
             val daypart = Daypart.of(LocalDateTime.now().hour)
-            val key = "${database.tasteVersion()}|$style|$daypart|${now / HOME_DAY_MS}"
+            val graphKey = graphKey(now)
+            val key = "${database.tasteVersion()}|$graphKey|$style|$daypart|${now / HOME_DAY_MS}"
             cached?.takeIf { cachedKey == key }?.let { return@withContext it }
             building?.takeIf { buildingKey == key }
-                ?: scope.async { buildAndKeep(key, style, now, wallNow, daypart) }.also {
+                ?: scope.async { buildAndKeep(key, graphKey, style, now, wallNow, daypart) }.also {
                     building = it
                     buildingKey = key
                 }
@@ -123,11 +128,11 @@ class IntelligenceRepository @Inject constructor(
         pending.await()
     }
 
-    private suspend fun buildAndKeep(key: String, style: RecommendationStyle, now: Long, wallNow: Long, daypart: Daypart): IntelligenceSnapshot {
+    private suspend fun buildAndKeep(key: String, graphKey: String, style: RecommendationStyle, now: Long, wallNow: Long, daypart: Daypart): IntelligenceSnapshot {
         var built: IntelligenceSnapshot? = null
         try {
             val started = System.nanoTime()
-            return PerfTrace.async(PerfTrace.SNAPSHOT_BUILD) { build(style, now, wallNow, daypart) }.also {
+            return PerfTrace.async(PerfTrace.SNAPSHOT_BUILD) { build(graphKey, style, now, wallNow, daypart) }.also {
                 built = it
                 Timber.tag(TAG).d(
                     "snapshot %d ms: %d artists, %d songs, %d graph nodes",
@@ -152,7 +157,7 @@ class IntelligenceRepository @Inject constructor(
         }
     }
 
-    private suspend fun build(style: RecommendationStyle, now: Long, wallNow: Long, daypart: Daypart): IntelligenceSnapshot = coroutineScope {
+    private suspend fun build(graphKey: String, style: RecommendationStyle, now: Long, wallNow: Long, daypart: Daypart): IntelligenceSnapshot = coroutineScope {
         val weekFrom = wallNow - HomeRanking.WEEK_DAYS * HOME_DAY_MS
         val monthFrom = wallNow - HomeRanking.MONTH_DAYS * HOME_DAY_MS
         val daypartFrom = wallNow - HomeRanking.DAYPART_WINDOW_DAYS * HOME_DAY_MS
@@ -174,7 +179,7 @@ class IntelligenceRepository @Inject constructor(
         val pendingImpressions = async { dao.impressionFatigue(now - 30 * HOME_DAY_MS) }
         val pendingFeatures = async { dao.songFeatures() }
         val pendingSearches = async { dao.recentSearches(limit = 8) }
-        val pendingBundle = async { graphBundle(now) }
+        val pendingBundle = async { graphBundle(graphKey) }
 
         val songStats = pendingSongStats.await()
         val artistStats = pendingArtistStats.await()
@@ -229,8 +234,10 @@ class IntelligenceRepository @Inject constructor(
         )
     }
 
-    private suspend fun graphBundle(now: Long): GraphBundle {
-        val key = "${graphEpoch.get()}:${dao.relationCount() / GRAPH_REBUILD_EVERY}:${now / GRAPH_MAX_AGE_MS}"
+    private suspend fun graphKey(now: Long) =
+        "${graphEpoch.get()}:${dao.relationCount() / GRAPH_REBUILD_EVERY}:${now / GRAPH_MAX_AGE_MS}"
+
+    private suspend fun graphBundle(key: String): GraphBundle {
         bundle?.takeIf { it.key == key }?.let { return it }
         val rows = dao.relationEdges(GRAPH_KINDS, GRAPH_EDGES)
         val names = dao.artistNames().associate { it.id to it.name }
@@ -254,13 +261,15 @@ class IntelligenceRepository @Inject constructor(
         scope.launch {
             try {
                 val now = System.currentTimeMillis()
-                if (digests.isNotEmpty()) {
-                    val rows = digests.flatMap { digest ->
-                        digest.related.map { related ->
-                            MusicRelation(digest.artistId, related.id, RelationKind.SimilarArtist.name, 4f, 1, related.title, now)
-                        }
+                val rows = digests.flatMap { digest ->
+                    digest.related.map { related ->
+                        MusicRelation(digest.artistId, related.id, RelationKind.SimilarArtist.name, 4f, 1, related.title, now)
                     }
-                    if (rows.isNotEmpty()) dao.upsertRelations(rows)
+                }
+                val fingerprint = rows.hashCodeOfIdentity()
+                if (rows.isNotEmpty() && fingerprint != lastSimilarArtists) {
+                    dao.keepRelations(rows, now - HOME_DAY_MS)
+                    lastSimilarArtists = fingerprint
                 }
                 val prefs = context.dataStore.data.first()
                 if (now - (prefs[IntelligenceGraphAtKey] ?: 0L) < GRAPH_REFRESH_MS) return@launch

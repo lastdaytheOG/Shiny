@@ -22,7 +22,6 @@ object TasteVersions {
         addAll(all("history", "event"))
         addAll(all("outcomes", "listen_outcome"))
         addAll(all("feedback", "music_feedback"))
-        addAll(all("relations", "music_relation"))
         addAll(all("features", "beat_info"))
         addAll(all("searches", "search_history"))
         addAll(all("saved", "playlist_song_map"))
@@ -40,6 +39,9 @@ object TasteVersions {
         }
         db.beginTransaction()
         try {
+            db.query("SELECT name FROM sqlite_master WHERE type = 'trigger' AND name LIKE '$PREFIX%'").use { cursor ->
+                buildList { while (cursor.moveToNext()) add(cursor.getString(0)) }
+            }.forEach { db.execSQL("DROP TRIGGER $it") }
             db.execSQL("CREATE TABLE IF NOT EXISTS taste_version (name TEXT NOT NULL PRIMARY KEY, version INTEGER NOT NULL) WITHOUT ROWID")
             watches.map { it.group }.distinct().forEach { group ->
                 db.execSQL("INSERT OR IGNORE INTO taste_version (name, version) VALUES ('$group', 0)")

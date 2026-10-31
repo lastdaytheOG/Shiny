@@ -236,6 +236,23 @@ interface IntelligenceDao {
         }
     }
 
+    @Query(
+        """
+        UPDATE music_relation SET weight = :weight, toName = :toName, updatedAt = :at
+        WHERE fromId = :fromId AND toId = :toId AND kind = :kind
+          AND (weight != :weight OR toName IS NOT :toName OR updatedAt < :staleBefore)
+        """,
+    )
+    fun refreshRelation(fromId: String, toId: String, kind: String, weight: Float, toName: String?, at: Long, staleBefore: Long)
+
+    @Transaction
+    fun keepRelations(relations: List<MusicRelation>, staleBefore: Long) {
+        relations.forEach { relation ->
+            insertRelationIfAbsent(relation)
+            refreshRelation(relation.fromId, relation.toId, relation.kind, relation.weight, relation.toName, relation.updatedAt, staleBefore)
+        }
+    }
+
     @Transaction
     fun addSimilarArtists(songId: String, artists: List<Pair<String, String>>, at: Long) {
         val lead = leadArtist(songId) ?: return
@@ -326,6 +343,9 @@ interface IntelligenceDao {
 
     @Query("SELECT id, name FROM artist")
     suspend fun artistNames(): List<ArtistNameRow>
+
+    @Query("SELECT MAX(updatedAt) FROM music_relation WHERE fromId = :fromId AND toId = :toId")
+    fun relationUpdatedAt(fromId: String, toId: String): Long?
 
     @Query("SELECT COUNT(*) FROM music_relation")
     suspend fun relationCount(): Int

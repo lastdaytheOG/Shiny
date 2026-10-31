@@ -10,6 +10,7 @@ import com.shiny.music.constants.RecommendationStyleKey
 import com.shiny.music.db.InternalDatabase
 import com.shiny.music.db.MusicDatabase
 import com.shiny.music.db.entities.MusicFeedback
+import com.shiny.music.db.entities.MusicRelation
 import com.shiny.music.utils.dataStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -123,6 +124,52 @@ class SnapshotFreshnessTest {
         assertEquals(200, first.size)
         assertEquals(50, rest.size)
         assertEquals(250, (first + rest).toSet().size)
+    }
+
+    @Test
+    fun rewritingTheSameSimilarArtistsWritesNothingAndKeepsTheSnapshot() = runBlocking {
+        val dao = database.intelligenceDao
+        val now = System.currentTimeMillis()
+        fun rows(at: Long) = listOf(MusicRelation("UCa", "UCb", "SimilarArtist", 4f, 1, "Artist b", at))
+        dao.keepRelations(rows(now), now - 86_400_000L)
+        val first = repository.snapshot()
+        dao.keepRelations(rows(now + 1_000), now - 86_400_000L)
+        assertSame(first, repository.snapshot())
+        assertEquals(now, dao.relationUpdatedAt("UCa", "UCb"))
+    }
+
+    @Test
+    fun keepingRelationsRaisesAWeakEdgeAndTouchesAnOldOne() = runBlocking {
+        val dao = database.intelligenceDao
+        val now = System.currentTimeMillis()
+        val day = 86_400_000L
+        dao.insertRelationIfAbsent(MusicRelation("UCa", "UCb", "SimilarArtist", 2f, 1, "Artist b", now))
+        dao.insertRelationIfAbsent(MusicRelation("UCa", "UCc", "SimilarArtist", 4f, 1, "Artist c", now - 3 * day))
+        dao.keepRelations(
+            listOf(
+                MusicRelation("UCa", "UCb", "SimilarArtist", 4f, 1, "Artist b", now + 1),
+                MusicRelation("UCa", "UCc", "SimilarArtist", 4f, 1, "Artist c", now + 1),
+                MusicRelation("UCb", "UCc", "SimilarArtist", 4f, 1, "Artist c", now + 1),
+            ),
+            now - day,
+        )
+        val edges = dao.relationEdges(listOf("SimilarArtist"), 10).associateBy { it.fromId + it.toId }
+        assertEquals(3, edges.size)
+        assertEquals(4f, edges.getValue("UCaUCb").weight)
+        assertEquals(now + 1, dao.relationUpdatedAt("UCa", "UCc"))
+    }
+
+    @Test
+    fun manyNewRelationsReachTheGraph() = runBlocking {
+        val dao = database.intelligenceDao
+        val first = repository.snapshot()
+        dao.keepRelations(
+            (0 until 30).map { MusicRelation("UCa", "other$it", "SimilarArtist", 4f, 1, "Other $it", 1L) },
+            0L,
+        )
+        val second = repository.snapshot()
+        assertNotSame(first, second)
+        assertEquals(30, second.graph.neighbours("UCa").size)
     }
 
     @Test
