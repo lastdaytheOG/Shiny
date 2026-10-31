@@ -356,11 +356,11 @@ interface IntelligenceDao {
         """
         SELECT id AS songId, isLocal AS isLocal FROM song
         WHERE (isLocal = 1 OR isDownloaded = 1 OR totalPlayTime > 0) AND id NOT IN (SELECT songId FROM beat_info)
-        ORDER BY totalPlayTime DESC
-        LIMIT :limit
+        ORDER BY totalPlayTime DESC, id
+        LIMIT :limit OFFSET :offset
         """,
     )
-    suspend fun songsAwaitingAnalysis(limit: Int): List<AnalysisCandidate>
+    suspend fun songsAwaitingAnalysis(limit: Int, offset: Int = 0): List<AnalysisCandidate>
 
     @Query("DELETE FROM listen_outcome")
     fun clearOutcomes()

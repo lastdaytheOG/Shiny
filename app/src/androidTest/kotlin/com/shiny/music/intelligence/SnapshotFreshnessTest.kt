@@ -113,6 +113,19 @@ class SnapshotFreshnessTest {
     }
 
     @Test
+    fun songsBeyondTheFirstPageAwaitAnalysisToo() = runBlocking {
+        for (i in 0 until 250) {
+            db.execSQL("INSERT INTO song (id, title, duration, liked, totalPlayTime, isLocal, romanizeLyrics, isDownloaded, isUploaded, isVideo, lyricsOffset, explicit) VALUES ('p$i', 'Song', 200, 0, ${1000 - i}, 0, 1, 0, 0, 0, 0, 0)")
+        }
+        val dao = database.intelligenceDao
+        val first = dao.songsAwaitingAnalysis(200, 0).map { it.songId }
+        val rest = dao.songsAwaitingAnalysis(200, 200).map { it.songId }
+        assertEquals(200, first.size)
+        assertEquals(50, rest.size)
+        assertEquals(250, (first + rest).toSet().size)
+    }
+
+    @Test
     fun anUnchangedDatabaseKeepsTheSameSnapshot() = runBlocking {
         val first = repository.snapshot()
         assertSame(first, repository.snapshot())

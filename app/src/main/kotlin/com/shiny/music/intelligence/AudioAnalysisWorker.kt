@@ -35,6 +35,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
@@ -65,33 +66,46 @@ class AudioAnalysisWorker(context: Context, params: WorkerParameters) : Coroutin
         if (applicationContext.dataStore.data.first()[AudioAnalysisEnabledKey] == false) return@withContext Result.success()
         val deps = EntryPointAccessors.fromApplication(applicationContext, AudioAnalysisEntryPoint::class.java)
         val dao = deps.database().intelligenceDao
-        val songs = dao.songsAwaitingAnalysis(CHECKED)
         var measured = 0
-        for (song in songs) {
-            if (!coroutineContext.isActive || measured >= BATCH) break
-            val stored = if (song.isLocal) null else storedCopy(deps, song.songId) ?: continue
-            val audio = runCatching {
-                if (stored != null) AudioDecoder.decode(stored) else AudioDecoder.decode(applicationContext, Uri.parse(song.songId))
+        var lookedAt = 0
+        var skipped = 0
+        pages@ while (lookedAt < MAX_CHECKED) {
+            val songs = dao.songsAwaitingAnalysis(PAGE, skipped)
+            if (songs.isEmpty()) break
+            for (song in songs) {
+                coroutineContext.ensureActive()
+                if (measured >= BATCH) break@pages
+                lookedAt++
+                val stored = if (song.isLocal) null else storedCopy(deps, song.songId)
+                if (!song.isLocal && stored == null) {
+                    skipped++
+                    continue
+                }
+                val keepGoing = { coroutineContext.isActive }
+                val audio = runCatching {
+                    if (stored != null) AudioDecoder.decode(stored, keepGoing) else AudioDecoder.decode(applicationContext, Uri.parse(song.songId), keepGoing)
+                }
+                    .onFailure { Timber.tag(IntelligenceRepository.TAG).d(it, "not decoded: %s", song.songId) }
+                    .getOrNull()
+                    ?.let { AudioFeatures.analyse(it, AudioDecoder.TARGET_RATE) }
+                coroutineContext.ensureActive()
+                dao.upsertBeatInfo(
+                    BeatInfoEntity(
+                        songId = song.songId,
+                        bpm = audio?.bpm ?: 0f,
+                        firstBeatOffsetMs = audio?.firstBeatMs ?: 0L,
+                        confidence = audio?.tempoConfidence ?: 0f,
+                        keyPitchClass = audio?.keyPitchClass,
+                        keyIsMinor = audio?.keyIsMinor,
+                        energy = audio?.energy,
+                        brightness = audio?.brightness,
+                        dynamics = audio?.dynamics,
+                    ),
+                )
+                if (audio != null) measured++
             }
-                .onFailure { Timber.tag(IntelligenceRepository.TAG).d(it, "not decoded: %s", song.songId) }
-                .getOrNull()
-                ?.let { AudioFeatures.analyse(it, AudioDecoder.TARGET_RATE) }
-            dao.upsertBeatInfo(
-                BeatInfoEntity(
-                    songId = song.songId,
-                    bpm = audio?.bpm ?: 0f,
-                    firstBeatOffsetMs = audio?.firstBeatMs ?: 0L,
-                    confidence = audio?.tempoConfidence ?: 0f,
-                    keyPitchClass = audio?.keyPitchClass,
-                    keyIsMinor = audio?.keyIsMinor,
-                    energy = audio?.energy,
-                    brightness = audio?.brightness,
-                    dynamics = audio?.dynamics,
-                ),
-            )
-            if (audio != null) measured++
         }
-        Timber.tag(IntelligenceRepository.TAG).d("audio analysis: %d measured, %d looked at", measured, songs.size)
+        Timber.tag(IntelligenceRepository.TAG).d("audio analysis: %d measured, %d looked at", measured, lookedAt)
         Result.success()
     }
 
@@ -120,7 +134,8 @@ class AudioAnalysisWorker(context: Context, params: WorkerParameters) : Coroutin
 
     companion object {
         private const val BATCH = 25
-        private const val CHECKED = 200
+        private const val PAGE = 200
+        private const val MAX_CHECKED = 5_000
         private const val NAME = "audio_analysis"
 
         fun schedule(context: Context) {
@@ -200,11 +215,13 @@ object AudioDecoder {
     private const val SECONDS = 45
     private const val TIMEOUT_US = 10_000L
 
-    fun decode(context: Context, uri: Uri): FloatArray? = decode { it.setDataSource(context, uri, null) }
+    fun decode(context: Context, uri: Uri, keepGoing: () -> Boolean = { true }): FloatArray? =
+        decode(keepGoing) { it.setDataSource(context, uri, null) }
 
-    fun decode(source: MediaDataSource): FloatArray? = decode { it.setDataSource(source) }
+    fun decode(source: MediaDataSource, keepGoing: () -> Boolean = { true }): FloatArray? =
+        decode(keepGoing) { it.setDataSource(source) }
 
-    private fun decode(open: (MediaExtractor) -> Unit): FloatArray? {
+    private fun decode(keepGoing: () -> Boolean, open: (MediaExtractor) -> Unit): FloatArray? {
         val extractor = MediaExtractor()
         try {
             open(extractor)
@@ -220,7 +237,7 @@ object AudioDecoder {
             try {
                 codec.configure(format, null, null, 0)
                 codec.start()
-                return drain(extractor, codec, format)
+                return drain(extractor, codec, format, keepGoing)
             } finally {
                 runCatching { codec.stop() }
                 codec.release()
@@ -230,7 +247,7 @@ object AudioDecoder {
         }
     }
 
-    private fun drain(extractor: MediaExtractor, codec: MediaCodec, input: MediaFormat): FloatArray? {
+    private fun drain(extractor: MediaExtractor, codec: MediaCodec, input: MediaFormat, keepGoing: () -> Boolean): FloatArray? {
         var sourceRate = input.getInteger(MediaFormat.KEY_SAMPLE_RATE)
         var channels = input.getInteger(MediaFormat.KEY_CHANNEL_COUNT)
         var encoding = AudioFormat.ENCODING_PCM_16BIT
@@ -240,6 +257,7 @@ object AudioDecoder {
         val info = MediaCodec.BufferInfo()
         var inputDone = false
         while (written < output.size) {
+            if (!keepGoing()) return null
             if (!inputDone) {
                 val slot = codec.dequeueInputBuffer(TIMEOUT_US)
                 if (slot >= 0) {

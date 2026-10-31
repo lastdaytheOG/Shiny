@@ -41,6 +41,19 @@ class AudioDecoderTest {
     }
 
     @Test
+    fun decodingStopsWhenTheWorkIsCancelled() {
+        val file = clickTrackWav(120.0, 40)
+        try {
+            var checks = 0
+            val audio = AudioDecoder.decode(context, Uri.fromFile(file)) { ++checks < 3 }
+            assertNull(audio)
+            assertEquals(3, checks)
+        } finally {
+            file.delete()
+        }
+    }
+
+    @Test
     fun aRealFileIsDecodedAndItsTempoMeasured() {
         val file = clickTrackWav(120.0, 40)
         try {
