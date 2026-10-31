@@ -2,6 +2,7 @@ package com.shiny.music.baselineprofile
 
 import android.os.SystemClock
 import androidx.benchmark.macro.CompilationMode
+import androidx.benchmark.macro.ExperimentalMacrobenchmarkApi
 import androidx.benchmark.macro.ExperimentalMetricApi
 import androidx.benchmark.macro.FrameTimingMetric
 import androidx.benchmark.macro.MacrobenchmarkScope
@@ -17,7 +18,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalMetricApi::class)
+@OptIn(ExperimentalMetricApi::class, ExperimentalMacrobenchmarkApi::class)
 @RunWith(AndroidJUnit4::class)
 class JourneyBenchmarks {
     @get:Rule
