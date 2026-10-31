@@ -1,0 +1,2033 @@
+# small taste
+DiscoveryPersonality(appetite=0.580207800511509, noveltyAcceptance=0.6652173913043479, familiarShare=0.5980392156862745, evidence=17)
+SoundProfile(bpm=144.57142857142858, bpmSpread=24.190359017339016, energy=0.4516956699745996, brightness=0.593047351709434, measuredSongs=8)
+ArtistTaste(artistId=a0, longTerm=0.6002966016724472, shortTerm=0.6032238065716057, rejection=0.39709539696787494, positive=15.561447297843356, negative=15.48551371323484, plays=17, songs=3, saved=5, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a1, longTerm=0.6052720177318811, shortTerm=0.39849624060150374, rejection=0.12899214180827848, positive=3.474446646266342, negative=1.7955731701307385, plays=19, songs=4, saved=5, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a10, longTerm=0.7130215351218686, shortTerm=0.7474747474747475, rejection=0.0, positive=0.0, negative=0.0, plays=24, songs=4, saved=0, lastHeardMs=1799654400000)
+ArtistTaste(artistId=a11, longTerm=0.0, shortTerm=0.46037099494097805, rejection=0.5305882450161946, positive=6.394864943276942, negative=9.488932925326846, plays=0, songs=0, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a12, longTerm=0.6242471221872425, shortTerm=0.7233509120774617, rejection=0.268116826607376, positive=11.23770887843081, negative=7.670284363680013, plays=22, songs=2, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a13, longTerm=0.5657853906455425, shortTerm=0.42342342342342343, rejection=0.28915219201757, positive=7.9969444248809864, negative=6.486752698195949, plays=17, songs=2, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a14, longTerm=0.0, shortTerm=0.5628415300546448, rejection=0.36056777630004566, positive=10.61142201216612, negative=7.11142201216612, plays=0, songs=0, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a15, longTerm=0.5874204966920125, shortTerm=0.603862342163902, rejection=0.3017518691346487, positive=10.042517595011724, negative=7.9268224636283415, plays=18, songs=2, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a16, longTerm=0.7264052557521367, shortTerm=0.609375, rejection=0.28991753565601863, positive=6.9433597551961075, negative=7.795573170130739, plays=29, songs=4, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a18, longTerm=0.60359938825676, shortTerm=0.0, rejection=0.0, positive=0.0, negative=0.0, plays=21, songs=3, saved=0, lastHeardMs=1795334400000)
+ArtistTaste(artistId=a19, longTerm=0.6639341385022888, shortTerm=0.6153846153846154, rejection=0.26666666666666666, positive=1.0, negative=3.0, plays=15, songs=4, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a2, longTerm=0.324, shortTerm=0.4532251174711662, rejection=0.3445071969939292, positive=7.937815102603665, negative=5.223015126239635, plays=0, songs=0, saved=7, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a20, longTerm=0.45, shortTerm=0.5121951219512195, rejection=0.2926829268292683, positive=5.25, negative=3.0, plays=0, songs=0, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a21, longTerm=0.6166089993199015, shortTerm=0.5101415996938385, rejection=0.31254246719989276, positive=9.743835854927003, negative=8.680731945872612, plays=21, songs=3, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a22, longTerm=0.5484981600181125, shortTerm=0.05395417590539542, rejection=0.4457444656665974, positive=3.748557364717426, negative=8.282325868326687, plays=13, songs=3, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a23, longTerm=0.0, shortTerm=0.5402298850574713, rejection=0.5006405635898998, positive=8.472512844933759, negative=10.499380507519446, plays=0, songs=0, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a3, longTerm=0.7603050413930449, shortTerm=0.706959706959707, rejection=0.19613510802707643, positive=8.872233231331712, negative=5.8977865850653695, plays=38, songs=5, saved=9, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a4, longTerm=0.47990093365151865, shortTerm=0.6029776674937966, rejection=0.42456586305513627, positive=11.366389947754858, negative=12.702568352427596, plays=11, songs=2, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a6, longTerm=0.5987815152655902, shortTerm=0.686212982937831, rejection=0.35334658176941114, positive=17.2644909900628, negative=14.160285172060576, plays=19, songs=2, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a7, longTerm=0.404959804310138, shortTerm=0.4832458619297537, rejection=0.41492064772509013, positive=12.925379828345768, negative=11.825676931747427, plays=5, songs=2, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a8, longTerm=0.0, shortTerm=0.518796992481203, rejection=0.43573907515209737, positive=7.711333277792879, negative=7.4993805075194455, plays=0, songs=0, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a9, longTerm=0.6316830071528773, shortTerm=0.41605839416058393, rejection=0.16448055558294847, positive=5.020019816397081, negative=2.8977865850653695, plays=22, songs=4, saved=0, lastHeardMs=1800000000000)
+SongTaste(songId=s0_0, plays=5, familiarity=0.625, positive=0.0, negative=0.0, lastHeardMs=1790841600000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s0_1, plays=8, familiarity=0.7272727272727273, positive=3.3450558225057474, negative=5.486752698195949, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s0_2, plays=4, familiarity=0.5714285714285714, positive=5.957097327152423, negative=7.305401259842783, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s0_3, plays=0, familiarity=0.0, positive=4.795573170130739, negative=2.6933597551961075, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s10_0, plays=9, familiarity=0.75, positive=0.0, negative=0.0, lastHeardMs=1798790400000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s10_1, plays=4, familiarity=0.5714285714285714, positive=0.0, negative=0.0, lastHeardMs=1796284800000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s10_2, plays=3, familiarity=0.5, positive=0.0, negative=0.0, lastHeardMs=1794729600000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s10_3, plays=8, familiarity=0.7272727272727273, positive=0.0, negative=0.0, lastHeardMs=1799654400000, weekPlays=8, saved=false, fadedOut=false)
+SongTaste(songId=s11_0, plays=0, familiarity=0.0, positive=1.0, negative=3.0, lastHeardMs=1800000000000, weekPlays=0, saved=true, fadedOut=false)
+SongTaste(songId=s11_2, plays=0, familiarity=0.0, positive=0.8977865850653692, negative=2.7955731701307385, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s11_4, plays=0, familiarity=0.0, positive=3.7955731701307385, negative=3.6933597551961075, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s12_0, plays=0, familiarity=0.0, positive=0.0, negative=0.0, lastHeardMs=0, weekPlays=0, saved=true, fadedOut=false)
+SongTaste(songId=s12_2, plays=12, familiarity=0.8, positive=4.242842407571117, negative=2.5296553710435266, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s12_4, plays=0, familiarity=0.0, positive=5.957097327152423, negative=5.140628992636485, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s12_5, plays=10, familiarity=0.7692307692307693, positive=0.0, negative=0.0, lastHeardMs=1798185600000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s13_1, plays=9, familiarity=0.75, positive=0.0, negative=0.0, lastHeardMs=1792396800000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s13_2, plays=0, familiarity=0.0, positive=7.772497778614644, negative=6.486752698195949, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s13_5, plays=8, familiarity=0.7272727272727273, positive=0.0, negative=0.0, lastHeardMs=1796457600000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s14_1, plays=0, familiarity=0.0, positive=3.0, negative=0.0, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s14_2, plays=0, familiarity=0.0, positive=7.11142201216612, negative=7.11142201216612, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s15_0, plays=10, familiarity=0.7692307692307693, positive=0.0, negative=0.0, lastHeardMs=1793865600000, weekPlays=0, saved=true, fadedOut=false)
+SongTaste(songId=s15_1, plays=0, familiarity=0.0, positive=6.670284363680013, negative=3.2334627084322336, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s15_2, plays=8, familiarity=0.7272727272727273, positive=0.0, negative=0.0, lastHeardMs=1797494400000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s15_3, plays=0, familiarity=0.0, positive=2.8977865850653695, negative=4.6933597551961075, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s16_0, plays=1, familiarity=0.25, positive=0.0, negative=0.0, lastHeardMs=1794211200000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s16_2, plays=12, familiarity=0.8, positive=3.0, negative=3.0, lastHeardMs=1800000000000, weekPlays=0, saved=true, fadedOut=false)
+SongTaste(songId=s16_3, plays=0, familiarity=0.0, positive=3.6933597551961075, negative=4.795573170130739, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s16_4, plays=9, familiarity=0.75, positive=0.0, negative=0.0, lastHeardMs=1796803200000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s16_5, plays=7, familiarity=0.7, positive=0.0, negative=0.0, lastHeardMs=1799395200000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s18_1, plays=3, familiarity=0.5, positive=0.0, negative=0.0, lastHeardMs=1795334400000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s18_4, plays=10, familiarity=0.7692307692307693, positive=0.0, negative=0.0, lastHeardMs=1793433600000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s18_5, plays=8, familiarity=0.7272727272727273, positive=0.0, negative=0.0, lastHeardMs=1792915200000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s19_2, plays=5, familiarity=0.625, positive=0.0, negative=0.0, lastHeardMs=1800000000000, weekPlays=5, saved=false, fadedOut=false)
+SongTaste(songId=s19_3, plays=6, familiarity=0.6666666666666666, positive=0.0, negative=0.0, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s19_4, plays=1, familiarity=0.25, positive=0.0, negative=0.0, lastHeardMs=1792915200000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s19_5, plays=3, familiarity=0.5, positive=1.0, negative=3.0, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s1_1, plays=2, familiarity=0.4, positive=2.0, negative=1.7955731701307385, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s1_2, plays=5, familiarity=0.625, positive=0.0, negative=0.0, lastHeardMs=1794470400000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s1_3, plays=0, familiarity=0.0, positive=1.0, negative=0.0, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s1_4, plays=11, familiarity=0.7857142857142857, positive=0.0, negative=0.0, lastHeardMs=1791878400000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s1_5, plays=1, familiarity=0.25, positive=0.0, negative=0.0, lastHeardMs=1794643200000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s20_1, plays=0, familiarity=0.0, positive=3.0, negative=3.0, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s20_3, plays=0, familiarity=0.0, positive=2.0, negative=0.0, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s21_0, plays=3, familiarity=0.5, positive=7.11142201216612, negative=7.680731945872612, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s21_2, plays=10, familiarity=0.7692307692307693, positive=0.0, negative=0.0, lastHeardMs=1794729600000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s21_3, plays=8, familiarity=0.7272727272727273, positive=0.0, negative=0.0, lastHeardMs=1793260800000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s21_4, plays=0, familiarity=0.0, positive=2.0, negative=1.0, lastHeardMs=1800000000000, weekPlays=0, saved=true, fadedOut=false)
+SongTaste(songId=s22_0, plays=0, familiarity=0.0, positive=3.1416968756902017, negative=8.282325868326687, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s22_1, plays=7, familiarity=0.7, positive=0.0, negative=0.0, lastHeardMs=1791014400000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s22_4, plays=2, familiarity=0.4, positive=0.0, negative=0.0, lastHeardMs=1795248000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s22_5, plays=4, familiarity=0.5714285714285714, positive=0.0, negative=0.0, lastHeardMs=1789891200000, weekPlays=0, saved=true, fadedOut=false)
+SongTaste(songId=s23_0, plays=0, familiarity=0.0, positive=2.0, negative=1.0, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s23_1, plays=0, familiarity=0.0, positive=3.447269237440378, negative=3.0, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s23_2, plays=0, familiarity=0.0, positive=0.0, negative=5.4993805075194455, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s23_4, plays=0, familiarity=0.0, positive=1.8977865850653692, negative=1.0, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s23_5, plays=0, familiarity=0.0, positive=0.0, negative=0.0, lastHeardMs=0, weekPlays=0, saved=true, fadedOut=false)
+SongTaste(songId=s2_0, plays=0, familiarity=0.0, positive=7.305401259842783, negative=5.223015126239635, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s2_1, plays=0, familiarity=0.0, positive=0.0, negative=0.0, lastHeardMs=0, weekPlays=0, saved=true, fadedOut=false)
+SongTaste(songId=s2_3, plays=0, familiarity=0.0, positive=0.0, negative=0.0, lastHeardMs=0, weekPlays=0, saved=true, fadedOut=false)
+SongTaste(songId=s3_0, plays=8, familiarity=0.7272727272727273, positive=1.0, negative=1.0, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s3_1, plays=6, familiarity=0.6666666666666666, positive=3.0, negative=1.0, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s3_2, plays=10, familiarity=0.7692307692307693, positive=0.0, negative=0.0, lastHeardMs=1789891200000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s3_3, plays=10, familiarity=0.7692307692307693, positive=3.8977865850653695, negative=3.8977865850653695, lastHeardMs=1800000000000, weekPlays=0, saved=true, fadedOut=false)
+SongTaste(songId=s3_4, plays=4, familiarity=0.5714285714285714, positive=0.0, negative=0.0, lastHeardMs=1795852800000, weekPlays=0, saved=true, fadedOut=false)
+SongTaste(songId=s4_0, plays=0, familiarity=0.0, positive=4.795573170130739, negative=3.7955731701307385, lastHeardMs=1800000000000, weekPlays=0, saved=true, fadedOut=false)
+SongTaste(songId=s4_1, plays=0, familiarity=0.0, positive=5.6933597551961075, negative=3.4076146747774136, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s4_2, plays=10, familiarity=0.7692307692307693, positive=0.0, negative=0.0, lastHeardMs=1793865600000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s4_3, plays=1, familiarity=0.25, positive=0.0, negative=0.0, lastHeardMs=1791446400000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s4_4, plays=0, familiarity=0.0, positive=0.0, negative=5.4993805075194455, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s5_0, plays=0, familiarity=0.0, positive=0.0, negative=0.0, lastHeardMs=0, weekPlays=0, saved=true, fadedOut=false)
+SongTaste(songId=s5_2, plays=0, familiarity=0.0, positive=0.0, negative=0.0, lastHeardMs=0, weekPlays=0, saved=true, fadedOut=false)
+SongTaste(songId=s6_0, plays=0, familiarity=0.0, positive=7.048863159894455, negative=4.048863159894454, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s6_1, plays=0, familiarity=0.0, positive=3.601593922454076, negative=2.8060207523233376, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s6_3, plays=8, familiarity=0.7272727272727273, positive=0.8977865850653692, negative=5.6933597551961075, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s6_4, plays=11, familiarity=0.7857142857142857, positive=0.0, negative=0.0, lastHeardMs=1792137600000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s6_5, plays=0, familiarity=0.0, positive=4.315848842035382, negative=1.6120415046466752, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s7_0, plays=0, familiarity=0.0, positive=0.0, negative=0.0, lastHeardMs=0, weekPlays=0, saved=true, fadedOut=false)
+SongTaste(songId=s7_1, plays=0, familiarity=0.0, positive=8.66090466454113, negative=5.315848842035383, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s7_2, plays=0, familiarity=0.0, positive=2.5098280897120446, negative=5.509828089712045, lastHeardMs=1800000000000, weekPlays=0, saved=true, fadedOut=false)
+SongTaste(songId=s7_3, plays=1, familiarity=0.25, positive=0.0, negative=0.0, lastHeardMs=1792569600000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s7_4, plays=0, familiarity=0.0, positive=0.8977865850653692, negative=1.0, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s7_5, plays=4, familiarity=0.5714285714285714, positive=0.0, negative=0.0, lastHeardMs=1797235200000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s8_0, plays=0, familiarity=0.0, positive=0.0, negative=1.0, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s8_4, plays=0, familiarity=0.0, positive=3.0, negative=1.0, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s8_5, plays=0, familiarity=0.0, positive=4.509828089712045, negative=5.4993805075194455, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s9_0, plays=5, familiarity=0.625, positive=0.0, negative=0.0, lastHeardMs=1795248000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s9_1, plays=4, familiarity=0.5714285714285714, positive=0.0, negative=0.0, lastHeardMs=1794038400000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s9_2, plays=0, familiarity=0.0, positive=4.795573170130739, negative=2.8977865850653695, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s9_4, plays=11, familiarity=0.7857142857142857, positive=0.0, negative=0.0, lastHeardMs=1790409600000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s9_5, plays=2, familiarity=0.4, positive=0.0, negative=0.0, lastHeardMs=1795420800000, weekPlays=0, saved=false, fadedOut=false)
+{a10=0.7474747474747475, a3=0.6111825299658892, a18=0.60359938825676, a21=0.5934495019247235, a12=0.5294083610077016, a9=0.5277834351840645, a1=0.5271966837880274, a16=0.5158076341168972, a19=0.48688503490167845, a6=0.44374197105095714, a15=0.4216457517159178, a13=0.40218730472886677, a0=0.3636864096405813, a20=0.36228435455086255, a14=0.3598990111535262, a4=0.3469739336913198, a2=0.2970858026439304, a8=0.29273687078575406, a7=0.2827371758873908, a11=0.2161035566788851}
+# small Balanced reach
+GraphReach(artistId=a17, score=1.2512280720671278, hops=1, seeds=[a18, a21, a14, a6, a20, a15, a19, a11, a16], via=a18)
+GraphReach(artistId=a22, score=1.2516744541536524, hops=1, seeds=[a21, a19, a4, a1, a7, a11, a20, a0, a12, a10, a18, a13, a14, a2], via=a21)
+GraphReach(artistId=a23, score=1.466066930626267, hops=1, seeds=[a12, a21, a10, a18, a1, a20, a0, a14, a2, a19, a4, a7, a11, a13], via=a12)
+GraphReach(artistId=a5, score=0.6788195427945303, hops=1, seeds=[a3, a2, a4, a6, a8, a9, a7], via=a3)
+# small Balanced discover
+s16_4 1.968841701 GraphFar Connects(first=Artist 18, second=Artist 21) 1.968841701
+s17_4 1.923761477 PlaylistNeighbour Connects(first=Artist 18, second=Artist 21) 1.923761477
+s10_4 1.725447213 RelatedSong YourArtist(artist=Artist 10) 1.725447213
+s3_4 1.519846424 GraphBridge YourArtist(artist=Artist 3) 1.519846424
+s8_2 1.124042974 GraphNear BecauseSong(songId=s5_1, title=Title s5_1) 1.124042974
+s18_4 1.125117309 RelatedSong YourArtist(artist=Artist 18) 1.125117309
+s10_2 1.696972008 SeedArtist YourArtist(artist=Artist 10) 1.696972008
+s1_4 0.966590019 PlaylistNeighbour BecauseSong(songId=s5_5, title=Title s5_5) 0.966590019
+s3_2 1.382263398 GraphFar BecauseSong(songId=s11_4, title=Title s11_4) 1.382263398
+s16_0 1.679589754 RelatedSong Connects(first=Artist 18, second=Artist 21) 1.679589754
+s13_4 0.904325869 GraphNear YourArtist(artist=Artist 13) 0.904325869
+s20_4 0.865161664 ArtistTopSong YouChose(artist=Artist 20) 0.865161664
+s5_2 1.913181689 RelatedSong Connects(first=Artist 3, second=Artist 2) 1.913181689
+s9_4 0.956641123 PlaylistNeighbour YourArtist(artist=Artist 9) 0.956641123
+s6_4 0.666484492 CoListen BecauseSong(songId=s23_2, title=Title s23_2) 0.666484492
+s2_4 0.892978193 RelatedSong YourArtist(artist=Artist 2) 0.892978193
+s15_0 0.857022133 PlaylistNeighbour BecauseSong(songId=s4_3, title=Title s4_3) 0.857022133
+s12_0 0.541618696 CoListen YourArtist(artist=Artist 12) 0.541618696
+s13_0 0.776181060 SeedArtist YourArtist(artist=Artist 13) 0.776181060
+s18_2 0.881218132 SeedArtist BecauseSong(songId=s16_1, title=Title s16_1) 0.881218132
+s2_2 0.819849683 SeedArtist YourArtist(artist=Artist 2) 0.819849683
+s21_2 0.581987005 RelatedSong YourArtist(artist=Artist 21) 0.581987005
+s4_2 0.502159342 PlaylistNeighbour Connects(first=Artist 3, second=Artist 2) 0.502159342
+s1_2 0.516141529 CoListen YourArtist(artist=Artist 1) 0.516141529
+s5_0 1.829559466 SeedArtist Connects(first=Artist 3, second=Artist 2) 1.829559466
+s14_0 0.336765183 GraphFar YourArtist(artist=Artist 14) 0.336765183
+s15_2 0.781677583 ArtistTopSong YourArtist(artist=Artist 15) 0.781677583
+s0_4 0.259107494 GraphFar YourArtist(artist=Artist 1) 0.259107494
+s20_2 0.755731641 PlaylistNeighbour YouChose(artist=Artist 20) 0.755731641
+s19_4 0.121126861 GraphBridge YourArtist(artist=Artist 19) 0.121126861
+s6_2 0.527184278 GraphBridge YourArtist(artist=Artist 6) 0.527184278
+s7_0 0.204931708 PlaylistNeighbour YourArtist(artist=Artist 7) 0.204931708
+s9_0 0.498059844 GraphBridge YourArtist(artist=Artist 9) 0.498059844
+s14_4 0.329885417 CoListen YourArtist(artist=Artist 14) 0.329885417
+s0_0 0.326849003 RelatedSong BecauseSong(songId=s0_0, title=Title s0_0) 0.326849003
+s17_0 1.293586628 GraphBridge Connects(first=Artist 18, second=Artist 21) 1.293586628
+s22_2 -0.271225633 GraphBridge Connects(first=Artist 21, second=Artist 19) -0.271225633
+s19_0 0.100901787 GraphNear YourArtist(artist=Artist 19) 0.100901787
+s11_0 -1.400867604 GraphNear YourArtist(artist=Artist 11) -1.400867604
+s8_4 0.016019700 GraphFar YourArtist(artist=Artist 9) 0.016019700
+s12_4 -0.204039994 ArtistTopSong YourArtist(artist=Artist 12) -0.204039994
+s22_4 -0.343744005 CoListen Connects(first=Artist 21, second=Artist 19) -0.343744005
+s11_4 -1.351631162 GraphBridge BecauseSong(songId=s16_5, title=Title s16_5) -1.351631162
+s21_4 -0.485590435 GraphNear BecauseSong(songId=s3_5, title=Title s3_5) -0.485590435
+s7_4 -0.708136629 SeedArtist YourArtist(artist=Artist 7) -0.708136629
+s4_0 -0.975557328 CoListen Connects(first=Artist 3, second=Artist 2) -0.975557328
+# small Balanced up next
+s16_4 1.968841701 GraphFar Connects(first=Artist 18, second=Artist 21) 1.968841701
+s5_2 1.913181689 RelatedSong Connects(first=Artist 3, second=Artist 2) 1.913181689
+s17_4 1.923761477 PlaylistNeighbour Connects(first=Artist 18, second=Artist 21) 1.923761477
+s10_4 1.725447213 RelatedSong YourArtist(artist=Artist 10) 1.725447213
+s16_0 1.679589754 RelatedSong Connects(first=Artist 18, second=Artist 21) 1.679589754
+s5_0 1.829559466 SeedArtist Connects(first=Artist 3, second=Artist 2) 1.829559466
+s3_4 1.519846424 GraphBridge YourArtist(artist=Artist 3) 1.519846424
+s5_4 1.746177648 GraphNear Connects(first=Artist 3, second=Artist 2) 1.746177648
+s10_2 1.696972008 SeedArtist YourArtist(artist=Artist 10) 1.696972008
+s8_2 1.124042974 GraphNear YourArtist(artist=Artist 9) 1.124042974
+s10_0 1.623395202 ArtistTopSong YourArtist(artist=Artist 10) 1.623395202
+s9_4 0.956641123 PlaylistNeighbour YourArtist(artist=Artist 9) 0.956641123
+s3_2 1.382263398 GraphFar YourArtist(artist=Artist 3) 1.382263398
+s1_4 0.966590019 PlaylistNeighbour YourArtist(artist=Artist 1) 0.966590019
+s16_2 1.058045549 GraphNear Connects(first=Artist 18, second=Artist 21) 1.058045549
+s18_4 1.125117309 RelatedSong YourArtist(artist=Artist 18) 1.125117309
+s17_2 1.245624968 CoListen Connects(first=Artist 18, second=Artist 21) 1.245624968
+s20_4 0.865161664 ArtistTopSong YouChose(artist=Artist 20) 0.865161664
+s17_0 1.293586628 GraphBridge Connects(first=Artist 18, second=Artist 21) 1.293586628
+s15_0 0.857022133 PlaylistNeighbour YourArtist(artist=Artist 15) 0.857022133
+s18_2 0.881218132 SeedArtist YourArtist(artist=Artist 18) 0.881218132
+s13_4 0.904325869 GraphNear YourArtist(artist=Artist 13) 0.904325869
+s2_4 0.892978193 RelatedSong YourArtist(artist=Artist 2) 0.892978193
+s4_2 0.502159342 PlaylistNeighbour Connects(first=Artist 3, second=Artist 2) 0.502159342
+s6_4 0.666484492 CoListen YourArtist(artist=Artist 6) 0.666484492
+# small Balanced factors
+s0_0 1.300000000 1.300000000
+s0_2 1.089486419 1.089486419
+s0_4 1.300000000 1.362562084
+s1_0 1.300000000 0.050000000
+s1_2 1.300000000 1.300000000
+s1_4 1.300000000 1.300000000
+s2_0 1.161474340 1.161474340
+s2_2 1.141684882 1.196628102
+s2_4 1.141684882 1.196628102
+s3_0 1.300000000 1.300000000
+s3_2 1.300000000 1.300000000
+s3_4 1.300000000 1.300000000
+s4_0 1.116570874 1.116570874
+s4_2 1.300000000 1.300000000
+s4_4 0.394286391 0.394286391
+s5_0 1.000000000 1.048124680
+s5_2 1.000000000 1.048124680
+s5_4 1.000000000 1.048124680
+s6_0 1.269959382 1.269959382
+s6_2 1.268604495 1.329655681
+s6_4 1.300000000 1.300000000
+s7_0 1.108258301 1.161592877
+s7_2 0.757231527 0.757231527
+s7_4 1.045441238 1.045441238
+s8_0 0.999215258 0.999215258
+s8_2 1.300000000 1.362562084
+s8_4 1.300000000 1.300000000
+s9_0 1.300000000 1.300000000
+s9_2 1.300000000 1.300000000
+s9_4 1.300000000 1.300000000
+s10_0 1.300000000 1.300000000
+s10_2 1.300000000 1.300000000
+s10_4 1.300000000 1.362562084
+s11_0 0.653691610 0.653691610
+s11_2 0.653097189 0.653097189
+s11_4 0.969306190 0.969306190
+s12_0 1.300000000 1.362562084
+s12_2 1.300000000 1.300000000
+s12_4 1.146724087 1.146724087
+s13_0 1.300000000 1.362562084
+# small Comfort reach
+GraphReach(artistId=a17, score=1.2512280720671278, hops=1, seeds=[a18, a21, a14, a6, a20, a15, a19, a11, a16], via=a18)
+GraphReach(artistId=a22, score=1.0294761924345226, hops=1, seeds=[a21, a19, a4, a1, a7, a11, a20, a0, a13], via=a21)
+GraphReach(artistId=a23, score=1.2344347873284995, hops=1, seeds=[a12, a10, a18, a1, a20, a21, a0, a14, a2], via=a12)
+GraphReach(artistId=a5, score=0.6788195427945303, hops=1, seeds=[a3, a2, a4, a6, a8, a9, a7], via=a3)
+# small Comfort discover
+s10_0 2.477109599 ArtistTopSong BecauseSong(songId=s11_0, title=Title s11_0) 1.623395202
+s5_2 1.199270940 RelatedSong Connects(first=Artist 3, second=Artist 2) 1.913181689
+s3_4 2.368498286 GraphBridge YourArtist(artist=Artist 3) 1.519846424
+s16_4 2.353824281 GraphFar Connects(first=Artist 18, second=Artist 21) 1.968841701
+s10_2 2.398783627 SeedArtist YourArtist(artist=Artist 10) 1.696972008
+s3_2 2.279125418 GraphFar BecauseSong(songId=s11_4, title=Title s11_4) 1.382263398
+s18_4 1.854583903 RelatedSong YourArtist(artist=Artist 18) 1.125117309
+s1_4 1.769341359 PlaylistNeighbour BecauseSong(songId=s5_5, title=Title s5_5) 0.966590019
+s9_4 1.790454030 PlaylistNeighbour YourArtist(artist=Artist 9) 0.956641123
+s15_0 1.770823674 PlaylistNeighbour BecauseSong(songId=s4_3, title=Title s4_3) 0.857022133
+s6_4 1.492917582 CoListen BecauseSong(songId=s23_2, title=Title s23_2) 0.666484492
+s8_2 1.373780437 GraphNear BecauseSong(songId=s5_1, title=Title s5_1) 1.124042974
+s10_4 2.070702146 RelatedSong YourArtist(artist=Artist 10) 1.725447213
+s20_4 1.262587887 ArtistTopSong YouChose(artist=Artist 20) 0.865161664
+s16_0 1.748407807 RelatedSong Connects(first=Artist 18, second=Artist 21) 1.679589754
+s21_2 1.548219715 RelatedSong YourArtist(artist=Artist 21) 0.581987005
+s13_4 1.135955783 GraphNear YourArtist(artist=Artist 13) 0.904325869
+s15_2 1.588492881 ArtistTopSong YourArtist(artist=Artist 15) 0.781677583
+s2_4 1.065038430 RelatedSong YourArtist(artist=Artist 2) 0.892978193
+s1_2 1.203479847 CoListen YourArtist(artist=Artist 1) 0.516141529
+s0_0 1.008071393 RelatedSong BecauseSong(songId=s0_0, title=Title s0_0) 0.326849003
+s17_4 0.957062255 PlaylistNeighbour Connects(first=Artist 18, second=Artist 21) 1.923761477
+s20_2 1.152689752 PlaylistNeighbour YouChose(artist=Artist 20) 0.755731641
+s16_2 1.527262769 GraphNear Connects(first=Artist 18, second=Artist 21) 1.058045549
+s18_2 1.085753590 SeedArtist BecauseSong(songId=s16_1, title=Title s16_1) 0.881218132
+s13_0 1.010351587 SeedArtist YourArtist(artist=Artist 13) 0.776181060
+s12_0 0.903497117 CoListen YourArtist(artist=Artist 12) 0.541618696
+s9_0 1.223091970 GraphBridge YourArtist(artist=Artist 9) 0.498059844
+s2_2 0.991040090 SeedArtist YourArtist(artist=Artist 2) 0.819849683
+s4_2 0.986777917 PlaylistNeighbour Connects(first=Artist 3, second=Artist 2) 0.502159342
+s19_4 0.603683830 GraphBridge YourArtist(artist=Artist 19) 0.121126861
+s3_0 1.238136752 GraphNear YourArtist(artist=Artist 3) 0.383205262
+s6_2 0.786545652 GraphBridge YourArtist(artist=Artist 6) 0.527184278
+s14_0 0.428525445 GraphFar YourArtist(artist=Artist 14) 0.336765183
+s7_0 0.461482668 PlaylistNeighbour YourArtist(artist=Artist 7) 0.204931708
+s15_4 0.980364284 SeedArtist YourArtist(artist=Artist 15) 0.691535804
+s18_0 0.746783236 ArtistTopSong YourArtist(artist=Artist 18) 0.547702323
+s20_0 0.736204638 CoListen BecauseSong(songId=s22_0, title=Title s22_0) 0.350028425
+s12_2 0.596778929 PlaylistNeighbour YourArtist(artist=Artist 12) -0.235749211
+s19_0 0.386101444 GraphNear YourArtist(artist=Artist 19) 0.100901787
+s14_4 0.415816457 CoListen YourArtist(artist=Artist 14) 0.329885417
+s5_0 1.112870940 SeedArtist Connects(first=Artist 3, second=Artist 2) 1.829559466
+s0_4 0.479619229 GraphFar YourArtist(artist=Artist 1) 0.259107494
+s8_4 0.323524049 GraphFar YourArtist(artist=Artist 9) 0.016019700
+s19_2 0.083570891 GraphFar YourArtist(artist=Artist 19) -0.642239597
+s21_4 0.023582889 GraphNear BecauseSong(songId=s3_5, title=Title s3_5) -0.485590435
+s22_4 -0.408508699 CoListen Connects(first=Artist 21, second=Artist 19) -0.462249745
+s12_4 0.112431194 ArtistTopSong YourArtist(artist=Artist 12) -0.204039994
+s11_4 -1.225420785 GraphBridge BecauseSong(songId=s16_5, title=Title s16_5) -1.351631162
+s13_2 -0.059308996 RelatedSong BecauseSong(songId=s22_4, title=Title s22_4) -0.320519369
+s8_0 0.039464936 RelatedSong YourArtist(artist=Artist 9) -0.231813957
+s2_0 -0.083371289 ArtistTopSong YourArtist(artist=Artist 2) -0.300801104
+s0_2 -0.116711935 GraphNear YourArtist(artist=Artist 1) -0.710144418
+s11_0 -1.222738488 GraphNear YourArtist(artist=Artist 11) -1.400867604
+s7_4 -0.481989643 SeedArtist YourArtist(artist=Artist 7) -0.708136629
+s22_2 -0.644460019 GraphBridge Connects(first=Artist 21, second=Artist 19) -0.389731373
+s21_0 -0.288419836 SeedArtist YourArtist(artist=Artist 21) -1.028691465
+s6_0 -0.286466307 GraphFar YourArtist(artist=Artist 6) -0.601892902
+s9_2 -0.356589097 CoListen YourArtist(artist=Artist 9) -0.668564375
+s14_2 -0.411493154 GraphBridge YourArtist(artist=Artist 14) -0.553650237
+# small Comfort up next
+s16_4 2.353824281 GraphFar Connects(first=Artist 18, second=Artist 21) 1.968841701
+s10_0 2.477109599 ArtistTopSong YourArtist(artist=Artist 10) 1.623395202
+s10_2 2.398783627 SeedArtist YourArtist(artist=Artist 10) 1.696972008
+s3_4 2.368498286 GraphBridge YourArtist(artist=Artist 3) 1.519846424
+s3_2 2.279125418 GraphFar YourArtist(artist=Artist 3) 1.382263398
+s1_4 1.769341359 PlaylistNeighbour YourArtist(artist=Artist 1) 0.966590019
+s16_0 1.748407807 RelatedSong Connects(first=Artist 18, second=Artist 21) 1.679589754
+s18_4 1.854583903 RelatedSong YourArtist(artist=Artist 18) 1.125117309
+s15_0 1.770823674 PlaylistNeighbour YourArtist(artist=Artist 15) 0.857022133
+s10_4 2.070702146 RelatedSong YourArtist(artist=Artist 10) 1.725447213
+s9_4 1.790454030 PlaylistNeighbour YourArtist(artist=Artist 9) 0.956641123
+s21_2 1.548219715 RelatedSong YourArtist(artist=Artist 21) 0.581987005
+s16_2 1.527262769 GraphNear Connects(first=Artist 18, second=Artist 21) 1.058045549
+s15_2 1.588492881 ArtistTopSong YourArtist(artist=Artist 15) 0.781677583
+s8_2 1.373780437 GraphNear YourArtist(artist=Artist 9) 1.124042974
+s6_4 1.492917582 CoListen YourArtist(artist=Artist 6) 0.666484492
+s3_0 1.238136752 GraphNear YourArtist(artist=Artist 3) 0.383205262
+s5_2 1.199270940 RelatedSong Connects(first=Artist 3, second=Artist 2) 1.913181689
+s9_0 1.223091970 GraphBridge YourArtist(artist=Artist 9) 0.498059844
+s20_4 1.262587887 ArtistTopSong YouChose(artist=Artist 20) 0.865161664
+s0_0 1.008071393 RelatedSong YourArtist(artist=Artist 1) 0.326849003
+s2_4 1.065038430 RelatedSong YourArtist(artist=Artist 2) 0.892978193
+s1_2 1.203479847 CoListen YourArtist(artist=Artist 1) 0.516141529
+s2_2 0.991040090 SeedArtist YourArtist(artist=Artist 2) 0.819849683
+s4_2 0.986777917 PlaylistNeighbour Connects(first=Artist 3, second=Artist 2) 0.502159342
+# small Comfort factors
+s0_0 1.300000000 1.300000000
+s0_2 1.089486419 1.089486419
+s0_4 1.300000000 1.362562084
+s1_0 1.300000000 0.050000000
+s1_2 1.300000000 1.300000000
+s1_4 1.300000000 1.300000000
+s2_0 1.161474340 1.161474340
+s2_2 1.141684882 1.196628102
+s2_4 1.141684882 1.196628102
+s3_0 1.300000000 1.300000000
+s3_2 1.300000000 1.300000000
+s3_4 1.300000000 1.300000000
+s4_0 1.116570874 1.116570874
+s4_2 1.300000000 1.300000000
+s4_4 0.394286391 0.394286391
+s5_0 1.000000000 1.048124680
+s5_2 1.000000000 1.048124680
+s5_4 1.000000000 1.048124680
+s6_0 1.269959382 1.269959382
+s6_2 1.268604495 1.329655681
+s6_4 1.300000000 1.300000000
+s7_0 1.108258301 1.161592877
+s7_2 0.757231527 0.757231527
+s7_4 1.045441238 1.045441238
+s8_0 0.999215258 0.999215258
+s8_2 1.300000000 1.362562084
+s8_4 1.300000000 1.300000000
+s9_0 1.300000000 1.300000000
+s9_2 1.300000000 1.300000000
+s9_4 1.300000000 1.300000000
+s10_0 1.300000000 1.300000000
+s10_2 1.300000000 1.300000000
+s10_4 1.300000000 1.362562084
+s11_0 0.653691610 0.653691610
+s11_2 0.653097189 0.653097189
+s11_4 0.969306190 0.969306190
+s12_0 1.300000000 1.362562084
+s12_2 1.300000000 1.300000000
+s12_4 1.146724087 1.146724087
+s13_0 1.300000000 1.362562084
+# small Discovery reach
+GraphReach(artistId=a17, score=1.2512280720671278, hops=1, seeds=[a18, a21, a14, a6, a20, a15, a19, a11, a16], via=a18)
+GraphReach(artistId=a22, score=1.2516744541536524, hops=1, seeds=[a21, a19, a4, a1, a7, a11, a20, a0, a12, a10, a18, a13, a14, a2], via=a21)
+GraphReach(artistId=a23, score=1.466066930626267, hops=1, seeds=[a12, a21, a10, a18, a1, a20, a0, a14, a2, a19, a4, a7, a11, a13], via=a12)
+GraphReach(artistId=a5, score=0.6788195427945303, hops=1, seeds=[a3, a2, a4, a6, a8, a9, a7], via=a3)
+# small Discovery discover
+s10_4 1.655845115 RelatedSong YourArtist(artist=Artist 10) 1.725447213
+s17_4 2.829743163 PlaylistNeighbour Connects(first=Artist 18, second=Artist 21) 1.923761477
+s16_4 1.632442292 GraphFar Connects(first=Artist 18, second=Artist 21) 1.968841701
+s8_2 1.107488119 GraphNear BecauseSong(songId=s5_1, title=Title s5_1) 1.124042974
+s18_2 0.895758156 SeedArtist BecauseSong(songId=s16_1, title=Title s16_1) 0.881218132
+s3_4 0.882333070 GraphBridge YourArtist(artist=Artist 3) 1.519846424
+s13_4 0.898897072 GraphNear YourArtist(artist=Artist 13) 0.904325869
+s2_4 0.921966805 RelatedSong YourArtist(artist=Artist 2) 0.892978193
+s15_4 0.651872132 SeedArtist YourArtist(artist=Artist 15) 0.691535804
+s20_4 0.759808170 ArtistTopSong YouChose(artist=Artist 20) 0.865161664
+s12_0 0.457668943 CoListen YourArtist(artist=Artist 12) 0.541618696
+s1_4 0.307264694 PlaylistNeighbour BecauseSong(songId=s5_5, title=Title s5_5) 0.966590019
+s5_2 2.646708569 RelatedSong Connects(first=Artist 3, second=Artist 2) 1.913181689
+s6_2 0.503583363 GraphBridge YourArtist(artist=Artist 6) 0.527184278
+s9_4 0.278609686 PlaylistNeighbour YourArtist(artist=Artist 9) 0.956641123
+s14_0 0.411850643 GraphFar YourArtist(artist=Artist 14) 0.336765183
+s7_0 0.182008761 PlaylistNeighbour YourArtist(artist=Artist 7) 0.204931708
+s22_2 0.112092287 GraphBridge Connects(first=Artist 21, second=Artist 19) -0.271225633
+s0_4 0.259323498 GraphFar YourArtist(artist=Artist 1) 0.259107494
+s19_0 0.063329007 GraphNear YourArtist(artist=Artist 19) 0.100901787
+s4_2 0.078027481 PlaylistNeighbour Connects(first=Artist 3, second=Artist 2) 0.502159342
+s21_2 -0.172325352 RelatedSong YourArtist(artist=Artist 21) 0.581987005
+s11_4 -1.427845292 GraphBridge BecauseSong(songId=s16_5, title=Title s16_5) -1.351631162
+# small Discovery up next
+s17_4 2.829743163 PlaylistNeighbour Connects(first=Artist 18, second=Artist 21) 1.923761477
+s5_0 2.564475236 SeedArtist Connects(first=Artist 3, second=Artist 2) 1.829559466
+s17_0 2.219422565 GraphBridge Connects(first=Artist 18, second=Artist 21) 1.293586628
+s5_2 2.646708569 RelatedSong Connects(first=Artist 3, second=Artist 2) 1.913181689
+s17_2 2.190398634 CoListen Connects(first=Artist 18, second=Artist 21) 1.245624968
+s5_4 2.534629781 GraphNear Connects(first=Artist 3, second=Artist 2) 1.746177648
+s16_0 1.649397608 RelatedSong Connects(first=Artist 18, second=Artist 21) 1.679589754
+s10_4 1.655845115 RelatedSong YourArtist(artist=Artist 10) 1.725447213
+s8_2 1.107488119 GraphNear YourArtist(artist=Artist 9) 1.124042974
+s16_4 1.632442292 GraphFar Connects(first=Artist 18, second=Artist 21) 1.968841701
+s18_2 0.895758156 SeedArtist YourArtist(artist=Artist 18) 0.881218132
+s20_4 0.759808170 ArtistTopSong YouChose(artist=Artist 20) 0.865161664
+s2_4 0.921966805 RelatedSong YourArtist(artist=Artist 2) 0.892978193
+s3_4 0.882333070 GraphBridge YourArtist(artist=Artist 3) 1.519846424
+s10_2 1.165940592 SeedArtist YourArtist(artist=Artist 10) 1.696972008
+s13_4 0.898897072 GraphNear YourArtist(artist=Artist 13) 0.904325869
+s15_4 0.651872132 SeedArtist YourArtist(artist=Artist 15) 0.691535804
+s16_2 0.656816319 GraphNear Connects(first=Artist 18, second=Artist 21) 1.058045549
+s20_2 0.650612202 PlaylistNeighbour YouChose(artist=Artist 20) 0.755731641
+s2_2 0.849273210 SeedArtist YourArtist(artist=Artist 2) 0.819849683
+s3_2 0.669946063 GraphFar YourArtist(artist=Artist 3) 1.382263398
+s10_0 0.942349897 ArtistTopSong YourArtist(artist=Artist 10) 1.623395202
+s13_0 0.769481956 SeedArtist YourArtist(artist=Artist 13) 0.776181060
+s14_0 0.411850643 GraphFar YourArtist(artist=Artist 14) 0.336765183
+s12_0 0.457668943 CoListen YourArtist(artist=Artist 12) 0.541618696
+# small Discovery factors
+s0_0 1.300000000 1.300000000
+s0_2 1.089486419 1.089486419
+s0_4 1.300000000 1.362562084
+s1_0 1.300000000 0.050000000
+s1_2 1.300000000 1.300000000
+s1_4 1.300000000 1.300000000
+s2_0 1.161474340 1.161474340
+s2_2 1.141684882 1.196628102
+s2_4 1.141684882 1.196628102
+s3_0 1.300000000 1.300000000
+s3_2 1.300000000 1.300000000
+s3_4 1.300000000 1.300000000
+s4_0 1.116570874 1.116570874
+s4_2 1.300000000 1.300000000
+s4_4 0.394286391 0.394286391
+s5_0 1.000000000 1.048124680
+s5_2 1.000000000 1.048124680
+s5_4 1.000000000 1.048124680
+s6_0 1.269959382 1.269959382
+s6_2 1.268604495 1.329655681
+s6_4 1.300000000 1.300000000
+s7_0 1.108258301 1.161592877
+s7_2 0.757231527 0.757231527
+s7_4 1.045441238 1.045441238
+s8_0 0.999215258 0.999215258
+s8_2 1.300000000 1.362562084
+s8_4 1.300000000 1.300000000
+s9_0 1.300000000 1.300000000
+s9_2 1.300000000 1.300000000
+s9_4 1.300000000 1.300000000
+s10_0 1.300000000 1.300000000
+s10_2 1.300000000 1.300000000
+s10_4 1.300000000 1.362562084
+s11_0 0.653691610 0.653691610
+s11_2 0.653097189 0.653097189
+s11_4 0.969306190 0.969306190
+s12_0 1.300000000 1.362562084
+s12_2 1.300000000 1.300000000
+s12_4 1.146724087 1.146724087
+s13_0 1.300000000 1.362562084
+# small Adventure reach
+GraphReach(artistId=a17, score=1.2512280720671278, hops=1, seeds=[a18, a21, a14, a6, a20, a15, a19, a11, a16], via=a18)
+GraphReach(artistId=a22, score=1.2933682399472506, hops=1, seeds=[a21, a19, a4, a1, a7, a11, a20, a0, a12, a10, a13, a18, a14, a2], via=a21)
+GraphReach(artistId=a23, score=1.5160615395130712, hops=1, seeds=[a12, a21, a10, a18, a1, a20, a0, a14, a2, a19, a4, a7, a11, a13], via=a12)
+GraphReach(artistId=a5, score=0.6788195427945303, hops=1, seeds=[a3, a2, a4, a6, a8, a9, a7], via=a3)
+# small Adventure discover
+s10_4 1.223412175 RelatedSong YourArtist(artist=Artist 10) 1.725447213
+s17_4 2.568032467 PlaylistNeighbour Connects(first=Artist 18, second=Artist 21) 1.923761477
+s18_2 0.749279921 SeedArtist BecauseSong(songId=s16_1, title=Title s16_1) 0.881218132
+s8_2 0.673595632 GraphNear BecauseSong(songId=s5_1, title=Title s5_1) 1.124042974
+s13_4 0.565367568 GraphNear YourArtist(artist=Artist 13) 0.904325869
+s15_4 0.402015246 SeedArtist YourArtist(artist=Artist 15) 0.691535804
+s16_0 0.689604566 RelatedSong Connects(first=Artist 18, second=Artist 21) 1.679589754
+s2_4 0.509141839 RelatedSong YourArtist(artist=Artist 2) 0.892978193
+s6_2 0.323735174 GraphBridge YourArtist(artist=Artist 6) 0.527184278
+s3_4 0.195027483 GraphBridge YourArtist(artist=Artist 3) 1.519846424
+s7_0 -0.079974533 PlaylistNeighbour YourArtist(artist=Artist 7) 0.204931708
+s12_0 0.236684336 CoListen YourArtist(artist=Artist 12) 0.541618696
+s5_2 2.496493948 RelatedSong Connects(first=Artist 3, second=Artist 2) 1.913181689
+s20_4 0.164935444 ArtistTopSong YouChose(artist=Artist 20) 0.865161664
+s14_0 0.153831929 GraphFar YourArtist(artist=Artist 14) 0.336765183
+s19_0 -0.226652017 GraphNear YourArtist(artist=Artist 19) 0.100901787
+s0_4 0.066340748 GraphFar YourArtist(artist=Artist 1) 0.259107494
+s9_4 -0.348767542 PlaylistNeighbour YourArtist(artist=Artist 9) 0.956641123
+s22_2 -0.495720471 GraphBridge Connects(first=Artist 21, second=Artist 19) -0.248988947
+s1_4 -0.425001621 PlaylistNeighbour BecauseSong(songId=s5_5, title=Title s5_5) 0.966590019
+s11_4 -1.916637786 GraphBridge BecauseSong(songId=s16_5, title=Title s16_5) -1.351631162
+s4_2 -0.862781456 PlaylistNeighbour Connects(first=Artist 3, second=Artist 2) 0.502159342
+s21_2 -0.864873752 RelatedSong YourArtist(artist=Artist 21) 0.581987005
+# small Adventure up next
+s5_2 2.496493948 RelatedSong Connects(first=Artist 3, second=Artist 2) 1.913181689
+s17_4 2.568032467 PlaylistNeighbour Connects(first=Artist 18, second=Artist 21) 1.923761477
+s5_0 2.460238393 SeedArtist Connects(first=Artist 3, second=Artist 2) 1.829559466
+s17_0 2.083820370 GraphBridge Connects(first=Artist 18, second=Artist 21) 1.293586628
+s5_4 2.419465665 GraphNear Connects(first=Artist 3, second=Artist 2) 1.746177648
+s17_2 2.049471897 CoListen Connects(first=Artist 18, second=Artist 21) 1.245624968
+s10_4 1.223412175 RelatedSong YourArtist(artist=Artist 10) 1.725447213
+s8_2 0.673595632 GraphNear YourArtist(artist=Artist 9) 1.124042974
+s16_0 0.689604566 RelatedSong Connects(first=Artist 18, second=Artist 21) 1.679589754
+s18_2 0.749279921 SeedArtist YourArtist(artist=Artist 18) 0.881218132
+s13_4 0.565367568 GraphNear YourArtist(artist=Artist 13) 0.904325869
+s2_4 0.509141839 RelatedSong YourArtist(artist=Artist 2) 0.892978193
+s15_4 0.402015246 SeedArtist YourArtist(artist=Artist 15) 0.691535804
+s10_2 0.489880186 SeedArtist YourArtist(artist=Artist 10) 1.696972008
+s12_0 0.236684336 CoListen YourArtist(artist=Artist 12) 0.541618696
+s16_4 0.447834723 GraphFar Connects(first=Artist 18, second=Artist 21) 1.968841701
+s18_0 0.467145930 ArtistTopSong YourArtist(artist=Artist 18) 0.547702323
+s13_0 0.519811839 SeedArtist YourArtist(artist=Artist 13) 0.776181060
+s2_2 0.480518074 SeedArtist YourArtist(artist=Artist 2) 0.819849683
+s6_2 0.323735174 GraphBridge YourArtist(artist=Artist 6) 0.527184278
+s10_0 0.246461713 ArtistTopSong YourArtist(artist=Artist 10) 1.623395202
+s3_4 0.195027483 GraphBridge YourArtist(artist=Artist 3) 1.519846424
+s14_0 0.153831929 GraphFar YourArtist(artist=Artist 14) 0.336765183
+s0_4 0.066340748 GraphFar YourArtist(artist=Artist 1) 0.259107494
+s20_4 0.164935444 ArtistTopSong YouChose(artist=Artist 20) 0.865161664
+# small Adventure factors
+s0_0 1.300000000 1.300000000
+s0_2 1.089486419 1.089486419
+s0_4 1.300000000 1.362562084
+s1_0 1.300000000 0.050000000
+s1_2 1.300000000 1.300000000
+s1_4 1.300000000 1.300000000
+s2_0 1.161474340 1.161474340
+s2_2 1.141684882 1.196628102
+s2_4 1.141684882 1.196628102
+s3_0 1.300000000 1.300000000
+s3_2 1.300000000 1.300000000
+s3_4 1.300000000 1.300000000
+s4_0 1.116570874 1.116570874
+s4_2 1.300000000 1.300000000
+s4_4 0.394286391 0.394286391
+s5_0 1.000000000 1.048124680
+s5_2 1.000000000 1.048124680
+s5_4 1.000000000 1.048124680
+s6_0 1.269959382 1.269959382
+s6_2 1.268604495 1.329655681
+s6_4 1.300000000 1.300000000
+s7_0 1.108258301 1.161592877
+s7_2 0.757231527 0.757231527
+s7_4 1.045441238 1.045441238
+s8_0 0.999215258 0.999215258
+s8_2 1.300000000 1.362562084
+s8_4 1.300000000 1.300000000
+s9_0 1.300000000 1.300000000
+s9_2 1.300000000 1.300000000
+s9_4 1.300000000 1.300000000
+s10_0 1.300000000 1.300000000
+s10_2 1.300000000 1.300000000
+s10_4 1.300000000 1.362562084
+s11_0 0.653691610 0.653691610
+s11_2 0.653097189 0.653097189
+s11_4 0.969306190 0.969306190
+s12_0 1.300000000 1.362562084
+s12_2 1.300000000 1.300000000
+s12_4 1.146724087 1.146724087
+s13_0 1.300000000 1.362562084
+# small DeepListening reach
+GraphReach(artistId=a17, score=1.2512280720671278, hops=1, seeds=[a18, a21, a14, a6, a20, a15, a19, a11, a16], via=a18)
+GraphReach(artistId=a22, score=1.0294761924345226, hops=1, seeds=[a21, a19, a4, a1, a7, a11, a20, a0, a13], via=a21)
+GraphReach(artistId=a23, score=1.2344347873284995, hops=1, seeds=[a12, a10, a18, a1, a20, a21, a0, a14, a2], via=a12)
+GraphReach(artistId=a5, score=0.6788195427945303, hops=1, seeds=[a3, a2, a4, a6, a8, a9, a7], via=a3)
+# small DeepListening discover
+s16_4 2.103790409 GraphFar Connects(first=Artist 18, second=Artist 21) 1.968841701
+s17_4 1.850721816 PlaylistNeighbour Connects(first=Artist 18, second=Artist 21) 1.923761477
+s16_0 1.891888462 RelatedSong Connects(first=Artist 18, second=Artist 21) 1.679589754
+s3_4 1.586481830 GraphBridge YourArtist(artist=Artist 3) 1.519846424
+s10_2 1.661224434 SeedArtist YourArtist(artist=Artist 10) 1.696972008
+s10_4 1.653644443 RelatedSong YourArtist(artist=Artist 10) 1.725447213
+s3_2 1.438285617 GraphFar BecauseSong(songId=s11_4, title=Title s11_4) 1.382263398
+s10_0 1.606572627 ArtistTopSong BecauseSong(songId=s11_0, title=Title s11_0) 1.623395202
+s18_4 1.081205578 RelatedSong YourArtist(artist=Artist 18) 1.125117309
+s8_2 0.973486170 GraphNear BecauseSong(songId=s5_1, title=Title s5_1) 1.124042974
+s1_4 0.863481498 PlaylistNeighbour BecauseSong(songId=s5_5, title=Title s5_5) 0.966590019
+s5_2 1.824220890 RelatedSong Connects(first=Artist 3, second=Artist 2) 1.913181689
+s9_4 0.952633911 PlaylistNeighbour YourArtist(artist=Artist 9) 0.956641123
+s16_2 1.251419257 GraphNear Connects(first=Artist 18, second=Artist 21) 1.058045549
+s15_0 0.950539144 PlaylistNeighbour BecauseSong(songId=s4_3, title=Title s4_3) 0.857022133
+s13_4 0.803079932 GraphNear YourArtist(artist=Artist 13) 0.904325869
+s18_2 0.869485822 SeedArtist BecauseSong(songId=s16_1, title=Title s16_1) 0.881218132
+s20_4 0.745621904 ArtistTopSong YouChose(artist=Artist 20) 0.865161664
+s6_4 0.664833589 CoListen BecauseSong(songId=s23_2, title=Title s23_2) 0.666484492
+s2_4 0.686801978 RelatedSong YourArtist(artist=Artist 2) 0.892978193
+s13_0 0.732535123 SeedArtist YourArtist(artist=Artist 13) 0.776181060
+s5_0 1.769398668 SeedArtist Connects(first=Artist 3, second=Artist 2) 1.829559466
+s15_2 0.816451937 ArtistTopSong YourArtist(artist=Artist 15) 0.781677583
+s12_0 0.637959568 CoListen YourArtist(artist=Artist 12) 0.541618696
+s20_2 0.664991880 PlaylistNeighbour YouChose(artist=Artist 20) 0.755731641
+s21_2 0.667247935 RelatedSong YourArtist(artist=Artist 21) 0.581987005
+s2_2 0.642473468 SeedArtist YourArtist(artist=Artist 2) 0.819849683
+s6_2 0.558363894 GraphBridge YourArtist(artist=Artist 6) 0.527184278
+s4_2 0.565054376 PlaylistNeighbour Connects(first=Artist 3, second=Artist 2) 0.502159342
+s1_2 0.448181222 CoListen YourArtist(artist=Artist 1) 0.516141529
+s15_4 0.699232236 SeedArtist YourArtist(artist=Artist 15) 0.691535804
+s5_4 1.596816850 GraphNear Connects(first=Artist 3, second=Artist 2) 1.746177648
+s9_0 0.558000847 GraphBridge YourArtist(artist=Artist 9) 0.498059844
+s18_0 0.564770013 ArtistTopSong YourArtist(artist=Artist 18) 0.547702323
+s0_0 0.371577915 RelatedSong BecauseSong(songId=s0_0, title=Title s0_0) 0.326849003
+s7_0 0.181420284 PlaylistNeighbour YourArtist(artist=Artist 7) 0.204931708
+s14_0 0.164401525 GraphFar YourArtist(artist=Artist 14) 0.336765183
+s3_0 0.469684824 GraphNear YourArtist(artist=Artist 3) 0.383205262
+s19_0 0.078692299 GraphNear YourArtist(artist=Artist 19) 0.100901787
+s0_4 0.243918711 GraphFar YourArtist(artist=Artist 1) 0.259107494
+s20_0 0.288088664 CoListen BecauseSong(songId=s22_0, title=Title s22_0) 0.350028425
+s17_0 1.278146967 GraphBridge Connects(first=Artist 18, second=Artist 21) 1.293586628
+s19_4 0.058447569 GraphBridge YourArtist(artist=Artist 19) 0.121126861
+s14_4 0.099921758 CoListen YourArtist(artist=Artist 14) 0.329885417
+s8_4 -0.136331908 GraphFar YourArtist(artist=Artist 9) 0.016019700
+s22_2 -0.304897966 GraphBridge Connects(first=Artist 21, second=Artist 19) -0.389731373
+s12_4 -0.169893926 ArtistTopSong YourArtist(artist=Artist 12) -0.204039994
+s12_2 -0.204403144 PlaylistNeighbour YourArtist(artist=Artist 12) -0.235749211
+s22_4 -0.395011143 CoListen Connects(first=Artist 21, second=Artist 19) -0.462249745
+s13_2 -0.365960110 RelatedSong BecauseSong(songId=s22_4, title=Title s22_4) -0.320519369
+s21_4 -0.382390435 GraphNear BecauseSong(songId=s3_5, title=Title s3_5) -0.485590435
+s17_2 1.201385307 CoListen Connects(first=Artist 18, second=Artist 21) 1.245624968
+s8_0 -0.326565565 RelatedSong YourArtist(artist=Artist 9) -0.231813957
+s2_0 -0.422372124 ArtistTopSong YourArtist(artist=Artist 2) -0.300801104
+s6_0 -0.514908091 GraphFar YourArtist(artist=Artist 6) -0.601892902
+s7_4 -0.793842858 SeedArtist YourArtist(artist=Artist 7) -0.708136629
+s9_2 -0.612735872 CoListen YourArtist(artist=Artist 9) -0.668564375
+s19_2 -0.690931390 GraphFar YourArtist(artist=Artist 19) -0.642239597
+s4_0 -0.821877678 CoListen Connects(first=Artist 3, second=Artist 2) -0.975557328
+s0_2 -0.692099434 GraphNear YourArtist(artist=Artist 1) -0.710144418
+# small DeepListening up next
+s16_4 2.103790409 GraphFar Connects(first=Artist 18, second=Artist 21) 1.968841701
+s16_0 1.891888462 RelatedSong Connects(first=Artist 18, second=Artist 21) 1.679589754
+s17_4 1.850721816 PlaylistNeighbour Connects(first=Artist 18, second=Artist 21) 1.923761477
+s18_2 0.869485822 SeedArtist YourArtist(artist=Artist 18) 0.881218132
+s18_4 1.081205578 RelatedSong YourArtist(artist=Artist 18) 1.125117309
+s16_2 1.251419257 GraphNear Connects(first=Artist 18, second=Artist 21) 1.058045549
+s17_0 1.278146967 GraphBridge Connects(first=Artist 18, second=Artist 21) 1.293586628
+s17_2 1.201385307 CoListen Connects(first=Artist 18, second=Artist 21) 1.245624968
+s20_4 0.745621904 ArtistTopSong YouChose(artist=Artist 20) 0.865161664
+s10_2 1.661224434 SeedArtist YourArtist(artist=Artist 10) 1.696972008
+s10_4 1.653644443 RelatedSong YourArtist(artist=Artist 10) 1.725447213
+s10_0 1.606572627 ArtistTopSong YourArtist(artist=Artist 10) 1.623395202
+s8_2 0.973486170 GraphNear YourArtist(artist=Artist 9) 1.124042974
+s5_2 1.824220890 RelatedSong Connects(first=Artist 3, second=Artist 2) 1.913181689
+s5_0 1.769398668 SeedArtist Connects(first=Artist 3, second=Artist 2) 1.829559466
+s5_4 1.596816850 GraphNear Connects(first=Artist 3, second=Artist 2) 1.746177648
+s3_4 1.586481830 GraphBridge YourArtist(artist=Artist 3) 1.519846424
+s3_2 1.438285617 GraphFar YourArtist(artist=Artist 3) 1.382263398
+s6_4 0.664833589 CoListen YourArtist(artist=Artist 6) 0.666484492
+s9_4 0.952633911 PlaylistNeighbour YourArtist(artist=Artist 9) 0.956641123
+s21_2 0.667247935 RelatedSong YourArtist(artist=Artist 21) 0.581987005
+s9_0 0.558000847 GraphBridge YourArtist(artist=Artist 9) 0.498059844
+s20_2 0.664991880 PlaylistNeighbour YouChose(artist=Artist 20) 0.755731641
+s2_4 0.686801978 RelatedSong YourArtist(artist=Artist 2) 0.892978193
+s1_4 0.863481498 PlaylistNeighbour YourArtist(artist=Artist 1) 0.966590019
+# small DeepListening factors
+s0_0 1.300000000 1.300000000
+s0_2 1.089486419 1.089486419
+s0_4 1.300000000 1.362562084
+s1_0 1.300000000 0.050000000
+s1_2 1.300000000 1.300000000
+s1_4 1.300000000 1.300000000
+s2_0 1.161474340 1.161474340
+s2_2 1.141684882 1.196628102
+s2_4 1.141684882 1.196628102
+s3_0 1.300000000 1.300000000
+s3_2 1.300000000 1.300000000
+s3_4 1.300000000 1.300000000
+s4_0 1.116570874 1.116570874
+s4_2 1.300000000 1.300000000
+s4_4 0.394286391 0.394286391
+s5_0 1.000000000 1.048124680
+s5_2 1.000000000 1.048124680
+s5_4 1.000000000 1.048124680
+s6_0 1.269959382 1.269959382
+s6_2 1.268604495 1.329655681
+s6_4 1.300000000 1.300000000
+s7_0 1.108258301 1.161592877
+s7_2 0.757231527 0.757231527
+s7_4 1.045441238 1.045441238
+s8_0 0.999215258 0.999215258
+s8_2 1.300000000 1.362562084
+s8_4 1.300000000 1.300000000
+s9_0 1.300000000 1.300000000
+s9_2 1.300000000 1.300000000
+s9_4 1.300000000 1.300000000
+s10_0 1.300000000 1.300000000
+s10_2 1.300000000 1.300000000
+s10_4 1.300000000 1.362562084
+s11_0 0.653691610 0.653691610
+s11_2 0.653097189 0.653097189
+s11_4 0.969306190 0.969306190
+s12_0 1.300000000 1.362562084
+s12_2 1.300000000 1.300000000
+s12_4 1.146724087 1.146724087
+s13_0 1.300000000 1.362562084
+# large taste
+DiscoveryPersonality(appetite=0.580207800511509, noveltyAcceptance=0.6652173913043479, familiarShare=0.5980392156862745, evidence=17)
+SoundProfile(bpm=125.3875, bpmSpread=26.59616689957408, energy=0.49925381150096654, brightness=0.5386984314769506, measuredSongs=54)
+ArtistTaste(artistId=a0, longTerm=0.7182537069480799, shortTerm=0.5704697986577181, rejection=0.3592538456380046, positive=3.4834627084322336, negative=8.569138831799098, plays=28, songs=4, saved=1, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a1, longTerm=0.7080945389503884, shortTerm=0.8495816489611733, rejection=0.19320117960991925, positive=8.379759171735884, negative=5.0, plays=30, songs=3, saved=8, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a10, longTerm=0.7133711886203731, shortTerm=0.6396396396396397, rejection=0.22988567429950596, positive=12.43782621785953, negative=8.488932925326846, plays=40, songs=5, saved=9, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a100, longTerm=0.7069588620635392, shortTerm=0.7817785051827605, rejection=0.47936880446867924, positive=11.8354249788616, negative=20.150905472921693, plays=23, songs=4, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a101, longTerm=0.0, shortTerm=0.3857965451055662, rejection=0.5013630614224474, positive=6.756906447923617, negative=8.804781767362227, plays=0, songs=0, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a102, longTerm=0.7074103929206057, shortTerm=0.7514756135445791, rejection=0.3068362967428057, positive=13.727117143549505, negative=10.835056630886308, plays=25, songs=4, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a103, longTerm=0.61955940429655, shortTerm=0.5772787318361955, rejection=0.3941614568215273, positive=12.093394598836635, negative=13.723463516812796, plays=20, songs=3, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a104, longTerm=0.0, shortTerm=0.5017516543402102, rejection=0.5047129805528116, positive=9.794130534848165, negative=12.018588296370373, plays=0, songs=0, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a105, longTerm=0.6151509067615292, shortTerm=0.7399642450836991, rejection=0.3305378927957513, positive=7.471525004477916, negative=8.305401259842782, plays=21, songs=2, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a106, longTerm=0.6098550649108787, shortTerm=0.5397339086659475, rejection=0.3054947541548161, positive=10.917405497368433, negative=9.223015126239634, plays=23, songs=3, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a107, longTerm=0.0, shortTerm=0.16666666666666666, rejection=0.25, positive=1.0, negative=1.0, plays=0, songs=0, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a108, longTerm=0.27886555270686586, shortTerm=0.5610425240054869, rejection=0.42627888740014175, positive=9.425332341866621, negative=9.00920859723149, plays=2, songs=2, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a109, longTerm=0.6016719268980346, shortTerm=0.5571547190700249, rejection=0.44490670440961555, positive=9.57311892693199, negative=13.203187844908154, plays=14, songs=3, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a11, longTerm=0.30857142857142855, shortTerm=0.5872299258303773, rejection=0.2942501788919411, positive=17.084848261857893, negative=7.957097327152423, plays=0, songs=0, saved=5, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a110, longTerm=0.0, shortTerm=0.600997506234414, rejection=0.42498949503133976, positive=14.248451268798615, negative=12.00920859723149, plays=0, songs=0, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a111, longTerm=0.6681120684034273, shortTerm=0.6472857536511436, rejection=0.36064290637174207, positive=17.491592307354143, negative=15.732843215951679, plays=24, songs=4, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a112, longTerm=0.5984242772529411, shortTerm=0.47107438016528924, rejection=0.44779202709203386, positive=8.945352158263702, negative=13.416823272008903, plays=16, songs=3, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a113, longTerm=0.0, shortTerm=0.4766966475878986, rejection=0.4973610672383497, positive=13.9597361642146, negative=15.792153958038734, plays=0, songs=0, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a114, longTerm=0.7164870093752, shortTerm=0.6750609260763607, rejection=0.1658790857742092, positive=10.713635427100751, negative=4.407614674777413, plays=27, songs=4, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a115, longTerm=0.7007782652790028, shortTerm=0.500780031201248, rejection=0.27809801202624906, positive=5.2015051880808345, negative=7.8977865850653695, plays=38, songs=5, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a116, longTerm=0.45, shortTerm=0.3103448275862069, rejection=0.19047619047619047, positive=2.25, negative=1.0, plays=0, songs=0, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a117, longTerm=0.6422448718887565, shortTerm=0.7919375812743823, rejection=0.31855382951735606, positive=5.925139806801024, negative=7.140628992636485, plays=21, songs=2, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a118, longTerm=0.7349613755542805, shortTerm=0.8090521228033535, rejection=0.35865120548240453, positive=14.610343013856538, negative=13.986133205715396, plays=24, songs=5, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a119, longTerm=0.0, shortTerm=0.375, rejection=0.2857142857142857, positive=3.0, negative=2.0, plays=0, songs=0, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a12, longTerm=0.6468165079994728, shortTerm=0.5790581425940542, rejection=0.26574022025736926, positive=10.894245450796387, negative=6.6933597551961075, plays=16, songs=4, saved=6, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a13, longTerm=0.6493143768628002, shortTerm=0.29515418502202645, rejection=0.30361054096846724, positive=3.1495864530673656, negative=6.670284363680013, plays=29, songs=3, saved=9, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a14, longTerm=0.2907692307692308, shortTerm=0.523986612123466, rejection=0.5235938023676674, positive=10.605119222760239, negative=13.853644927256683, plays=0, songs=0, saved=4, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a15, longTerm=0.7754822128474315, shortTerm=0.8236768878970714, rejection=0.34881416143958954, positive=14.311538455697095, negative=15.486752698195948, plays=36, songs=5, saved=8, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a16, longTerm=0.5485124094564799, shortTerm=0.4275491949910555, rejection=0.5424182445323694, positive=7.573604486081958, negative=17.15703706187596, plays=14, songs=2, saved=2, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a17, longTerm=0.27, shortTerm=0.574468085106383, rejection=0.508591864301069, positive=8.627147276187733, negative=10.998761015038891, plays=0, songs=0, saved=5, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a18, longTerm=0.5843506339903785, shortTerm=0.21568627450980393, rejection=0.43521355292121405, positive=3.576040568720418, negative=8.612041504646676, plays=16, songs=3, saved=9, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a19, longTerm=0.6837184748914518, shortTerm=0.5880535530381051, rejection=0.32281302439559306, positive=10.11142201216612, negative=10.11142201216612, plays=26, songs=3, saved=3, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a2, longTerm=0.2907692307692308, shortTerm=0.6059113300492611, rejection=0.3772802082948402, positive=10.69827380005213, negative=7.6933597551961075, plays=0, songs=0, saved=4, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a20, longTerm=0.24545454545454545, shortTerm=0.3162393162393162, rejection=0.377853855823498, positive=4.41780640146245, negative=3.8977865850653695, plays=0, songs=0, saved=5, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a21, longTerm=0.7906767581598027, shortTerm=0.8265958599761569, rejection=0.3001676604530098, positive=14.887343713875067, negative=13.548243667413901, plays=42, songs=6, saved=3, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a22, longTerm=0.5253823276849, shortTerm=0.6364462622131334, rejection=0.3576801175327196, positive=14.196842280025423, negative=10.57851853093798, plays=8, songs=3, saved=6, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a23, longTerm=0.2907692307692308, shortTerm=0.5532286212914486, rejection=0.4751966790307282, positive=12.174931437772605, negative=12.835056630886308, plays=0, songs=0, saved=7, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a24, longTerm=0.6246586586529002, shortTerm=0.4131132508023842, rejection=0.2167368170377724, positive=4.404543273400236, negative=3.8060207523233376, plays=21, songs=3, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a25, longTerm=0.7227261259406383, shortTerm=0.6721311475409836, rejection=0.17291066282420747, positive=3.25, negative=3.0, plays=26, songs=4, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a26, longTerm=0.0, shortTerm=0.46755407653910147, rejection=0.3785041123216567, positive=8.654693032988988, negative=6.488932925326846, plays=0, songs=0, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a27, longTerm=0.5683099494544568, shortTerm=0.7043879907621247, rejection=0.3829983396052005, positive=24.437975081550533, negative=20.32180932908226, plays=18, songs=3, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a28, longTerm=0.38758611025807554, shortTerm=0.5538515162077379, rejection=0.34891455880602995, positive=12.488558173097989, negative=9.640009500155932, plays=10, songs=1, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a29, longTerm=0.0, shortTerm=0.6019900497512438, rejection=0.3252617836820867, positive=8.372233231331712, negative=5.0, plays=0, songs=0, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a3, longTerm=0.6518534004294538, shortTerm=0.49044585987261147, rejection=0.3158136922581438, positive=2.91780640146245, negative=4.6933597551961075, plays=15, songs=4, saved=2, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a30, longTerm=0.650463979023968, shortTerm=0.7088791848617176, rejection=0.3307480301039865, positive=12.223827153785788, negative=10.488932925326846, plays=20, songs=3, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a31, longTerm=0.7039629030875687, shortTerm=0.3191489361702128, rejection=0.2481620196524334, positive=4.0473730381327355, negative=6.039483460755572, plays=35, songs=5, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a32, longTerm=0.0, shortTerm=0.3939393939393939, rejection=0.41960560140777453, positive=3.25, negative=3.7955731701307385, plays=0, songs=0, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a33, longTerm=0.7678917804142655, shortTerm=0.7179747058564314, rejection=0.35156030891086437, positive=8.2775885322781, negative=12.213635427100751, plays=35, songs=5, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a34, longTerm=0.47236350236892105, shortTerm=0.48717948717948717, rejection=0.34514684954760844, positive=6.6933597551961075, negative=6.795573170130739, plays=12, songs=2, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a35, longTerm=0.0, shortTerm=0.5460992907801419, rejection=0.41095577564425007, positive=9.889587261447929, negative=8.294953677650184, plays=0, songs=0, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a36, longTerm=0.5193616892102002, shortTerm=0.46109801279892226, rejection=0.34454590462869, positive=3.948081264986531, negative=4.966477026291306, plays=10, songs=2, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a37, longTerm=0.6876401345479217, shortTerm=0.13793103448275862, rejection=0.0, positive=0.0, negative=0.0, plays=21, songs=4, saved=0, lastHeardMs=1799049600000)
+ArtistTaste(artistId=a38, longTerm=0.0, shortTerm=0.4482758620689655, rejection=0.2479807155463609, positive=6.16780640146245, negative=2.6933597551961075, plays=0, songs=0, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a39, longTerm=0.7215328594253916, shortTerm=0.6753246753246753, rejection=0.0, positive=0.0, negative=0.0, plays=28, songs=4, saved=0, lastHeardMs=1799308800000)
+ArtistTaste(artistId=a4, longTerm=0.6050211363596278, shortTerm=0.3548387096774194, rejection=0.27629582935803365, positive=4.6933597551961075, negative=4.6933597551961075, plays=16, songs=3, saved=8, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a40, longTerm=0.46696623665926534, shortTerm=0.7370151216305062, rejection=0.3991025121423826, positive=16.52449018168224, negative=13.465857533810752, plays=5, songs=3, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a41, longTerm=0.0, shortTerm=0.32346723044397463, rejection=0.498338920815255, positive=6.073118926931992, negative=8.01965617942409, plays=0, songs=0, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a42, longTerm=0.6253149176821292, shortTerm=0.40298507462686567, rejection=0.3142823661254369, positive=4.28046739858968, negative=6.407614674777414, plays=22, songs=3, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a43, longTerm=0.4554038239379231, shortTerm=0.5890059080400719, rejection=0.18285127317575683, positive=11.935160431578666, negative=3.5098280897120446, plays=5, songs=3, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a44, longTerm=0.0, shortTerm=0.5473833097595474, rejection=0.36987870883969914, positive=13.868558163732143, negative=9.314780958981666, plays=0, songs=0, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a45, longTerm=0.7394103846777684, shortTerm=0.694729310756022, rejection=0.2250463703052536, positive=21.536353449938726, negative=12.018588296370373, plays=51, songs=5, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a46, longTerm=0.641380795965489, shortTerm=0.0, rejection=0.0, positive=0.0, negative=0.0, plays=23, songs=4, saved=0, lastHeardMs=1795766400000)
+ArtistTaste(artistId=a47, longTerm=0.0, shortTerm=0.5800524934383202, rejection=0.30386622689313536, positive=12.466669561356905, negative=6.314780958981666, plays=0, songs=0, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a48, longTerm=0.6145673280835429, shortTerm=0.7425997425997426, rejection=0.3435131587687679, positive=12.565149306956954, negative=11.650457082348533, plays=22, songs=2, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a49, longTerm=0.6304373629435986, shortTerm=0.601221259891582, rejection=0.34082783727980615, positive=11.98667826249812, negative=10.670284363680013, plays=19, songs=3, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a5, longTerm=0.30857142857142855, shortTerm=0.1184573002754821, rejection=0.5700194777952268, positive=4.349157839815616, negative=8.416994373916296, plays=0, songs=0, saved=7, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a50, longTerm=0.0, shortTerm=0.5955766192733017, rejection=0.4819921046939044, positive=14.162127815539419, negative=15.038415577701857, plays=0, songs=0, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a51, longTerm=0.7727287497731854, shortTerm=0.7030438010393468, rejection=0.234183714031501, positive=2.6680622569700128, negative=5.601593922454077, plays=39, songs=5, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a52, longTerm=0.593314205900511, shortTerm=0.8421623754562494, rejection=0.3157265932885183, positive=17.579523093549735, negative=11.294953677650184, plays=14, songs=2, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a54, longTerm=0.7068123751944363, shortTerm=0.49447077409162715, rejection=0.2576068291128681, positive=11.547201936225342, negative=9.315848842035383, plays=38, songs=5, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a55, longTerm=0.46638070943792137, shortTerm=0.5772787318361955, rejection=0.531041910435537, positive=7.823738419412546, negative=14.294953677650184, plays=8, songs=2, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a56, longTerm=0.0, shortTerm=0.46308724832214765, rejection=0.47233608884525236, positive=4.474446646266342, negative=5.795573170130739, plays=0, songs=0, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a57, longTerm=0.5671419858788742, shortTerm=0.6582109479305741, rejection=0.40423781495907923, positive=22.700991783814434, negative=20.08492740855802, plays=14, songs=3, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a58, longTerm=0.7553212501530322, shortTerm=0.7013393065472024, rejection=0.34121736976677786, positive=18.738670665565714, negative=16.180112453392056, plays=30, songs=6, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a59, longTerm=0.0, shortTerm=0.7313746065057712, rejection=0.4234087548279629, positive=23.57808045826716, negative=18.782774258899845, plays=0, songs=0, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a6, longTerm=0.6853354002719305, shortTerm=0.647518863248334, rejection=0.35679517220677187, positive=11.487490290044272, negative=11.364712001929837, plays=20, songs=4, saved=3, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a60, longTerm=0.6607897006884927, shortTerm=0.07407407407407407, rejection=0.0, positive=0.0, negative=0.0, plays=24, songs=3, saved=0, lastHeardMs=1798099200000)
+ArtistTaste(artistId=a61, longTerm=0.7340571200390605, shortTerm=0.7153024911032029, rejection=0.1045902942300174, positive=6.372233231331712, negative=2.0, plays=25, songs=5, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a62, longTerm=0.0, shortTerm=0.6004993757802747, rejection=0.3876109027384895, positive=12.685160431578666, negative=9.294953677650184, plays=0, songs=0, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a63, longTerm=0.7344294563430827, shortTerm=0.5312042191620275, rejection=0.19056540153102014, positive=5.787373846513297, negative=4.305401259842783, plays=30, songs=5, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a64, longTerm=0.715915787981155, shortTerm=0.7371015445284259, rejection=0.21023759760678906, positive=19.462086695899366, negative=8.601593922454077, plays=31, songs=4, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a65, longTerm=0.0, shortTerm=0.6707818930041153, rejection=0.47422233636124295, positive=22.27325119672113, negative=21.893128388012254, plays=0, songs=0, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a66, longTerm=0.6906940025676352, shortTerm=0.047619047619047616, rejection=0.20698791067756042, positive=0.25, negative=3.6933597551961075, plays=34, songs=4, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a67, longTerm=0.6972125461042872, shortTerm=0.8047828208882382, rejection=0.19980000203215897, positive=5.270019816397081, negative=4.0, plays=25, songs=3, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a68, longTerm=0.0, shortTerm=0.6506550218340611, rejection=0.4850458293155576, positive=14.213555384502879, negative=15.27187828613409, plays=0, songs=0, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a69, longTerm=0.5079211273089727, shortTerm=0.7288135593220338, rejection=0.2662412236803059, positive=20.473383474214923, negative=10.059310742087055, plays=15, songs=2, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a7, longTerm=0.7000805363186862, shortTerm=0.602879126334078, rejection=0.3891539685552853, positive=11.817841245102976, negative=14.600354937492966, plays=26, songs=4, saved=2, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a70, longTerm=0.7349253410599766, shortTerm=0.6423781850692892, rejection=0.3364374242286849, positive=12.297009401159743, negative=13.282325868326687, plays=34, songs=5, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a71, longTerm=0.0, shortTerm=0.2955421023665383, rejection=0.43046470016063043, positive=5.855428969000515, negative=5.937270045820941, plays=0, songs=0, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a72, longTerm=0.7396360542279802, shortTerm=0.5939086294416244, rejection=0.24694653718543266, positive=0.4744466462663423, negative=3.7955731701307385, plays=26, songs=5, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a73, longTerm=0.6758177280704839, shortTerm=0.6478291971606229, rejection=0.36631859020727053, positive=16.478276974105828, negative=15.5377960852213, plays=24, songs=3, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a74, longTerm=0.0, shortTerm=0.6714579055441479, rejection=0.510238620665271, positive=19.37788397213831, negative=22.271707184226695, plays=0, songs=0, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a75, longTerm=0.6898978765888297, shortTerm=0.5834689228766677, rejection=0.06845859383922427, positive=13.66473971108757, negative=2.0, plays=33, songs=4, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a76, longTerm=0.7816072814916701, shortTerm=0.6876220226474032, rejection=0.2807389827743767, positive=14.962706188379919, negative=14.407614674777413, plays=57, songs=7, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a77, longTerm=0.0, shortTerm=0.33884297520661155, rejection=0.14244974033609423, positive=4.020019816397081, negative=1.0, plays=0, songs=0, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a78, longTerm=0.6464127185743948, shortTerm=0.5854922279792746, rejection=0.2396183589571015, positive=5.16780640146245, negative=4.795573170130739, plays=23, songs=3, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a79, longTerm=0.5742064901131164, shortTerm=0.3939393939393939, rejection=0.3418803418803419, positive=3.25, negative=6.0, plays=18, songs=3, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a8, longTerm=0.30857142857142855, shortTerm=0.5698924731182796, rejection=0.3935542448470655, positive=9.540039632794162, negative=7.488932925326846, plays=0, songs=0, saved=6, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a80, longTerm=0.0, shortTerm=0.2920353982300885, rejection=0.6544263500420613, positive=2.224446646266342, negative=8.0, plays=0, songs=0, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a81, longTerm=0.7260620271786716, shortTerm=0.538505912892991, rejection=0.2419405038892377, positive=7.532325868326687, negative=5.9466497449598235, plays=26, songs=4, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a82, longTerm=0.7809822076686176, shortTerm=0.3853246254321936, rejection=0.26089716711813643, positive=7.155178592138954, negative=9.038415577701855, plays=47, songs=7, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a83, longTerm=0.0, shortTerm=0.6521739130434783, rejection=0.28946069639182836, positive=16.95616808843159, negative=7.72239563375908, plays=0, songs=0, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a84, longTerm=0.6297720189373245, shortTerm=0.6810366309494144, rejection=0.43163869266709387, positive=18.61065747109911, negative=19.373920599161323, plays=14, songs=4, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a85, longTerm=0.7606048814136677, shortTerm=0.6397207836072957, rejection=0.39734899125788187, positive=12.582327524163482, negative=18.845333111171517, plays=40, songs=5, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a86, longTerm=0.0, shortTerm=0.4624107517849643, rejection=0.34745082740352334, positive=12.233254339403816, negative=7.578518530937981, plays=0, songs=0, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a87, longTerm=0.582654727456674, shortTerm=0.5462601914214817, rejection=0.30310073114516645, positive=12.013855671324084, negative=8.835056630886308, plays=18, songs=3, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a88, longTerm=0.5904986210044934, shortTerm=0.6673596673596673, rejection=0.43933738648559967, positive=19.22667346397864, negative=20.19870074976243, plays=13, songs=4, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a89, longTerm=0.0, shortTerm=0.479039479039479, rejection=0.43171378492179396, positive=11.521381611728255, negative=10.27187828613409, plays=0, songs=0, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a9, longTerm=0.6682656577408481, shortTerm=0.7353184449958643, rejection=0.336278564045968, positive=15.57311892693199, negative=12.804781767362227, plays=22, songs=4, saved=9, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a90, longTerm=0.5247825013803495, shortTerm=0.4188158372684344, rejection=0.36919331388952564, positive=6.981353094189959, negative=7.509828089712045, plays=11, songs=2, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a91, longTerm=0.6705276384459106, shortTerm=0.5555555555555556, rejection=0.18387936387104886, positive=9.938082073367093, negative=4.8977865850653695, plays=28, songs=4, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a92, longTerm=0.0, shortTerm=0.5544726766446223, rejection=0.4490895306879214, positive=13.417598032434032, negative=12.568070948745383, plays=0, songs=0, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a93, longTerm=0.7452065349711197, shortTerm=0.8082569357061538, rejection=0.2771396080701116, positive=17.945442420219695, negative=12.209319433862422, plays=34, songs=4, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a94, longTerm=0.6864256523472724, shortTerm=0.7186689524814278, rejection=0.34268057433067484, positive=15.953774781269981, negative=13.374091701068721, plays=22, songs=4, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a95, longTerm=0.0, shortTerm=0.5492957746478874, rejection=0.2968483785158931, positive=12.258898850991212, negative=6.019656179424089, plays=0, songs=0, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a96, longTerm=0.5593510458025703, shortTerm=0.40298507462686567, rejection=0.29964212933410495, positive=10.182724348940207, negative=7.00920859723149, plays=12, songs=4, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a97, longTerm=0.7643568758492392, shortTerm=0.5889003083247687, rejection=0.20567503188462957, positive=4.372233231331712, negative=6.0, plays=48, songs=6, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a98, longTerm=0.0, shortTerm=0.4466061392131431, rejection=0.27318002138714254, positive=9.316259965487518, negative=4.253289989763716, plays=0, songs=0, saved=0, lastHeardMs=1800000000000)
+ArtistTaste(artistId=a99, longTerm=0.729852206328572, shortTerm=0.591628381827463, rejection=0.29878114698436664, positive=5.717289053837459, negative=7.314780958981666, plays=27, songs=5, saved=0, lastHeardMs=1800000000000)
+SongTaste(songId=s0_0, plays=3, familiarity=0.5, positive=0.0, negative=0.0, lastHeardMs=1790841600000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s0_2, plays=10, familiarity=0.7692307692307693, positive=2.5098280897120446, negative=4.418062256970012, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s0_3, plays=0, familiarity=0.0, positive=0.7236346187201891, negative=4.1510765748290845, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s0_4, plays=11, familiarity=0.7857142857142857, positive=0.0, negative=0.0, lastHeardMs=1799136000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s0_5, plays=4, familiarity=0.5714285714285714, positive=0.0, negative=0.0, lastHeardMs=1798099200000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s100_1, plays=0, familiarity=0.0, positive=0.0, negative=3.0, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s100_2, plays=9, familiarity=0.75, positive=6.384539283261319, negative=6.141696875690202, lastHeardMs=1800000000000, weekPlays=9, saved=false, fadedOut=false)
+SongTaste(songId=s100_3, plays=0, familiarity=0.0, positive=1.8977865850653692, negative=7.11142201216612, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s100_5, plays=5, familiarity=0.625, positive=0.0, negative=0.0, lastHeardMs=1798099200000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s100_6, plays=4, familiarity=0.5714285714285714, positive=2.601593922454076, negative=3.8977865850653695, lastHeardMs=1800000000000, weekPlays=0, saved=true, fadedOut=false)
+SongTaste(songId=s100_7, plays=5, familiarity=0.625, positive=0.0, negative=0.0, lastHeardMs=1791792000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s101_1, plays=0, familiarity=0.0, positive=4.407614674777413, negative=5.11142201216612, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s101_3, plays=0, familiarity=0.0, positive=1.8977865850653692, negative=3.6933597551961075, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s101_7, plays=0, familiarity=0.0, positive=0.0, negative=0.0, lastHeardMs=0, weekPlays=0, saved=true, fadedOut=false)
+SongTaste(songId=s102_2, plays=0, familiarity=0.0, positive=5.151076574829085, negative=2.6214212037855584, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s102_3, plays=8, familiarity=0.7272727272727273, positive=3.0, negative=1.0, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s102_4, plays=2, familiarity=0.4, positive=2.0, negative=0.0, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s102_5, plays=8, familiarity=0.7272727272727273, positive=0.0, negative=0.0, lastHeardMs=1799136000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s102_7, plays=7, familiarity=0.7, positive=2.601593922454076, negative=7.213635427100751, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s103_2, plays=0, familiarity=0.0, positive=5.315848842035383, negative=3.5098280897120446, lastHeardMs=1800000000000, weekPlays=0, saved=true, fadedOut=false)
+SongTaste(songId=s103_4, plays=2, familiarity=0.4, positive=2.601593922454076, negative=7.213635427100751, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s103_5, plays=6, familiarity=0.6666666666666666, positive=0.0, negative=0.0, lastHeardMs=1793865600000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s103_6, plays=12, familiarity=0.8, positive=3.0, negative=3.0, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s104_0, plays=0, familiarity=0.0, positive=0.0, negative=0.0, lastHeardMs=0, weekPlays=0, saved=true, fadedOut=false)
+SongTaste(songId=s104_2, plays=0, familiarity=0.0, positive=4.039483460755571, negative=4.3252285411742655, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s104_3, plays=0, familiarity=0.0, positive=1.0, negative=2.0, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s104_7, plays=0, familiarity=0.0, positive=3.8977865850653695, negative=5.6933597551961075, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s105_2, plays=9, familiarity=0.75, positive=0.0, negative=0.0, lastHeardMs=1797753600000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s105_4, plays=0, familiarity=0.0, positive=3.8977865850653695, negative=2.612041504646675, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s105_6, plays=0, familiarity=0.0, positive=2.8977865850653695, negative=5.6933597551961075, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s105_7, plays=12, familiarity=0.8, positive=0.0, negative=0.0, lastHeardMs=1798185600000, weekPlays=0, saved=true, fadedOut=false)
+SongTaste(songId=s106_1, plays=0, familiarity=0.0, positive=6.864263611356675, negative=5.3252285411742655, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s106_3, plays=4, familiarity=0.5714285714285714, positive=1.8977865850653692, negative=0.8977865850653692, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s106_4, plays=9, familiarity=0.75, positive=0.0, negative=0.0, lastHeardMs=1790236800000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s106_5, plays=10, familiarity=0.7692307692307693, positive=0.0, negative=0.0, lastHeardMs=1791187200000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s106_6, plays=0, familiarity=0.0, positive=1.0, negative=3.0, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s107_0, plays=0, familiarity=0.0, positive=0.0, negative=0.0, lastHeardMs=0, weekPlays=0, saved=true, fadedOut=false)
+SongTaste(songId=s107_3, plays=0, familiarity=0.0, positive=1.0, negative=1.0, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s108_0, plays=0, familiarity=0.0, positive=2.0, negative=2.8977865850653695, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s108_1, plays=1, familiarity=0.25, positive=0.0, negative=0.0, lastHeardMs=1791878400000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s108_3, plays=1, familiarity=0.25, positive=2.8977865850653695, negative=1.8977865850653692, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s108_5, plays=0, familiarity=0.0, positive=3.601593922454076, negative=4.213635427100751, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s109_2, plays=1, familiarity=0.25, positive=4.6933597551961075, negative=2.0, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s109_4, plays=7, familiarity=0.7, positive=0.0, negative=2.7955731701307385, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=true)
+SongTaste(songId=s109_5, plays=6, familiarity=0.6666666666666666, positive=0.0, negative=0.0, lastHeardMs=1794297600000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s109_6, plays=0, familiarity=0.0, positive=3.703807337388707, negative=4.612041504646675, lastHeardMs=1800000000000, weekPlays=0, saved=true, fadedOut=false)
+SongTaste(songId=s109_7, plays=0, familiarity=0.0, positive=0.0, negative=3.7955731701307385, lastHeardMs=1800000000000, weekPlays=0, saved=true, fadedOut=false)
+SongTaste(songId=s10_0, plays=9, familiarity=0.75, positive=0.0, negative=0.0, lastHeardMs=1796198400000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s10_1, plays=7, familiarity=0.7, positive=0.0, negative=0.0, lastHeardMs=1789891200000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s10_2, plays=11, familiarity=0.7857142857142857, positive=2.0, negative=2.0, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s10_3, plays=0, familiarity=0.0, positive=3.7955731701307385, negative=3.6933597551961075, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s10_4, plays=12, familiarity=0.8, positive=5.6933597551961075, negative=2.7955731701307385, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s10_5, plays=1, familiarity=0.25, positive=0.0, negative=0.0, lastHeardMs=1796371200000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s110_0, plays=0, familiarity=0.0, positive=1.0, negative=1.0, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s110_2, plays=0, familiarity=0.0, positive=3.703807337388707, negative=4.795573170130739, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s110_3, plays=0, familiarity=0.0, positive=3.6933597551961075, negative=2.8977865850653695, lastHeardMs=1800000000000, weekPlays=0, saved=true, fadedOut=false)
+SongTaste(songId=s110_6, plays=0, familiarity=0.0, positive=4.4993805075194455, negative=3.3158488420353818, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s111_0, plays=10, familiarity=0.7692307692307693, positive=0.0, negative=0.0, lastHeardMs=1790236800000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s111_1, plays=0, familiarity=0.0, positive=3.0, negative=2.0, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s111_2, plays=10, familiarity=0.7692307692307693, positive=0.0, negative=0.0, lastHeardMs=1797148800000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s111_3, plays=0, familiarity=0.0, positive=1.0, negative=2.0, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s111_5, plays=1, familiarity=0.25, positive=7.558691249606498, negative=5.519207788850928, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s111_6, plays=0, familiarity=0.0, positive=4.601593922454076, negative=6.213635427100751, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s111_7, plays=3, familiarity=0.5, positive=0.0, negative=0.0, lastHeardMs=1794470400000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s112_0, plays=0, familiarity=0.0, positive=4.6933597551961075, negative=5.601593922454077, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s112_1, plays=12, familiarity=0.8, positive=0.0, negative=0.0, lastHeardMs=1792828800000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s112_2, plays=0, familiarity=0.0, positive=1.8060207523233376, negative=5.11142201216612, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s112_3, plays=0, familiarity=0.0, positive=1.7955731701307385, negative=2.7038073373887066, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s112_5, plays=2, familiarity=0.4, positive=0.0, negative=0.0, lastHeardMs=1795593600000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s112_6, plays=2, familiarity=0.4, positive=0.0, negative=0.0, lastHeardMs=1796976000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s113_0, plays=0, familiarity=0.0, positive=4.233462708432234, negative=8.835056630886308, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s113_3, plays=0, familiarity=0.0, positive=4.9466497449598235, negative=4.345055822505747, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s113_4, plays=0, familiarity=0.0, positive=3.6933597551961075, negative=2.612041504646675, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s114_1, plays=8, familiarity=0.7272727272727273, positive=0.0, negative=0.0, lastHeardMs=1792396800000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s114_2, plays=8, familiarity=0.7272727272727273, positive=3.0, negative=0.0, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s114_3, plays=3, familiarity=0.5, positive=0.0, negative=0.0, lastHeardMs=1791964800000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s114_4, plays=0, familiarity=0.0, positive=7.213635427100751, negative=4.407614674777413, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s114_6, plays=8, familiarity=0.7272727272727273, positive=0.0, negative=0.0, lastHeardMs=1789718400000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s115_0, plays=2, familiarity=0.4, positive=1.0, negative=2.0, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s115_2, plays=0, familiarity=0.0, positive=3.0, negative=2.8977865850653695, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s115_3, plays=5, familiarity=0.625, positive=0.0, negative=0.0, lastHeardMs=1795852800000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s115_4, plays=12, familiarity=0.8, positive=0.0, negative=0.0, lastHeardMs=1794643200000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s115_6, plays=7, familiarity=0.7, positive=0.0, negative=0.0, lastHeardMs=1790150400000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s115_7, plays=12, familiarity=0.8, positive=1.0, negative=3.0, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s116_0, plays=0, familiarity=0.0, positive=2.0, negative=1.0, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s117_2, plays=11, familiarity=0.7857142857142857, positive=0.0, negative=0.0, lastHeardMs=1792396800000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s117_4, plays=10, familiarity=0.7692307692307693, positive=2.0, negative=0.0, lastHeardMs=1800000000000, weekPlays=10, saved=false, fadedOut=false)
+SongTaste(songId=s117_5, plays=0, familiarity=0.0, positive=0.0, negative=0.0, lastHeardMs=0, weekPlays=0, saved=true, fadedOut=false)
+SongTaste(songId=s117_6, plays=0, familiarity=0.0, positive=0.7236346187201891, negative=6.242842407571117, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s117_7, plays=0, familiarity=0.0, positive=3.0, negative=0.8977865850653692, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s118_0, plays=0, familiarity=0.0, positive=6.131249293497603, negative=5.86533149441039, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s118_1, plays=2, familiarity=0.4, positive=0.0, negative=0.0, lastHeardMs=1799740800000, weekPlays=2, saved=false, fadedOut=false)
+SongTaste(songId=s118_3, plays=4, familiarity=0.5714285714285714, positive=0.0, negative=3.7955731701307385, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=true)
+SongTaste(songId=s118_4, plays=4, familiarity=0.5714285714285714, positive=3.8977865850653695, negative=1.5296553710435266, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s118_6, plays=11, familiarity=0.7857142857142857, positive=0.0, negative=0.0, lastHeardMs=1799222400000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s118_7, plays=3, familiarity=0.5, positive=3.0, negative=2.7955731701307385, lastHeardMs=1800000000000, weekPlays=3, saved=false, fadedOut=false)
+SongTaste(songId=s119_1, plays=0, familiarity=0.0, positive=3.0, negative=2.0, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s11_0, plays=0, familiarity=0.0, positive=5.418062256970012, negative=1.4472692374403782, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s11_1, plays=0, familiarity=0.0, positive=1.7955731701307385, negative=3.0, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s11_2, plays=0, familiarity=0.0, positive=6.772497778614643, negative=3.5098280897120446, lastHeardMs=1800000000000, weekPlays=0, saved=true, fadedOut=false)
+SongTaste(songId=s11_5, plays=0, familiarity=0.0, positive=0.0, negative=0.0, lastHeardMs=0, weekPlays=0, saved=true, fadedOut=false)
+SongTaste(songId=s11_7, plays=0, familiarity=0.0, positive=2.6933597551961075, negative=0.0, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s12_0, plays=3, familiarity=0.5, positive=0.0, negative=0.0, lastHeardMs=1795334400000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s12_1, plays=1, familiarity=0.25, positive=6.4993805075194455, negative=4.6933597551961075, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s12_2, plays=1, familiarity=0.25, positive=0.0, negative=0.0, lastHeardMs=1797840000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s12_3, plays=11, familiarity=0.7857142857142857, positive=0.0, negative=0.0, lastHeardMs=1792915200000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s12_6, plays=0, familiarity=0.0, positive=3.6933597551961075, negative=2.0, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s13_0, plays=9, familiarity=0.75, positive=0.0, negative=0.0, lastHeardMs=1796371200000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s13_2, plays=0, familiarity=0.0, positive=1.723634618720189, negative=6.670284363680013, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s13_3, plays=11, familiarity=0.7857142857142857, positive=0.0, negative=0.0, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s13_4, plays=9, familiarity=0.75, positive=0.0, negative=0.0, lastHeardMs=1792742400000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s13_5, plays=0, familiarity=0.0, positive=1.0, negative=0.0, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s14_2, plays=0, familiarity=0.0, positive=3.8977865850653695, negative=2.6933597551961075, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s14_5, plays=0, familiarity=0.0, positive=0.8977865850653692, negative=4.601593922454076, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s14_7, plays=0, familiarity=0.0, positive=4.3252285411742655, negative=6.558691249606498, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s15_1, plays=11, familiarity=0.7857142857142857, positive=2.7955731701307385, negative=3.8977865850653695, lastHeardMs=1800000000000, weekPlays=11, saved=false, fadedOut=false)
+SongTaste(songId=s15_2, plays=10, familiarity=0.7692307692307693, positive=0.0, negative=0.0, lastHeardMs=1796371200000, weekPlays=0, saved=true, fadedOut=false)
+SongTaste(songId=s15_3, plays=2, familiarity=0.4, positive=0.0, negative=1.0, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s15_4, plays=0, familiarity=0.0, positive=7.835056630886309, negative=7.58896611313058, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+SongTaste(songId=s15_5, plays=0, familiarity=0.0, positive=1.0, negative=2.0, lastHeardMs=1800000000000, weekPlays=0, saved=false, fadedOut=false)
+{a117=0.7555279648290015, a39=0.7215328594253916, a37=0.6876401345479217, a1=0.6854414722069343, a60=0.6607897006884927, a61=0.657281869872536, a67=0.6439872116393215, a75=0.6426684380648918, a46=0.641380795965489, a97=0.6071477510377111, a25=0.5977590724638709, a114=0.5976367992909446, a63=0.5944726120988543, a51=0.5917682612123824, a93=0.5842569253246009, a64=0.582135086614516, a21=0.5784785145469702, a82=0.5772261621182072, a52=0.5762693176576817, a45=0.5730087614400253, a76=0.5621796483566528, a72=0.5569854918588836, a81=0.5503982144682225, a10=0.5493773718985386}
+# large Balanced reach
+GraphReach(artistId=a0, score=1.595006281058979, hops=1, seeds=[a117, a1, a60, a25, a61, a93, a46, a114, a97], via=a117)
+GraphReach(artistId=a100, score=0.43893682252974087, hops=1, seeds=[a97, a52, a21, a25], via=a97)
+GraphReach(artistId=a101, score=0.5902141359431743, hops=1, seeds=[a64, a97, a60, a52, a75, a67, a37, a93, a21], via=a64)
+GraphReach(artistId=a102, score=0.8688826651543469, hops=1, seeds=[a52, a51, a1, a97, a60, a81, a67, a82, a21, a93], via=a52)
+GraphReach(artistId=a103, score=0.6682398528929148, hops=2, seeds=[a97, a82, a52, a60, a21, a25, a76, a81, a93], via=a79)
+GraphReach(artistId=a104, score=0.9185404950566523, hops=1, seeds=[a60, a117, a1, a93, a52, a82, a25, a21], via=a60)
+GraphReach(artistId=a105, score=0.8316579968241267, hops=2, seeds=[a82, a97, a52, a63, a76, a75, a60, a45, a46, a37, a81, a93, a21], via=a79)
+GraphReach(artistId=a106, score=0.6319738901904091, hops=1, seeds=[a82, a60, a51, a63, a93, a114, a81, a117], via=a82)
+GraphReach(artistId=a107, score=0.41908787331304737, hops=2, seeds=[a63, a60, a51, a76, a72, a82, a52, a93, a21, a75], via=a73)
+GraphReach(artistId=a108, score=0.5513393286885011, hops=1, seeds=[a63, a61, a67, a82, a72], via=a63)
+GraphReach(artistId=a109, score=0.9082319502455467, hops=2, seeds=[a72, a93, a63, a97, a76, a60, a114, a46, a82, a21, a75, a67], via=a96)
+GraphReach(artistId=a11, score=0.6718686667215797, hops=1, seeds=[a10, a51, a60, a39, a52, a46, a37, a75, a72, a64, a45, a76], via=a10)
+GraphReach(artistId=a110, score=0.7964856344922919, hops=2, seeds=[a114, a25, a63, a61, a51, a117, a97, a76, a81, a82, a21], via=a24)
+GraphReach(artistId=a111, score=0.4000132911103089, hops=1, seeds=[a114, a63, a61, a97, a76], via=a114)
+GraphReach(artistId=a112, score=0.861804776689837, hops=1, seeds=[a114, a97, a76, a117, a61], via=a114)
+GraphReach(artistId=a113, score=0.9718095528352164, hops=1, seeds=[a61, a114, a117, a60, a97, a76, a1, a81], via=a61)
+GraphReach(artistId=a115, score=1.2956442154675984, hops=1, seeds=[a114, a117, a76, a97, a82, a46, a81, a61, a60, a1, a67, a45], via=a114)
+GraphReach(artistId=a116, score=1.1798382263326324, hops=1, seeds=[a117, a114, a1, a61, a25, a97, a76, a46, a75, a45], via=a114)
+GraphReach(artistId=a118, score=1.6763223450260871, hops=1, seeds=[a117, a1, a114, a60, a72, a93, a82, a39, a45, a25, a81, a61, a67, a97], via=a1)
+GraphReach(artistId=a119, score=1.7176795603736343, hops=1, seeds=[a117, a1, a25, a60, a114, a10, a93, a67, a63, a97, a64], via=a117)
+GraphReach(artistId=a12, score=0.3175303106063062, hops=1, seeds=[a10, a82, a51], via=a10)
+GraphReach(artistId=a13, score=0.19114553439432894, hops=1, seeds=[a10], via=a10)
+GraphReach(artistId=a14, score=0.5945091967496228, hops=1, seeds=[a82, a10, a76, a39, a67, a60, a61], via=a82)
+GraphReach(artistId=a15, score=0.4477009538122074, hops=2, seeds=[a117, a1, a25, a10, a97, a45, a46, a21], via=a119)
+GraphReach(artistId=a16, score=0.3720055399953021, hops=2, seeds=[a10, a39, a75, a37, a82, a97, a21], via=a41)
+GraphReach(artistId=a17, score=0.1197957672950346, hops=2, seeds=[a51, a52, a97, a21], via=a53)
+GraphReach(artistId=a18, score=0.395502087113052, hops=1, seeds=[a97, a21, a52, a67, a51], via=a97)
+GraphReach(artistId=a19, score=0.4542200910301991, hops=1, seeds=[a21, a25, a114, a117, a97, a10], via=a21)
+GraphReach(artistId=a2, score=1.0348208591534984, hops=1, seeds=[a1, a117, a25, a52, a60, a21], via=a1)
+GraphReach(artistId=a20, score=0.5677639045038664, hops=1, seeds=[a21, a25, a97, a52, a82, a10, a81, a63, a75], via=a21)
+GraphReach(artistId=a22, score=0.6578693406235686, hops=1, seeds=[a25, a21, a114, a45, a46, a72, a60, a93, a97], via=a25)
+GraphReach(artistId=a23, score=0.8097380045632359, hops=1, seeds=[a25, a21, a93, a97, a114], via=a25)
+GraphReach(artistId=a24, score=1.1201976932604791, hops=1, seeds=[a25, a114, a21, a61, a51, a60, a93, a52, a67, a81], via=a25)
+GraphReach(artistId=a26, score=0.8280445572945105, hops=1, seeds=[a25, a93, a114, a21, a45, a67, a63, a46, a39, a64, a51], via=a93)
+GraphReach(artistId=a27, score=1.6698521055431748, hops=1, seeds=[a25, a51, a75, a37, a76, a72, a114, a39, a82, a64, a52, a1, a93, a21, a67], via=a25)
+GraphReach(artistId=a28, score=0.5148835741340587, hops=1, seeds=[a25, a51, a72, a61, a1, a93, a67, a60, a81], via=a25)
+GraphReach(artistId=a29, score=0.2420867654062654, hops=2, seeds=[a25, a51, a37, a45, a93], via=a27)
+GraphReach(artistId=a3, score=0.5211614743831113, hops=1, seeds=[a1, a117, a60, a93, a72, a25, a67], via=a1)
+GraphReach(artistId=a30, score=0.22006399448104794, hops=2, seeds=[a25, a52, a10, a51], via=a8)
+GraphReach(artistId=a31, score=0.3555794582465601, hops=1, seeds=[a37, a63, a45, a60, a39, a93, a97], via=a63)
+GraphReach(artistId=a32, score=0.4358910162601061, hops=1, seeds=[a46, a37, a25, a75, a45, a10, a72, a67], via=a46)
+GraphReach(artistId=a33, score=0.534041469768424, hops=2, seeds=[a37, a45, a75, a72, a52, a67, a64, a51, a46, a39, a76, a117], via=a74)
+GraphReach(artistId=a34, score=0.4888722148148481, hops=1, seeds=[a37, a45, a75, a46, a39, a64, a117], via=a37)
+GraphReach(artistId=a35, score=0.782102822424356, hops=1, seeds=[a37, a75, a45, a63, a64, a39, a82, a81, a67, a117], via=a75)
+GraphReach(artistId=a36, score=0.9691210841819585, hops=1, seeds=[a37, a39, a76, a72, a64, a75, a117, a21, a82, a93, a45], via=a39)
+GraphReach(artistId=a38, score=1.1370366733900454, hops=1, seeds=[a37, a39, a25, a10, a60, a51, a75, a64, a117], via=a37)
+GraphReach(artistId=a4, score=0.40245520410392865, hops=1, seeds=[a1, a25, a10], via=a1)
+GraphReach(artistId=a40, score=0.8985118440083204, hops=1, seeds=[a39, a37, a60, a45, a46, a10], via=a60)
+GraphReach(artistId=a41, score=1.0210767938091032, hops=1, seeds=[a39, a10, a37, a46, a45, a60], via=a39)
+GraphReach(artistId=a42, score=1.0960511541052882, hops=1, seeds=[a39, a45, a46, a76, a72, a1, a117, a60, a10, a21, a75, a37, a93, a25], via=a39)
+GraphReach(artistId=a43, score=1.015400701023645, hops=1, seeds=[a39, a45, a46, a10, a60, a25, a21, a76, a37, a61], via=a45)
+GraphReach(artistId=a44, score=0.8933092841628715, hops=1, seeds=[a46, a45, a39, a10, a114, a117, a37, a93, a75, a25], via=a46)
+GraphReach(artistId=a47, score=0.999642335081603, hops=1, seeds=[a46, a75, a45, a51, a52, a82, a81, a67, a114, a117], via=a46)
+GraphReach(artistId=a48, score=1.11918020174048, hops=1, seeds=[a46, a51, a45, a75, a81, a52, a67], via=a46)
+GraphReach(artistId=a49, score=1.0497251512490033, hops=1, seeds=[a46, a51, a52, a75, a82, a1, a67, a45, a76, a72, a21, a81], via=a46)
+GraphReach(artistId=a5, score=0.8022207112509455, hops=2, seeds=[a10, a1, a72, a46, a75, a52, a25, a64, a45, a76, a51], via=a74)
+GraphReach(artistId=a50, score=1.3585405022028425, hops=1, seeds=[a51, a46, a52, a67, a45, a75, a25, a114, a97, a21, a81], via=a52)
+GraphReach(artistId=a53, score=1.1109716792718896, hops=1, seeds=[a51, a52, a25, a117, a75, a82, a76, a61, a10, a67, a64, a81, a93], via=a51)
+GraphReach(artistId=a54, score=0.6599941571486257, hops=1, seeds=[a51, a117, a52, a10, a37, a45, a75, a1, a82], via=a51)
+GraphReach(artistId=a55, score=0.7083843585516846, hops=1, seeds=[a82, a75, a52, a117, a51, a81, a76, a60, a61], via=a75)
+GraphReach(artistId=a56, score=1.1646809761738206, hops=1, seeds=[a117, a76, a97, a51, a82, a61, a60, a52, a81, a75], via=a117)
+GraphReach(artistId=a57, score=0.7884348157554615, hops=1, seeds=[a60, a61, a82, a117, a76, a81, a21, a25, a64, a75, a52], via=a60)
+GraphReach(artistId=a58, score=0.984384891783078, hops=1, seeds=[a76, a60, a117, a61, a114, a45, a46, a75, a82, a81, a52], via=a76)
+GraphReach(artistId=a59, score=1.0511081051901565, hops=1, seeds=[a61, a60, a117, a76, a81, a25, a114, a63, a64, a21], via=a61)
+GraphReach(artistId=a6, score=0.5310667059639067, hops=2, seeds=[a1, a61, a10, a67, a25, a72, a52, a97, a51, a21], via=a70)
+GraphReach(artistId=a62, score=0.8864167879537638, hops=1, seeds=[a61, a63, a64, a60, a25, a81, a37, a45, a67], via=a61)
+GraphReach(artistId=a65, score=0.942810874538228, hops=1, seeds=[a63, a64, a37, a67, a45, a75, a61, a60, a25], via=a63)
+GraphReach(artistId=a66, score=0.895336652073903, hops=1, seeds=[a63, a67, a64, a25, a117, a93, a1, a37, a72, a45], via=a67)
+GraphReach(artistId=a68, score=0.898464985505874, hops=1, seeds=[a67, a61, a63, a64, a52, a72, a37, a45, a114, a117, a21], via=a67)
+GraphReach(artistId=a69, score=0.6093832687347285, hops=1, seeds=[a67, a72, a25, a61, a63, a64, a51], via=a72)
+GraphReach(artistId=a7, score=0.688563684204903, hops=1, seeds=[a25, a10, a1, a117, a51, a52], via=a25)
+GraphReach(artistId=a70, score=0.9701542150293345, hops=1, seeds=[a67, a61, a72, a63, a76, a1, a117, a21, a75], via=a61)
+GraphReach(artistId=a71, score=1.0369257626746315, hops=1, seeds=[a72, a67, a75, a61, a76, a64, a51, a46, a63, a93, a21, a82, a10, a1], via=a72)
+GraphReach(artistId=a73, score=1.065340516580322, hops=1, seeds=[a72, a76, a75, a21, a39, a37, a64, a45, a61, a117, a67, a46, a51, a52], via=a76)
+GraphReach(artistId=a74, score=0.8341304685579347, hops=1, seeds=[a72, a75, a64, a76, a25, a51, a21], via=a72)
+GraphReach(artistId=a77, score=1.3865274990041025, hops=1, seeds=[a76, a75, a81, a82, a51, a97, a25, a64, a61, a10, a72], via=a76)
+GraphReach(artistId=a78, score=1.5247682136780485, hops=1, seeds=[a76, a75, a81, a61, a10, a64, a97, a82, a51, a52], via=a76)
+GraphReach(artistId=a79, score=1.6398451965475829, hops=1, seeds=[a76, a97, a82, a81, a117, a75, a61, a10, a114, a64], via=a97)
+GraphReach(artistId=a8, score=0.3826691900688893, hops=1, seeds=[a10, a52, a25, a51], via=a52)
+GraphReach(artistId=a80, score=1.398013699627026, hops=1, seeds=[a82, a81, a75, a76, a51, a1, a117, a97, a46, a61, a10, a52, a64, a45], via=a82)
+GraphReach(artistId=a83, score=1.1813656623204722, hops=1, seeds=[a82, a51, a81, a52, a75, a76, a1, a63, a21], via=a51)
+GraphReach(artistId=a84, score=0.9048166472704283, hops=1, seeds=[a82, a81, a63, a51, a75, a1, a64, a21, a37], via=a82)
+GraphReach(artistId=a85, score=1.3069325666491753, hops=1, seeds=[a82, a1, a75, a51, a81, a64, a46, a25, a21, a63, a52], via=a82)
+GraphReach(artistId=a86, score=0.9769270247179564, hops=1, seeds=[a82, a46, a51, a81, a52, a1, a75, a63, a21, a64, a45], via=a46)
+GraphReach(artistId=a87, score=0.9179631094564642, hops=1, seeds=[a64, a82, a21, a97, a1, a75, a46, a81, a93, a63], via=a64)
+GraphReach(artistId=a88, score=0.8577034082905323, hops=2, seeds=[a61, a82, a64, a93, a63, a1, a60, a75, a97, a46, a21, a25, a52, a67, a51], via=a62)
+GraphReach(artistId=a89, score=0.8017111286602236, hops=1, seeds=[a10, a37, a93, a64, a46, a39, a21, a82, a72, a60, a45, a97], via=a10)
+GraphReach(artistId=a9, score=0.3770493951803565, hops=1, seeds=[a51, a10, a25, a52], via=a51)
+GraphReach(artistId=a90, score=0.5488553978119224, hops=1, seeds=[a93, a46, a64, a82, a21], via=a46)
+GraphReach(artistId=a91, score=0.7413560089827451, hops=1, seeds=[a93, a82, a46, a51, a97, a39, a52, a37, a64, a117], via=a82)
+GraphReach(artistId=a92, score=0.7715018077629603, hops=1, seeds=[a93, a97, a46, a25, a51, a82], via=a93)
+GraphReach(artistId=a94, score=1.1583065675361939, hops=1, seeds=[a93, a46, a97, a60, a72, a117, a82, a1], via=a93)
+GraphReach(artistId=a95, score=0.8934680552290875, hops=1, seeds=[a93, a97, a72, a25, a46, a60, a21], via=a93)
+GraphReach(artistId=a96, score=1.3104682346604521, hops=1, seeds=[a93, a97, a72, a60, a46, a1, a117, a25, a21], via=a72)
+GraphReach(artistId=a98, score=0.8506572683758491, hops=1, seeds=[a97, a93, a72, a60, a64, a117, a21, a1, a25], via=a97)
+GraphReach(artistId=a99, score=0.9226661069839165, hops=1, seeds=[a97, a25, a117, a1, a72, a76, a21, a60, a93, a75, a52], via=a97)
+# large Balanced discover
+s78_4 2.624544219 GraphFar Connects(first=Artist 76, second=Artist 75) 2.624544219
+s53_6 1.792364208 SeedArtist Connects(first=Artist 51, second=Artist 52) 1.792364208
+s76_2 2.333062619 GraphNear Connects(first=Artist 76, second=Artist 75) 2.333062619
+s64_4 2.333406066 GraphFar Connects(first=Artist 63, second=Artist 64) 2.333406066
+s24_4 2.229813532 GraphFar Connects(first=Artist 25, second=Artist 114) 2.229813532
+s39_6 2.093367966 SeedArtist YourArtist(artist=Artist 39) 2.093367966
+s36_4 2.120185223 GraphFar Connects(first=Artist 37, second=Artist 39) 2.120185223
+s78_2 2.504077171 GraphNear Connects(first=Artist 76, second=Artist 75) 2.504077171
+s91_6 1.951885298 SeedArtist Connects(first=Artist 93, second=Artist 82) 1.951885298
+s72_4 2.031423318 GraphFar Connects(first=Artist 72, second=Artist 76) 2.031423318
+s73_2 1.876277475 PlaylistNeighbour Connects(first=Artist 72, second=Artist 76) 1.876277475
+s60_4 2.007520861 GraphFar YourArtist(artist=Artist 61) 2.007520861
+s77_6 1.892064624 SeedArtist Connects(first=Artist 76, second=Artist 75) 1.892064624
+s44_6 1.803825958 GraphBridge Connects(first=Artist 46, second=Artist 45) 1.803825958
+s15_2 1.830257846 PlaylistNeighbour Connects(first=Artist 117, second=Artist 1) 1.830257846
+s49_2 1.797182456 PlaylistNeighbour Connects(first=Artist 46, second=Artist 51) 1.797182456
+s38_0 1.725083824 RelatedSong Connects(first=Artist 37, second=Artist 39) 1.725083824
+s66_6 1.926191919 GraphBridge Connects(first=Artist 63, second=Artist 67) 1.926191919
+s33_4 1.712786275 ArtistTopSong Connects(first=Artist 37, second=Artist 45) 1.712786275
+s52_4 1.897484122 GraphFar Connects(first=Artist 51, second=Artist 52) 1.897484122
+s94_2 1.899882396 GraphNear Connects(first=Artist 93, second=Artist 46) 1.899882396
+s37_6 1.744062920 SeedArtist YourArtist(artist=Artist 37) 1.744062920
+s20_0 1.650286901 RelatedSong Connects(first=Artist 21, second=Artist 25) 1.650286901
+s32_6 1.683245495 GraphBridge Connects(first=Artist 37, second=Artist 45) 1.683245495
+s76_6 2.184415973 GraphBridge Connects(first=Artist 76, second=Artist 75) 2.184415973
+s43_6 1.850096294 SeedArtist Connects(first=Artist 39, second=Artist 45) 1.850096294
+s105_2 1.795478944 PlaylistNeighbour Connects(first=Artist 82, second=Artist 97) 1.795478944
+s48_4 2.094902097 GraphFar Connects(first=Artist 46, second=Artist 51) 2.094902097
+s99_6 1.808849284 SeedArtist Connects(first=Artist 97, second=Artist 25) 1.808849284
+s111_2 1.576655168 PlaylistNeighbour Connects(first=Artist 114, second=Artist 63) 1.576655168
+s0_4 1.884212058 GraphFar Connects(first=Artist 117, second=Artist 1) 1.884212058
+s53_4 1.604350362 ArtistTopSong Connects(first=Artist 51, second=Artist 52) 1.604350362
+s3_6 1.805930846 SeedArtist Connects(first=Artist 1, second=Artist 117) 1.805930846
+s4_0 1.831648431 RelatedSong Connects(first=Artist 10, second=Artist 1) 1.831648431
+s10_6 1.545857688 GraphBridge YourArtist(artist=Artist 10) 1.545857688
+s96_4 2.036549364 GraphFar Connects(first=Artist 93, second=Artist 97) 2.036549364
+s8_6 1.692730468 GraphBridge Connects(first=Artist 10, second=Artist 52) 1.692730468
+s24_0 1.972330240 RelatedSong Connects(first=Artist 25, second=Artist 114) 1.972330240
+s87_4 1.374495942 ArtistTopSong Connects(first=Artist 64, second=Artist 82) 1.374495942
+s80_2 1.596683784 GraphNear Connects(first=Artist 82, second=Artist 81) 1.596683784
+s56_0 1.445443429 RelatedSong Connects(first=Artist 117, second=Artist 76) 1.445443429
+s115_4 1.351034432 ArtistTopSong Connects(first=Artist 114, second=Artist 117) 1.351034432
+s31_0 1.366831274 CoListen Connects(first=Artist 37, second=Artist 63) 1.366831274
+s79_4 1.439323250 ArtistTopSong Connects(first=Artist 76, second=Artist 97) 1.439323250
+s69_0 1.528833860 CoListen Connects(first=Artist 67, second=Artist 72) 1.528833860
+s67_2 1.485039328 PlaylistNeighbour YourArtist(artist=Artist 67) 1.485039328
+s95_6 1.370133511 SeedArtist Connects(first=Artist 93, second=Artist 97) 1.370133511
+s46_6 1.682890626 GraphBridge YourArtist(artist=Artist 46) 1.682890626
+s22_0 1.466493452 RelatedSong Connects(first=Artist 25, second=Artist 21) 1.466493452
+s40_2 1.415911592 GraphNear Connects(first=Artist 39, second=Artist 10) 1.415911592
+s57_6 1.497101530 SeedArtist Connects(first=Artist 60, second=Artist 61) 1.497101530
+s51_4 1.353913035 ArtistTopSong YourArtist(artist=Artist 51) 1.353913035
+s28_0 1.239507318 RelatedSong Connects(first=Artist 25, second=Artist 51) 1.239507318
+s72_6 1.783614851 GraphBridge Connects(first=Artist 72, second=Artist 76) 1.783614851
+s71_6 1.310422873 SeedArtist Connects(first=Artist 72, second=Artist 67) 1.310422873
+s116_4 1.494624801 GraphFar Connects(first=Artist 117, second=Artist 114) 1.494624801
+s6_0 1.730706593 RelatedSong Connects(first=Artist 1, second=Artist 61) 1.730706593
+s49_0 1.716145342 CoListen Connects(first=Artist 46, second=Artist 51) 1.716145342
+s92_2 1.264878615 GraphNear Connects(first=Artist 93, second=Artist 97) 1.264878615
+s104_6 1.339537430 GraphBridge Connects(first=Artist 60, second=Artist 117) 1.339537430
+# large Balanced up next
+s4_0 1.831648431 RelatedSong Connects(first=Artist 10, second=Artist 1) 1.831648431
+s0_4 1.884212058 GraphFar Connects(first=Artist 117, second=Artist 1) 1.884212058
+s3_6 1.805930846 SeedArtist Connects(first=Artist 1, second=Artist 117) 1.805930846
+s6_4 1.734625952 GraphFar Connects(first=Artist 1, second=Artist 61) 1.734625952
+s8_6 1.692730468 GraphBridge Connects(first=Artist 10, second=Artist 52) 1.692730468
+s15_2 1.830257846 PlaylistNeighbour Connects(first=Artist 117, second=Artist 1) 1.830257846
+s0_6 1.668932441 GraphBridge Connects(first=Artist 117, second=Artist 1) 1.668932441
+s4_6 1.446670376 GraphBridge Connects(first=Artist 10, second=Artist 1) 1.446670376
+s6_0 1.730706593 RelatedSong Connects(first=Artist 1, second=Artist 61) 1.730706593
+s8_4 1.559133255 GraphFar Connects(first=Artist 10, second=Artist 52) 1.559133255
+s10_6 1.545857688 GraphBridge YourArtist(artist=Artist 10) 1.545857688
+s12_4 1.229727067 GraphFar Connects(first=Artist 10, second=Artist 82) 1.229727067
+s0_0 1.551724901 RelatedSong Connects(first=Artist 117, second=Artist 1) 1.551724901
+s3_0 1.362790785 CoListen Connects(first=Artist 1, second=Artist 117) 1.362790785
+s6_2 1.514804218 GraphNear Connects(first=Artist 1, second=Artist 61) 1.514804218
+s8_2 1.338037812 GraphNear Connects(first=Artist 10, second=Artist 52) 1.338037812
+s11_6 1.183129086 SeedArtist Connects(first=Artist 10, second=Artist 51) 1.183129086
+s9_4 1.169065115 ArtistTopSong Connects(first=Artist 51, second=Artist 10) 1.169065115
+s19_6 1.545074779 SeedArtist Connects(first=Artist 21, second=Artist 25) 1.545074779
+s7_4 1.241555236 ArtistTopSong Connects(first=Artist 25, second=Artist 10) 1.241555236
+s10_0 1.209722161 RelatedSong YourArtist(artist=Artist 10) 1.209722161
+s3_4 1.449614620 ArtistTopSong Connects(first=Artist 1, second=Artist 117) 1.449614620
+s1_2 1.269143788 PlaylistNeighbour YourArtist(artist=Artist 1) 1.269143788
+s2_6 1.065185799 GraphBridge Connects(first=Artist 1, second=Artist 117) 1.065185799
+s3_2 1.272315729 PlaylistNeighbour Connects(first=Artist 1, second=Artist 117) 1.272315729
+# large Balanced factors
+s0_0 1.300000000 1.300000000
+s0_2 1.297879082 1.297879082
+s0_4 1.300000000 1.300000000
+s0_6 1.300000000 1.362562084
+s1_0 1.300000000 0.050000000
+s1_2 1.300000000 1.300000000
+s1_4 1.300000000 1.362562084
+s1_6 1.300000000 1.300000000
+s2_0 1.185264426 1.185264426
+s2_2 1.123194457 1.177247831
+s2_4 1.123194457 1.177247831
+s2_6 1.123194457 1.177247831
+s3_0 1.300000000 1.300000000
+s3_2 1.271157292 1.332331330
+s3_4 1.271157292 1.332331330
+s3_6 1.271157292 1.332331330
+s4_0 1.108764900 1.162123856
+s4_2 0.795758019 0.795758019
+s4_4 1.300000000 1.300000000
+s4_6 1.300000000 1.300000000
+s5_0 0.783235450 0.820928406
+s5_2 0.783235450 0.820928406
+s5_4 0.783235450 0.820928406
+s5_6 0.391617725 0.391617725
+s6_0 1.300000000 1.300000000
+s6_2 1.260545804 1.321209168
+s6_4 1.260545804 1.321209168
+s6_6 1.260545804 1.321209168
+s7_0 0.998008577 0.998008577
+s7_2 0.944732426 0.944732426
+s7_4 1.300000000 1.300000000
+s7_6 1.286818111 1.286818111
+s8_0 1.082246673 1.082246673
+s8_2 1.253488807 1.313812555
+s8_4 1.253488807 1.313812555
+s8_6 1.253488807 1.313812555
+s9_0 1.300000000 1.362562084
+s9_2 1.121444326 1.121444326
+s9_4 1.300000000 1.300000000
+s9_6 1.300000000 1.300000000
+# large Comfort reach
+GraphReach(artistId=a0, score=0.6857204583454012, hops=1, seeds=[a117, a60, a1], via=a117)
+GraphReach(artistId=a100, score=0.22279844969581472, hops=1, seeds=[a97], via=a97)
+GraphReach(artistId=a101, score=0.13956881176233832, hops=1, seeds=[a64], via=a64)
+GraphReach(artistId=a102, score=0.32482502881552916, hops=1, seeds=[a52, a21], via=a52)
+GraphReach(artistId=a104, score=0.3655231173833993, hops=1, seeds=[a60, a93], via=a60)
+GraphReach(artistId=a106, score=0.2078014183625546, hops=1, seeds=[a82], via=a82)
+GraphReach(artistId=a108, score=0.28237449074695575, hops=1, seeds=[a63], via=a63)
+GraphReach(artistId=a11, score=0.10398555896090399, hops=1, seeds=[a10], via=a10)
+GraphReach(artistId=a111, score=0.13574406186067325, hops=1, seeds=[a114], via=a114)
+GraphReach(artistId=a112, score=0.49541689431026403, hops=1, seeds=[a114, a97, a76], via=a114)
+GraphReach(artistId=a113, score=0.32148352646647704, hops=1, seeds=[a61, a114], via=a61)
+GraphReach(artistId=a115, score=0.3853114761162846, hops=1, seeds=[a114, a117], via=a114)
+GraphReach(artistId=a116, score=0.5437873398963086, hops=1, seeds=[a114, a117], via=a114)
+GraphReach(artistId=a118, score=0.40195686819674314, hops=1, seeds=[a1, a117], via=a1)
+GraphReach(artistId=a119, score=0.8247342599761031, hops=1, seeds=[a117, a1, a25], via=a117)
+GraphReach(artistId=a12, score=0.14596218538590244, hops=1, seeds=[a10], via=a10)
+GraphReach(artistId=a13, score=0.19114553439432894, hops=1, seeds=[a10], via=a10)
+GraphReach(artistId=a14, score=0.1533612347256468, hops=1, seeds=[a82], via=a82)
+GraphReach(artistId=a18, score=0.23316071434968194, hops=1, seeds=[a97, a21], via=a97)
+GraphReach(artistId=a19, score=0.16101658416195475, hops=1, seeds=[a21], via=a21)
+GraphReach(artistId=a2, score=0.20563244166208028, hops=1, seeds=[a1], via=a1)
+GraphReach(artistId=a20, score=0.11321493854117674, hops=1, seeds=[a21], via=a21)
+GraphReach(artistId=a22, score=0.2704330699455313, hops=1, seeds=[a25, a21], via=a25)
+GraphReach(artistId=a23, score=0.31769821962644174, hops=1, seeds=[a25, a21], via=a25)
+GraphReach(artistId=a24, score=0.4989563216137978, hops=1, seeds=[a25, a114, a21], via=a25)
+GraphReach(artistId=a26, score=0.22974139047821845, hops=1, seeds=[a93, a25], via=a93)
+GraphReach(artistId=a27, score=0.3993925599292206, hops=1, seeds=[a25, a51], via=a25)
+GraphReach(artistId=a28, score=0.15324771226248388, hops=1, seeds=[a25], via=a25)
+GraphReach(artistId=a3, score=0.16768603370311683, hops=1, seeds=[a1], via=a1)
+GraphReach(artistId=a31, score=0.08322616569383959, hops=1, seeds=[a63], via=a63)
+GraphReach(artistId=a32, score=0.09620711939482336, hops=1, seeds=[a46], via=a46)
+GraphReach(artistId=a34, score=0.3589416087114015, hops=1, seeds=[a37, a45], via=a37)
+GraphReach(artistId=a35, score=0.24087001740130967, hops=1, seeds=[a75, a37], via=a75)
+GraphReach(artistId=a36, score=0.4528081030834432, hops=1, seeds=[a39, a37, a64, a117], via=a39)
+GraphReach(artistId=a38, score=0.4540175610790407, hops=1, seeds=[a37, a39], via=a37)
+GraphReach(artistId=a4, score=0.23990451527242698, hops=1, seeds=[a1], via=a1)
+GraphReach(artistId=a40, score=0.5829154805602127, hops=1, seeds=[a60, a39, a37], via=a60)
+GraphReach(artistId=a41, score=0.6036823598788669, hops=1, seeds=[a39, a10], via=a39)
+GraphReach(artistId=a42, score=0.2894829718107108, hops=1, seeds=[a39, a45], via=a39)
+GraphReach(artistId=a43, score=0.296767460285533, hops=1, seeds=[a45, a46], via=a45)
+GraphReach(artistId=a44, score=0.24834767424313997, hops=1, seeds=[a46, a45], via=a46)
+GraphReach(artistId=a47, score=0.41834572843262346, hops=1, seeds=[a46, a75, a45], via=a46)
+GraphReach(artistId=a48, score=0.8127172329131904, hops=1, seeds=[a46, a45, a51, a75, a81], via=a46)
+GraphReach(artistId=a49, score=0.3558730776732974, hops=1, seeds=[a46, a51, a52], via=a46)
+GraphReach(artistId=a50, score=0.4073506046941534, hops=1, seeds=[a52, a67, a51], via=a52)
+GraphReach(artistId=a53, score=0.3761942959890256, hops=1, seeds=[a51, a52], via=a51)
+GraphReach(artistId=a54, score=0.15239269443345416, hops=1, seeds=[a51, a52], via=a51)
+GraphReach(artistId=a55, score=0.386928248078086, hops=1, seeds=[a75, a82, a52], via=a75)
+GraphReach(artistId=a56, score=0.25025966314960096, hops=1, seeds=[a117], via=a117)
+GraphReach(artistId=a57, score=0.11673532724502539, hops=1, seeds=[a60], via=a60)
+GraphReach(artistId=a58, score=0.38414488331559454, hops=1, seeds=[a76, a60, a61], via=a76)
+GraphReach(artistId=a59, score=0.44252173405246464, hops=1, seeds=[a61, a60, a81], via=a61)
+GraphReach(artistId=a62, score=0.7280282807677154, hops=1, seeds=[a61, a63, a64, a60, a25], via=a61)
+GraphReach(artistId=a65, score=0.6659233195282659, hops=1, seeds=[a63, a37, a64, a45, a67], via=a63)
+GraphReach(artistId=a66, score=0.33031247584957135, hops=1, seeds=[a67, a63, a64], via=a67)
+GraphReach(artistId=a68, score=0.17109874847340628, hops=1, seeds=[a67], via=a67)
+GraphReach(artistId=a69, score=0.19906459382742572, hops=1, seeds=[a72, a67], via=a72)
+GraphReach(artistId=a7, score=0.31104276308963963, hops=1, seeds=[a25, a10], via=a25)
+GraphReach(artistId=a70, score=0.6202813933923046, hops=1, seeds=[a61, a67, a72], via=a61)
+GraphReach(artistId=a71, score=0.12651073888370484, hops=1, seeds=[a72], via=a72)
+GraphReach(artistId=a73, score=0.6500175715368156, hops=1, seeds=[a76, a72, a21, a75], via=a76)
+GraphReach(artistId=a74, score=0.5591395218978366, hops=1, seeds=[a72, a75, a64, a76], via=a72)
+GraphReach(artistId=a77, score=0.36751124498069454, hops=1, seeds=[a76, a75], via=a76)
+GraphReach(artistId=a78, score=0.9129835618875721, hops=1, seeds=[a76, a61, a10, a75, a64, a81], via=a76)
+GraphReach(artistId=a79, score=0.7482082577565305, hops=1, seeds=[a97, a76, a82, a81], via=a97)
+GraphReach(artistId=a8, score=0.316529883876712, hops=1, seeds=[a52, a10], via=a52)
+GraphReach(artistId=a80, score=0.27206152970889336, hops=1, seeds=[a82, a81], via=a82)
+GraphReach(artistId=a83, score=0.5456149341958025, hops=1, seeds=[a51, a81, a82], via=a51)
+GraphReach(artistId=a84, score=0.494881309286784, hops=1, seeds=[a82, a81, a63], via=a82)
+GraphReach(artistId=a85, score=0.6260139272205776, hops=1, seeds=[a82, a1, a75], via=a82)
+GraphReach(artistId=a86, score=0.14567984191582964, hops=1, seeds=[a46], via=a46)
+GraphReach(artistId=a87, score=0.34674186484841285, hops=1, seeds=[a64, a21], via=a64)
+GraphReach(artistId=a89, score=0.16481321156956158, hops=1, seeds=[a10], via=a10)
+GraphReach(artistId=a9, score=0.24888356030819025, hops=1, seeds=[a51, a10], via=a51)
+GraphReach(artistId=a90, score=0.34317856196122515, hops=1, seeds=[a46, a93], via=a46)
+GraphReach(artistId=a91, score=0.4066453634009686, hops=1, seeds=[a82, a93], via=a82)
+GraphReach(artistId=a92, score=0.0516075109084455, hops=1, seeds=[a93], via=a93)
+GraphReach(artistId=a94, score=0.5099458376254009, hops=1, seeds=[a93, a46, a97], via=a93)
+GraphReach(artistId=a95, score=0.43191213829847097, hops=1, seeds=[a93, a97], via=a93)
+GraphReach(artistId=a96, score=0.7327396702789881, hops=1, seeds=[a72, a60, a93, a97], via=a72)
+GraphReach(artistId=a98, score=0.25857061713698914, hops=1, seeds=[a97], via=a97)
+GraphReach(artistId=a99, score=0.05746013714155316, hops=1, seeds=[a97], via=a97)
+# large Comfort discover
+s60_4 2.893355572 GraphFar YourArtist(artist=Artist 61) 2.007520861
+s53_6 0.681159032 SeedArtist Connects(first=Artist 51, second=Artist 52) 1.400482937
+s64_4 2.810850754 GraphFar Connects(first=Artist 63, second=Artist 37) 2.185732703
+s78_2 2.682690167 GraphNear Connects(first=Artist 76, second=Artist 61) 2.191001737
+s37_6 2.547058062 SeedArtist YourArtist(artist=Artist 37) 1.744062920
+s61_6 2.493056693 SeedArtist YourArtist(artist=Artist 61) 1.567603896
+s39_6 2.461217533 SeedArtist YourArtist(artist=Artist 39) 2.093367966
+s82_4 2.456548807 GraphFar BecauseSong(songId=s48_6, title=Title s48_6) 1.590475810
+s15_2 2.382085635 PlaylistNeighbour YourArtist(artist=Artist 15) 1.391484004
+s76_6 2.357578189 GraphBridge Connects(first=Artist 76, second=Artist 75) 1.640940638
+s72_4 2.377410632 GraphFar Connects(first=Artist 76, second=Artist 72) 1.809917748
+s78_4 2.676464110 GraphFar Connects(first=Artist 76, second=Artist 61) 2.311468785
+s73_2 2.296427373 PlaylistNeighbour Connects(first=Artist 76, second=Artist 72) 1.654771905
+s81_6 2.292293667 SeedArtist YourArtist(artist=Artist 81) 1.448427841
+s97_2 2.353044210 PlaylistNeighbour YourArtist(artist=Artist 97) 1.389859011
+s91_6 2.366301755 SeedArtist Connects(first=Artist 82, second=Artist 93) 1.773372953
+s48_4 2.463813217 GraphFar Connects(first=Artist 46, second=Artist 45) 1.931455180
+s66_6 2.180163971 GraphBridge Connects(first=Artist 67, second=Artist 63) 1.624845692
+s46_2 2.279607010 GraphNear BecauseSong(songId=s41_7, title=Title s41_7) 1.501584695
+s63_6 2.178085444 SeedArtist BecauseSong(songId=s103_1, title=Title s103_1) 1.297660354
+s10_0 2.062962182 RelatedSong BecauseSong(songId=s35_0, title=Title s35_0) 1.209722161
+s53_4 0.439467767 ArtistTopSong Connects(first=Artist 51, second=Artist 52) 1.212469091
+s6_0 2.086008420 RelatedSong YourArtist(artist=Artist 6) 1.247471016
+s25_4 1.964122747 ArtistTopSong YourArtist(artist=Artist 25) 1.087066299
+s75_2 2.121654429 PlaylistNeighbour YourArtist(artist=Artist 75) 1.242045383
+s1_2 2.186836608 PlaylistNeighbour BecauseSong(songId=s4_3, title=Title s4_3) 1.269143788
+s24_4 2.000473128 GraphFar Connects(first=Artist 25, second=Artist 114) 1.898484801
+s82_2 2.210196431 GraphNear YourArtist(artist=Artist 82) 1.369103955
+s111_2 2.049432401 PlaylistNeighbour BecauseSong(songId=s29_3, title=Title s29_3) 1.235711579
+s78_0 2.573377386 RelatedSong Connects(first=Artist 76, second=Artist 61) 2.093825007
+s39_4 2.135953017 ArtistTopSong YourArtist(artist=Artist 39) 1.784206675
+s0_4 2.048394245 GraphFar Connects(first=Artist 117, second=Artist 60) 1.449929636
+s36_2 2.049725522 GraphNear Connects(first=Artist 39, second=Artist 37) 1.561500903
+s46_4 2.334309143 GraphFar YourArtist(artist=Artist 46) 1.662590272
+s8_6 1.758775580 GraphBridge Connects(first=Artist 52, second=Artist 10) 1.657456171
+s33_0 1.815238603 CoListen YourArtist(artist=Artist 33) 1.056088222
+s49_4 1.751692250 ArtistTopSong Connects(first=Artist 46, second=Artist 51) 1.100861594
+s51_6 2.018819497 SeedArtist YourArtist(artist=Artist 51) 1.113171126
+s105_2 1.998549210 PlaylistNeighbour YourArtist(artist=Artist 105) 1.151928012
+s67_0 1.888019353 CoListen YourArtist(artist=Artist 67) 1.342037955
+s54_0 1.800965753 RelatedSong Connects(first=Artist 51, second=Artist 52) 1.086414959
+s53_0 0.426764541 CoListen Connects(first=Artist 51, second=Artist 52) 1.123755113
+s69_0 1.855344539 CoListen Connects(first=Artist 72, second=Artist 67) 1.309997233
+s91_2 2.242160750 PlaylistNeighbour Connects(first=Artist 82, second=Artist 93) 1.595521124
+s44_6 1.627456504 GraphBridge Connects(first=Artist 46, second=Artist 45) 1.459846432
+s106_4 2.032322618 GraphFar SimilarToArtist(artist=Artist 82) 1.273915474
+s57_6 1.690027338 SeedArtist SimilarToArtist(artist=Artist 60) 0.938861803
+s34_6 1.715135003 GraphBridge Connects(first=Artist 37, second=Artist 45) 1.262320699
+s13_0 1.666510551 CoListen SimilarToArtist(artist=Artist 10) 0.953452234
+s32_6 1.603718038 GraphBridge SimilarToArtist(artist=Artist 46) 1.249733842
+s97_4 2.050224633 ArtistTopSong BecauseSong(songId=s101_2, title=Title s101_2) 1.253018264
+s22_4 1.860555253 GraphFar Connects(first=Artist 25, second=Artist 21) 1.375328066
+s60_2 1.937863974 GraphNear YourArtist(artist=Artist 61) 1.599416479
+s10_6 1.872388995 GraphBridge YourArtist(artist=Artist 10) 1.545857688
+s20_0 1.528024688 RelatedSong BecauseSong(songId=s70_0, title=Title s70_0) 1.207860786
+s99_2 1.900522308 PlaylistNeighbour SimilarToArtist(artist=Artist 97) 1.045507599
+s81_4 2.018893898 ArtistTopSong YourArtist(artist=Artist 81) 1.194085552
+s3_0 1.708668725 CoListen SimilarToArtist(artist=Artist 1) 0.974270550
+s28_0 1.500451675 RelatedSong SimilarToArtist(artist=Artist 25) 0.846634859
+s45_4 1.797910973 ArtistTopSong YourArtist(artist=Artist 45) 0.896159826
+# large Comfort up next
+s15_2 2.382085635 PlaylistNeighbour YourArtist(artist=Artist 15) 1.391484004
+s1_2 2.186836608 PlaylistNeighbour YourArtist(artist=Artist 1) 1.269143788
+s0_4 2.048394245 GraphFar Connects(first=Artist 117, second=Artist 60) 1.449929636
+s6_0 2.086008420 RelatedSong YourArtist(artist=Artist 6) 1.247471016
+s8_6 1.758775580 GraphBridge Connects(first=Artist 52, second=Artist 10) 1.657456171
+s10_0 2.062962182 RelatedSong YourArtist(artist=Artist 10) 1.209722161
+s10_6 1.872388995 GraphBridge YourArtist(artist=Artist 10) 1.545857688
+s13_0 1.666510551 CoListen SimilarToArtist(artist=Artist 10) 0.953452234
+s4_6 1.570671256 GraphBridge SimilarToArtist(artist=Artist 1) 0.946768405
+s7_4 1.695685190 ArtistTopSong Connects(first=Artist 25, second=Artist 10) 1.040210745
+s9_4 1.618813650 ArtistTopSong Connects(first=Artist 51, second=Artist 10) 1.100710003
+s8_4 1.626305687 GraphFar Connects(first=Artist 52, second=Artist 10) 1.523858958
+s10_4 1.575815679 GraphFar YourArtist(artist=Artist 10) 0.713318116
+s10_2 1.343126243 GraphNear YourArtist(artist=Artist 10) 0.493154739
+s12_0 1.323183970 RelatedSong SimilarToArtist(artist=Artist 10) 0.776222473
+s4_0 1.569138286 RelatedSong SimilarToArtist(artist=Artist 1) 1.331746460
+s3_0 1.708668725 CoListen SimilarToArtist(artist=Artist 1) 0.974270550
+s3_6 1.736969785 SeedArtist SimilarToArtist(artist=Artist 1) 1.417410611
+s0_0 1.528746074 RelatedSong Connects(first=Artist 117, second=Artist 60) 1.117442479
+s19_6 1.448194045 SeedArtist SimilarToArtist(artist=Artist 21) 1.188699576
+s9_6 1.382545722 SeedArtist Connects(first=Artist 51, second=Artist 10) 0.674717294
+s6_4 1.525624691 GraphFar YourArtist(artist=Artist 6) 1.251390376
+s13_4 1.233665304 ArtistTopSong SimilarToArtist(artist=Artist 10) 0.520370369
+s12_2 1.158924986 GraphNear SimilarToArtist(artist=Artist 10) 0.771984921
+s8_2 1.402528587 GraphNear Connects(first=Artist 52, second=Artist 10) 1.302763516
+# large Comfort factors
+s0_0 1.300000000 1.300000000
+s0_2 1.297879082 1.297879082
+s0_4 1.300000000 1.300000000
+s0_6 1.300000000 1.362562084
+s1_0 1.300000000 0.050000000
+s1_2 1.300000000 1.300000000
+s1_4 1.300000000 1.362562084
+s1_6 1.300000000 1.300000000
+s2_0 1.185264426 1.185264426
+s2_2 1.123194457 1.177247831
+s2_4 1.123194457 1.177247831
+s2_6 1.123194457 1.177247831
+s3_0 1.300000000 1.300000000
+s3_2 1.271157292 1.332331330
+s3_4 1.271157292 1.332331330
+s3_6 1.271157292 1.332331330
+s4_0 1.108764900 1.162123856
+s4_2 0.795758019 0.795758019
+s4_4 1.300000000 1.300000000
+s4_6 1.300000000 1.300000000
+s5_0 0.783235450 0.820928406
+s5_2 0.783235450 0.820928406
+s5_4 0.783235450 0.820928406
+s5_6 0.391617725 0.391617725
+s6_0 1.300000000 1.300000000
+s6_2 1.260545804 1.321209168
+s6_4 1.260545804 1.321209168
+s6_6 1.260545804 1.321209168
+s7_0 0.998008577 0.998008577
+s7_2 0.944732426 0.944732426
+s7_4 1.300000000 1.300000000
+s7_6 1.286818111 1.286818111
+s8_0 1.082246673 1.082246673
+s8_2 1.253488807 1.313812555
+s8_4 1.253488807 1.313812555
+s8_6 1.253488807 1.313812555
+s9_0 1.300000000 1.362562084
+s9_2 1.121444326 1.121444326
+s9_4 1.300000000 1.300000000
+s9_6 1.300000000 1.300000000
+# large Discovery reach
+GraphReach(artistId=a0, score=1.595006281058979, hops=1, seeds=[a117, a1, a60, a25, a61, a93, a46, a114, a97], via=a117)
+GraphReach(artistId=a100, score=0.43893682252974087, hops=1, seeds=[a97, a52, a21, a25], via=a97)
+GraphReach(artistId=a101, score=0.5902141359431743, hops=1, seeds=[a64, a97, a60, a52, a75, a67, a37, a93, a21], via=a64)
+GraphReach(artistId=a102, score=0.8688826651543469, hops=1, seeds=[a52, a51, a1, a97, a60, a81, a67, a82, a21, a93], via=a52)
+GraphReach(artistId=a103, score=0.6682398528929148, hops=2, seeds=[a97, a82, a52, a60, a21, a25, a76, a81, a93], via=a79)
+GraphReach(artistId=a104, score=0.9185404950566523, hops=1, seeds=[a60, a117, a1, a93, a52, a82, a25, a21], via=a60)
+GraphReach(artistId=a105, score=0.8316579968241267, hops=2, seeds=[a82, a97, a52, a63, a76, a75, a60, a45, a46, a37, a81, a93, a21], via=a79)
+GraphReach(artistId=a106, score=0.6319738901904091, hops=1, seeds=[a82, a60, a51, a63, a93, a114, a81, a117], via=a82)
+GraphReach(artistId=a107, score=0.41908787331304737, hops=2, seeds=[a63, a60, a51, a76, a72, a82, a52, a93, a21, a75], via=a73)
+GraphReach(artistId=a108, score=0.5513393286885011, hops=1, seeds=[a63, a61, a67, a82, a72], via=a63)
+GraphReach(artistId=a109, score=0.9082319502455467, hops=2, seeds=[a72, a93, a63, a97, a76, a60, a114, a46, a82, a21, a75, a67], via=a96)
+GraphReach(artistId=a11, score=0.6718686667215797, hops=1, seeds=[a10, a51, a60, a39, a52, a46, a37, a75, a72, a64, a45, a76], via=a10)
+GraphReach(artistId=a110, score=0.7964856344922919, hops=2, seeds=[a114, a25, a63, a61, a51, a117, a97, a76, a81, a82, a21], via=a24)
+GraphReach(artistId=a111, score=0.4000132911103089, hops=1, seeds=[a114, a63, a61, a97, a76], via=a114)
+GraphReach(artistId=a112, score=0.861804776689837, hops=1, seeds=[a114, a97, a76, a117, a61], via=a114)
+GraphReach(artistId=a113, score=0.9718095528352164, hops=1, seeds=[a61, a114, a117, a60, a97, a76, a1, a81], via=a61)
+GraphReach(artistId=a115, score=1.2956442154675984, hops=1, seeds=[a114, a117, a76, a97, a82, a46, a81, a61, a60, a1, a67, a45], via=a114)
+GraphReach(artistId=a116, score=1.1798382263326324, hops=1, seeds=[a117, a114, a1, a61, a25, a97, a76, a46, a75, a45], via=a114)
+GraphReach(artistId=a118, score=1.6763223450260871, hops=1, seeds=[a117, a1, a114, a60, a72, a93, a82, a39, a45, a25, a81, a61, a67, a97], via=a1)
+GraphReach(artistId=a119, score=1.7176795603736343, hops=1, seeds=[a117, a1, a25, a60, a114, a10, a93, a67, a63, a97, a64], via=a117)
+GraphReach(artistId=a12, score=0.3175303106063062, hops=1, seeds=[a10, a82, a51], via=a10)
+GraphReach(artistId=a13, score=0.19114553439432894, hops=1, seeds=[a10], via=a10)
+GraphReach(artistId=a14, score=0.5945091967496228, hops=1, seeds=[a82, a10, a76, a39, a67, a60, a61], via=a82)
+GraphReach(artistId=a15, score=0.4477009538122074, hops=2, seeds=[a117, a1, a25, a10, a97, a45, a46, a21], via=a119)
+GraphReach(artistId=a16, score=0.3720055399953021, hops=2, seeds=[a10, a39, a75, a37, a82, a97, a21], via=a41)
+GraphReach(artistId=a17, score=0.1197957672950346, hops=2, seeds=[a51, a52, a97, a21], via=a53)
+GraphReach(artistId=a18, score=0.395502087113052, hops=1, seeds=[a97, a21, a52, a67, a51], via=a97)
+GraphReach(artistId=a19, score=0.4542200910301991, hops=1, seeds=[a21, a25, a114, a117, a97, a10], via=a21)
+GraphReach(artistId=a2, score=1.0348208591534984, hops=1, seeds=[a1, a117, a25, a52, a60, a21], via=a1)
+GraphReach(artistId=a20, score=0.5677639045038664, hops=1, seeds=[a21, a25, a97, a52, a82, a10, a81, a63, a75], via=a21)
+GraphReach(artistId=a22, score=0.6578693406235686, hops=1, seeds=[a25, a21, a114, a45, a46, a72, a60, a93, a97], via=a25)
+GraphReach(artistId=a23, score=0.8097380045632359, hops=1, seeds=[a25, a21, a93, a97, a114], via=a25)
+GraphReach(artistId=a24, score=1.1201976932604791, hops=1, seeds=[a25, a114, a21, a61, a51, a60, a93, a52, a67, a81], via=a25)
+GraphReach(artistId=a26, score=0.8280445572945105, hops=1, seeds=[a25, a93, a114, a21, a45, a67, a63, a46, a39, a64, a51], via=a93)
+GraphReach(artistId=a27, score=1.6698521055431748, hops=1, seeds=[a25, a51, a75, a37, a76, a72, a114, a39, a82, a64, a52, a1, a93, a21, a67], via=a25)
+GraphReach(artistId=a28, score=0.5148835741340587, hops=1, seeds=[a25, a51, a72, a61, a1, a93, a67, a60, a81], via=a25)
+GraphReach(artistId=a29, score=0.2420867654062654, hops=2, seeds=[a25, a51, a37, a45, a93], via=a27)
+GraphReach(artistId=a3, score=0.5211614743831113, hops=1, seeds=[a1, a117, a60, a93, a72, a25, a67], via=a1)
+GraphReach(artistId=a30, score=0.22006399448104794, hops=2, seeds=[a25, a52, a10, a51], via=a8)
+GraphReach(artistId=a31, score=0.3555794582465601, hops=1, seeds=[a37, a63, a45, a60, a39, a93, a97], via=a63)
+GraphReach(artistId=a32, score=0.4358910162601061, hops=1, seeds=[a46, a37, a25, a75, a45, a10, a72, a67], via=a46)
+GraphReach(artistId=a33, score=0.534041469768424, hops=2, seeds=[a37, a45, a75, a72, a52, a67, a64, a51, a46, a39, a76, a117], via=a74)
+GraphReach(artistId=a34, score=0.4888722148148481, hops=1, seeds=[a37, a45, a75, a46, a39, a64, a117], via=a37)
+GraphReach(artistId=a35, score=0.782102822424356, hops=1, seeds=[a37, a75, a45, a63, a64, a39, a82, a81, a67, a117], via=a75)
+GraphReach(artistId=a36, score=0.9691210841819585, hops=1, seeds=[a37, a39, a76, a72, a64, a75, a117, a21, a82, a93, a45], via=a39)
+GraphReach(artistId=a38, score=1.1370366733900454, hops=1, seeds=[a37, a39, a25, a10, a60, a51, a75, a64, a117], via=a37)
+GraphReach(artistId=a4, score=0.40245520410392865, hops=1, seeds=[a1, a25, a10], via=a1)
+GraphReach(artistId=a40, score=0.8985118440083204, hops=1, seeds=[a39, a37, a60, a45, a46, a10], via=a60)
+GraphReach(artistId=a41, score=1.0210767938091032, hops=1, seeds=[a39, a10, a37, a46, a45, a60], via=a39)
+GraphReach(artistId=a42, score=1.0960511541052882, hops=1, seeds=[a39, a45, a46, a76, a72, a1, a117, a60, a10, a21, a75, a37, a93, a25], via=a39)
+GraphReach(artistId=a43, score=1.015400701023645, hops=1, seeds=[a39, a45, a46, a10, a60, a25, a21, a76, a37, a61], via=a45)
+GraphReach(artistId=a44, score=0.8933092841628715, hops=1, seeds=[a46, a45, a39, a10, a114, a117, a37, a93, a75, a25], via=a46)
+GraphReach(artistId=a47, score=0.999642335081603, hops=1, seeds=[a46, a75, a45, a51, a52, a82, a81, a67, a114, a117], via=a46)
+GraphReach(artistId=a48, score=1.11918020174048, hops=1, seeds=[a46, a51, a45, a75, a81, a52, a67], via=a46)
+GraphReach(artistId=a49, score=1.0497251512490033, hops=1, seeds=[a46, a51, a52, a75, a82, a1, a67, a45, a76, a72, a21, a81], via=a46)
+GraphReach(artistId=a5, score=0.8022207112509455, hops=2, seeds=[a10, a1, a72, a46, a75, a52, a25, a64, a45, a76, a51], via=a74)
+GraphReach(artistId=a50, score=1.3585405022028425, hops=1, seeds=[a51, a46, a52, a67, a45, a75, a25, a114, a97, a21, a81], via=a52)
+GraphReach(artistId=a53, score=1.1109716792718896, hops=1, seeds=[a51, a52, a25, a117, a75, a82, a76, a61, a10, a67, a64, a81, a93], via=a51)
+GraphReach(artistId=a54, score=0.6599941571486257, hops=1, seeds=[a51, a117, a52, a10, a37, a45, a75, a1, a82], via=a51)
+GraphReach(artistId=a55, score=0.7083843585516846, hops=1, seeds=[a82, a75, a52, a117, a51, a81, a76, a60, a61], via=a75)
+GraphReach(artistId=a56, score=1.1646809761738206, hops=1, seeds=[a117, a76, a97, a51, a82, a61, a60, a52, a81, a75], via=a117)
+GraphReach(artistId=a57, score=0.7884348157554615, hops=1, seeds=[a60, a61, a82, a117, a76, a81, a21, a25, a64, a75, a52], via=a60)
+GraphReach(artistId=a58, score=0.984384891783078, hops=1, seeds=[a76, a60, a117, a61, a114, a45, a46, a75, a82, a81, a52], via=a76)
+GraphReach(artistId=a59, score=1.0511081051901565, hops=1, seeds=[a61, a60, a117, a76, a81, a25, a114, a63, a64, a21], via=a61)
+GraphReach(artistId=a6, score=0.5310667059639067, hops=2, seeds=[a1, a61, a10, a67, a25, a72, a52, a97, a51, a21], via=a70)
+GraphReach(artistId=a62, score=0.8864167879537638, hops=1, seeds=[a61, a63, a64, a60, a25, a81, a37, a45, a67], via=a61)
+GraphReach(artistId=a65, score=0.942810874538228, hops=1, seeds=[a63, a64, a37, a67, a45, a75, a61, a60, a25], via=a63)
+GraphReach(artistId=a66, score=0.895336652073903, hops=1, seeds=[a63, a67, a64, a25, a117, a93, a1, a37, a72, a45], via=a67)
+GraphReach(artistId=a68, score=0.898464985505874, hops=1, seeds=[a67, a61, a63, a64, a52, a72, a37, a45, a114, a117, a21], via=a67)
+GraphReach(artistId=a69, score=0.6093832687347285, hops=1, seeds=[a67, a72, a25, a61, a63, a64, a51], via=a72)
+GraphReach(artistId=a7, score=0.688563684204903, hops=1, seeds=[a25, a10, a1, a117, a51, a52], via=a25)
+GraphReach(artistId=a70, score=0.9701542150293345, hops=1, seeds=[a67, a61, a72, a63, a76, a1, a117, a21, a75], via=a61)
+GraphReach(artistId=a71, score=1.0369257626746315, hops=1, seeds=[a72, a67, a75, a61, a76, a64, a51, a46, a63, a93, a21, a82, a10, a1], via=a72)
+GraphReach(artistId=a73, score=1.065340516580322, hops=1, seeds=[a72, a76, a75, a21, a39, a37, a64, a45, a61, a117, a67, a46, a51, a52], via=a76)
+GraphReach(artistId=a74, score=0.8341304685579347, hops=1, seeds=[a72, a75, a64, a76, a25, a51, a21], via=a72)
+GraphReach(artistId=a77, score=1.3865274990041025, hops=1, seeds=[a76, a75, a81, a82, a51, a97, a25, a64, a61, a10, a72], via=a76)
+GraphReach(artistId=a78, score=1.5247682136780485, hops=1, seeds=[a76, a75, a81, a61, a10, a64, a97, a82, a51, a52], via=a76)
+GraphReach(artistId=a79, score=1.6398451965475829, hops=1, seeds=[a76, a97, a82, a81, a117, a75, a61, a10, a114, a64], via=a97)
+GraphReach(artistId=a8, score=0.3826691900688893, hops=1, seeds=[a10, a52, a25, a51], via=a52)
+GraphReach(artistId=a80, score=1.398013699627026, hops=1, seeds=[a82, a81, a75, a76, a51, a1, a117, a97, a46, a61, a10, a52, a64, a45], via=a82)
+GraphReach(artistId=a83, score=1.1813656623204722, hops=1, seeds=[a82, a51, a81, a52, a75, a76, a1, a63, a21], via=a51)
+GraphReach(artistId=a84, score=0.9048166472704283, hops=1, seeds=[a82, a81, a63, a51, a75, a1, a64, a21, a37], via=a82)
+GraphReach(artistId=a85, score=1.3069325666491753, hops=1, seeds=[a82, a1, a75, a51, a81, a64, a46, a25, a21, a63, a52], via=a82)
+GraphReach(artistId=a86, score=0.9769270247179564, hops=1, seeds=[a82, a46, a51, a81, a52, a1, a75, a63, a21, a64, a45], via=a46)
+GraphReach(artistId=a87, score=0.9179631094564642, hops=1, seeds=[a64, a82, a21, a97, a1, a75, a46, a81, a93, a63], via=a64)
+GraphReach(artistId=a88, score=0.8577034082905323, hops=2, seeds=[a61, a82, a64, a93, a63, a1, a60, a75, a97, a46, a21, a25, a52, a67, a51], via=a62)
+GraphReach(artistId=a89, score=0.8017111286602236, hops=1, seeds=[a10, a37, a93, a64, a46, a39, a21, a82, a72, a60, a45, a97], via=a10)
+GraphReach(artistId=a9, score=0.3770493951803565, hops=1, seeds=[a51, a10, a25, a52], via=a51)
+GraphReach(artistId=a90, score=0.5488553978119224, hops=1, seeds=[a93, a46, a64, a82, a21], via=a46)
+GraphReach(artistId=a91, score=0.7413560089827451, hops=1, seeds=[a93, a82, a46, a51, a97, a39, a52, a37, a64, a117], via=a82)
+GraphReach(artistId=a92, score=0.7715018077629603, hops=1, seeds=[a93, a97, a46, a25, a51, a82], via=a93)
+GraphReach(artistId=a94, score=1.1583065675361939, hops=1, seeds=[a93, a46, a97, a60, a72, a117, a82, a1], via=a93)
+GraphReach(artistId=a95, score=0.8934680552290875, hops=1, seeds=[a93, a97, a72, a25, a46, a60, a21], via=a93)
+GraphReach(artistId=a96, score=1.3104682346604521, hops=1, seeds=[a93, a97, a72, a60, a46, a1, a117, a25, a21], via=a72)
+GraphReach(artistId=a98, score=0.8506572683758491, hops=1, seeds=[a97, a93, a72, a60, a64, a117, a21, a1, a25], via=a97)
+GraphReach(artistId=a99, score=0.9226661069839165, hops=1, seeds=[a97, a25, a117, a1, a72, a76, a21, a60, a93, a75, a52], via=a97)
+# large Discovery discover
+s76_2 2.609529659 GraphNear Connects(first=Artist 76, second=Artist 75) 2.333062619
+s53_6 2.664611671 SeedArtist Connects(first=Artist 51, second=Artist 52) 1.792364208
+s24_4 2.463266421 GraphFar Connects(first=Artist 25, second=Artist 114) 2.229813532
+s78_4 2.445899631 GraphFar Connects(first=Artist 76, second=Artist 75) 2.624544219
+s77_6 2.316038985 SeedArtist Connects(first=Artist 76, second=Artist 75) 1.892064624
+s36_6 2.241300780 GraphBridge Connects(first=Artist 37, second=Artist 39) 1.966549500
+s94_2 2.149103776 GraphNear Connects(first=Artist 93, second=Artist 46) 1.899882396
+s38_0 2.064418073 RelatedSong Connects(first=Artist 37, second=Artist 39) 1.725083824
+s43_6 2.113894421 SeedArtist Connects(first=Artist 39, second=Artist 45) 1.850096294
+s80_4 2.134693053 GraphFar Connects(first=Artist 82, second=Artist 81) 1.814368941
+s72_6 2.030959972 GraphBridge Connects(first=Artist 72, second=Artist 76) 1.783614851
+s52_4 2.131859283 GraphFar Connects(first=Artist 51, second=Artist 52) 1.897484122
+s49_0 1.966331417 CoListen Connects(first=Artist 46, second=Artist 51) 1.716145342
+s39_6 2.010603162 SeedArtist YourArtist(artist=Artist 39) 2.093367966
+s44_6 1.991353328 GraphBridge Connects(first=Artist 46, second=Artist 45) 1.803825958
+s96_4 2.324784535 GraphFar Connects(first=Artist 93, second=Artist 97) 2.036549364
+s33_4 1.823999717 ArtistTopSong Connects(first=Artist 37, second=Artist 45) 1.712786275
+s0_6 1.982300482 GraphBridge Connects(first=Artist 117, second=Artist 1) 1.668932441
+s4_0 2.016994312 RelatedSong Connects(first=Artist 10, second=Artist 1) 1.831648431
+s56_0 1.732639397 RelatedSong Connects(first=Artist 117, second=Artist 76) 1.445443429
+s48_2 1.936663459 GraphNear Connects(first=Artist 46, second=Artist 51) 1.682117707
+s87_4 1.605214985 ArtistTopSong Connects(first=Artist 64, second=Artist 82) 1.374495942
+s32_6 1.769545480 GraphBridge Connects(first=Artist 37, second=Artist 45) 1.683245495
+s95_6 1.682067247 SeedArtist Connects(first=Artist 93, second=Artist 97) 1.370133511
+s105_0 1.559724963 CoListen Connects(first=Artist 82, second=Artist 97) 1.368473064
+s40_0 1.643998972 RelatedSong Connects(first=Artist 39, second=Artist 10) 1.377464463
+s71_6 1.680014729 SeedArtist Connects(first=Artist 72, second=Artist 67) 1.310422873
+s67_2 1.416602174 PlaylistNeighbour YourArtist(artist=Artist 67) 1.485039328
+s91_0 1.483194092 CoListen Connects(first=Artist 93, second=Artist 82) 1.306557855
+s111_4 1.474668133 ArtistTopSong Connects(first=Artist 114, second=Artist 63) 1.363535015
+s3_6 1.900184904 SeedArtist Connects(first=Artist 1, second=Artist 117) 1.805930846
+s28_4 1.580626616 GraphFar Connects(first=Artist 25, second=Artist 51) 1.354390259
+s79_6 1.884092369 SeedArtist Connects(first=Artist 76, second=Artist 97) 1.521357205
+s20_0 1.761842652 RelatedSong Connects(first=Artist 21, second=Artist 25) 1.650286901
+s83_2 1.316399385 PlaylistNeighbour Connects(first=Artist 82, second=Artist 51) 0.946641794
+s8_6 1.805069181 GraphBridge Connects(first=Artist 10, second=Artist 52) 1.692730468
+s69_2 1.555556631 PlaylistNeighbour Connects(first=Artist 67, second=Artist 72) 1.394646363
+s89_6 1.529408433 SeedArtist Connects(first=Artist 10, second=Artist 37) 1.217724546
+s22_0 1.645719244 RelatedSong Connects(first=Artist 25, second=Artist 21) 1.466493452
+s60_2 1.533281655 GraphNear YourArtist(artist=Artist 61) 1.599416479
+s54_4 1.671382852 GraphFar Connects(first=Artist 51, second=Artist 117) 1.506261221
+s46_6 1.633413864 GraphBridge YourArtist(artist=Artist 46) 1.682890626
+s64_0 1.896572634 RelatedSong Connects(first=Artist 63, second=Artist 64) 1.696515354
+s66_2 1.780455333 GraphNear Connects(first=Artist 63, second=Artist 67) 1.511991856
+s116_4 1.666950914 GraphFar Connects(first=Artist 117, second=Artist 114) 1.494624801
+s35_2 1.441291265 PlaylistNeighbour Connects(first=Artist 37, second=Artist 75) 1.135909645
+s27_6 1.701257721 SeedArtist Connects(first=Artist 25, second=Artist 51) 1.364088468
+s73_2 1.440246477 PlaylistNeighbour Connects(first=Artist 72, second=Artist 76) 1.876277475
+s102_6 1.594220441 GraphBridge Connects(first=Artist 52, second=Artist 51) 1.397797864
+s92_2 1.439380271 GraphNear Connects(first=Artist 93, second=Artist 97) 1.264878615
+s15_0 1.325054019 CoListen Connects(first=Artist 117, second=Artist 1) 1.242462747
+s104_6 1.560854668 GraphBridge Connects(first=Artist 60, second=Artist 117) 1.339537430
+s51_4 1.279075327 ArtistTopSong YourArtist(artist=Artist 51) 1.353913035
+s31_2 1.344262112 PlaylistNeighbour Connects(first=Artist 37, second=Artist 63) 1.223664268
+s107_6 1.563811199 SeedArtist Connects(first=Artist 63, second=Artist 60) 1.307821825
+s115_4 0.998518164 ArtistTopSong Connects(first=Artist 114, second=Artist 117) 1.351034432
+s99_0 1.489432285 CoListen Connects(first=Artist 97, second=Artist 25) 1.281437892
+s10_6 1.484775657 GraphBridge YourArtist(artist=Artist 10) 1.545857688
+s98_2 1.534314243 GraphNear Connects(first=Artist 97, second=Artist 93) 1.204655395
+s6_4 1.883841050 GraphFar Connects(first=Artist 1, second=Artist 61) 1.734625952
+# large Discovery up next
+s4_0 2.016994312 RelatedSong Connects(first=Artist 10, second=Artist 1) 1.831648431
+s6_4 1.883841050 GraphFar Connects(first=Artist 1, second=Artist 61) 1.734625952
+s8_6 1.805069181 GraphBridge Connects(first=Artist 10, second=Artist 52) 1.692730468
+s0_6 1.982300482 GraphBridge Connects(first=Artist 117, second=Artist 1) 1.668932441
+s3_6 1.900184904 SeedArtist Connects(first=Artist 1, second=Artist 117) 1.805930846
+s0_4 1.552339153 GraphFar Connects(first=Artist 117, second=Artist 1) 1.884212058
+s2_6 1.336162121 GraphBridge Connects(first=Artist 1, second=Artist 117) 1.065185799
+s19_6 1.663071871 SeedArtist Connects(first=Artist 21, second=Artist 25) 1.545074779
+s6_2 1.666173040 GraphNear Connects(first=Artist 1, second=Artist 61) 1.514804218
+s8_4 1.670908308 GraphFar Connects(first=Artist 10, second=Artist 52) 1.559133255
+s10_6 1.484775657 GraphBridge YourArtist(artist=Artist 10) 1.545857688
+s0_0 1.398075360 RelatedSong Connects(first=Artist 117, second=Artist 1) 1.551724901
+s3_2 1.420713309 PlaylistNeighbour Connects(first=Artist 1, second=Artist 117) 1.272315729
+s2_2 1.280490374 GraphNear Connects(first=Artist 1, second=Artist 117) 0.960125639
+s4_6 1.126478519 GraphBridge Connects(first=Artist 10, second=Artist 1) 1.446670376
+s12_4 1.364047216 GraphFar Connects(first=Artist 10, second=Artist 82) 1.229727067
+s11_6 1.396412853 SeedArtist Connects(first=Artist 10, second=Artist 51) 1.183129086
+s8_2 1.451153694 GraphNear Connects(first=Artist 10, second=Artist 52) 1.338037812
+s6_0 1.229976314 RelatedSong Connects(first=Artist 1, second=Artist 61) 1.730706593
+s3_4 1.551496502 ArtistTopSong Connects(first=Artist 1, second=Artist 117) 1.449614620
+s2_4 1.272309965 GraphFar Connects(first=Artist 1, second=Artist 117) 0.955375789
+s19_4 1.401422590 ArtistTopSong Connects(first=Artist 21, second=Artist 25) 1.279319925
+s15_0 1.325054019 CoListen Connects(first=Artist 117, second=Artist 1) 1.242462747
+s17_6 0.991705762 SeedArtist Connects(first=Artist 51, second=Artist 52) 0.856652046
+s15_2 1.225537687 PlaylistNeighbour Connects(first=Artist 117, second=Artist 1) 1.830257846
+# large Discovery factors
+s0_0 1.300000000 1.300000000
+s0_2 1.297879082 1.297879082
+s0_4 1.300000000 1.300000000
+s0_6 1.300000000 1.362562084
+s1_0 1.300000000 0.050000000
+s1_2 1.300000000 1.300000000
+s1_4 1.300000000 1.362562084
+s1_6 1.300000000 1.300000000
+s2_0 1.185264426 1.185264426
+s2_2 1.123194457 1.177247831
+s2_4 1.123194457 1.177247831
+s2_6 1.123194457 1.177247831
+s3_0 1.300000000 1.300000000
+s3_2 1.271157292 1.332331330
+s3_4 1.271157292 1.332331330
+s3_6 1.271157292 1.332331330
+s4_0 1.108764900 1.162123856
+s4_2 0.795758019 0.795758019
+s4_4 1.300000000 1.300000000
+s4_6 1.300000000 1.300000000
+s5_0 0.783235450 0.820928406
+s5_2 0.783235450 0.820928406
+s5_4 0.783235450 0.820928406
+s5_6 0.391617725 0.391617725
+s6_0 1.300000000 1.300000000
+s6_2 1.260545804 1.321209168
+s6_4 1.260545804 1.321209168
+s6_6 1.260545804 1.321209168
+s7_0 0.998008577 0.998008577
+s7_2 0.944732426 0.944732426
+s7_4 1.300000000 1.300000000
+s7_6 1.286818111 1.286818111
+s8_0 1.082246673 1.082246673
+s8_2 1.253488807 1.313812555
+s8_4 1.253488807 1.313812555
+s8_6 1.253488807 1.313812555
+s9_0 1.300000000 1.362562084
+s9_2 1.121444326 1.121444326
+s9_4 1.300000000 1.300000000
+s9_6 1.300000000 1.300000000
+# large Adventure reach
+GraphReach(artistId=a0, score=3.332771149459156, hops=1, seeds=[a117, a1, a60, a114, a25, a93, a61, a97, a72, a82, a52, a46, a39, a67, a45, a76, a81, a10, a63, a64, a21], via=a117)
+GraphReach(artistId=a100, score=1.7119892362000244, hops=1, seeds=[a97, a93, a25, a52, a21, a60, a82, a1, a64, a46, a51, a72, a117, a61, a75, a67, a76, a81, a63, a114, a37], via=a97)
+GraphReach(artistId=a101, score=1.981000126998928, hops=1, seeds=[a97, a64, a60, a52, a117, a37, a25, a93, a1, a82, a67, a21, a72, a75, a63, a76, a45, a81, a51, a61, a39, a114, a46], via=a64)
+GraphReach(artistId=a102, score=2.843648685374169, hops=1, seeds=[a52, a82, a1, a97, a117, a60, a51, a81, a21, a67, a25, a75, a63, a76, a93, a37, a72, a64, a61, a45, a46, a114], via=a52)
+GraphReach(artistId=a103, score=1.9980892279004219, hops=2, seeds=[a97, a82, a60, a52, a25, a76, a93, a81, a21, a117, a51, a75, a1, a63, a114, a67, a37, a64, a45, a46, a61, a10], via=a79)
+GraphReach(artistId=a104, score=2.2807163280225478, hops=1, seeds=[a60, a117, a1, a82, a52, a93, a97, a25, a51, a63, a21, a81, a67, a114, a76, a75, a37, a61, a46, a64, a10, a45, a72], via=a60)
+GraphReach(artistId=a105, score=2.5102623851134505, hops=2, seeds=[a82, a60, a97, a76, a52, a63, a37, a75, a81, a45, a39, a117, a51, a21, a10, a25, a46, a93, a64, a1, a114, a61, a67, a72], via=a79)
+GraphReach(artistId=a106, score=2.003136076036029, hops=1, seeds=[a82, a60, a97, a52, a117, a63, a76, a81, a93, a51, a1, a114, a75, a25, a21, a46, a72, a45, a37, a67, a61], via=a82)
+GraphReach(artistId=a107, score=1.4734405688370817, hops=2, seeds=[a63, a60, a82, a51, a117, a52, a76, a114, a25, a75, a72, a93, a97, a21, a61, a81, a1, a46, a45, a37, a39, a64, a67, a10], via=a73)
+GraphReach(artistId=a108, score=1.6304332416085878, hops=1, seeds=[a63, a82, a72, a61, a67, a60, a76, a114, a97, a93, a51, a75, a52, a46, a21, a81, a45, a25, a117, a37, a64, a10, a1], via=a63)
+GraphReach(artistId=a109, score=2.0650254238652312, hops=2, seeds=[a93, a72, a97, a63, a60, a114, a46, a76, a82, a117, a21, a51, a67, a39, a25, a64, a37, a75, a61, a1, a81, a45, a52], via=a96)
+GraphReach(artistId=a11, score=0.848360579876747, hops=1, seeds=[a10, a51, a46, a60, a39, a52, a75, a37, a72, a45, a76, a67, a64, a82, a81, a114, a117, a61], via=a10)
+GraphReach(artistId=a110, score=2.3164407124837476, hops=2, seeds=[a114, a25, a61, a117, a63, a51, a76, a97, a82, a21, a60, a1, a72, a93, a81, a52, a67, a75, a10, a46, a45], via=a24)
+GraphReach(artistId=a111, score=1.1029945575273232, hops=1, seeds=[a114, a63, a97, a76, a72, a61, a93, a117, a60, a25, a82, a21, a46, a51, a75, a81, a1, a67], via=a114)
+GraphReach(artistId=a112, score=2.075213163299975, hops=1, seeds=[a114, a117, a97, a76, a61, a1, a72, a60, a63, a82, a25, a93, a46, a81, a21, a51, a75, a67, a45], via=a114)
+GraphReach(artistId=a113, score=1.8282202948016546, hops=1, seeds=[a114, a61, a117, a1, a76, a97, a60, a25, a63, a81, a51, a46, a82, a93, a21, a64, a45, a75, a67], via=a61)
+GraphReach(artistId=a115, score=2.6427242972229235, hops=1, seeds=[a117, a114, a76, a97, a82, a61, a81, a60, a75, a46, a45, a1, a39, a10, a67, a64, a72, a93, a63, a37, a52, a25, a51, a21], via=a114)
+GraphReach(artistId=a116, score=2.4744173473216735, hops=1, seeds=[a117, a114, a1, a61, a60, a97, a25, a76, a82, a46, a81, a72, a93, a45, a51, a63, a67, a39, a75, a21, a10, a52, a64], via=a114)
+GraphReach(artistId=a118, score=3.660562583746231, hops=1, seeds=[a117, a1, a114, a60, a97, a93, a82, a76, a25, a46, a72, a61, a39, a45, a81, a75, a10, a51, a67, a37, a21, a52, a64, a63], via=a1)
+GraphReach(artistId=a119, score=3.691191246903128, hops=1, seeds=[a117, a1, a25, a60, a114, a93, a97, a52, a72, a61, a10, a82, a21, a67, a64, a63, a76, a45, a46, a75, a39, a37, a81], via=a117)
+GraphReach(artistId=a12, score=1.1732350611014355, hops=1, seeds=[a10, a82, a51, a60, a117, a52, a39, a81, a1, a75, a76, a63, a45, a37, a67, a46, a93, a114, a64, a21, a61, a72, a25, a97], via=a10)
+GraphReach(artistId=a13, score=1.010613947322576, hops=1, seeds=[a10, a117, a1, a45, a52, a75, a76, a46, a72, a51, a25, a37, a39, a60, a64, a67, a82, a61, a97, a21], via=a10)
+GraphReach(artistId=a14, score=1.4056639992975697, hops=1, seeds=[a82, a10, a67, a117, a39, a61, a60, a76, a45, a37, a46, a52, a114, a63, a72, a64, a75, a1, a25, a81, a51, a21, a97], via=a82)
+GraphReach(artistId=a15, score=1.0575642275806665, hops=2, seeds=[a117, a1, a10, a60, a25, a39, a97, a76, a45, a21, a46, a67, a61, a114, a51, a82, a93, a52, a37, a81, a63, a64, a75], via=a119)
+GraphReach(artistId=a16, score=0.8787913921089885, hops=2, seeds=[a39, a10, a37, a45, a75, a46, a117, a60, a63, a82, a1, a97, a64, a67, a76, a25, a21, a81, a51, a61, a93, a114], via=a41)
+GraphReach(artistId=a17, score=0.8583279656233912, hops=2, seeds=[a10, a51, a52, a25, a117, a1, a76, a75, a97, a21, a67, a46, a64, a82, a39, a72, a45, a61, a60, a81, a93, a63], via=a53)
+GraphReach(artistId=a18, score=1.2051894161920886, hops=1, seeds=[a97, a21, a52, a51, a46, a25, a67, a1, a45, a10, a75, a117, a81, a114, a61, a82, a72, a63], via=a97)
+GraphReach(artistId=a19, score=0.7421720351233095, hops=1, seeds=[a21, a25, a117, a114, a97, a10, a1, a52, a61, a82, a75, a81, a63, a76, a46, a45], via=a21)
+GraphReach(artistId=a2, score=2.1337009525660235, hops=1, seeds=[a1, a117, a60, a25, a52, a93, a51, a10, a114, a97, a61, a67, a46, a64, a81, a82, a21, a72, a75, a63, a45, a76], via=a1)
+GraphReach(artistId=a20, score=0.6858534528886969, hops=1, seeds=[a21, a25, a97, a52, a82, a10, a93, a81, a63, a75, a114], via=a21)
+GraphReach(artistId=a22, score=1.3802914685514935, hops=1, seeds=[a25, a21, a39, a93, a45, a114, a97, a60, a46, a10, a61, a52, a72, a76, a51, a81, a37, a82, a67, a63, a75, a1, a117], via=a25)
+GraphReach(artistId=a23, score=2.086559192419185, hops=1, seeds=[a25, a21, a97, a93, a60, a52, a82, a114, a76, a117, a72, a61, a81, a46, a75, a51, a1, a67, a64, a63, a10, a45, a39], via=a25)
+GraphReach(artistId=a24, score=2.527903841092085, hops=1, seeds=[a25, a114, a21, a51, a61, a93, a76, a60, a75, a117, a46, a52, a97, a81, a63, a67, a37, a72, a64, a82, a45, a39, a1], via=a25)
+GraphReach(artistId=a26, score=2.046047955931143, hops=1, seeds=[a25, a93, a39, a21, a114, a45, a51, a46, a67, a64, a37, a75, a72, a63, a117, a76, a1, a97, a10, a60, a52, a61, a82, a81], via=a93)
+GraphReach(artistId=a27, score=3.622812057630388, hops=1, seeds=[a25, a51, a75, a76, a39, a82, a37, a64, a72, a93, a81, a52, a114, a61, a21, a97, a67, a10, a46, a117, a1, a60, a63, a45], via=a25)
+GraphReach(artistId=a28, score=1.8865042827509322, hops=1, seeds=[a25, a72, a51, a75, a67, a76, a61, a37, a64, a1, a93, a114, a82, a63, a39, a117, a52, a21, a10, a60, a46, a45, a81], via=a25)
+GraphReach(artistId=a29, score=1.2357945083766908, hops=2, seeds=[a25, a51, a76, a114, a75, a37, a39, a10, a72, a67, a82, a93, a64, a45, a61, a52, a60, a21, a63, a1, a117, a97, a81, a46], via=a27)
+GraphReach(artistId=a3, score=1.7048609496192686, hops=1, seeds=[a1, a117, a25, a60, a72, a67, a61, a52, a10, a93, a75, a46, a51, a64, a21, a76, a63, a114, a97, a45, a82, a39], via=a1)
+GraphReach(artistId=a30, score=0.9029133073492865, hops=2, seeds=[a25, a51, a52, a75, a114, a37, a10, a72, a76, a64, a45, a39, a82, a67, a117, a63, a61, a1, a21, a93, a46, a97, a81], via=a8)
+GraphReach(artistId=a31, score=0.5720280797194519, hops=1, seeds=[a37, a45, a63, a93, a60, a39, a97, a75, a72, a46, a52, a67, a64, a51, a25, a76, a21, a117], via=a63)
+GraphReach(artistId=a32, score=0.9432815144665172, hops=1, seeds=[a37, a46, a45, a25, a75, a67, a64, a72, a10, a63, a39, a93, a82, a61, a51, a21, a52, a81, a117, a60, a76, a97], via=a46)
+GraphReach(artistId=a33, score=1.1726502651613884, hops=2, seeds=[a37, a45, a75, a46, a39, a51, a52, a72, a64, a67, a76, a21, a25, a63, a10, a60, a114, a81, a97, a117, a82, a61, a93], via=a74)
+GraphReach(artistId=a34, score=1.090854688547354, hops=1, seeds=[a37, a45, a75, a39, a117, a46, a64, a10, a52, a51, a72, a63, a67, a82, a76, a1, a114, a81, a21, a93, a25], via=a37)
+GraphReach(artistId=a35, score=1.5892379233010816, hops=1, seeds=[a37, a75, a45, a39, a63, a64, a97, a82, a52, a60, a67, a76, a81, a46, a72, a51, a25, a21, a10, a117, a93], via=a75)
+GraphReach(artistId=a36, score=1.493064487446225, hops=1, seeds=[a39, a37, a64, a72, a75, a76, a117, a45, a21, a25, a51, a82, a67, a10, a93, a60, a52, a61, a46, a63, a81], via=a39)
+GraphReach(artistId=a38, score=2.2313239605013253, hops=1, seeds=[a37, a39, a25, a75, a64, a51, a72, a76, a10, a60, a45, a93, a46, a82, a21, a114, a117, a63, a52, a1, a67, a81, a97], via=a37)
+GraphReach(artistId=a4, score=1.1194721499624345, hops=1, seeds=[a1, a117, a25, a10, a52, a72, a60, a61, a67, a46, a75, a45, a21, a51, a97, a64, a76], via=a1)
+GraphReach(artistId=a40, score=1.60888301214045, hops=1, seeds=[a39, a37, a60, a10, a45, a46, a25, a75, a51, a76, a21, a72, a117, a52, a64, a1, a93, a61], via=a60)
+GraphReach(artistId=a41, score=1.8584320899001554, hops=1, seeds=[a39, a10, a37, a45, a46, a60, a25, a76, a117, a75, a21, a51, a114, a67, a93, a72, a64, a61, a1], via=a39)
+GraphReach(artistId=a42, score=2.19631758454755, hops=1, seeds=[a39, a45, a117, a46, a60, a72, a10, a37, a1, a25, a76, a114, a21, a75, a93, a67, a61, a64, a82, a51, a81, a63, a97, a52], via=a39)
+GraphReach(artistId=a43, score=2.66515725863691, hops=1, seeds=[a45, a39, a46, a10, a60, a37, a82, a76, a75, a25, a117, a52, a21, a1, a97, a72, a63, a81, a51, a61, a64, a114, a93, a67], via=a45)
+GraphReach(artistId=a44, score=2.1342522190630326, hops=1, seeds=[a46, a39, a45, a10, a37, a117, a114, a76, a93, a25, a60, a21, a82, a75, a97, a72, a1, a64, a51, a81, a67, a52, a61, a63], via=a46)
+GraphReach(artistId=a47, score=2.182699330636554, hops=1, seeds=[a46, a75, a51, a45, a82, a52, a81, a117, a39, a10, a1, a76, a114, a67, a97, a25, a37, a60, a61, a21, a64, a72, a93], via=a46)
+GraphReach(artistId=a48, score=1.7063169480478582, hops=1, seeds=[a46, a51, a45, a75, a52, a81, a67, a82, a114, a25, a21, a97, a1, a117, a76, a72], via=a46)
+GraphReach(artistId=a49, score=2.080577122121825, hops=1, seeds=[a46, a51, a52, a75, a82, a45, a1, a81, a67, a25, a72, a64, a21, a10, a76, a114, a63, a97, a39, a117, a37, a61], via=a46)
+GraphReach(artistId=a5, score=1.5559665383306849, hops=2, seeds=[a1, a10, a25, a52, a72, a46, a75, a45, a39, a117, a64, a76, a60, a51, a67, a61, a21, a82, a37, a97, a81], via=a74)
+GraphReach(artistId=a50, score=2.441198640817155, hops=1, seeds=[a51, a46, a52, a67, a75, a45, a25, a82, a21, a81, a114, a61, a97, a1, a64, a117, a93, a76, a37, a72, a60, a10, a63, a39], via=a52)
+GraphReach(artistId=a53, score=2.575731890289423, hops=1, seeds=[a51, a52, a75, a76, a25, a82, a117, a81, a97, a61, a46, a64, a37, a10, a60, a72, a93, a67, a114, a45, a21, a39, a63, a1], via=a51)
+GraphReach(artistId=a54, score=1.4506814009599331, hops=1, seeds=[a117, a51, a52, a82, a10, a60, a76, a61, a45, a75, a37, a81, a97, a1, a25, a114, a64, a93, a72, a67, a21, a39], via=a51)
+GraphReach(artistId=a55, score=1.9456581984993844, hops=1, seeds=[a82, a75, a117, a52, a76, a51, a81, a61, a97, a60, a10, a1, a46, a25, a45, a64, a21, a37, a114, a67, a93, a63], via=a75)
+GraphReach(artistId=a56, score=2.726202365926958, hops=1, seeds=[a117, a76, a61, a82, a75, a51, a60, a81, a52, a97, a10, a25, a114, a64, a45, a37, a21, a1, a67, a46, a93, a63], via=a117)
+GraphReach(artistId=a57, score=2.2324612319727013, hops=1, seeds=[a60, a117, a82, a61, a76, a75, a81, a97, a25, a51, a21, a52, a114, a64, a1, a46, a93, a45, a10, a63, a37], via=a60)
+GraphReach(artistId=a58, score=2.597865326083567, hops=1, seeds=[a76, a60, a61, a117, a82, a114, a97, a81, a39, a10, a75, a45, a46, a25, a52, a21, a51, a67, a64, a1, a37, a63], via=a76)
+GraphReach(artistId=a59, score=2.3240395411107135, hops=1, seeds=[a61, a60, a117, a76, a81, a25, a114, a82, a51, a21, a52, a97, a75, a64, a63, a45, a46, a93, a67, a1], via=a61)
+GraphReach(artistId=a6, score=1.1947305671339032, hops=2, seeds=[a1, a10, a61, a25, a114, a72, a67, a52, a51, a97, a46, a75, a21, a63, a76, a64, a117, a45, a81, a82], via=a70)
+GraphReach(artistId=a62, score=1.3492760166101467, hops=1, seeds=[a61, a63, a64, a60, a25, a82, a93, a117, a1, a76, a81, a75, a21, a37, a114, a97, a46, a67, a52, a45, a51], via=a61)
+GraphReach(artistId=a65, score=1.4572741712750994, hops=1, seeds=[a63, a37, a64, a67, a45, a61, a72, a75, a117, a25, a52, a93, a39, a1, a60, a114, a82, a21, a81], via=a63)
+GraphReach(artistId=a66, score=1.5549152663779113, hops=1, seeds=[a67, a63, a25, a64, a117, a1, a93, a72, a37, a114, a45, a60, a21, a61, a51, a46, a39, a10, a52, a97], via=a67)
+GraphReach(artistId=a68, score=1.8932116651344906, hops=1, seeds=[a67, a61, a72, a63, a64, a52, a37, a97, a76, a60, a10, a51, a117, a114, a1, a82, a75, a39, a45, a93, a21, a81, a25, a46], via=a67)
+GraphReach(artistId=a69, score=1.7122829799821528, hops=1, seeds=[a72, a67, a63, a25, a64, a61, a37, a75, a93, a51, a76, a117, a1, a52, a114, a82, a21, a46, a45, a97, a39, a60, a10], via=a72)
+GraphReach(artistId=a7, score=1.4231898881524079, hops=1, seeds=[a25, a10, a1, a117, a52, a51, a72, a60, a46, a75, a64, a67, a61, a45, a114, a97, a76, a93, a63, a21], via=a25)
+GraphReach(artistId=a70, score=1.9358474994995891, hops=1, seeds=[a67, a61, a72, a63, a117, a64, a1, a52, a75, a37, a76, a25, a21, a114, a51, a10, a45, a93, a39, a46, a82, a60, a97, a81], via=a61)
+GraphReach(artistId=a71, score=1.5301843868205933, hops=1, seeds=[a72, a67, a61, a75, a64, a63, a76, a51, a46, a93, a21, a82, a37, a52, a39, a10, a25, a1, a45, a117, a114, a81], via=a72)
+GraphReach(artistId=a73, score=2.250040094436205, hops=1, seeds=[a72, a76, a75, a21, a39, a46, a37, a67, a93, a45, a63, a60, a61, a64, a82, a51, a117, a97, a1, a52, a114, a10, a25, a81], via=a76)
+GraphReach(artistId=a74, score=2.440629620557142, hops=1, seeds=[a72, a75, a76, a64, a25, a51, a37, a10, a67, a52, a1, a46, a39, a82, a61, a45, a21, a93, a114, a81, a63, a97, a60, a117], via=a72)
+GraphReach(artistId=a77, score=3.1503286530775965, hops=1, seeds=[a76, a75, a82, a81, a51, a97, a25, a64, a117, a72, a61, a10, a52, a1, a114, a37, a93, a21, a39, a60, a46, a63, a67, a45], via=a76)
+GraphReach(artistId=a78, score=2.7199275140218795, hops=1, seeds=[a76, a75, a81, a61, a10, a64, a82, a51, a97, a117, a25, a52, a114, a72, a67, a1, a46, a93, a45], via=a76)
+GraphReach(artistId=a79, score=3.863251817907218, hops=1, seeds=[a76, a97, a82, a81, a75, a117, a61, a51, a52, a114, a10, a64, a60, a25, a46, a45, a63, a1, a21, a37, a72, a93, a67], via=a97)
+GraphReach(artistId=a8, score=1.0906255705885564, hops=1, seeds=[a10, a52, a25, a1, a72, a51, a75, a46, a21, a61, a64, a97, a45, a67, a60, a39, a76, a37, a82, a81, a63], via=a52)
+GraphReach(artistId=a80, score=3.3583580244756916, hops=1, seeds=[a82, a81, a117, a76, a75, a51, a1, a97, a61, a46, a60, a114, a52, a64, a25, a10, a72, a45, a21, a93, a39, a67, a63], via=a82)
+GraphReach(artistId=a83, score=2.900326698408164, hops=1, seeds=[a82, a51, a81, a75, a76, a52, a1, a97, a63, a114, a25, a117, a64, a46, a61, a60, a21, a10, a67, a45, a93, a72], via=a51)
+GraphReach(artistId=a84, score=1.7108925922945173, hops=1, seeds=[a82, a81, a63, a51, a75, a1, a64, a52, a21, a46, a97, a25, a37, a76, a45, a10, a93, a39, a67, a117], via=a82)
+GraphReach(artistId=a85, score=2.8066568084900427, hops=1, seeds=[a82, a75, a1, a51, a81, a46, a52, a64, a63, a21, a25, a76, a72, a93, a97, a67, a61, a45, a37, a114, a39, a60, a10], via=a82)
+GraphReach(artistId=a86, score=2.2684392167342193, hops=1, seeds=[a82, a46, a51, a81, a52, a1, a75, a64, a21, a63, a39, a93, a60, a97, a37, a45, a25, a76, a61, a67, a10, a72], via=a46)
+GraphReach(artistId=a87, score=2.163993198036918, hops=1, seeds=[a64, a82, a21, a97, a93, a1, a81, a46, a75, a51, a63, a60, a61, a52, a25, a72, a37, a117, a39, a76, a45, a67], via=a64)
+GraphReach(artistId=a88, score=1.5495876145772338, hops=2, seeds=[a82, a64, a61, a46, a93, a63, a51, a1, a75, a97, a21, a52, a81, a60, a25, a45, a67, a37, a39, a114, a72], via=a62)
+GraphReach(artistId=a89, score=2.4147864271489308, hops=1, seeds=[a93, a82, a10, a46, a39, a37, a97, a64, a75, a21, a1, a51, a60, a72, a63, a25, a45, a81, a52, a114, a117, a76, a61, a67], via=a10)
+GraphReach(artistId=a9, score=0.8569730477158111, hops=1, seeds=[a51, a10, a25, a72, a52, a67, a75, a61, a46, a60, a39, a1, a76, a37, a64, a21, a63, a93, a82, a97, a45], via=a51)
+GraphReach(artistId=a90, score=1.5443195360918325, hops=1, seeds=[a93, a46, a82, a64, a97, a21, a75, a61, a72, a1, a63, a37, a25, a67, a51, a39, a60, a76, a81, a45, a10, a52], via=a46)
+GraphReach(artistId=a91, score=1.5667489168416908, hops=1, seeds=[a93, a82, a46, a64, a97, a37, a61, a60, a51, a39, a72, a117, a21, a75, a52, a1, a25, a63, a76, a67, a45, a10, a81], via=a82)
+GraphReach(artistId=a92, score=1.7405749761048837, hops=1, seeds=[a93, a97, a46, a25, a72, a82, a37, a60, a51, a75, a64, a39, a21, a76, a117, a1, a114, a52, a45, a67], via=a93)
+GraphReach(artistId=a94, score=2.216530004081748, hops=1, seeds=[a93, a97, a46, a60, a117, a72, a1, a82, a25, a21, a63, a76, a61, a114, a51, a75, a67], via=a93)
+GraphReach(artistId=a95, score=1.7946143925618052, hops=1, seeds=[a93, a97, a46, a25, a72, a60, a21, a117, a82, a1, a114, a51, a64], via=a93)
+GraphReach(artistId=a96, score=2.9285010945797483, hops=1, seeds=[a93, a72, a97, a60, a117, a46, a1, a25, a21, a114, a82, a76, a63, a75, a64, a39, a45, a67, a52, a81, a37, a61], via=a72)
+GraphReach(artistId=a98, score=1.7152889240072244, hops=1, seeds=[a97, a93, a60, a72, a117, a1, a25, a21, a64, a46, a82, a75, a52, a76, a63, a67, a81, a114, a37, a10], via=a97)
+GraphReach(artistId=a99, score=2.311519383367784, hops=1, seeds=[a97, a25, a93, a117, a60, a1, a72, a21, a76, a75, a52, a51, a81, a64, a82, a114, a67, a10, a46, a61, a37, a63], via=a97)
+# large Adventure discover
+s36_4 1.974805193 GraphFar Connects(first=Artist 39, second=Artist 37) 2.399621705
+s53_6 2.605149164 SeedArtist Connects(first=Artist 51, second=Artist 52) 1.999845979
+s77_6 1.664479827 SeedArtist Connects(first=Artist 76, second=Artist 75) 1.952583291
+s76_2 1.633517922 GraphNear Connects(first=Artist 76, second=Artist 75) 2.393581286
+s24_4 1.692147451 GraphFar Connects(first=Artist 25, second=Artist 114) 2.432374763
+s43_6 1.661330142 SeedArtist Connects(first=Artist 45, second=Artist 39) 2.108549254
+s4_0 1.558635651 RelatedSong Connects(first=Artist 1, second=Artist 10) 2.203797385
+s72_6 1.557145100 GraphBridge Connects(first=Artist 72, second=Artist 76) 2.015433242
+s3_6 1.635078130 SeedArtist Connects(first=Artist 1, second=Artist 117) 2.327978060
+s52_4 1.595037726 GraphFar Connects(first=Artist 51, second=Artist 52) 2.104965893
+s8_6 1.429611933 GraphBridge Connects(first=Artist 10, second=Artist 52) 2.070307204
+s49_0 1.341792198 CoListen Connects(first=Artist 46, second=Artist 51) 1.956291928
+s48_2 1.376750095 GraphNear Connects(first=Artist 46, second=Artist 51) 1.885221599
+s39_6 1.516106366 SeedArtist YourArtist(artist=Artist 39) 2.093367966
+s28_4 1.502068893 GraphFar Connects(first=Artist 25, second=Artist 72) 1.879785686
+s44_6 1.390129321 GraphBridge Connects(first=Artist 46, second=Artist 39) 2.127394340
+s111_4 1.215777334 ArtistTopSong Connects(first=Artist 114, second=Artist 63) 1.738458357
+s35_2 1.208041360 PlaylistNeighbour Connects(first=Artist 37, second=Artist 75) 1.518788140
+s26_0 1.240966442 RelatedSong Connects(first=Artist 25, second=Artist 93) 1.498106769
+s32_6 1.375762351 GraphBridge Connects(first=Artist 37, second=Artist 45) 2.023836853
+s91_0 1.189850844 CoListen Connects(first=Artist 93, second=Artist 82) 1.711167984
+s105_0 1.117461492 CoListen Connects(first=Artist 82, second=Artist 60) 1.724922133
+s87_4 1.041282583 ArtistTopSong Connects(first=Artist 64, second=Artist 82) 1.684915617
+s80_4 1.256344735 GraphFar Connects(first=Artist 82, second=Artist 81) 1.868761635
+s83_2 1.021025847 PlaylistNeighbour Connects(first=Artist 82, second=Artist 51) 1.116580107
+s66_2 1.456858814 GraphNear Connects(first=Artist 67, second=Artist 63) 1.834478975
+s40_0 1.076380805 RelatedSong Connects(first=Artist 39, second=Artist 10) 1.632890173
+s89_6 1.195800626 SeedArtist Connects(first=Artist 93, second=Artist 82) 1.590145277
+s0_6 1.157978788 GraphBridge Connects(first=Artist 117, second=Artist 1) 1.668932441
+s71_4 0.985877899 ArtistTopSong Connects(first=Artist 72, second=Artist 67) 1.395247100
+s38_0 1.429150806 RelatedSong Connects(first=Artist 37, second=Artist 39) 1.918664265
+s94_2 1.370843365 GraphNear Connects(first=Artist 93, second=Artist 97) 2.082118893
+s107_6 1.519837700 SeedArtist Connects(first=Artist 63, second=Artist 60) 1.870143263
+s54_4 1.508613271 GraphFar Connects(first=Artist 117, second=Artist 51) 1.927961084
+s106_0 1.411752378 RelatedSong Connects(first=Artist 82, second=Artist 60) 1.763590867
+s33_4 1.332831435 ArtistTopSong Connects(first=Artist 37, second=Artist 45) 2.053377632
+s37_2 0.873457052 PlaylistNeighbour YourArtist(artist=Artist 37) 1.232261189
+s69_2 1.247705714 PlaylistNeighbour Connects(first=Artist 72, second=Artist 67) 1.869641953
+s78_6 1.387471119 GraphBridge Connects(first=Artist 76, second=Artist 75) 1.721050934
+s92_2 1.293597252 GraphNear Connects(first=Artist 93, second=Artist 97) 1.653410984
+s95_6 1.379109660 SeedArtist Connects(first=Artist 93, second=Artist 97) 1.693617215
+s22_0 1.264009753 RelatedSong Connects(first=Artist 25, second=Artist 21) 1.851785253
+s12_4 1.245366555 GraphFar Connects(first=Artist 10, second=Artist 82) 1.686102934
+s15_0 0.914640630 CoListen Connects(first=Artist 117, second=Artist 1) 1.567723160
+s104_6 1.119294074 GraphBridge Connects(first=Artist 82, second=Artist 60) 1.649649166
+s23_2 0.963607082 PlaylistNeighbour Connects(first=Artist 25, second=Artist 21) 1.215021905
+s60_2 1.021129043 GraphNear YourArtist(artist=Artist 61) 1.599416479
+s100_4 1.159348992 GraphFar Connects(first=Artist 97, second=Artist 64) 1.757209044
+s109_0 0.903287367 CoListen Connects(first=Artist 93, second=Artist 72) 1.340304918
+s64_0 1.421034358 RelatedSong Connects(first=Artist 63, second=Artist 37) 1.970895779
+s55_4 0.486823851 ArtistTopSong Connects(first=Artist 82, second=Artist 75) 0.917402401
+s86_2 0.992960474 GraphNear Connects(first=Artist 82, second=Artist 46) 1.171336314
+s59_2 0.870344356 PlaylistNeighbour Connects(first=Artist 61, second=Artist 60) 1.097744541
+s99_0 1.235464699 CoListen Connects(first=Artist 97, second=Artist 25) 1.589349301
+s11_6 1.008577359 SeedArtist Connects(first=Artist 10, second=Artist 51) 1.277258107
+s20_0 1.008105086 RelatedSong Connects(first=Artist 21, second=Artist 25) 1.713267993
+s6_4 1.456733651 GraphFar Connects(first=Artist 1, second=Artist 10) 2.088580012
+s67_2 0.866262403 PlaylistNeighbour YourArtist(artist=Artist 67) 1.485039328
+s103_0 0.829359016 CoListen Connects(first=Artist 97, second=Artist 82) 1.400370145
+s98_2 1.258953975 GraphNear Connects(first=Artist 97, second=Artist 93) 1.550971518
+# large Adventure up next
+s6_4 1.456733651 GraphFar Connects(first=Artist 1, second=Artist 10) 2.088580012
+s8_6 1.429611933 GraphBridge Connects(first=Artist 10, second=Artist 52) 2.070307204
+s12_4 1.245366555 GraphFar Connects(first=Artist 10, second=Artist 82) 1.686102934
+s4_0 1.558635651 RelatedSong Connects(first=Artist 1, second=Artist 10) 2.203797385
+s3_6 1.635078130 SeedArtist Connects(first=Artist 1, second=Artist 117) 2.327978060
+s0_6 1.157978788 GraphBridge Connects(first=Artist 117, second=Artist 1) 1.668932441
+s2_2 1.072136356 GraphNear Connects(first=Artist 1, second=Artist 117) 1.208221181
+s6_2 1.286573089 GraphNear Connects(first=Artist 1, second=Artist 10) 1.868758278
+s8_4 1.337523739 GraphFar Connects(first=Artist 10, second=Artist 52) 1.936709991
+s12_2 0.558561571 GraphNear Connects(first=Artist 10, second=Artist 82) 1.495766002
+s3_4 1.344845375 ArtistTopSong Connects(first=Artist 1, second=Artist 117) 1.971661834
+s19_6 1.099626221 SeedArtist Connects(first=Artist 21, second=Artist 25) 1.698649149
+s11_6 1.008577359 SeedArtist Connects(first=Artist 10, second=Artist 51) 1.277258107
+s10_6 0.986349836 GraphBridge YourArtist(artist=Artist 10) 1.545857688
+s8_2 1.163650783 GraphNear Connects(first=Artist 10, second=Artist 52) 1.715614548
+s3_2 1.318693581 PlaylistNeighbour Connects(first=Artist 1, second=Artist 117) 1.794362942
+s2_4 1.013894831 GraphFar Connects(first=Artist 1, second=Artist 117) 1.203471330
+s13_6 0.918016960 SeedArtist Connects(first=Artist 10, second=Artist 117) 1.184749847
+s4_6 0.639175553 GraphBridge Connects(first=Artist 1, second=Artist 10) 1.818819330
+s6_6 0.914786358 GraphBridge Connects(first=Artist 1, second=Artist 10) 1.308916558
+s9_0 0.895297401 CoListen Connects(first=Artist 51, second=Artist 10) 1.209287120
+s15_0 0.914640630 CoListen Connects(first=Artist 117, second=Artist 1) 1.567723160
+s19_4 0.889388087 ArtistTopSong Connects(first=Artist 21, second=Artist 25) 1.432894296
+s2_6 0.974231276 GraphBridge Connects(first=Artist 1, second=Artist 117) 1.313281341
+s17_6 0.809375169 SeedArtist Connects(first=Artist 10, second=Artist 51) 1.250535885
+# large Adventure factors
+s0_0 1.300000000 1.300000000
+s0_2 1.297879082 1.297879082
+s0_4 1.300000000 1.300000000
+s0_6 1.300000000 1.362562084
+s1_0 1.300000000 0.050000000
+s1_2 1.300000000 1.300000000
+s1_4 1.300000000 1.362562084
+s1_6 1.300000000 1.300000000
+s2_0 1.185264426 1.185264426
+s2_2 1.123194457 1.177247831
+s2_4 1.123194457 1.177247831
+s2_6 1.123194457 1.177247831
+s3_0 1.300000000 1.300000000
+s3_2 1.271157292 1.332331330
+s3_4 1.271157292 1.332331330
+s3_6 1.271157292 1.332331330
+s4_0 1.108764900 1.162123856
+s4_2 0.795758019 0.795758019
+s4_4 1.300000000 1.300000000
+s4_6 1.300000000 1.300000000
+s5_0 0.783235450 0.820928406
+s5_2 0.783235450 0.820928406
+s5_4 0.783235450 0.820928406
+s5_6 0.391617725 0.391617725
+s6_0 1.300000000 1.300000000
+s6_2 1.260545804 1.321209168
+s6_4 1.260545804 1.321209168
+s6_6 1.260545804 1.321209168
+s7_0 0.998008577 0.998008577
+s7_2 0.944732426 0.944732426
+s7_4 1.300000000 1.300000000
+s7_6 1.286818111 1.286818111
+s8_0 1.082246673 1.082246673
+s8_2 1.253488807 1.313812555
+s8_4 1.253488807 1.313812555
+s8_6 1.253488807 1.313812555
+s9_0 1.300000000 1.362562084
+s9_2 1.121444326 1.121444326
+s9_4 1.300000000 1.300000000
+s9_6 1.300000000 1.300000000
+# large DeepListening reach
+GraphReach(artistId=a0, score=0.6857204583454012, hops=1, seeds=[a117, a60, a1], via=a117)
+GraphReach(artistId=a100, score=0.22279844969581472, hops=1, seeds=[a97], via=a97)
+GraphReach(artistId=a101, score=0.13956881176233832, hops=1, seeds=[a64], via=a64)
+GraphReach(artistId=a102, score=0.32482502881552916, hops=1, seeds=[a52, a21], via=a52)
+GraphReach(artistId=a104, score=0.3655231173833993, hops=1, seeds=[a60, a93], via=a60)
+GraphReach(artistId=a106, score=0.2078014183625546, hops=1, seeds=[a82], via=a82)
+GraphReach(artistId=a108, score=0.28237449074695575, hops=1, seeds=[a63], via=a63)
+GraphReach(artistId=a11, score=0.10398555896090399, hops=1, seeds=[a10], via=a10)
+GraphReach(artistId=a111, score=0.13574406186067325, hops=1, seeds=[a114], via=a114)
+GraphReach(artistId=a112, score=0.49541689431026403, hops=1, seeds=[a114, a97, a76], via=a114)
+GraphReach(artistId=a113, score=0.32148352646647704, hops=1, seeds=[a61, a114], via=a61)
+GraphReach(artistId=a115, score=0.3853114761162846, hops=1, seeds=[a114, a117], via=a114)
+GraphReach(artistId=a116, score=0.5437873398963086, hops=1, seeds=[a114, a117], via=a114)
+GraphReach(artistId=a118, score=0.40195686819674314, hops=1, seeds=[a1, a117], via=a1)
+GraphReach(artistId=a119, score=0.8247342599761031, hops=1, seeds=[a117, a1, a25], via=a117)
+GraphReach(artistId=a12, score=0.14596218538590244, hops=1, seeds=[a10], via=a10)
+GraphReach(artistId=a13, score=0.19114553439432894, hops=1, seeds=[a10], via=a10)
+GraphReach(artistId=a14, score=0.1533612347256468, hops=1, seeds=[a82], via=a82)
+GraphReach(artistId=a18, score=0.23316071434968194, hops=1, seeds=[a97, a21], via=a97)
+GraphReach(artistId=a19, score=0.16101658416195475, hops=1, seeds=[a21], via=a21)
+GraphReach(artistId=a2, score=0.20563244166208028, hops=1, seeds=[a1], via=a1)
+GraphReach(artistId=a20, score=0.11321493854117674, hops=1, seeds=[a21], via=a21)
+GraphReach(artistId=a22, score=0.2704330699455313, hops=1, seeds=[a25, a21], via=a25)
+GraphReach(artistId=a23, score=0.31769821962644174, hops=1, seeds=[a25, a21], via=a25)
+GraphReach(artistId=a24, score=0.4989563216137978, hops=1, seeds=[a25, a114, a21], via=a25)
+GraphReach(artistId=a26, score=0.22974139047821845, hops=1, seeds=[a93, a25], via=a93)
+GraphReach(artistId=a27, score=0.3993925599292206, hops=1, seeds=[a25, a51], via=a25)
+GraphReach(artistId=a28, score=0.15324771226248388, hops=1, seeds=[a25], via=a25)
+GraphReach(artistId=a3, score=0.16768603370311683, hops=1, seeds=[a1], via=a1)
+GraphReach(artistId=a31, score=0.08322616569383959, hops=1, seeds=[a63], via=a63)
+GraphReach(artistId=a32, score=0.09620711939482336, hops=1, seeds=[a46], via=a46)
+GraphReach(artistId=a34, score=0.3589416087114015, hops=1, seeds=[a37, a45], via=a37)
+GraphReach(artistId=a35, score=0.24087001740130967, hops=1, seeds=[a75, a37], via=a75)
+GraphReach(artistId=a36, score=0.4528081030834432, hops=1, seeds=[a39, a37, a64, a117], via=a39)
+GraphReach(artistId=a38, score=0.4540175610790407, hops=1, seeds=[a37, a39], via=a37)
+GraphReach(artistId=a4, score=0.23990451527242698, hops=1, seeds=[a1], via=a1)
+GraphReach(artistId=a40, score=0.5829154805602127, hops=1, seeds=[a60, a39, a37], via=a60)
+GraphReach(artistId=a41, score=0.6036823598788669, hops=1, seeds=[a39, a10], via=a39)
+GraphReach(artistId=a42, score=0.2894829718107108, hops=1, seeds=[a39, a45], via=a39)
+GraphReach(artistId=a43, score=0.296767460285533, hops=1, seeds=[a45, a46], via=a45)
+GraphReach(artistId=a44, score=0.24834767424313997, hops=1, seeds=[a46, a45], via=a46)
+GraphReach(artistId=a47, score=0.41834572843262346, hops=1, seeds=[a46, a75, a45], via=a46)
+GraphReach(artistId=a48, score=0.8127172329131904, hops=1, seeds=[a46, a45, a51, a75, a81], via=a46)
+GraphReach(artistId=a49, score=0.3558730776732974, hops=1, seeds=[a46, a51, a52], via=a46)
+GraphReach(artistId=a50, score=0.4073506046941534, hops=1, seeds=[a52, a67, a51], via=a52)
+GraphReach(artistId=a53, score=0.3761942959890256, hops=1, seeds=[a51, a52], via=a51)
+GraphReach(artistId=a54, score=0.15239269443345416, hops=1, seeds=[a51, a52], via=a51)
+GraphReach(artistId=a55, score=0.386928248078086, hops=1, seeds=[a75, a82, a52], via=a75)
+GraphReach(artistId=a56, score=0.25025966314960096, hops=1, seeds=[a117], via=a117)
+GraphReach(artistId=a57, score=0.11673532724502539, hops=1, seeds=[a60], via=a60)
+GraphReach(artistId=a58, score=0.38414488331559454, hops=1, seeds=[a76, a60, a61], via=a76)
+GraphReach(artistId=a59, score=0.44252173405246464, hops=1, seeds=[a61, a60, a81], via=a61)
+GraphReach(artistId=a62, score=0.7280282807677154, hops=1, seeds=[a61, a63, a64, a60, a25], via=a61)
+GraphReach(artistId=a65, score=0.6659233195282659, hops=1, seeds=[a63, a37, a64, a45, a67], via=a63)
+GraphReach(artistId=a66, score=0.33031247584957135, hops=1, seeds=[a67, a63, a64], via=a67)
+GraphReach(artistId=a68, score=0.17109874847340628, hops=1, seeds=[a67], via=a67)
+GraphReach(artistId=a69, score=0.19906459382742572, hops=1, seeds=[a72, a67], via=a72)
+GraphReach(artistId=a7, score=0.31104276308963963, hops=1, seeds=[a25, a10], via=a25)
+GraphReach(artistId=a70, score=0.6202813933923046, hops=1, seeds=[a61, a67, a72], via=a61)
+GraphReach(artistId=a71, score=0.12651073888370484, hops=1, seeds=[a72], via=a72)
+GraphReach(artistId=a73, score=0.6500175715368156, hops=1, seeds=[a76, a72, a21, a75], via=a76)
+GraphReach(artistId=a74, score=0.5591395218978366, hops=1, seeds=[a72, a75, a64, a76], via=a72)
+GraphReach(artistId=a77, score=0.36751124498069454, hops=1, seeds=[a76, a75], via=a76)
+GraphReach(artistId=a78, score=0.9129835618875721, hops=1, seeds=[a76, a61, a10, a75, a64, a81], via=a76)
+GraphReach(artistId=a79, score=0.7482082577565305, hops=1, seeds=[a97, a76, a82, a81], via=a97)
+GraphReach(artistId=a8, score=0.316529883876712, hops=1, seeds=[a52, a10], via=a52)
+GraphReach(artistId=a80, score=0.27206152970889336, hops=1, seeds=[a82, a81], via=a82)
+GraphReach(artistId=a83, score=0.5456149341958025, hops=1, seeds=[a51, a81, a82], via=a51)
+GraphReach(artistId=a84, score=0.494881309286784, hops=1, seeds=[a82, a81, a63], via=a82)
+GraphReach(artistId=a85, score=0.6260139272205776, hops=1, seeds=[a82, a1, a75], via=a82)
+GraphReach(artistId=a86, score=0.14567984191582964, hops=1, seeds=[a46], via=a46)
+GraphReach(artistId=a87, score=0.34674186484841285, hops=1, seeds=[a64, a21], via=a64)
+GraphReach(artistId=a89, score=0.16481321156956158, hops=1, seeds=[a10], via=a10)
+GraphReach(artistId=a9, score=0.24888356030819025, hops=1, seeds=[a51, a10], via=a51)
+GraphReach(artistId=a90, score=0.34317856196122515, hops=1, seeds=[a46, a93], via=a46)
+GraphReach(artistId=a91, score=0.4066453634009686, hops=1, seeds=[a82, a93], via=a82)
+GraphReach(artistId=a92, score=0.0516075109084455, hops=1, seeds=[a93], via=a93)
+GraphReach(artistId=a94, score=0.5099458376254009, hops=1, seeds=[a93, a46, a97], via=a93)
+GraphReach(artistId=a95, score=0.43191213829847097, hops=1, seeds=[a93, a97], via=a93)
+GraphReach(artistId=a96, score=0.7327396702789881, hops=1, seeds=[a72, a60, a93, a97], via=a72)
+GraphReach(artistId=a98, score=0.25857061713698914, hops=1, seeds=[a97], via=a97)
+GraphReach(artistId=a99, score=0.05746013714155316, hops=1, seeds=[a97], via=a97)
+# large DeepListening discover
+s78_4 2.321948776 GraphFar Connects(first=Artist 76, second=Artist 61) 2.311468785
+s53_6 1.205437928 SeedArtist Connects(first=Artist 51, second=Artist 52) 1.400482937
+s64_4 2.232158525 GraphFar Connects(first=Artist 63, second=Artist 37) 2.185732703
+s78_2 2.222468541 GraphNear Connects(first=Artist 76, second=Artist 61) 2.191001737
+s39_6 2.000226754 SeedArtist YourArtist(artist=Artist 39) 2.093367966
+s36_4 1.961028300 GraphFar Connects(first=Artist 39, second=Artist 37) 1.844818300
+s72_4 1.953514118 GraphFar Connects(first=Artist 76, second=Artist 72) 1.809917748
+s48_4 2.014063393 GraphFar Connects(first=Artist 46, second=Artist 45) 1.931455180
+s24_4 1.861170926 GraphFar Connects(first=Artist 25, second=Artist 114) 1.898484801
+s78_0 2.154851426 RelatedSong Connects(first=Artist 76, second=Artist 61) 2.093825007
+s76_6 1.794025323 GraphBridge Connects(first=Artist 76, second=Artist 75) 1.640940638
+s60_4 1.844469065 GraphFar YourArtist(artist=Artist 61) 2.007520861
+s73_2 1.743127267 PlaylistNeighbour Connects(first=Artist 76, second=Artist 72) 1.654771905
+s91_6 1.741161259 SeedArtist Connects(first=Artist 82, second=Artist 93) 1.773372953
+s96_4 1.713335678 GraphFar Connects(first=Artist 72, second=Artist 60) 1.728427463
+s76_2 1.745666773 GraphNear Connects(first=Artist 76, second=Artist 75) 1.789587284
+s53_0 1.046710104 CoListen Connects(first=Artist 51, second=Artist 52) 1.123755113
+s8_6 1.588884606 GraphBridge Connects(first=Artist 52, second=Artist 10) 1.657456171
+s39_4 1.719865463 ArtistTopSong YourArtist(artist=Artist 39) 1.784206675
+s37_6 1.576376128 SeedArtist YourArtist(artist=Artist 37) 1.744062920
+s36_6 1.746992578 GraphBridge Connects(first=Artist 39, second=Artist 37) 1.691182577
+s52_4 1.601917423 GraphFar Connects(first=Artist 51, second=Artist 52) 1.505602851
+s24_0 1.661287634 RelatedSong Connects(first=Artist 25, second=Artist 114) 1.641001509
+s72_6 1.680285071 GraphBridge Connects(first=Artist 76, second=Artist 72) 1.562109280
+s91_2 1.653826096 PlaylistNeighbour Connects(first=Artist 82, second=Artist 93) 1.595521124
+s64_0 1.657462618 RelatedSong Connects(first=Artist 63, second=Artist 37) 1.548841991
+s0_4 1.607696710 GraphFar Connects(first=Artist 117, second=Artist 60) 1.449929636
+s61_6 1.565291421 SeedArtist YourArtist(artist=Artist 61) 1.567603896
+s22_4 1.567305136 GraphFar Connects(first=Artist 25, second=Artist 21) 1.375328066
+s46_6 1.543617433 GraphBridge YourArtist(artist=Artist 46) 1.682890626
+s94_2 1.522753031 GraphNear Connects(first=Artist 93, second=Artist 46) 1.554090006
+s53_4 1.046224082 ArtistTopSong Connects(first=Artist 51, second=Artist 52) 1.212469091
+s43_6 1.484047130 SeedArtist Connects(first=Artist 45, second=Artist 46) 1.466825233
+s81_6 1.430913349 SeedArtist YourArtist(artist=Artist 81) 1.448427841
+s10_6 1.419821904 GraphBridge YourArtist(artist=Artist 10) 1.545857688
+s97_2 1.433546224 PlaylistNeighbour YourArtist(artist=Artist 97) 1.389859011
+s66_6 1.569125311 GraphBridge Connects(first=Artist 67, second=Artist 63) 1.624845692
+s39_2 1.678090390 PlaylistNeighbour YourArtist(artist=Artist 39) 1.713631602
+s49_2 1.377911068 PlaylistNeighbour Connects(first=Artist 46, second=Artist 51) 1.427128017
+s44_6 1.393723871 GraphBridge Connects(first=Artist 46, second=Artist 45) 1.459846432
+s48_2 1.633458423 GraphNear Connects(first=Artist 46, second=Artist 45) 1.518670790
+s3_6 1.362629506 SeedArtist BecauseSong(songId=s13_1, title=Title s13_1) 1.417410611
+s82_4 1.485119404 GraphFar BecauseSong(songId=s48_6, title=Title s48_6) 1.590475810
+s15_2 1.314999066 PlaylistNeighbour YourArtist(artist=Artist 15) 1.391484004
+s36_2 1.674266099 GraphNear Connects(first=Artist 39, second=Artist 37) 1.561500903
+s77_6 1.290906716 SeedArtist Connects(first=Artist 76, second=Artist 75) 1.348589289
+s53_2 1.028407073 PlaylistNeighbour Connects(first=Artist 51, second=Artist 52) 1.165852082
+s60_2 1.469759488 GraphNear YourArtist(artist=Artist 61) 1.599416479
+s8_4 1.484087393 GraphFar Connects(first=Artist 52, second=Artist 10) 1.523858958
+s63_6 1.317997110 SeedArtist BecauseSong(songId=s103_1, title=Title s103_1) 1.297660354
+s67_2 1.336199839 PlaylistNeighbour YourArtist(artist=Artist 67) 1.485039328
+s49_0 1.308543759 CoListen Connects(first=Artist 46, second=Artist 51) 1.346090903
+s72_2 1.516738925 GraphNear Connects(first=Artist 76, second=Artist 72) 1.340963134
+s51_2 1.274217247 PlaylistNeighbour BecauseSong(songId=s59_3, title=Title s59_3) 1.389489134
+s32_6 1.225614542 GraphBridge SimilarToArtist(artist=Artist 46) 1.249733842
+s46_4 1.522834775 GraphFar YourArtist(artist=Artist 46) 1.662590272
+s38_0 1.260674414 RelatedSong Connects(first=Artist 37, second=Artist 39) 1.360806964
+s69_0 1.280961838 CoListen Connects(first=Artist 72, second=Artist 67) 1.309997233
+s44_4 1.409822591 GraphFar Connects(first=Artist 46, second=Artist 45) 1.447145152
+s43_4 1.309479034 ArtistTopSong Connects(first=Artist 45, second=Artist 46) 1.263457137
+# large DeepListening up next
+s0_4 1.607696710 GraphFar Connects(first=Artist 117, second=Artist 60) 1.449929636
+s4_0 1.244092755 RelatedSong SimilarToArtist(artist=Artist 1) 1.331746460
+s8_6 1.588884606 GraphBridge Connects(first=Artist 52, second=Artist 10) 1.657456171
+s8_4 1.484087393 GraphFar Connects(first=Artist 52, second=Artist 10) 1.523858958
+s8_2 1.291791950 GraphNear Connects(first=Artist 52, second=Artist 10) 1.302763516
+s10_0 1.167466572 RelatedSong YourArtist(artist=Artist 10) 1.209722161
+s10_6 1.419821904 GraphBridge YourArtist(artist=Artist 10) 1.545857688
+s7_4 1.110975776 ArtistTopSong Connects(first=Artist 25, second=Artist 10) 1.040210745
+s9_4 1.211950336 ArtistTopSong Connects(first=Artist 51, second=Artist 10) 1.100710003
+s9_0 1.046557865 CoListen Connects(first=Artist 51, second=Artist 10) 0.884972727
+s9_6 0.745307627 SeedArtist Connects(first=Artist 51, second=Artist 10) 0.674717294
+s6_0 1.134463546 RelatedSong YourArtist(artist=Artist 6) 1.247471016
+s6_4 1.084813425 GraphFar YourArtist(artist=Artist 6) 1.251390376
+s3_6 1.362629506 SeedArtist SimilarToArtist(artist=Artist 1) 1.417410611
+s3_4 1.035113280 ArtistTopSong SimilarToArtist(artist=Artist 1) 1.061094385
+s3_0 0.973644639 CoListen SimilarToArtist(artist=Artist 1) 0.974270550
+s0_6 1.367647612 GraphBridge Connects(first=Artist 117, second=Artist 60) 1.234650019
+s0_0 1.344095267 RelatedSong Connects(first=Artist 117, second=Artist 60) 1.117442479
+s4_6 1.002632395 GraphBridge SimilarToArtist(artist=Artist 1) 0.946768405
+s1_2 1.208506503 PlaylistNeighbour YourArtist(artist=Artist 1) 1.269143788
+s1_4 0.782945723 ArtistTopSong YourArtist(artist=Artist 1) 0.867788203
+s3_2 0.855014388 PlaylistNeighbour SimilarToArtist(artist=Artist 1) 0.883795494
+s6_2 0.893791691 GraphNear YourArtist(artist=Artist 6) 1.031568642
+s6_6 0.567149972 GraphBridge YourArtist(artist=Artist 6) 0.471726923
+s15_2 1.314999066 PlaylistNeighbour YourArtist(artist=Artist 15) 1.391484004
+# large DeepListening factors
+s0_0 1.300000000 1.300000000
+s0_2 1.297879082 1.297879082
+s0_4 1.300000000 1.300000000
+s0_6 1.300000000 1.362562084
+s1_0 1.300000000 0.050000000
+s1_2 1.300000000 1.300000000
+s1_4 1.300000000 1.362562084
+s1_6 1.300000000 1.300000000
+s2_0 1.185264426 1.185264426
+s2_2 1.123194457 1.177247831
+s2_4 1.123194457 1.177247831
+s2_6 1.123194457 1.177247831
+s3_0 1.300000000 1.300000000
+s3_2 1.271157292 1.332331330
+s3_4 1.271157292 1.332331330
+s3_6 1.271157292 1.332331330
+s4_0 1.108764900 1.162123856
+s4_2 0.795758019 0.795758019
+s4_4 1.300000000 1.300000000
+s4_6 1.300000000 1.300000000
+s5_0 0.783235450 0.820928406
+s5_2 0.783235450 0.820928406
+s5_4 0.783235450 0.820928406
+s5_6 0.391617725 0.391617725
+s6_0 1.300000000 1.300000000
+s6_2 1.260545804 1.321209168
+s6_4 1.260545804 1.321209168
+s6_6 1.260545804 1.321209168
+s7_0 0.998008577 0.998008577
+s7_2 0.944732426 0.944732426
+s7_4 1.300000000 1.300000000
+s7_6 1.286818111 1.286818111
+s8_0 1.082246673 1.082246673
+s8_2 1.253488807 1.313812555
+s8_4 1.253488807 1.313812555
+s8_6 1.253488807 1.313812555
+s9_0 1.300000000 1.362562084
+s9_2 1.121444326 1.121444326
+s9_4 1.300000000 1.300000000
+s9_6 1.300000000 1.300000000
