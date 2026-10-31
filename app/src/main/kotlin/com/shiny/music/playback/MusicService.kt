@@ -1229,7 +1229,7 @@ class MusicService :
                 if (!cachedPersistentQueue) continue
                 val position = player.currentPosition
                 if (player.isPlaying || position != savedPosition) {
-                    saveQueueToDisk()
+                    if (queueFingerprint() == savedQueueFingerprint) savePlayerStateToDisk() else saveQueueToDisk()
                     savedPosition = position
                 }
             }
@@ -3923,7 +3923,54 @@ class MusicService :
      * Reads the player's current state on the calling (main) thread. Null when there is
      * nothing to persist, in which case the persisted files have been cleared instead.
      */
+    private var savedQueueFingerprint = 0
+
+    private fun queueFingerprint(): Int {
+        var hash = 31 * player.currentMediaItemIndex + automixItems.value.size
+        for (i in 0 until player.mediaItemCount) hash = 31 * hash + player.getMediaItemAt(i).mediaId.hashCode()
+        return hash
+    }
+
+    private fun savedQueueIndex(): Int {
+        var saved = 0
+        for (i in 0 until player.currentMediaItemIndex.coerceAtMost(player.mediaItemCount)) {
+            if (player.getMediaItemAt(i).metadata != null) saved++
+        }
+        return saved
+    }
+
+    private fun playerStateNow(savedIndex: Int) = PersistPlayerState(
+        playWhenReady = player.playWhenReady,
+        repeatMode = player.repeatMode,
+        shuffleModeEnabled = player.shuffleModeEnabled,
+        volume = restorePlayerVolume(playerVolume.value),
+        currentPosition = player.currentPosition,
+        currentMediaItemIndex = savedIndex,
+        playbackState = player.playbackState,
+    )
+
+    private fun savePlayerStateToDisk() {
+        if (player.mediaItemCount == 0) return
+        val state = playerStateNow(savedQueueIndex())
+        scope.launch(Dispatchers.IO) { writePlayerState(state) }
+    }
+
+    private fun writePlayerState(state: PersistPlayerState) {
+        runCatching {
+            val temporary = filesDir.resolve("$PERSISTENT_PLAYER_STATE_FILE.tmp")
+            temporary.outputStream().use { fos ->
+                ObjectOutputStream(fos).use { oos -> oos.writeObject(state) }
+            }
+            check(temporary.renameTo(filesDir.resolve(PERSISTENT_PLAYER_STATE_FILE))) { "player state not moved into place" }
+            Timber.tag(TAG).d("Player state saved successfully")
+        }.onFailure {
+            Timber.tag(TAG).e(it, "Failed to save player state")
+            reportException(it)
+        }
+    }
+
     private fun queueSnapshot(): QueueSnapshot? {
+        savedQueueFingerprint = queueFingerprint()
         if (player.mediaItemCount == 0) {
             Timber.tag(TAG).d("Clearing persisted queue - no media items")
             saveQueueJob?.cancel()
@@ -3961,15 +4008,7 @@ class MusicService :
                     mediaItemIndex = 0,
                     position = 0,
                 ),
-                playerState = PersistPlayerState(
-                    playWhenReady = player.playWhenReady,
-                    repeatMode = player.repeatMode,
-                    shuffleModeEnabled = player.shuffleModeEnabled,
-                    volume = restorePlayerVolume(playerVolume.value),
-                    currentPosition = player.currentPosition,
-                    currentMediaItemIndex = savedIndex,
-                    playbackState = player.playbackState,
-                ),
+                playerState = playerStateNow(savedIndex),
             )
         } catch (e: Exception) {
             Timber.tag(TAG).e(e, "Error snapshotting queue for save")
@@ -4015,17 +4054,7 @@ class MusicService :
                 reportException(it)
             }
 
-            runCatching {
-                filesDir.resolve(PERSISTENT_PLAYER_STATE_FILE).outputStream().use { fos ->
-                    ObjectOutputStream(fos).use { oos ->
-                        oos.writeObject(persistPlayerState)
-                    }
-                }
-                Timber.tag(TAG).d("Player state saved successfully")
-            }.onFailure {
-                Timber.tag(TAG).e(it, "Failed to save player state")
-                reportException(it)
-            }
+            writePlayerState(persistPlayerState)
         } catch (e: Exception) {
             Timber.tag(TAG).e(e, "Error during queue save operation")
             reportException(e)
