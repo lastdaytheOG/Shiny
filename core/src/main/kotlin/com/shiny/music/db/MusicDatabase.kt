@@ -187,27 +187,7 @@ abstract class InternalDatabase : RoomDatabase() {
                 delegate =
                     Room
                         .databaseBuilder(context, InternalDatabase::class.java, DB_NAME)
-                        .addMigrations(
-                            MIGRATION_1_2,
-                            MIGRATION_21_24,
-                            MIGRATION_22_24,
-                            MIGRATION_24_25,
-                            MIGRATION_27_28,
-                            MIGRATION_28_29,
-                            MIGRATION_29_30,
-                            MIGRATION_31_32,
-                            MIGRATION_36_37,
-                            MIGRATION_37_38,
-                            MIGRATION_38_39,
-                            MIGRATION_39_40,
-                            MIGRATION_40_41,
-                            MIGRATION_41_42,
-                            MIGRATION_42_43,
-                            MIGRATION_43_44,
-                            MIGRATION_44_45,
-                            MIGRATION_45_46,
-                            MIGRATION_46_47,
-                        )
+                        .addMigrations(*allMigrations())
                         .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
                         .setTransactionExecutor(java.util.concurrent.Executors.newFixedThreadPool(4))
                         .setQueryExecutor(java.util.concurrent.Executors.newFixedThreadPool(4))
@@ -230,6 +210,28 @@ abstract class InternalDatabase : RoomDatabase() {
 }
 
 
+
+fun allMigrations(): Array<Migration> = arrayOf(
+    MIGRATION_1_2,
+    MIGRATION_21_24,
+    MIGRATION_22_24,
+    MIGRATION_24_25,
+    MIGRATION_27_28,
+    MIGRATION_28_29,
+    MIGRATION_29_30,
+    MIGRATION_31_32,
+    MIGRATION_36_37,
+    MIGRATION_37_38,
+    MIGRATION_38_39,
+    MIGRATION_39_40,
+    MIGRATION_40_41,
+    MIGRATION_41_42,
+    MIGRATION_42_43,
+    MIGRATION_43_44,
+    MIGRATION_44_45,
+    MIGRATION_45_46,
+    MIGRATION_46_47,
+)
 
 val MIGRATION_1_2 =
     object : Migration(1, 2) {

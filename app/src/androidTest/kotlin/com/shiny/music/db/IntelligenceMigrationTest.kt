@@ -51,7 +51,7 @@ class IntelligenceMigrationTest {
     }
 
     private fun open(): InternalDatabase = Room.databaseBuilder(context, InternalDatabase::class.java, name)
-        .addMigrations(MIGRATION_45_46, MIGRATION_46_47)
+        .addMigrations(*allMigrations())
         .allowMainThreadQueries()
         .build()
         .also { database = it }
