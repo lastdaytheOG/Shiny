@@ -58,7 +58,7 @@ enum class CandidateSource(val kindIsDiscovery: Boolean) {
             onDelete = ForeignKey.CASCADE,
         ),
     ],
-    indices = [Index("songId"), Index("startedAt"), Index("sessionId")],
+    indices = [Index("songId", "startedAt", "kind", "listenedMs"), Index("startedAt"), Index("sessionId")],
 )
 data class ListenOutcome(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
