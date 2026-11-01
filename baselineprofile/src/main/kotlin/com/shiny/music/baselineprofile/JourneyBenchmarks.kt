@@ -37,6 +37,7 @@ class JourneyBenchmarks {
     )
 
     private fun MacrobenchmarkScope.home() {
+        killProcess()
         startActivityAndWait()
         device.dismissFirstRunScreens()
         device.waitForIdle()
@@ -94,7 +95,7 @@ class JourneyBenchmarks {
         packageName = targetPackage,
         metrics = listOf(FrameTimingMetric()),
         compilationMode = keepCompiled,
-        startupMode = StartupMode.COLD,
+        startupMode = null,
         iterations = iterations,
         setupBlock = { home() },
     ) {
@@ -109,7 +110,7 @@ class JourneyBenchmarks {
         packageName = targetPackage,
         metrics = listOf(FrameTimingMetric()),
         compilationMode = keepCompiled,
-        startupMode = StartupMode.COLD,
+        startupMode = null,
         iterations = iterations,
         setupBlock = {
             home()
@@ -126,7 +127,7 @@ class JourneyBenchmarks {
         packageName = targetPackage,
         metrics = listOf(FrameTimingMetric()),
         compilationMode = keepCompiled,
-        startupMode = StartupMode.COLD,
+        startupMode = null,
         iterations = iterations,
         setupBlock = { home() },
     ) {
