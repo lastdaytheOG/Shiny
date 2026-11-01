@@ -130,7 +130,7 @@ class JourneyBenchmarks {
         iterations = iterations,
         setupBlock = { home() },
     ) {
-        listOf("New", "Library", "Home", "Library", "New", "Home").forEach { tab ->
+        listOf("Discover", "Library", "Home", "Library", "Discover", "Home").forEach { tab ->
             (device.findObject(By.desc(tab)) ?: device.findObject(By.text(tab)))?.click()
             SystemClock.sleep(700)
         }
