@@ -81,7 +81,7 @@ object HomeRanking {
             .filter { isStreamableId(it.songId) }
             .map { s ->
                 s.songId to when {
-                    s.liked -> 0.8
+                    s.liked || s.spotifyLiked -> 0.8
                     s.inTop -> 0.7
                     s.inLibrary -> 0.6
                     s.inPlaylist -> 0.5
@@ -91,6 +91,20 @@ object HomeRanking {
             }
             .filter { it.second > 0.0 }
             .toMap()
+
+    /** Spotify likes take turns with everything else, so neither service crowds out the other. */
+    fun mergeSaved(saved: List<HomeSavedSong>, spotifyLiked: List<HomeSavedSong>, limit: Int): List<HomeSavedSong> {
+        if (spotifyLiked.isEmpty()) return saved.take(limit)
+        val mine = spotifyLiked.associateBy { it.songId }
+        val others = saved.filter { it.songId !in mine }.iterator()
+        val spotify = spotifyLiked.iterator()
+        return buildList {
+            while (size < limit && (others.hasNext() || spotify.hasNext())) {
+                if (others.hasNext()) add(others.next())
+                if (size < limit && spotify.hasNext()) add(spotify.next())
+            }
+        }
+    }
 
     /** Played seeds, topped up with saved ones, strongest first. */
     fun mergeSeeds(played: Map<String, Double>, saved: Map<String, Double>, limit: Int = 25): Map<String, Double> =

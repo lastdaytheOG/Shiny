@@ -77,6 +77,8 @@ data class HomeSavedSong(
     val inMix: Boolean,
     /** Among the listener's most played on Spotify (`SPOTIFY_TOP_…`). */
     val inTop: Boolean = false,
+    /** In the imported Spotify Liked Songs. Never `liked`: that would sync it to YouTube. */
+    val spotifyLiked: Boolean = false,
 )
 
 /** An artist across the songs the listener has chosen, played or not, local files included. */

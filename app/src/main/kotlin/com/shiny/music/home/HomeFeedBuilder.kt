@@ -1,6 +1,5 @@
 package com.shiny.music.home
 
-import com.music.innertube.pages.MoodAndGenres
 import com.shiny.music.db.entities.HomeArtistStat
 import com.shiny.music.db.entities.Song
 import com.shiny.music.home.HomeRanking.capPerArtist
@@ -9,9 +8,9 @@ import com.shiny.music.home.HomeRanking.rotateHead
 import com.shiny.music.home.HomeRanking.spreadArtists
 import com.shiny.music.intelligence.DiscoveryMix
 import com.shiny.music.intelligence.IntelligenceSnapshot
+import com.shiny.music.intelligence.Reason
 import com.shiny.music.intelligence.RecommendationEngine
-import com.shiny.music.intelligence.TasteInsights
-import java.time.ZoneOffset
+import com.shiny.music.intelligence.RecommendationStyle
 import kotlin.math.ln
 import kotlin.math.roundToInt
 
@@ -51,6 +50,8 @@ object HomeFeedBuilder {
     const val MIN_DISCOVER_HIGH = 5
     const val MIN_REDISCOVER = 5
     const val MIN_SPOTIFY_MIX_SONGS = 5
+    const val MIN_DISCOVERY_MIX = 8
+    const val MIN_MORE_LIKE = 4
 
     /** Saved songs by one artist before they count as one of the listener's artists. */
     const val MIN_SAVED_ARTIST_SONGS = 3
@@ -88,7 +89,6 @@ object HomeFeedBuilder {
         val confidence = taste.confidence
         val profile = profileOf(taste, signals)
         val stats = signals.songStats
-        val now = ctx.nowMs
         val intel = signals.intelligence
 
         fun playable(song: Song) = ctx.online || song.song.isLocal || song.song.isDownloaded
@@ -167,21 +167,38 @@ object HomeFeedBuilder {
 
         val sections = linkedMapOf<HomeSlot, HomeSection>()
 
-        if (!ctx.online) sections[HomeSlot.OfflineNotice] = OfflineNoticeSection(signals.counts.localSongs + signals.counts.downloadedSongs)
+        if (!ctx.online) sections[HomeSlot.OfflineNotice] = OfflineNoticeSection
+
+        val shortcuts = buildList {
+            if (signals.counts.downloadedSongs > 0) add(DownloadsTile(signals.counts.downloadedSongs))
+            if (signals.counts.localSongs > 0) add(DeviceTile(signals.counts.localSongs))
+        }
+        if (shortcuts.isNotEmpty()) sections[HomeSlot.Shortcuts] = ShortcutsSection(shortcuts)
+
+        val wantsNew = !(intel.enabled && intel.style == RecommendationStyle.Comfort)
+        val onDisplay = discover.map { it.song.id }.toSet() + continueIds + hero?.songs?.map { it.id }.orEmpty()
+        val unused = discoverAll.filterNot { it.song.id in onDisplay }
+        var moreLike = if (wantsNew) moreLike(unused) else emptyList()
+        fun leftForMix() = moreLike.flatMap { it.picks }.map { it.song.id }.toSet().let { shelved ->
+            unused.filterNot { it.song.id in shelved }
+        }
+        while (moreLike.isNotEmpty() && leftForMix().size < MIN_DISCOVERY_MIX) moreLike = moreLike.dropLast(1)
+        val mixPicks = leftForMix()
+        if (wantsNew && mixPicks.size >= MIN_DISCOVERY_MIX) {
+            sections[HomeSlot.DiscoveryMix] = DiscoveryMixSection(
+                spreadArtists(rotateHead(mixPicks, mixPicks.size, ctx.seed + 2).take(HERO_SIZE), artistOf = { primaryArtistKey(it.song) }),
+            )
+        }
+        moreLike.forEachIndexed { index, section ->
+            sections[if (index == 0) HomeSlot.MoreLikeFirst else HomeSlot.MoreLikeSecond] = section
+        }
 
         if (hero != null) {
             sections[HomeSlot.Opening] = hero
         } else {
-            // Nothing of the listener's own to open on: what is already on the device.
             val device = signals.offlineSongs.filter(::allowed)
-            if (device.isNotEmpty() || !ctx.online) {
-                sections[HomeSlot.Opening] = StartHereSection(
-                    chart = null,
-                    deviceSongs = device.take(30),
-                    localSongs = signals.counts.localSongs,
-                    downloadedSongs = signals.counts.downloadedSongs,
-                    online = ctx.online,
-                )
+            if (device.isNotEmpty()) {
+                sections[HomeSlot.Opening] = StartHereSection(deviceSongs = device.take(30), online = ctx.online)
             }
         }
 
@@ -192,10 +209,6 @@ object HomeFeedBuilder {
         ) {
             sections[HomeSlot.PickArtists] = PickArtistsSection
         }
-        if (intel.enabled) {
-            TasteInsights.pickForToday(signals.insights, ctx.seed)?.let { sections[HomeSlot.TasteNote] = TasteNoteSection(it) }
-        }
-
         // ---- Each connected service's own row: its liked songs, then its mixes -----------
         // Everything in them streams from YouTube, so like the charts they need the network.
         val spotify = if (ctx.online) spotifySection(signals, spotifyMixes) else null
@@ -212,20 +225,18 @@ object HomeFeedBuilder {
             sections[HomeSlot.Rotation] = RotationSection(rotation)
         }
 
-        val moods = if (ctx.online) moodsFor(ctx.daypart, remote?.moods.orEmpty()) else emptyList()
         if (daypartSongs.size >= HomeTaste.minimum(confidence, MIN_AROUND_NOW_LOW, MIN_AROUND_NOW_HIGH)) {
-            sections[HomeSlot.AroundNow] = AroundNowSection(ctx.daypart, daypartSongs, moods.take(6))
-        } else if (moods.isNotEmpty()) {
-            // No pattern at this hour yet: offer the choice instead of guessing.
-            sections[HomeSlot.Moods] = MoodsSection(ctx.daypart, moods.take(8))
+            sections[HomeSlot.AroundNow] = AroundNowSection(ctx.daypart, daypartSongs)
         }
 
         if (discover.size >= HomeTaste.minimum(confidence, MIN_DISCOVER_LOW, MIN_DISCOVER_HIGH)) {
-            sections[HomeSlot.Discover] = discoverSection(discover)
+            sections[HomeSlot.Discover] = DiscoverSection(discover)
         }
 
         if (ctx.online && remote != null) {
-            deepDive(signals, remote, ctx, taste, intel)?.let { sections[HomeSlot.DeepDive] = it }
+            deepDives(signals, remote, ctx, taste, intel).forEachIndexed { index, section ->
+                sections[if (index == 0) HomeSlot.DeepDive else HomeSlot.DeepDiveSecond] = section
+            }
         }
 
         spotify?.let { sections[HomeSlot.Spotify] = it }
@@ -233,28 +244,9 @@ object HomeFeedBuilder {
 
         if (rediscover.size >= MIN_REDISCOVER) sections[HomeSlot.Rediscover] = RediscoverSection(rediscover.map(::ranked))
 
-        albumsInProgress(signals, ctx)?.let { sections[HomeSlot.AlbumsInProgress] = it }
-        recentlyAdded(signals, ctx, ::allowed)?.let { sections[HomeSlot.RecentlyAdded] = it }
-        readyOffline(signals, ctx, taste, ::allowed)?.let { sections[HomeSlot.ReadyOffline] = it }
-        insights(signals, remote, ctx)?.let { sections[HomeSlot.Insights] = it }
-
-        val surprise = SurpriseSection(
-            listOf(
-                SurprisePool(SurpriseKind.Forgotten, 0.30, rediscoverAll.drop(rediscover.size).ifEmpty { rediscoverAll }),
-                SurprisePool(SurpriseKind.Unexplored, 0.30, signals.unexplored.filter(::allowed)),
-                SurprisePool(
-                    SurpriseKind.NewToYou, 0.25,
-                    if (ctx.online) discoverAll.drop(discover.size).map { it.song }.ifEmpty { discover.map { it.song } } else emptyList(),
-                ),
-                SurprisePool(
-                    SurpriseKind.OnDevice, 0.15,
-                    signals.offlineSongs.filter { song ->
-                        allowed(song) && (stats[song.id]?.lastPlayed?.let { now - it > 14 * HOME_DAY_MS } ?: true)
-                    },
-                ),
-            ).filter { it.songs.isNotEmpty() }
-        )
-        if (surprise.size >= 5) sections[HomeSlot.Surprise] = surprise
+        if (sections.keys.all { it == HomeSlot.OfflineNotice || it == HomeSlot.PickArtists }) {
+            sections[HomeSlot.Opening] = StartHereSection(deviceSongs = emptyList(), online = ctx.online)
+        }
 
         val feed = HomeOrder.order(sections.keys, ctx, taste).mapNotNull { sections[it] }
         return HomeFeed(feed, profile, ctx.daypart, ctx.online, taste)
@@ -391,20 +383,6 @@ object HomeFeedBuilder {
         return null
     }
 
-    /** The shelf, plus the one song or artist most of it came from, when there is one. */
-    private fun discoverSection(picks: List<DiscoverPick>): DiscoverSection {
-        val seeds = picks.mapNotNull { it.because }
-        val bySeed = seeds.groupingBy { it.id }.eachCount()
-        val dominant = bySeed.maxByOrNull { it.value }
-            ?.takeIf { it.value * 2 >= picks.size }
-            ?.let { entry -> seeds.first { it.id == entry.key } }
-        val byArtist = seeds.groupingBy { primaryArtistKey(it) }.eachCount()
-        val dominantArtist = byArtist.maxByOrNull { it.value }
-            ?.takeIf { it.value * 2 >= picks.size }
-            ?.let { entry -> seeds.first { primaryArtistKey(it) == entry.key }.artists.firstOrNull()?.name }
-        return DiscoverSection(picks, lead = dominant, leadArtist = dominantArtist)
-    }
-
     /** An artist's photo from the library, else from their cached artist page. */
     private fun artistImage(signals: HomeSignals, remote: HomeRemote?, artistId: String): String? =
         signals.artists[artistId]?.artist?.thumbnailUrl ?: remote?.artists?.get(artistId)?.thumbnail
@@ -428,17 +406,12 @@ object HomeFeedBuilder {
             signals.pinned.take(4).forEach { pin ->
                 val local = signals.pinnedPlaylists[pin.id]
                 when {
-                    local != null -> tiles += PlaylistTile(local, pinned = true)
+                    local != null -> tiles += PlaylistTile(local)
                     ctx.online -> tiles += PinnedTile(pin)
                 }
             }
         }
         val pinnedIds = signals.pinned.map { it.id }.toSet()
-
-        if (!ctx.online) {
-            if (signals.counts.downloadedSongs > 0) tiles += DownloadsTile(signals.counts.downloadedSongs)
-            if (signals.counts.localSongs > 0) tiles += DeviceTile(signals.counts.localSongs)
-        }
 
         // Albums and artists interleaved by when they were last played.
         val recent = buildList<Pair<Long, LatelyTile>> {
@@ -446,13 +419,14 @@ object HomeFeedBuilder {
                 if (now - st.lastPlayed > window || st.albumId in pinnedIds) return@forEach
                 val album = signals.albums[st.albumId] ?: return@forEach
                 if (!ctx.online && !album.album.isLocal) return@forEach
-                add(st.lastPlayed to AlbumTile(album, st.songsPlayed))
+                add(st.lastPlayed to AlbumTile(album))
             }
             signals.artistStats.forEach { st ->
                 if (now - st.lastPlayed > window || st.songs < 2 || st.artistId in pinnedIds) return@forEach
                 val artist = signals.artists[st.artistId] ?: return@forEach
                 if (!ctx.online && !artist.artist.isLocal) return@forEach
-                add(st.lastPlayed to ArtistTile(artist, st.plays, artistImage(signals, remote, st.artistId)))
+                val image = artistImage(signals, remote, st.artistId) ?: return@forEach
+                add(st.lastPlayed to ArtistTile(artist, image))
             }
         }.sortedByDescending { it.first }.map { it.second }
 
@@ -468,39 +442,47 @@ object HomeFeedBuilder {
         }
         signals.playlists.filterNot { it.id in playlistsShown }.take(2).forEach { if (tiles.size < 7) tiles += PlaylistTile(it) }
         if (ctx.online && !likedShown && signals.counts.likedSongs >= 5) tiles += LikedTile(signals.counts.likedSongs)
-        if (ctx.online && signals.counts.downloadedSongs > 0) tiles += DownloadsTile(signals.counts.downloadedSongs)
-        if (ctx.online && signals.counts.localSongs > 0) tiles += DeviceTile(signals.counts.localSongs)
 
         return tiles.distinctBy { it.key }.take(8).takeIf { it.size >= 2 }?.let(::LatelySection)
     }
 
-    private fun deepDive(
+    private fun moreLike(pool: List<DiscoverPick>): List<MoreLikeSection> =
+        pool.groupBy(::seedArtist)
+            .mapNotNull { (artist, picks) ->
+                val shown = capPerArtist(picks, 2) { primaryArtistKey(it.song) }.take(8)
+                if (artist.isNullOrBlank() || shown.size < MIN_MORE_LIKE) null else MoreLikeSection(artist, shown)
+            }
+            .sortedByDescending { it.picks.size }
+            .take(2)
+
+    private fun seedArtist(pick: DiscoverPick): String? = when (val reason = pick.reason) {
+        is Reason.SimilarToArtist -> reason.artist
+        else -> pick.because?.artists?.firstOrNull()?.name
+    }
+
+    private fun deepDives(
         signals: HomeSignals,
         remote: HomeRemote,
         ctx: HomeContext,
         taste: HomeTasteProfile,
         intel: IntelligenceSnapshot,
-    ): DeepDiveSection? {
-        // Not a permanent fixture: it skips mornings and one daypart in three.
-        if (ctx.daypart == Daypart.Morning || Math.floorMod(ctx.seed, 3L) == 2L) return null
-        // An artist heard once is not one to build a whole section around. Below Warming,
-        // "keep listening" says the same thing without claiming a preference.
+    ): List<DeepDiveSection> {
         val strong = taste.favourites.map { it.artistId }.toSet() - intel.taste.hiddenArtists
-        val candidates = topArtists(signals, artistIds = remote.artistIds)
+        val digests = topArtists(signals, artistIds = remote.artistIds)
             .filter { it.artistId in strong }
-            .mapNotNull { st -> remote.artists[st.artistId]?.let { st to it } }
-        if (candidates.isEmpty()) return null
-        val (st, digest) = candidates[Math.floorMod(ctx.seed / 4, candidates.size.toLong()).toInt()]
-
+            .mapNotNull { remote.artists[it.artistId] }
+        if (digests.isEmpty()) return emptyList()
+        val first = Math.floorMod(ctx.seed / 4, digests.size.toLong()).toInt()
         val heardAlbums = signals.albumStats.map { it.albumId }.toSet()
         val listened = signals.artistStats.map { it.artistId }.toSet()
-        val albums = (listOfNotNull(digest.latest) + digest.albums)
-            .distinctBy { it.id }
-            .filter { it.id !in heardAlbums && !(ctx.hideExplicit && it.explicit) }
-            .take(8)
-        val related = digest.related.filter { it.id !in listened && it.id !in intel.taste.hiddenArtists }.take(10)
-        if (albums.size + related.size < 4) return null
-        return DeepDiveSection(digest, st.plays, st.songs, albums, related, fromLibrary = st.plays == 0)
+        return (digests.drop(first) + digests.take(first)).mapNotNull { digest ->
+            val albums = (listOfNotNull(digest.latest) + digest.albums)
+                .distinctBy { it.id }
+                .filter { it.id !in heardAlbums && !(ctx.hideExplicit && it.explicit) }
+                .take(8)
+            val related = digest.related.filter { it.id !in listened && it.id !in intel.taste.hiddenArtists }.take(10)
+            if (albums.size + related.size < 4) null else DeepDiveSection(digest, albums, related)
+        }.take(2)
     }
 
     /**
@@ -557,91 +539,5 @@ object HomeFeedBuilder {
         val mixes = remote?.youtubeMixes.orEmpty()
         if (liked == null && mixes.isEmpty()) return null
         return YouTubeSection(liked, mixes)
-    }
-
-    private fun albumsInProgress(signals: HomeSignals, ctx: HomeContext): AlbumsInProgressSection? {
-        val albums = signals.albumStats.asSequence()
-            .filter { ctx.nowMs - it.lastPlayed <= 60 * HOME_DAY_MS && it.songsPlayed >= 2 }
-            .mapNotNull { st ->
-                val album = signals.albums[st.albumId] ?: return@mapNotNull null
-                val total = album.album.songCount
-                if (total < 5 || st.songsPlayed >= total || st.songsPlayed > total * 0.8) return@mapNotNull null
-                if (!ctx.online && !album.album.isLocal) return@mapNotNull null
-                AlbumProgress(album, st.songsPlayed, total)
-            }
-            .take(8)
-            .toList()
-        return albums.takeIf { it.size >= 2 }?.let(::AlbumsInProgressSection)
-    }
-
-    /** When a song arrived: saved to the library, downloaded, or (for a file) last written. */
-    fun addedAt(song: Song): Long? = listOfNotNull(
-        song.song.inLibrary,
-        song.song.dateDownload,
-        song.song.dateModified.takeIf { song.song.isLocal },
-    ).maxOrNull()?.toInstant(ZoneOffset.UTC)?.toEpochMilli()
-
-    private fun recentlyAdded(signals: HomeSignals, ctx: HomeContext, allowed: (Song) -> Boolean): RecentlyAddedSection? {
-        val songs = signals.recentlyAdded
-            .filter { song -> allowed(song) && (addedAt(song)?.let { ctx.nowMs - it <= 30 * HOME_DAY_MS } ?: false) }
-            .take(12)
-        return songs.takeIf { it.size >= 3 }?.let(::RecentlyAddedSection)
-    }
-
-    private fun readyOffline(
-        signals: HomeSignals,
-        ctx: HomeContext,
-        taste: HomeTasteProfile,
-        allowed: (Song) -> Boolean,
-    ): ReadyOfflineSection? {
-        val local = signals.counts.localSongs
-        val downloaded = signals.counts.downloadedSongs
-        if (local + downloaded < 5) return null
-        // Relevant when it is all that plays, when it is most of what they play, when they
-        // have barely any history yet, or when they have simply downloaded a lot.
-        val relevant = !ctx.online || taste.offlineLean >= 0.5 || taste.confidence < 0.25 || downloaded >= 10
-        if (!relevant) return null
-        val songs = signals.offlineSongs.filter(allowed)
-        if (songs.isEmpty()) return null
-        return ReadyOfflineSection(local, downloaded, songs)
-    }
-
-    private fun insights(signals: HomeSignals, remote: HomeRemote?, ctx: HomeContext): InsightsSection? {
-        val week = signals.songStats.values.filter { it.weekPlays > 0 }
-        val weekPlays = week.sumOf { it.weekPlays }
-        if (weekPlays < 5) return null
-        val topArtist = signals.artistStats.maxByOrNull { it.weekPlays }?.takeIf { it.weekPlays >= 3 }
-        val replayed = week.maxByOrNull { it.weekPlays }?.takeIf { it.weekPlays >= 3 }
-        return InsightsSection(
-            weekPlays = weekPlays,
-            weekSongs = week.size,
-            weekArtists = signals.artistStats.count { it.weekPlays > 0 },
-            weekMinutes = (week.sumOf { it.weekPlayTime } / 60_000L).toInt(),
-            newSongs = week.count { ctx.nowMs - it.firstPlayed <= HomeRanking.WEEK_DAYS * HOME_DAY_MS },
-            topArtist = topArtist?.let { signals.artists[it.artistId] },
-            topArtistImage = topArtist?.let { artistImage(signals, remote, it.artistId) },
-            topArtistPlays = topArtist?.weekPlays ?: 0,
-            replayed = replayed?.let { signals.songs[it.songId] },
-            replayedPlays = replayed?.weekPlays ?: 0,
-        )
-    }
-
-    private val daypartMoodWords = mapOf(
-        Daypart.Morning to listOf("energ", "commute", "workout", "feel good", "focus"),
-        Daypart.Afternoon to listOf("focus", "workout", "energ", "party", "feel good"),
-        Daypart.Evening to listOf("chill", "feel good", "romance", "party", "relax"),
-        Daypart.Night to listOf("sleep", "chill", "romance", "sad", "relax"),
-    )
-
-    /**
-     * YouTube Music's moods, the ones that suit this part of the day first. The listener
-     * picks; nothing here claims to know their mood. Titles that do not match (another
-     * language, say) keep YouTube's own order after the matches.
-     */
-    fun moodsFor(daypart: Daypart, moods: List<MoodAndGenres.Item>): List<MoodAndGenres.Item> {
-        val words = daypartMoodWords.getValue(daypart)
-        val unique = moods.distinctBy { it.title }
-        val matched = words.flatMap { word -> unique.filter { it.title.contains(word, ignoreCase = true) } }.distinct()
-        return (matched + unique).distinct()
     }
 }

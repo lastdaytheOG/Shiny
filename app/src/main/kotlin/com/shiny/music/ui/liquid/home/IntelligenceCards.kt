@@ -5,33 +5,20 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.AutoAwesome
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.shiny.music.R
-import com.shiny.music.home.TasteNoteSection
 import com.shiny.music.intelligence.Reason
 import com.shiny.music.intelligence.RecommendationStyle
 import com.shiny.music.intelligence.TasteInsight
@@ -90,57 +77,15 @@ fun styleDescription(style: RecommendationStyle): String = stringResource(
     },
 )
 
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-internal fun TasteNoteCard(section: TasteNoteSection, onOpen: (String) -> Unit) {
-    val colors = Liquid.colors
-    val interaction = remember { MutableInteractionSource() }
-    val route = insightRoute(section.insight)
-    Row(
-        Modifier
-            .padding(horizontal = PageMargin)
-            .padding(top = 20.dp)
-            .fillMaxWidth()
-            .pressScale(interaction, 0.985f)
-            .clip(RoundedCornerShape(16.dp))
-            .background(colors.quaternaryFill)
-            .combinedClickable(interactionSource = interaction, indication = null, role = Role.Button, onClick = { onOpen(route) })
-            .padding(horizontal = 14.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(Icons.Rounded.AutoAwesome, null, tint = colors.secondaryLabel, modifier = Modifier.size(18.dp))
-        Spacer(Modifier.width(10.dp))
-        Text(
-            insightLine(section.insight),
-            style = LiquidTypography.subheadline,
-            color = colors.label,
-            maxLines = 3,
-            overflow = TextOverflow.Ellipsis,
-        )
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun PickArtistsCard(onPick: () -> Unit, onDismiss: () -> Unit) {
-    val colors = Liquid.colors
-    Column(
-        Modifier
-            .padding(horizontal = PageMargin)
-            .padding(top = 16.dp)
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(colors.quaternaryFill)
-            .padding(16.dp),
+    HomeHeader(stringResource(R.string.pick_artists_title))
+    Row(
+        Modifier.padding(horizontal = PageMargin),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Text(stringResource(R.string.pick_artists_title), style = LiquidTypography.headline, color = colors.label)
-        Spacer(Modifier.height(4.dp))
-        Text(stringResource(R.string.pick_artists_body), style = LiquidTypography.footnote, color = colors.secondaryLabel)
-        Spacer(Modifier.height(12.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            CardButton(stringResource(R.string.pick_artists_action), primary = true, onClick = onPick)
-            CardButton(stringResource(R.string.not_now), primary = false, onClick = onDismiss)
-        }
+        CardButton(stringResource(R.string.pick_artists_action), primary = true, onClick = onPick)
+        CardButton(stringResource(R.string.not_now), primary = false, onClick = onDismiss)
     }
 }
 

@@ -12,6 +12,12 @@ object HomeImpressions {
         is DiscoverSection -> RecSurface.HomeDiscover to section.picks.take(VISIBLE_ON_A_SHELF).map {
             ImpressionItem(it.song.id, it.source ?: CandidateSource.RelatedSong, it.reason)
         }
+        is DiscoveryMixSection -> RecSurface.HomeDiscover to section.picks.take(VISIBLE_ON_A_SHELF).map {
+            ImpressionItem(it.song.id, it.source ?: CandidateSource.RelatedSong, it.reason)
+        }
+        is MoreLikeSection -> RecSurface.HomeDiscover to section.picks.take(VISIBLE_ON_A_SHELF).map {
+            ImpressionItem(it.song.id, it.source ?: CandidateSource.RelatedSong, it.reason)
+        }
         is RotationSection -> RecSurface.HomeRotation to section.songs.take(VISIBLE_ON_A_SHELF).map {
             ImpressionItem(it.song.id, CandidateSource.Rotation)
         }

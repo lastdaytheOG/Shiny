@@ -160,9 +160,7 @@
 
     <!-- Noun -->
     <string name="home_spotify_title">Spotify</string>
-    <string name="home_spotify_subtitle">Your liked songs and mixes from Spotify</string>
     <string name="home_youtube_title">YouTube Music</string>
-    <string name="home_youtube_subtitle">Your liked songs and mixes from YouTube Music</string>
     <string name="spotify_home_mixes">Spotify mixes on Home</string>
     <string name="spotify_home_mixes_desc">Your Daily Mixes, Discover Weekly and Release Radar from your connected Spotify account, updated daily</string>
     <plurals name="n_song">
@@ -555,7 +553,6 @@
     <string name="hide_video_songs_desc">Hide or show video songs</string>
     <string name="hide_youtube_shorts_desc">Hide or show YouTube Shorts</string>
     <string name="history_duration_desc">Manage History duration settings</string>
-    <string name="home_desc">Manage Home settings</string>
     <string name="image_cache_desc">Manage image cache settings</string>
     <string name="ip_version_auto_desc">Manage Automatic settings</string>
     <string name="ip_version_ipv4_desc">Manage Forced IPv4 settings</string>

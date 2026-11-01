@@ -168,7 +168,13 @@ class IntelligenceRepository @Inject constructor(
         val pendingArtistStats = async { if (played) database.homeArtistStats(weekFrom, monthFrom, limit = 300) else emptyList() }
         val pendingAlbumStats = async { if (played) database.homeAlbumStats(limit = 60) else emptyList() }
         val pendingDaypartDays = async { if (played) database.homeDaypartDays(daypartFrom, daypart.hours) else 0 }
-        val pendingSaved = async { database.homeSavedSongs(limit = SAVED_POOL) }
+        val pendingSaved = async {
+            HomeRanking.mergeSaved(
+                database.homeSavedSongs(limit = SAVED_POOL),
+                database.homeSpotifyLikedSongs(limit = SAVED_POOL),
+                SAVED_POOL,
+            )
+        }
         val pendingSavedArtists = async { database.homeSavedArtists(limit = 60) }
         val pendingSongOutcomes = async { dao.songOutcomeBuckets(now, bucketMs, TasteProfileBuilder.MAX_BUCKET) }
         val pendingArtistOutcomes = async { dao.artistOutcomeBuckets(now, bucketMs, TasteProfileBuilder.MAX_BUCKET) }

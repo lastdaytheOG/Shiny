@@ -20,7 +20,6 @@ import com.shiny.music.db.entities.CandidateSource
 import com.shiny.music.intelligence.IntelligenceSnapshot
 import com.shiny.music.intelligence.Reason
 import com.shiny.music.intelligence.Recommendation
-import com.shiny.music.intelligence.TasteInsight
 import kotlinx.serialization.Serializable
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -114,7 +113,6 @@ data class HomeSignals(
     val songs: Map<String, Song>,
     val artists: Map<String, Artist>,
     val albums: Map<String, Album>,
-    val recentlyAdded: List<Song>,
     val offlineSongs: List<Song>,
     val unexplored: List<Song>,
     val playlists: List<Playlist>,
@@ -140,7 +138,6 @@ data class HomeSignals(
     val spotifyLiked: Playlist? = null,
     val intelligence: IntelligenceSnapshot = IntelligenceSnapshot.Neutral,
     val recommendations: Map<String, Recommendation> = emptyMap(),
-    val insights: List<TasteInsight> = emptyList(),
 ) {
     val monthPlays: Int get() = songStats.values.sumOf { it.monthPlays }
 
@@ -159,7 +156,6 @@ data class HomeSignals(
             songs = emptyMap(),
             artists = emptyMap(),
             albums = emptyMap(),
-            recentlyAdded = emptyList(),
             offlineSongs = emptyList(),
             unexplored = emptyList(),
             playlists = emptyList(),
@@ -325,22 +321,9 @@ data class HeroMixSection(
     val tentative: Boolean get() = confidence < 0.18
 }
 
-/**
- * The opening of a Home with no listening behind it at all.
- *
- * Not an onboarding wall and not a progress meter — those told a new listener to come back
- * later, which is the one thing a music app must never say. This is the best real content
- * Shiny has for someone it has never heard: the top of the chart for where they are, or
- * the music already on their device. It is a *place to start*, and it disappears the
- * moment there is a mix to put there instead.
- */
 data class StartHereSection(
-    /** The chart to open on, when there is a network and a chart for this country. */
-    val chart: HomeChart?,
-    /** Songs already on the device, when there are any: playable with no network at all. */
+    /** Songs already on the device; empty means there is nothing to play yet. */
     val deviceSongs: List<Song>,
-    val localSongs: Int,
-    val downloadedSongs: Int,
     val online: Boolean,
 ) : HomeSection {
     override val key get() = "start_here"
@@ -378,7 +361,7 @@ enum class ContinueKind {
     Related,
 }
 
-data class OfflineNoticeSection(val playable: Int) : HomeSection {
+data object OfflineNoticeSection : HomeSection {
     override val key get() = "offline_notice"
 }
 
@@ -395,15 +378,15 @@ data class PinnedTile(val item: SpeedDialItem) : LatelyTile {
     override val key get() = "pin_${item.id}"
 }
 
-data class AlbumTile(val album: Album, val songsHeard: Int) : LatelyTile {
+data class AlbumTile(val album: Album) : LatelyTile {
     override val key get() = "album_${album.id}"
 }
 
-data class ArtistTile(val artist: Artist, val plays: Int, val image: String?) : LatelyTile {
+data class ArtistTile(val artist: Artist, val image: String) : LatelyTile {
     override val key get() = "artist_${artist.id}"
 }
 
-data class PlaylistTile(val playlist: Playlist, val pinned: Boolean = false) : LatelyTile {
+data class PlaylistTile(val playlist: Playlist) : LatelyTile {
     override val key get() = "playlist_${playlist.id}"
 }
 
@@ -447,21 +430,12 @@ data class RotationSection(val songs: List<RankedSong>) : HomeSection {
     override val key get() = "rotation"
 }
 
-/** What the listener tends to play at this time of day, and moods to set one. */
+/** What the listener tends to play at this time of day. */
 data class AroundNowSection(
     val daypart: Daypart,
     val songs: List<Song>,
-    val moods: List<MoodAndGenres.Item>,
 ) : HomeSection {
     override val key get() = "around_now"
-}
-
-/** Moods for this part of the day when there is not yet a pattern to show. */
-data class MoodsSection(
-    val daypart: Daypart,
-    val moods: List<MoodAndGenres.Item>,
-) : HomeSection {
-    override val key get() = "moods"
 }
 
 data class DiscoverPick(
@@ -471,95 +445,43 @@ data class DiscoverPick(
     val source: CandidateSource? = null,
 )
 
-data class TasteNoteSection(val insight: TasteInsight) : HomeSection {
-    override val key get() = "taste_note"
-}
-
 data object PickArtistsSection : HomeSection {
     override val key get() = "pick_artists"
 }
 
-/**
- * Songs the listener has never played, each tied to one they have.
- *
- * [lead] is the song most of these came from, when one song dominates the seeds — that is
- * what lets the shelf be headed "More like <song>" instead of the same flat "Discover"
- * every time, without ever claiming a connection the related-song graph does not hold.
- */
-data class DiscoverSection(
-    val picks: List<DiscoverPick>,
-    val lead: Song? = null,
-    val leadArtist: String? = null,
-) : HomeSection {
+/** Songs the listener has never played, each tied to one they have. */
+data class DiscoverSection(val picks: List<DiscoverPick>) : HomeSection {
     override val key get() = "discover"
+}
+
+/** A whole queue of music the listener has never played. */
+data class DiscoveryMixSection(val picks: List<DiscoverPick>) : HomeSection {
+    override val key get() = "discovery_mix"
+}
+
+/** Never-played songs that all came from one of the listener's artists. */
+data class MoreLikeSection(val artist: String, val picks: List<DiscoverPick>) : HomeSection {
+    override val key get() = "more_like_$artist"
+}
+
+/** Downloads and files on the phone, a tap from Home; absent while there are none. */
+data class ShortcutsSection(val tiles: List<LatelyTile>) : HomeSection {
+    override val key get() = "shortcuts"
 }
 
 /** One of the listener's artists, opened up: their unheard albums and artists like them. */
 data class DeepDiveSection(
     val digest: HomeArtistDigest,
-    val plays: Int,
-    val songsHeard: Int,
     val albums: List<AlbumItem>,
     val related: List<ArtistItem>,
-    /** Known from the listener's saved songs rather than plays: [songsHeard] counts saved songs. */
-    val fromLibrary: Boolean = false,
 ) : HomeSection {
-    override val key get() = "deep_dive"
-}
-
-data class ChartsSection(
-    val charts: List<HomeChart>,
-    /** When Shiny last fetched them, in System.currentTimeMillis(). */
-    val refreshedAt: Long,
-) : HomeSection {
-    override val key get() = "charts"
+    override val key get() = "deep_dive_${digest.artistId}"
 }
 
 /** Songs once played a lot and not in a long while. */
 data class RediscoverSection(val songs: List<RankedSong>) : HomeSection {
     override val key get() = "rediscover"
 }
-
-data class AlbumProgress(val album: Album, val heard: Int, val total: Int)
-
-/** Albums the listener has started and not finished. */
-data class AlbumsInProgressSection(val albums: List<AlbumProgress>) : HomeSection {
-    override val key get() = "albums_in_progress"
-}
-
-data class RecentlyAddedSection(val songs: List<Song>) : HomeSection {
-    override val key get() = "recently_added"
-}
-
-/** Everything that plays without a network: downloads and files on the device. */
-data class ReadyOfflineSection(
-    val localSongs: Int,
-    val downloadedSongs: Int,
-    val songs: List<Song>,
-) : HomeSection {
-    override val key get() = "ready_offline"
-}
-
-/** A few true sentences about the week's listening. */
-data class InsightsSection(
-    val weekPlays: Int,
-    val weekSongs: Int,
-    val weekArtists: Int,
-    val weekMinutes: Int,
-    val newSongs: Int,
-    val topArtist: Artist?,
-    /** The artist's photo, from the library or else from their cached artist page. */
-    val topArtistImage: String?,
-    val topArtistPlays: Int,
-    val replayed: Song?,
-    val replayedPlays: Int,
-) : HomeSection {
-    override val key get() = "insights"
-}
-
-enum class SurpriseKind { Forgotten, Unexplored, NewToYou, OnDevice }
-
-data class SurprisePool(val kind: SurpriseKind, val weight: Double, val songs: List<Song>)
 
 /**
  * One of the listener's Spotify mixes (Daily Mix, Discover Weekly, Release Radar...),
@@ -603,8 +525,43 @@ data class YouTubeSection(
     override val key get() = "youtube"
 }
 
-/** One button that picks something from the listener's own music universe. */
-data class SurpriseSection(val pools: List<SurprisePool>) : HomeSection {
-    override val key get() = "surprise"
-    val size: Int get() = pools.sumOf { it.songs.size }
+/** The songs of a section Home shows as one Top Picks card; empty for every other section. */
+val HomeSection.pickSongs: List<Song>
+    get() = when (this) {
+        is DiscoveryMixSection -> picks.map { it.song }
+        is AroundNowSection -> songs
+        is RediscoverSection -> songs.map { it.song }
+        is StartHereSection -> deviceSongs
+        else -> emptyList()
+    }
+
+val HomeSection.isTopPick: Boolean get() = pickSongs.isNotEmpty()
+
+/** Section key to up to three covers: square album covers first, and none shown twice while others remain. */
+fun topPickCovers(sections: List<HomeSection>, taken: Collection<String> = emptyList()): Map<String, List<String>> {
+    val used = HashSet(taken)
+    return sections.associate { section ->
+        val urls = section.pickSongs.mapNotNull { it.thumbnailUrl }.distinct()
+        val fresh = urls.filter { it !in used }.sortedByDescending { "googleusercontent.com" in it }
+        val covers = (fresh + urls).distinct().take(3)
+        used += covers
+        section.key to covers
+    }
 }
+
+/** The More Like shelves drawn as song lists: never right after another list, so the page keeps changing shape. */
+fun moreLikeLists(shelves: List<HomeSection>): Set<String> {
+    val lists = HashSet<String>()
+    var previousWasList = false
+    shelves.forEach { section ->
+        previousWasList = when (section) {
+            is RotationSection -> true
+            is MoreLikeSection -> (!previousWasList).also { if (it) lists += section.key }
+            else -> false
+        }
+    }
+    return lists
+}
+
+/** The covers the mix bar shows, lead first. */
+fun HeroMixSection.barCovers(): List<String> = songs.mapNotNull { it.thumbnailUrl }.distinct().take(3)

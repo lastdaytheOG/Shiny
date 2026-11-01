@@ -141,45 +141,34 @@ lens; *Frosted* blurs harder with a calmer lens and no dispersion. The finish co
   full-screen field of its colour; name centred on it; info · Play · follow beneath;
   "Latest Release" in its own box; Top Songs as a 4-row paged grid; shelves; About.
 - **Home** (`screens/LiquidHomeScreen.kt`, sections in `ui/liquid/home/`, feed in `app/…/home/`)
-  — a feed assembled by `HomeFeedBuilder` from real listening only; the screen renders
-  whatever the feed decides, in the feed's order.
+  — a feed assembled by `HomeFeedBuilder` from real listening only. Music first, one plain
+  title per shelf, no subtitles, reason lines, stat counts, eyebrows or prose.
 
-  **Personalisation is a slope, not a door.** There is no play count at which Home becomes
-  personal. `HomeTaste` turns the history into continuous weights — a `confidence` that
-  moves from the first counted play, a per-artist `ArtistAffinity` with an `AffinityTier`
-  (Exploring / Warming / Favourite), and leans for albums, artists, offline, exploring,
-  habit and activity — and every section minimum is scaled by confidence rather than
-  tested against a threshold. One play cannot reach Warming, so a single listen never
-  reshapes Home; repeats across songs and days do. `HomeInterest` (a tiny decayed file,
-  `home_interest.json`) records what the listener reaches for *on Home* — charts, moods,
-  releases, discovery — which the history cannot see; search is read from
-  `search_history`'s size. `HomeOrder` then scores every section: editorial slots (charts,
-  moods, releases) start high and are pushed down by confidence while personal ones are
-  lifted by it, so a new Home opens on the charts and hands over to the rotation over
-  weeks. Sections move only *within* five fixed bands (Opening · Immediate · Core ·
-  Library · Closing), which is what keeps an adaptive page from becoming a chaotic one,
-  and the order is deterministic for a given listener and moment.
+  **The mix bar** opens the page: a rounded band in the mix's own colour (fixed per mix, never
+  taken from a cover) with three fanned covers, the day's mix (*First Light / Daylight / Golden
+  Hour / Afterglow*), its artists, a sliders disc for the recommendation style and a play disc.
 
-  **The opening is a field, not a card.** `AtmosphericField` is a full-width band of the
-  lead artwork's colour that rises out of the page ground and sinks back into it, its
-  fade measured in pixels from the real height so it never meets a hard edge. Every
-  opening state wears the same shape — eyebrow, headline, one true sentence, Play and
-  Shuffle (YouTube's charts are not on Home; charts live in Discover): **the day's mix** (*First Light / Daylight / Golden Hour / Afterglow*, with a
-  reason line that states the familiar/new split, and a "place to start" eyebrow while
-  confidence is low) or, for a listener with no history at all, **Start Here** — the
-  music already on the phone. There is no onboarding
-  wall and no plays-until-personal meter.
+  **Top Picks** follows: cards that are Shiny's own mix artwork, not one album's cover: a
+  gradient in that mix's colours, three small real covers at the size they were requested, the
+  mix's name set large, its artists and a play disc. Tapping plays; tapping the card that is
+  already playing pauses. The cards are **Discovery Mix** (not for the Comfort style), the
+  hour's habit (*Your Evenings*), *Long Time No Hear*, or *Your Music* for a listener with no
+  history. No recommended song appears in two places.
 
-  The rest: **Pick up where you left off** (a paused session, decided on arrival),
-  **Keep listening** (more from the artist just played — the first personal shelf, live
-  from one play, retiring once the rotation can say it better), **Lately** (two-column
-  typographic index), **Your Rotation**, **Your Evenings** etc. (the hour's own songs as
-  a paged grid, plus moods), **Discover** (never-played songs, headed from the data —
-  "More like *song*" only when one song really did seed the shelf), **Go deeper** (one
-  artist, only above Exploring), **New Releases** (one featured record set as editorial,
-  no panel), **Long Time No Hear**, **Albums You Started**, **Recently Added**, **Ready Offline**,
-  **Your Week** and **Surprise Me**. Moods are compact neutral tiles with a colour rule,
-  never flooded chips.
+  Below it, **Downloads** and **On This Device** as two flat cells with no heading, then
+  **Recently Played ›** (square tiles and round artists; opens History), then one row each for
+  **Spotify** and **YouTube Music** (liked songs, then mixes; they never mix, and appear only
+  once connected or imported). Then the recommendations in `HomeOrder`'s scored order, each with
+  its own shape so the page never settles into one rhythm: **Your Rotation** (a paged song grid),
+  **Fresh Discoveries** (tiles), **More Like X** (a song grid or smaller tiles, never a list right
+  after a list), **More from X ›** (the artist's photo in the heading, larger albums), **Similar to
+  X** (round artists). An artist with no photo is left out rather than drawn as a blank circle.
+  There is no resume card: the mini player already is one.
+
+  **Personalisation is a slope, not a door.** `HomeTaste` turns the history into continuous
+  weights, and every section minimum is scaled by confidence rather than tested against a
+  threshold. Sections move only within five fixed bands (Opening · Immediate · Services · Core ·
+  Library).
 - **New**, **Library** (one flat list of accent-glyph category rows with grey counts, no
   panels, a gap before History/Stats/Together/Recognition; pushed category pages with a ⋯
   sort menu, Songs also searchable; Recently Added grid. Settings → Library & Home can fold

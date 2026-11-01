@@ -29,7 +29,6 @@
     <string name="style_choose">Recommendation style</string>
 
     <string name="pick_artists_title">Who do you love?</string>
-    <string name="pick_artists_body">Pick a few artists and Home starts from them. You can skip this.</string>
     <string name="pick_artists_action">Choose artists</string>
     <string name="not_now">Not now</string>
     <string name="pick_artists_search">Search artists</string>

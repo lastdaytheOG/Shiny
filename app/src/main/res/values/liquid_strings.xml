@@ -223,51 +223,23 @@
 
     <!-- Home: a feed assembled from real listening. Every line below states something Shiny
          actually measured, or offers a choice; none of it claims to know the listener's mood. -->
-    <string name="home_eyebrow_morning">For this morning</string>
-    <string name="home_eyebrow_afternoon">For this afternoon</string>
-    <string name="home_eyebrow_evening">For this evening</string>
-    <string name="home_eyebrow_night">For tonight</string>
-    <string name="home_eyebrow_offline">Plays without a connection</string>
     <string name="home_mix_morning">First Light</string>
     <string name="home_mix_afternoon">Daylight</string>
     <string name="home_mix_evening">Golden Hour</string>
     <string name="home_mix_night">Afterglow</string>
     <string name="home_mix_offline">Offline Mix</string>
-    <string name="home_mix_reason_both">%1$d from your listening · %2$d new to you</string>
-    <string name="home_mix_reason_short">%1$d you know · %2$d new</string>
-    <plurals name="home_mix_reason_familiar">
-        <item quantity="one">%d song from your listening</item>
-        <item quantity="other">%d songs from your listening</item>
-    </plurals>
-    <string name="home_resume_eyebrow">Pick up where you left off</string>
-    <string name="home_resume">Resume</string>
-    <string name="home_from_queue">From %1$s</string>
     <!-- A Home with no listening behind it. No progress meter, no "unlock": real music, now. -->
-    <string name="home_eyebrow_start">A place to start</string>
-    <string name="home_start_eyebrow">Playing everywhere</string>
-    <string name="home_start_title">Start anywhere</string>
-    <string name="home_start_chart_reason">%1$s, in full. Home learns as you listen.</string>
-    <string name="home_start_device_eyebrow">Already on this phone</string>
-    <string name="home_start_device_title">Your music</string>
-    <plurals name="home_start_device_reason">
-        <item quantity="one">%1$d song, ready with or without a connection.</item>
-        <item quantity="other">%1$d songs, ready with or without a connection.</item>
-    </plurals>
+    <string name="home_start_device_title">Your Music</string>
     <string name="home_quiet_title">Nothing to play yet</string>
-    <string name="home_quiet_body">Search for something, or add music from this phone. Home fills in as you listen.</string>
+    <string name="home_quiet_body">Search for a song to get started.</string>
     <string name="home_quiet_offline_title">Nothing here offline</string>
-    <string name="home_quiet_offline_body">Download a few songs or add music from this phone, and Home works with no connection at all.</string>
+    <string name="home_quiet_offline_body">Downloaded songs play here with no connection.</string>
     <string name="home_offline_title">You are offline</string>
-    <plurals name="home_offline_body">
-        <item quantity="one">Showing the %d song that plays on this device.</item>
-        <item quantity="other">Showing the %d songs that play on this device.</item>
-    </plurals>
-    <string name="home_offline_empty">Nothing is downloaded or on this device yet.</string>
-    <string name="home_lately">Lately</string>
-    <string name="home_tile_album">Album</string>
-    <string name="home_tile_artist">Artist</string>
+    <string name="home_top_picks">Top Picks</string>
+    <string name="home_discovery_mix">Discovery Mix</string>
+    <string name="home_discover">Fresh Discoveries</string>
+    <string name="home_similar_to">Similar to %1$s</string>
     <string name="home_tile_playlist">Playlist</string>
-    <string name="home_tile_pinned">Pinned</string>
     <string name="home_tile_liked">Liked Songs</string>
     <string name="home_tile_downloads">Downloads</string>
     <string name="home_tile_device">On This Device</string>
@@ -275,73 +247,22 @@
         <item quantity="one">%d song</item>
         <item quantity="other">%d songs</item>
     </plurals>
-    <plurals name="home_songs_heard">
-        <item quantity="one">%d song heard</item>
-        <item quantity="other">%d songs heard</item>
-    </plurals>
     <string name="home_rotation">Your Rotation</string>
-    <string name="home_rotation_subtitle">What you keep coming back to this month</string>
-    <plurals name="home_plays_month">
-        <item quantity="one">%d play this month</item>
-        <item quantity="other">%d plays this month</item>
-    </plurals>
     <string name="home_around_morning">Your Mornings</string>
     <string name="home_around_afternoon">Your Afternoons</string>
     <string name="home_around_evening">Your Evenings</string>
     <string name="home_around_night">Your Late Nights</string>
-    <plurals name="home_around_body">
-        <item quantity="one">%d song you tend to play around this time</item>
-        <item quantity="other">%d songs you tend to play around this time</item>
-    </plurals>
-    <string name="home_discover">Fresh discoveries</string>
-    <string name="home_discover_subtitle">Songs you\'ve never played</string>
-    <string name="home_discover_like_song">More like %1$s</string>
-    <string name="home_discover_like_artist">If you like %1$s</string>
     <!-- Keep listening: the wording steps up only as the evidence does (AffinityTier). -->
     <string name="home_continue_artist">More from %1$s</string>
-    <string name="home_continue_warming">Back to %1$s</string>
-    <string name="home_continue_favourite">More from %1$s, on repeat</string>
-    <string name="home_continue_related">More like %1$s</string>
-    <string name="home_continue_subtitle">Carrying on from %1$s</string>
+    <string name="home_continue_related">More Like %1$s</string>
     <string name="home_because">Because of %1$s</string>
     <string name="home_play_all">Play All</string>
-    <string name="home_deep_eyebrow">Go deeper</string>
-    <plurals name="home_deep_meta">
-        <item quantity="one">You have played %d of their songs</item>
-        <item quantity="other">You have played %d of their songs</item>
-    </plurals>
-    <plurals name="home_deep_meta_saved">
-        <item quantity="one">%d of their songs is in your music</item>
-        <item quantity="other">%d of their songs are in your music</item>
-    </plurals>
-    <string name="home_new_reason_saved">From your music</string>
-    <string name="home_deep_albums">Not heard yet</string>
-    <string name="home_deep_related">If you like %1$s</string>
-    <string name="home_new_releases">New Releases</string>
     <string name="home_new_from">New from %1$s</string>
     <plurals name="home_new_reason">
         <item quantity="one">You have played them once</item>
         <item quantity="other">You have played them %d times</item>
     </plurals>
-    <string name="home_new_everyone">Out now</string>
-    <string name="home_charts">The Charts</string>
-    <string name="home_charts_source">YouTube Charts · refreshed %1$s</string>
-    <string name="home_charts_global">Global</string>
-    <string name="home_charts_full">See the full chart</string>
-    <string name="home_chart_new">New</string>
     <string name="home_rediscover">Long Time No Hear</string>
-    <string name="home_rediscover_subtitle">Once played often, quiet for a while</string>
-    <string name="home_last_played">Last played %1$s</string>
-    <string name="home_albums_started">Albums You Started</string>
-    <string name="home_album_progress">%1$d of %2$d songs heard</string>
-    <string name="home_recently_added_subtitle">Saved, downloaded or found on this device</string>
-    <string name="home_ready_offline">Ready Offline</string>
-    <plurals name="home_ready_offline_body">
-        <item quantity="one">%d song plays without a connection</item>
-        <item quantity="other">%d songs play without a connection</item>
-    </plurals>
-    <string name="home_ready_offline_split">%1$d downloaded · %2$d on this device</string>
-    <string name="home_just_now">just now</string>
 
     <!-- Sharing a playlist that isn't on YouTube Music as a link -->
     <string name="share_making_link">Making a link…</string>

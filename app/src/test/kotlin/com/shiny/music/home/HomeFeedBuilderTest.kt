@@ -162,8 +162,6 @@ class HomeFeedBuilderTest {
             songs = byId,
             artists = library.flatMap { it.artists }.distinctBy { it.id }.associate { it.id to Artist(it, 0) },
             albums = albums.associate { it.id to Album(it) },
-            recentlyAdded = library.filter { HomeFeedBuilder.addedAt(it) != null }
-                .sortedByDescending { HomeFeedBuilder.addedAt(it) },
             offlineSongs = library.filter { it.song.isLocal || it.song.isDownloaded },
             unexplored = library.filter { it.id !in played }.take(40),
             playlists = emptyList(),
@@ -220,26 +218,17 @@ class HomeFeedBuilderTest {
     private fun HomeFeed.kinds() = sections.map { it::class.simpleName }
 
     @Test
-    fun `a listener with nothing at all opens on real music, not on a wall`() {
-        val c = ctx()
-        val moods = listOf("Chill", "Feel good", "Focus").map {
-            com.music.innertube.pages.MoodAndGenres.Item(it, 0xFF00FF00, com.music.innertube.models.BrowseEndpoint("FEmusic_moods_and_genres_category", "p"))
-        }
-        val feed = HomeFeedBuilder.build(HomeSignals.Empty, charts().copy(moods = moods), c)
-
+    fun `a listener with nothing at all gets a quiet start and nothing invented`() {
+        val feed = HomeFeedBuilder.build(HomeSignals.Empty, charts(), ctx())
         assertEquals(ListenerProfile.New, feed.profile)
-        assertNotNull("the moods welcome a new listener, not an empty page", feed.find<MoodsSection>())
-        // Nothing personal is invented from a history that does not exist.
-        listOf(HeroMixSection::class, RotationSection::class, DiscoverSection::class, InsightsSection::class, RediscoverSection::class)
-            .forEach { kind -> assertTrue("$kind must not appear", feed.sections.none { kind.isInstance(it) }) }
-        assertNull("YouTube's charts are not on Home", feed.find<ChartsSection>())
+        assertEquals(listOf("StartHereSection"), feed.kinds())
+        assertFalse("nothing to play, so no card", feed.sections.single().isTopPick)
     }
 
     @Test
     fun `a listener with nothing at all and no network gets the honest empty state`() {
         val feed = HomeFeedBuilder.build(HomeSignals.Empty, charts(), ctx(online = false))
         assertEquals(listOf("OfflineNoticeSection", "StartHereSection"), feed.kinds())
-        assertNull("no chart can be offered offline", feed.find<StartHereSection>()!!.chart)
     }
 
     @Test
@@ -253,11 +242,6 @@ class HomeFeedBuilderTest {
         assertTrue("a mix of their own files", hero.songs.isNotEmpty())
         assertTrue("all of it is theirs; nothing was invented", hero.fresh == 0)
         assertTrue("and it says so", hero.tentative)
-        val offline = feed.find<ReadyOfflineSection>()
-        assertNotNull(offline)
-        assertEquals(30, offline!!.localSongs)
-        assertNotNull(feed.find<RecentlyAddedSection>())
-        assertNotNull("never-played files feed Surprise Me", feed.find<SurpriseSection>())
     }
 
     private fun libraryPlaylist(id: String, songs: Int) = Playlist(
@@ -283,8 +267,6 @@ class HomeFeedBuilderTest {
             assertTrue(tiles.none { it is PinnedTile })
             val forLiked = tiles.filterIsInstance<PlaylistTile>().filter { it.playlist.id == liked.id }
             assertEquals("exactly one tile for the pinned playlist (online=$online)", 1, forLiked.size)
-            assertTrue("and it says it is pinned", forLiked.single().pinned)
-            assertFalse(tiles.filterIsInstance<PlaylistTile>().single { it.playlist.id == other.id }.pinned)
         }
     }
 
@@ -326,7 +308,6 @@ class HomeFeedBuilderTest {
         assertEquals("a mix still matching (or nearly empty) is not shown", listOf("1"), section!!.mixes.map { it.spotifyId })
         val kinds = feed.kinds()
         assertTrue("their own mixes lead a new Home", kinds.indexOf("SpotifySection") in 0..1)
-        assertFalse(kinds.contains("ChartsSection"))
     }
 
     @Test
@@ -403,7 +384,6 @@ class HomeFeedBuilderTest {
         assertEquals("HeroMixSection", kinds.first())
         assertTrue(kinds.indexOf("AroundNowSection") < kinds.indexOf("RotationSection"))
         assertTrue(kinds.indexOf("RotationSection") < kinds.indexOf("DiscoverSection"))
-        assertNotNull(feed.find<InsightsSection>())
         assertNotNull(feed.find<RediscoverSection>())
     }
 
@@ -485,25 +465,6 @@ class HomeFeedBuilderTest {
     }
 
     @Test
-    fun `albums started and not finished are offered back`() {
-        val library = (0 until 12).map { song("t$it", artist = "band", album = "lp") } +
-            (0 until 10).map { song("o$it", artist = "o$it") }
-        val plays = listOf("t0", "t1", "t2", "t3").flatMap { id -> List(3) { Play(id, evening - it * day) } } +
-            (0 until 10).flatMap { i -> List(3) { Play("o$i", evening - it * day) } }
-        val c = ctx()
-        val album2 = AlbumEntity(id = "lp2", title = "Other", songCount = 10, duration = 2000)
-        val feed = HomeFeedBuilder.build(
-            signals(library + song("x0", artist = "band", album = "lp2") + song("x1", artist = "band", album = "lp2"),
-                plays + listOf(Play("x0", evening), Play("x1", evening)), c,
-                albums = listOf(AlbumEntity(id = "lp", title = "LP", songCount = 12, duration = 3000), album2)),
-            null, c,
-        )
-        val started = feed.find<AlbumsInProgressSection>()!!
-        assertEquals(setOf("lp", "lp2"), started.albums.map { it.album.id }.toSet())
-        assertEquals(4, started.albums.first { it.album.id == "lp" }.heard)
-    }
-
-    @Test
     fun `a listener who mostly plays files is treated as local-first`() {
         val (library, plays) = establishedLibrary(local = true)
         val c = ctx(seed = 3)
@@ -512,14 +473,6 @@ class HomeFeedBuilderTest {
         assertEquals(ListenerProfile.LocalHeavy, feed.profile)
         val kinds = feed.kinds()
         assertEquals("HeroMixSection", kinds.first())
-        // Downloads and device files are promoted out of the library band into the body of
-        // the feed, ahead of everything that needs a network.
-        assertNotNull(feed.find<ReadyOfflineSection>())
-        assertTrue(
-            "and sits in the body of the feed, not in its footnotes",
-            kinds.indexOf("ReadyOfflineSection") <= 3,
-        )
-        assertFalse(kinds.contains("ChartsSection"))
     }
 
     @Test
@@ -529,7 +482,7 @@ class HomeFeedBuilderTest {
         val feed = HomeFeedBuilder.build(signals(library + relatedSongs(), plays, c, related()), charts(), c)
 
         assertTrue(feed.sections.first() is OfflineNoticeSection)
-        listOf(DiscoverSection::class, ChartsSection::class, DeepDiveSection::class, MoodsSection::class)
+        listOf(DiscoverSection::class, DiscoveryMixSection::class, MoreLikeSection::class, DeepDiveSection::class)
             .forEach { kind -> assertTrue("$kind needs a network", feed.sections.none { kind.isInstance(it) }) }
 
         fun Song.offline() = song.isLocal || song.isDownloaded
@@ -539,9 +492,6 @@ class HomeFeedBuilderTest {
                 is RotationSection -> section.songs.map { it.song }
                 is AroundNowSection -> section.songs
                 is RediscoverSection -> section.songs.map { it.song }
-                is RecentlyAddedSection -> section.songs
-                is ReadyOfflineSection -> section.songs
-                is SurpriseSection -> section.pools.flatMap { it.songs }
                 else -> emptyList()
             }
             assertTrue("${section.key} offers a song that needs a network", songs.all { it.offline() })
@@ -582,14 +532,8 @@ class HomeFeedBuilderTest {
                         is LatelySection -> section.tiles.isEmpty()
                         is RotationSection -> section.songs.isEmpty()
                         is AroundNowSection -> section.songs.isEmpty()
-                        is MoodsSection -> section.moods.isEmpty()
                         is DiscoverSection -> section.picks.isEmpty()
                         is RediscoverSection -> section.songs.isEmpty()
-                        is AlbumsInProgressSection -> section.albums.isEmpty()
-                        is RecentlyAddedSection -> section.songs.isEmpty()
-                        is ReadyOfflineSection -> section.songs.isEmpty()
-                        is ChartsSection -> section.charts.isEmpty()
-                        is SurpriseSection -> section.size == 0
                         else -> false
                     }
                     assertFalse("${section.key} is empty (online=$online)", empty)
@@ -613,29 +557,6 @@ class HomeFeedBuilderTest {
         feed.find<HeroMixSection>()?.let { assertTrue(it.songs.size <= HomeFeedBuilder.HERO_SIZE) }
         feed.find<RotationSection>()?.let { assertTrue(it.songs.size <= 10) }
         feed.find<RediscoverSection>()?.let { assertTrue(it.songs.size <= 10) }
-    }
-
-    @Test
-    fun `surprise me skips recent picks and recent plays while it can`() {
-        val pool = (0 until 10).map { song("p$it") }
-        val section = SurpriseSection(listOf(SurprisePool(SurpriseKind.Unexplored, 1.0, pool)))
-        val stats = mapOf("p1" to HomeSongStat("p1", 1, 1, evening - day, evening - day, 1, 1, 1, 0))
-        val recent = setOf("p0", "p2", "p3")
-        repeat(200) { n ->
-            val pick = HomeSurprise.pick(section, stats, recent, evening, Random(n))!!
-            assertTrue(pick.song.id !in recent)
-            assertNotEquals("played yesterday", "p1", pick.song.id)
-        }
-    }
-
-    @Test
-    fun `surprise me favours the head of a pool without always taking it`() {
-        val pool = (0 until 10).map { song("p$it") }
-        val section = SurpriseSection(listOf(SurprisePool(SurpriseKind.Forgotten, 1.0, pool)))
-        val picks = (0 until 2_000).map { HomeSurprise.pick(section, emptyMap(), emptyList(), evening, Random(it))!!.song.id }
-        val firstHalf = picks.count { it.removePrefix("p").toInt() < 5 }
-        assertTrue(firstHalf in 1_300..1_550)
-        assertTrue(picks.distinct().size == 10)
     }
 
     @Test
@@ -665,19 +586,6 @@ class HomeFeedBuilderTest {
         val hero = feed.find<HeroMixSection>()
         assertNotNull(hero)
         assertTrue(hero!!.songs.size >= HomeFeedBuilder.MIN_HERO_LOW)
-    }
-
-    @Test
-    fun `moods never outrank the listener's own sections`() {
-        val (library, plays) = establishedLibrary()
-        val moods = listOf("Chill", "Feel good", "Sleep", "Focus").map {
-            com.music.innertube.pages.MoodAndGenres.Item(it, 0xFF00FF00, com.music.innertube.models.BrowseEndpoint("FEmusic_moods_and_genres_category", "p"))
-        }
-        // Morning: the listener has no morning pattern, so moods stand alone.
-        val c = ctx(now = morning, seed = 3)
-        val kinds = HomeFeedBuilder.build(signals(library, plays, c), HomeRemote(moods = moods), c).kinds()
-        assertTrue(kinds.contains("MoodsSection"))
-        assertTrue(kinds.indexOf("RotationSection") < kinds.indexOf("MoodsSection"))
     }
 
     @Test
@@ -844,15 +752,137 @@ class HomeFeedBuilderTest {
     }
 
     @Test
-    fun `Home never shows YouTube charts, even when chart data is held`() {
-        val newcomer = HomeFeedBuilder.build(HomeSignals.Empty, charts(), ctx())
-        assertNull(newcomer.find<ChartsSection>())
-        newcomer.find<StartHereSection>()?.let { assertNull(it.chart) }
-
+    fun `the hour and the forgotten songs are top picks, the mix keeps its own bar, and no cover shows twice`() {
         val (library, plays) = establishedLibrary()
         val c = ctx(seed = 3)
-        val known = HomeFeedBuilder.build(signals(library + relatedSongs(), plays, c, related()), charts(), c)
-        assertNull(known.find<ChartsSection>())
+        val feed = HomeFeedBuilder.build(signals(library, plays, c), null, c)
+
+        val picks = feed.sections.filter { it.isTopPick }
+        assertEquals(listOf("around_now", "rediscover"), picks.map { it.key })
+        assertTrue("the mix is the bar above them", feed.sections.first() is HeroMixSection)
+
+        fun card(url: String, id: String) = song(id).let { it.copy(song = it.song.copy(thumbnailUrl = url)) }
+        val still = "https://i.ytimg.com/vi/a/hq.jpg"
+        val square = "https://lh3.googleusercontent.com/a"
+        val other = "https://lh3.googleusercontent.com/b"
+        val covers = topPickCovers(
+            listOf(
+                RediscoverSection(listOf(card(still, "1"), card(square, "2")).map { RankedSong(it, 1, 1, 1, evening) }),
+                AroundNowSection(Daypart.Evening, listOf(card(square, "2"), card(other, "3"), card(still, "1"))),
+            ),
+            taken = emptyList(),
+        )
+        assertEquals("a square cover beats a video still", square, covers.getValue("rediscover").first())
+        assertEquals("and the next card leads with another picture", other, covers.getValue("around_now").first())
+        assertEquals(
+            "a cover already on the mix bar is passed over",
+            other,
+            topPickCovers(listOf(AroundNowSection(Daypart.Evening, listOf(card(square, "2"), card(other, "3")))), listOf(square)).getValue("around_now").first(),
+        )
+    }
+
+    @Test
+    fun `no recommended song appears in two places`() {
+        val (library, plays) = establishedLibrary()
+        val many = (0 until 90).map { song("m$it", artist = "new_artist_${it % 12}") }
+        val links = (0 until 12).flatMap { seed -> (0 until 8).map { HomeRelatedLink("s$seed", "m${seed * 7 + it}") } }
+        val c = ctx(seed = 3)
+        val feed = HomeFeedBuilder.build(signals(library + many, plays, c, links), charts(), c)
+
+        val hero = feed.find<HeroMixSection>()!!.songs.map { it.id }.filter { it.startsWith("m") }
+        val shelf = feed.find<DiscoverSection>()!!.picks.map { it.song.id }
+        val mix = feed.find<DiscoveryMixSection>()?.picks.orEmpty().map { it.song.id }
+        val moreLike = feed.sections.filterIsInstance<MoreLikeSection>().flatMap { s -> s.picks.map { it.song.id } }
+        val all = hero + shelf + mix + moreLike
+        assertEquals("every recommended song once", all.size, all.distinct().size)
+    }
+
+    @Test
+    fun `a song list never follows another song list`() {
+        fun more(name: String) = MoreLikeSection(name, emptyList())
+        val rotation = RotationSection(emptyList())
+        val shelf = DiscoverSection(emptyList())
+        assertEquals(setOf(more("b").key), moreLikeLists(listOf(rotation, more("a"), more("b"))))
+        assertEquals(setOf(more("a").key, more("b").key), moreLikeLists(listOf(more("a"), shelf, more("b"))))
+    }
+
+    @Test
+    fun `Spotify likes take turns with other saved songs and weigh the same as likes`() {
+        fun saved(id: String, liked: Boolean = false, spotify: Boolean = false) =
+            com.shiny.music.db.entities.HomeSavedSong(id, liked, inLibrary = false, inPlaylist = false, inMix = false, spotifyLiked = spotify)
+        val youtube = (0 until 300).map { saved("y$it", liked = true) }
+        val spotify = (0 until 300).map { saved("p$it", spotify = true) }
+
+        val merged = HomeRanking.mergeSaved(youtube, spotify, 200)
+        assertEquals(200, merged.size)
+        assertEquals(100, merged.count { it.spotifyLiked })
+        assertEquals(listOf("y0", "p0", "y1", "p1"), merged.take(4).map { it.songId })
+        assertEquals("nothing imported, nothing changes", youtube.take(200), HomeRanking.mergeSaved(youtube, emptyList(), 200))
+        assertEquals("a song in both is listed once", 1, HomeRanking.mergeSaved(listOf(saved("a", liked = true)), listOf(saved("a", spotify = true)), 10).size)
+
+        val weights = HomeRanking.savedSeedWeights(listOf(saved("y", liked = true), saved("p", spotify = true)))
+        assertEquals(weights["y"], weights["p"])
+    }
+
+    @Test
+    fun `downloads and device files are a tap from Home, online or not, and never in recently played`() {
+        val noPhoto = Artist(ArtistEntity(id = "UCnophoto", name = "No Photo"), 0)
+        val played = HomeArtistStat("UCnophoto", plays = 9, weekPlays = 2, monthPlays = 9, lastPlayed = evening - hour, songs = 5)
+        val sig = HomeSignals.Empty.copy(
+            counts = HomeLibraryCounts(localSongs = 4, downloadedSongs = 6, likedSongs = 0, librarySongs = 0, events = 0, playlists = 0),
+            artists = mapOf(noPhoto.id to noPhoto),
+            artistStats = listOf(played),
+            playlists = listOf(libraryPlaylist("LPa", 3), libraryPlaylist("LPb", 4)),
+        )
+        listOf(true, false).forEach { online ->
+            val feed = HomeFeedBuilder.build(sig, null, ctx(online = online))
+            assertEquals(listOf(DownloadsTile(6), DeviceTile(4)), feed.find<ShortcutsSection>()!!.tiles)
+            val recent = feed.find<LatelySection>()!!.tiles
+            assertTrue(recent.none { it is DownloadsTile || it is DeviceTile })
+            assertTrue("an artist with no photo would be a blank circle", recent.none { it is ArtistTile })
+        }
+        assertNull("nothing to link to", HomeFeedBuilder.build(HomeSignals.Empty, null, ctx()).find<ShortcutsSection>())
+    }
+
+    @Test
+    fun `recommendations fill Home - a discovery mix, fresh discoveries and more like an artist`() {
+        val (library, plays) = establishedLibrary()
+        val c = ctx(seed = 3)
+        val feed = HomeFeedBuilder.build(signals(library + relatedSongs(), plays, c, related()), charts(), c)
+
+        val mix = feed.find<DiscoveryMixSection>()!!
+        assertTrue("it is a top pick", mix.isTopPick)
+        assertTrue("and all of it is new", mix.picks.none { it.song.id.startsWith("s") })
+        val shelf = feed.find<DiscoverSection>()!!.picks.map { it.song.id }.toSet()
+        assertTrue("and nothing from the shelf", mix.picks.none { it.song.id in shelf })
+        val moreLike = feed.sections.filterIsInstance<MoreLikeSection>()
+        assertTrue(moreLike.size <= 2)
+        moreLike.forEach { section ->
+            assertTrue(section.picks.size >= HomeFeedBuilder.MIN_MORE_LIKE)
+            assertTrue("no song on two shelves", section.picks.none { it.song.id in shelf })
+        }
+    }
+
+    @Test
+    fun `the listener's services come before the recommendations, however well Shiny knows them`() {
+        val (library, plays) = establishedLibrary()
+        val c = ctx(seed = 3, youtubeSignedIn = true)
+        val sig = signals(library + relatedSongs(), plays, c, related()).copy(spotifyLiked = spotifyLiked(206), likedCovers = listOf("y1"))
+        val withLikes = sig.copy(counts = sig.counts.copy(likedSongs = 40))
+        val kinds = HomeFeedBuilder.build(withLikes, charts(), c).kinds()
+        val services = maxOf(kinds.indexOf("SpotifySection"), kinds.indexOf("YouTubeSection"))
+        assertTrue(kinds.indexOf("SpotifySection") >= 0 && kinds.indexOf("YouTubeSection") >= 0)
+        assertTrue("before the rotation", services < kinds.indexOf("RotationSection"))
+        assertTrue("before fresh discoveries", services < kinds.indexOf("DiscoverSection"))
+    }
+
+    @Test
+    fun `no discovery mix without a network`() {
+        val (library, plays) = establishedLibrary()
+        val c = ctx(online = false)
+        val feed = HomeFeedBuilder.build(signals(library + relatedSongs(), plays, c, related()), charts(), c)
+        assertNull(feed.find<DiscoveryMixSection>())
+        assertTrue(feed.sections.none { it is MoreLikeSection })
     }
 
     @Test

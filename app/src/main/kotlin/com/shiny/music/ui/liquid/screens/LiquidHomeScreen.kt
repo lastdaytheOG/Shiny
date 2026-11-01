@@ -29,9 +29,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -52,11 +50,7 @@ import com.shiny.music.R
 import com.shiny.music.constants.InnerTubeCookieKey
 import com.shiny.music.db.entities.Artist
 import com.shiny.music.db.entities.LocalItem
-import com.shiny.music.db.entities.RecSurface
 import com.shiny.music.db.entities.Playlist
-import com.shiny.music.home.AlbumsInProgressSection
-import com.shiny.music.home.AroundNowSection
-import com.shiny.music.home.ChartsSection
 import com.shiny.music.home.ContinueSection
 import com.shiny.music.home.DeepDiveSection
 import com.shiny.music.home.DiscoverSection
@@ -64,22 +58,18 @@ import com.shiny.music.home.HeroMixSection
 import com.shiny.music.home.HomeInterest
 import com.shiny.music.home.HomeSection
 import com.shiny.music.home.LatelySection
-import com.shiny.music.home.PickArtistsSection
-import com.shiny.music.home.TasteNoteSection
-import com.shiny.music.playback.queues.PlaybackOrigin
-import com.shiny.music.ui.component.LocalMenuState
-import com.shiny.music.ui.liquid.home.PickArtistsCard
-import com.shiny.music.ui.liquid.home.RecommendationStyleSheet
-import com.shiny.music.ui.liquid.home.TasteNoteCard
-import kotlinx.coroutines.delay
+import com.shiny.music.home.MoreLikeSection
 import com.shiny.music.home.OfflineNoticeSection
-import com.shiny.music.home.ReadyOfflineSection
-import com.shiny.music.home.RecentlyAddedSection
-import com.shiny.music.home.RediscoverSection
+import com.shiny.music.home.PickArtistsSection
 import com.shiny.music.home.RotationSection
+import com.shiny.music.home.ShortcutsSection
 import com.shiny.music.home.SpotifySection
-import com.shiny.music.home.YouTubeSection
 import com.shiny.music.home.StartHereSection
+import com.shiny.music.home.YouTubeSection
+import com.shiny.music.home.barCovers
+import com.shiny.music.home.isTopPick
+import com.shiny.music.home.moreLikeLists
+import com.shiny.music.ui.component.LocalMenuState
 import com.shiny.music.ui.liquid.ActivityIndicator
 import com.shiny.music.ui.liquid.Artwork
 import com.shiny.music.ui.liquid.LargeTitlePage
@@ -89,26 +79,24 @@ import com.shiny.music.ui.liquid.MediaTile
 import com.shiny.music.ui.liquid.SkeletonShelf
 import com.shiny.music.ui.liquid.appearance.LocalShinyAppearance
 import com.shiny.music.ui.liquid.appearance.PageTransitions
-import com.shiny.music.ui.liquid.home.AlbumsInProgressShelf
-import com.shiny.music.ui.liquid.home.AroundNowCard
-import com.shiny.music.ui.liquid.home.ChartsBlock
 import com.shiny.music.ui.liquid.home.ContinueShelf
-import com.shiny.music.ui.liquid.home.DeepDiveBlock
 import com.shiny.music.ui.liquid.home.DiscoverShelf
-import com.shiny.music.ui.liquid.home.HeroMixCard
-import com.shiny.music.ui.liquid.home.LatelyGrid
-import com.shiny.music.ui.liquid.home.SpotifyShelf
-import com.shiny.music.ui.liquid.home.YouTubeShelf
+import com.shiny.music.ui.liquid.home.MixBar
+import com.shiny.music.ui.liquid.home.MoreFromArtistShelf
+import com.shiny.music.ui.liquid.home.MoreLikeShelf
 import com.shiny.music.ui.liquid.home.OfflineNotice
-import com.shiny.music.ui.liquid.home.ReadyOfflineCard
-import com.shiny.music.ui.liquid.home.RecentlyAddedGrid
-import com.shiny.music.ui.liquid.home.RediscoverShelf
-import com.shiny.music.ui.liquid.home.ResumeCard
-import com.shiny.music.ui.liquid.home.RotationList
-import com.shiny.music.ui.liquid.home.StartHereBlock
-import com.shiny.music.ui.liquid.home.mixTitle
-import com.shiny.music.ui.liquid.rememberListState
+import com.shiny.music.ui.liquid.home.PickArtistsCard
+import com.shiny.music.ui.liquid.home.QuietStart
+import com.shiny.music.ui.liquid.home.RecentlyPlayedShelf
+import com.shiny.music.ui.liquid.home.RecommendationStyleSheet
+import com.shiny.music.ui.liquid.home.RotationGrid
+import com.shiny.music.ui.liquid.home.ShortcutsRow
+import com.shiny.music.ui.liquid.home.SpotifyShelf
+import com.shiny.music.ui.liquid.home.TopPicks
+import com.shiny.music.ui.liquid.home.TopPicksSkeleton
+import com.shiny.music.ui.liquid.home.YouTubeShelf
 import com.shiny.music.ui.liquid.rememberLiquidActions
+import com.shiny.music.ui.liquid.rememberListState
 import com.shiny.music.ui.liquid.statusBarHeight
 import com.shiny.music.ui.liquid.subtitleText
 import com.shiny.music.ui.theme.pressScale
@@ -116,15 +104,10 @@ import com.shiny.music.ui.utils.resize
 import com.shiny.music.utils.PerfTrace
 import com.shiny.music.utils.rememberPreference
 import com.shiny.music.viewmodels.HomeViewModel
+import kotlinx.coroutines.delay
 
-/**
- * Home: a feed that answers, in order of what matters at this moment, *what to play now,
- * what was just playing, what the listener keeps returning to, what to discover next and
- * what is happening in music* — assembled by [HomeViewModel] from real listening only.
- *
- * The screen does not decide what exists or in which order; the feed does. It only adds
- * the one live element the feed cannot know about: a paused session to pick up again.
- */
+private const val IMPRESSION_DELAY_MS = 1_000L
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LiquidHomeScreen(
@@ -151,23 +134,10 @@ fun LiquidHomeScreen(
     val listState = rememberListState(viewModel.scroll)
     val pullState = rememberPullToRefreshState()
 
-    // "Pick up where you left off" is decided when Home comes on screen, not live: pausing
-    // from the mini player while reading Home should not push the whole page down. It goes
-    // as soon as the session plays again.
-    var resumeVisible by remember {
-        mutableStateOf(playerConnection.mediaMetadata.value != null && !playerConnection.isPlaying.value)
-    }
-    LaunchedEffect(isPlaying, mediaMetadata == null) {
-        if (isPlaying || mediaMetadata == null) resumeVisible = false
-    }
-    // The queue is restored a moment after launch, often after Home has composed. A session
-    // that appears already paused (rather than one the listener just paused) earns the card.
-    val hasSession = mediaMetadata != null
-    LaunchedEffect(hasSession) {
-        if (hasSession && !playerConnection.isPlaying.value) resumeVisible = true
-    }
-    // The songs a tap on Home most likely starts: the mix's first song and the heads of the
-    // two personal shelves. Their first seconds are cached (on Wi-Fi) so they start at once.
+    val (topPicks, shelves) = remember(feed) { feed?.sections.orEmpty().partition { it.isTopPick } }
+    val mix = remember(shelves) { shelves.filterIsInstance<HeroMixSection>().firstOrNull() }
+    val mixCovers = remember(mix) { mix?.barCovers().orEmpty() }
+    val listShelves = remember(shelves) { moreLikeLists(shelves.filterNot { it is OfflineNoticeSection || it is HeroMixSection }) }
     val likelyIds = remember(feed) {
         feed?.sections.orEmpty().mapNotNull { section ->
             when (section) {
@@ -186,11 +156,7 @@ fun LiquidHomeScreen(
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
-                Lifecycle.Event.ON_RESUME -> {
-                    viewModel.setVisible(viewer, true)
-                    resumeVisible = playerConnection.mediaMetadata.value != null &&
-                        !playerConnection.isPlaying.value
-                }
+                Lifecycle.Event.ON_RESUME -> viewModel.setVisible(viewer, true)
                 Lifecycle.Event.ON_PAUSE -> viewModel.setVisible(viewer, false)
                 else -> Unit
             }
@@ -201,12 +167,6 @@ fun LiquidHomeScreen(
             viewModel.setVisible(viewer, false)
         }
     }
-    val resumePosition = remember(mediaMetadata?.id, resumeVisible) {
-        if (resumeVisible) runCatching { playerConnection.player.currentPosition }.getOrDefault(0L) else 0L
-    }
-
-    /** What the listener reached for, so Home can lead with it next time. */
-    fun note(kind: HomeInterest.Kind) = viewModel.note(kind)
 
     PullToRefreshBox(
         isRefreshing = isRefreshing,
@@ -226,48 +186,65 @@ fun LiquidHomeScreen(
                 )
             },
         ) {
-            val current = feed
-            if (current == null) {
-                items(3, key = { "skeleton_$it" }, contentType = { "skeleton" }) { SkeletonShelf() }
+            if (feed == null) {
+                item(key = "skeleton_picks", contentType = "skeleton_picks") { TopPicksSkeleton() }
+                item(key = "skeleton_shelf", contentType = "skeleton") { SkeletonShelf(tile = 150.dp) }
                 return@LargeTitlePage
             }
 
-            val live = mediaMetadata
-            if (resumeVisible && live != null) {
-                item(key = "resume", contentType = "resume") {
-                    HomeItem(reduceMotion) {
-                        ResumeCard(
-                            metadata = live,
-                            queueTitle = queueTitle,
-                            positionMs = resumePosition,
-                            onResume = actions::togglePlayPause,
-                        )
-                    }
+            if (OfflineNoticeSection in shelves) {
+                item(key = OfflineNoticeSection.key, contentType = "offline") {
+                    HomeItem(reduceMotion) { OfflineNotice() }
                 }
             }
 
-            current.sections
-                .filterNot { it is com.shiny.music.home.InsightsSection || it is com.shiny.music.home.SurpriseSection || it is com.shiny.music.home.MoodsSection }
-                .forEach { section ->
-                item(key = section.key, contentType = section.contentType()) {
-                    LaunchedEffect(section) {
-                        delay(IMPRESSION_DELAY_MS)
-                        viewModel.noteShown(section)
-                    }
+            if (mix != null) {
+                item(key = mix.key, contentType = "mix_bar") {
+                    NoteShown(mix, viewModel)
                     HomeItem(reduceMotion) {
-                        HomeSectionContent(
-                            section = section,
-                            actions = actions,
-                            activeId = live?.id,
+                        MixBar(
+                            section = mix,
+                            queueTitle = queueTitle,
                             isPlaying = isPlaying,
-                            compactHero = resumeVisible && live != null,
                             reduceMotion = reduceMotion,
-                            onNote = ::note,
+                            actions = actions,
                             onChooseStyle = {
                                 menuState.show {
                                     RecommendationStyleSheet(viewModel.intelligence, onDone = menuState::dismiss)
                                 }
                             },
+                        )
+                    }
+                }
+            }
+
+            if (topPicks.isNotEmpty()) {
+                item(key = "top_picks", contentType = "top_picks") {
+                    HomeItem(reduceMotion) {
+                        TopPicks(
+                            sections = topPicks,
+                            queueTitle = queueTitle,
+                            isPlaying = isPlaying,
+                            actions = actions,
+                            onPlayedDiscovery = { viewModel.note(HomeInterest.Kind.Discovery) },
+                            takenCovers = mixCovers,
+                            onShown = { section -> NoteShown(section, viewModel) },
+                        )
+                    }
+                }
+            }
+
+            shelves.filterNot { it is OfflineNoticeSection || it is HeroMixSection }.forEach { section ->
+                item(key = section.key, contentType = section::class.simpleName) {
+                    NoteShown(section, viewModel)
+                    HomeItem(reduceMotion) {
+                        HomeShelf(
+                            section = section,
+                            asList = section.key in listShelves,
+                            actions = actions,
+                            activeId = mediaMetadata?.id,
+                            isPlaying = isPlaying,
+                            onPlayedDiscovery = { viewModel.note(HomeInterest.Kind.Discovery) },
                             onPickArtists = { navController.navigate("settings/recommendations/artists") },
                             onDismissPickArtists = viewModel::dismissPickArtists,
                         )
@@ -280,12 +257,14 @@ fun LiquidHomeScreen(
     }
 }
 
-private fun HomeSection.contentType(): String = this::class.simpleName ?: "section"
+@Composable
+private fun NoteShown(section: HomeSection, viewModel: HomeViewModel) {
+    LaunchedEffect(section) {
+        delay(IMPRESSION_DELAY_MS)
+        viewModel.noteShown(section)
+    }
+}
 
-private const val IMPRESSION_DELAY_MS = 1_000L
-private val HomeMixOrigin = PlaybackOrigin(RecSurface.HomeMix)
-
-/** Sections fade in and slide into place when the feed changes; still when motion is reduced. */
 @Composable
 private fun LazyItemScope.HomeItem(reduceMotion: Boolean, content: @Composable () -> Unit) {
     Column(
@@ -306,58 +285,27 @@ private fun LazyItemScope.HomeItem(reduceMotion: Boolean, content: @Composable (
 }
 
 @Composable
-private fun HomeSectionContent(
+private fun HomeShelf(
     section: HomeSection,
+    asList: Boolean,
     actions: LiquidActions,
     activeId: String?,
     isPlaying: Boolean,
-    compactHero: Boolean,
-    reduceMotion: Boolean,
-    onNote: (HomeInterest.Kind) -> Unit,
-    onChooseStyle: () -> Unit,
+    onPlayedDiscovery: () -> Unit,
     onPickArtists: () -> Unit,
     onDismissPickArtists: () -> Unit,
 ) {
     when (section) {
-        is OfflineNoticeSection -> OfflineNotice(section)
-        is HeroMixSection -> {
-            val title = mixTitle(section)
-            HeroMixCard(
-                section = section,
-                reduceMotion = reduceMotion,
-                onPlay = { actions.playSongs(title, section.songs, origin = HomeMixOrigin) },
-                onShuffle = { actions.playSongs(title, section.songs, shuffle = true, origin = HomeMixOrigin) },
-                compact = compactHero,
-                onStyle = onChooseStyle.takeIf { section.styleable },
-            )
-        }
-        is StartHereSection -> {
-            val chartTitle = section.chart?.title.orEmpty()
-            val deviceTitle = stringResource(R.string.home_start_device_title)
-            StartHereBlock(
-                section = section,
-                reduceMotion = reduceMotion,
-                onPlayChart = { songs, shuffle ->
-                    onNote(HomeInterest.Kind.Charts)
-                    actions.playSongItems(chartTitle, songs, shuffle = shuffle)
-                },
-                onPlayDevice = { shuffle -> actions.playSongs(deviceTitle, section.deviceSongs, shuffle = shuffle) },
-            )
-        }
+        is StartHereSection -> QuietStart(section.online)
+        is ShortcutsSection -> ShortcutsRow(section, actions)
+        is LatelySection -> RecentlyPlayedShelf(section, actions)
         is ContinueSection -> ContinueShelf(section, activeId, actions)
-        is LatelySection -> LatelyGrid(section, actions)
-        is RotationSection -> RotationList(section, activeId, isPlaying, actions)
-        is AroundNowSection -> AroundNowCard(section, activeId, isPlaying, actions)
-        is DiscoverSection -> DiscoverShelf(section, actions) { onNote(HomeInterest.Kind.Discovery) }
-        is DeepDiveSection -> DeepDiveBlock(section, actions)
-        is ChartsSection -> ChartsBlock(section, activeId, isPlaying, actions) { onNote(HomeInterest.Kind.Charts) }
-        is RediscoverSection -> RediscoverShelf(section, actions)
+        is RotationSection -> RotationGrid(section, activeId, isPlaying, actions)
+        is DiscoverSection -> DiscoverShelf(section, activeId, actions, onPlayedDiscovery)
+        is MoreLikeSection -> MoreLikeShelf(section, asList, activeId, isPlaying, actions, onPlayedDiscovery)
+        is DeepDiveSection -> MoreFromArtistShelf(section, actions)
         is SpotifySection -> SpotifyShelf(section, actions)
         is YouTubeSection -> YouTubeShelf(section, actions)
-        is AlbumsInProgressSection -> AlbumsInProgressShelf(section, actions)
-        is RecentlyAddedSection -> RecentlyAddedGrid(section, activeId, isPlaying, actions)
-        is ReadyOfflineSection -> ReadyOfflineCard(section, actions)
-        is TasteNoteSection -> TasteNoteCard(section) { route -> actions.navController.navigate(route) }
         PickArtistsSection -> PickArtistsCard(onPick = onPickArtists, onDismiss = onDismissPickArtists)
         else -> Unit
     }
@@ -424,7 +372,6 @@ internal fun LocalTile(item: LocalItem, actions: LiquidActions, width: androidx.
     )
 }
 
-/** Pull-to-refresh with the iOS spinner instead of Material's arrow disc. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun BoxScope.RefreshIndicator(state: PullToRefreshState, refreshing: Boolean) {
@@ -441,8 +388,7 @@ internal fun BoxScope.RefreshIndicator(state: PullToRefreshState, refreshing: Bo
                 scaleY = s
             },
     ) {
-        // Composed only while visible: the spinner is an infinite animation, and an
-        // invisible one still redraws the whole window sixty times a second.
+        // An invisible infinite spinner would still redraw the window sixty times a second.
         if (refreshing || state.distanceFraction > 0f) ActivityIndicator(size = 28.dp)
     }
 }

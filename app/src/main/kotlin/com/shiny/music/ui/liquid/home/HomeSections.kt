@@ -1,6 +1,5 @@
 package com.shiny.music.ui.liquid.home
 
-import android.text.format.DateUtils
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -8,7 +7,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -16,39 +14,24 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AutoAwesome
-import androidx.compose.material.icons.rounded.Casino
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.DownloadDone
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.PhoneAndroid
 import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
-import com.shiny.music.constants.CombineDownloadsWithDeviceKey
-import com.shiny.music.utils.rememberPreference
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -63,62 +46,43 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.music.innertube.models.AlbumItem
 import com.music.innertube.models.ArtistItem
 import com.music.innertube.models.PlaylistItem
 import com.shiny.music.R
+import com.shiny.music.constants.CombineDownloadsWithDeviceKey
 import com.shiny.music.db.entities.RecSurface
-import com.shiny.music.intelligence.NewToYouPick
-import com.shiny.music.playback.queues.PlaybackOrigin
 import com.shiny.music.db.entities.Song
-import com.shiny.music.spotifyimport.SpotifyImportRepository
 import com.shiny.music.home.AlbumTile
-import com.shiny.music.home.AlbumsInProgressSection
-import com.shiny.music.home.AroundNowSection
 import com.shiny.music.home.ArtistTile
-import com.shiny.music.home.AffinityTier
-import com.shiny.music.home.ChartMove
-import com.shiny.music.home.ChartsSection
 import com.shiny.music.home.ContinueKind
 import com.shiny.music.home.ContinueSection
-import com.shiny.music.home.Daypart
 import com.shiny.music.home.DeepDiveSection
 import com.shiny.music.home.DeviceTile
-import com.shiny.music.home.combineDeviceTiles
 import com.shiny.music.home.DiscoverPick
 import com.shiny.music.home.DiscoverSection
 import com.shiny.music.home.DownloadsTile
+import com.shiny.music.home.HomeLikedSongs
+import com.shiny.music.home.HomeSpotifyMix
 import com.shiny.music.home.LatelySection
 import com.shiny.music.home.LatelyTile
 import com.shiny.music.home.LikedTile
-import com.shiny.music.home.moveOf
-import com.shiny.music.home.HomeLikedSongs
-import com.shiny.music.home.HomeSpotifyMix
+import com.shiny.music.home.MoreLikeSection
+import com.shiny.music.home.ShortcutsSection
 import com.shiny.music.home.PinnedTile
 import com.shiny.music.home.PlaylistTile
-import com.shiny.music.home.ReadyOfflineSection
-import com.shiny.music.home.RecentlyAddedSection
-import com.shiny.music.home.RediscoverSection
 import com.shiny.music.home.RotationSection
 import com.shiny.music.home.SpotifySection
 import com.shiny.music.home.YouTubeSection
+import com.shiny.music.home.combineDeviceTiles
+import com.shiny.music.intelligence.NewToYouPick
+import com.shiny.music.playback.queues.PlaybackOrigin
+import com.shiny.music.spotifyimport.SpotifyImportRepository
 import com.shiny.music.ui.liquid.Artwork
-import com.shiny.music.ui.liquid.ButtonTone
-import com.shiny.music.ui.liquid.Hairline
 import com.shiny.music.ui.liquid.Liquid
 import com.shiny.music.ui.liquid.LiquidActions
-import com.shiny.music.ui.liquid.LiquidButton
-import com.shiny.music.ui.liquid.LiquidSegmentedControl
 import com.shiny.music.ui.liquid.LiquidTypography
 import com.shiny.music.ui.liquid.MediaTile
 import com.shiny.music.ui.liquid.PageMargin
@@ -133,10 +97,17 @@ import com.shiny.music.ui.liquid.settings.SpotifyGreen
 import com.shiny.music.ui.liquid.subtitleText
 import com.shiny.music.ui.theme.pressScale
 import com.shiny.music.ui.utils.resize
-import java.time.LocalDateTime
-import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
-import java.util.Locale
+import com.shiny.music.utils.rememberPreference
+
+private val TileWidth = 150.dp
+private val RecentWidth = 132.dp
+private val ArtistWidth = 108.dp
+private val AlbumWidth = 172.dp
+private val YouTubeMusicRed = Color(0xFFFF0033)
+private val RotationOrigin = PlaybackOrigin(RecSurface.HomeRotation)
+private val ContinueOrigin = PlaybackOrigin(RecSurface.HomeContinue)
+
+private fun Song.artistLine(): String = artists.joinToString { it.name }
 
 @Composable
 internal fun HomeHeader(
@@ -154,7 +125,6 @@ internal fun HomeHeader(
     )
 }
 
-/** The small tinted "Play" capsule a section header carries when the section is playable. */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun HeaderPlay(onClick: () -> Unit, label: String = stringResource(R.string.liquid_play)) {
@@ -178,76 +148,45 @@ internal fun HeaderPlay(onClick: () -> Unit, label: String = stringResource(R.st
 }
 
 @Composable
-private fun SubLabel(text: String) {
-    Text(
-        text = text,
-        style = LiquidTypography.footnote.copy(fontWeight = FontWeight.SemiBold),
-        color = Liquid.colors.secondaryLabel,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
-        modifier = Modifier.padding(start = PageMargin, end = PageMargin, top = 16.dp, bottom = 8.dp),
-    )
-}
-
-@Composable
-private fun ProgressLine(fraction: Float, modifier: Modifier = Modifier) {
-    val colors = Liquid.colors
-    Box(
-        modifier
-            .fillMaxWidth()
-            .height(3.dp)
-            .clip(CircleShape)
-            .background(colors.tertiaryFill),
-    ) {
-        Box(
-            Modifier
-                .fillMaxHeight()
-                .fillMaxWidth(fraction.coerceIn(0f, 1f))
-                .background(colors.label.copy(alpha = 0.7f)),
-        )
-    }
-}
-
-private val RotationOrigin = PlaybackOrigin(RecSurface.HomeRotation)
-private val AroundNowOrigin = PlaybackOrigin(RecSurface.HomeAroundNow)
-private val ContinueOrigin = PlaybackOrigin(RecSurface.HomeContinue)
-private val RediscoverOrigin = PlaybackOrigin(RecSurface.HomeRediscover)
-
-private fun Song.artistLine(): String = artists.joinToString { it.name }
-
-/** Month and year of a history timestamp (wall time stored as UTC). */
-private fun monthYear(wallMs: Long): String =
-    LocalDateTime.ofEpochSecond(wallMs / 1000, 0, ZoneOffset.UTC)
-        .format(DateTimeFormatter.ofPattern("MMM yyyy", Locale.getDefault()))
-
-/** [template] with its `%n$s` arguments set in [emphasis], the rest left as it is. */
-private fun emphasized(template: String, args: List<String>, emphasis: SpanStyle): AnnotatedString = buildAnnotatedString {
-    var last = 0
-    Regex("%(\\d)\\\$s").findAll(template).forEach { match ->
-        append(template.substring(last, match.range.first))
-        withStyle(emphasis) { append(args.getOrElse(match.groupValues[1].toInt() - 1) { "" }) }
-        last = match.range.last + 1
-    }
-    append(template.substring(last))
-}
-
-// ---------------------------------------------------------------------------------------
-// Lately — a two-column index of what was just playing
-// ---------------------------------------------------------------------------------------
-
-@Composable
-internal fun LatelyGrid(section: LatelySection, actions: LiquidActions) {
-    HomeHeader(stringResource(R.string.home_lately))
+internal fun RecentlyPlayedShelf(section: LatelySection, actions: LiquidActions) {
     val combine by rememberPreference(CombineDownloadsWithDeviceKey, false)
     val tiles = remember(section, combine) { if (combine) combineDeviceTiles(section.tiles) else section.tiles }
-    Column(
-        Modifier.padding(horizontal = PageMargin),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+    HomeHeader(
+        title = stringResource(R.string.liquid_recently_played),
+        onClick = { actions.navController.navigate("history") },
+    )
+    Shelf(items = tiles, key = { it.key }) { tile -> RecentTile(tile, actions) }
+}
+
+@Composable
+internal fun ShortcutsRow(section: ShortcutsSection, actions: LiquidActions) {
+    val combine by rememberPreference(CombineDownloadsWithDeviceKey, false)
+    val tiles = remember(section, combine) { if (combine) combineDeviceTiles(section.tiles) else section.tiles }
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(start = PageMargin, end = PageMargin, top = 18.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        tiles.chunked(2).forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                row.forEach { tile -> LatelyCell(tile, actions, Modifier.weight(1f)) }
-                if (row.size == 1) Spacer(Modifier.weight(1f))
+        tiles.forEach { tile ->
+            when (tile) {
+                is DownloadsTile -> ShortcutCell(
+                    title = stringResource(R.string.home_tile_downloads),
+                    count = tile.count,
+                    icon = Icons.Rounded.DownloadDone,
+                    alone = tiles.size == 1,
+                    onClick = { actions.navController.navigate("auto_playlist/downloaded") },
+                    modifier = Modifier.weight(1f),
+                )
+                is DeviceTile -> ShortcutCell(
+                    title = stringResource(R.string.home_tile_device),
+                    count = tile.count,
+                    icon = Icons.Rounded.PhoneAndroid,
+                    alone = tiles.size == 1,
+                    onClick = { actions.navController.navigate("local_songs") },
+                    modifier = Modifier.weight(1f),
+                )
+                else -> Unit
             }
         }
     }
@@ -255,103 +194,28 @@ internal fun LatelyGrid(section: LatelySection, actions: LiquidActions) {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun LatelyCell(tile: LatelyTile, actions: LiquidActions, modifier: Modifier) {
+private fun ShortcutCell(title: String, count: Int, icon: ImageVector, alone: Boolean, onClick: () -> Unit, modifier: Modifier) {
     val colors = Liquid.colors
-    val nav = actions.navController
-    val pinnedItem = remember(tile) { (tile as? PinnedTile)?.let { runCatching { it.item.toYTItem() }.getOrNull() } }
-    val title: String
-    val meta: String
-    var artwork: String? = null
-    var icon: ImageVector? = null
-    var circular = false
-    val onClick: () -> Unit
-    var onLongClick: (() -> Unit)? = null
-    when (tile) {
-        is PinnedTile -> {
-            title = tile.item.title
-            meta = listOfNotNull(stringResource(R.string.home_tile_pinned), tile.item.subtitle).joinToString(" · ")
-            artwork = tile.item.thumbnailUrl?.resize(144, 144)
-            circular = pinnedItem is ArtistItem
-            onClick = { pinnedItem?.let(actions::open) }
-            onLongClick = pinnedItem?.let { item -> { actions.menu(item) } }
-        }
-        is AlbumTile -> {
-            title = tile.album.title
-            meta = listOfNotNull(
-                stringResource(R.string.home_tile_album),
-                tile.album.artists.firstOrNull()?.name,
-            ).joinToString(" · ")
-            artwork = tile.album.thumbnailUrl?.resize(144, 144)
-            onClick = { actions.open(tile.album) }
-            onLongClick = { actions.menu(tile.album) }
-        }
-        is ArtistTile -> {
-            title = tile.artist.title
-            meta = stringResource(R.string.home_tile_artist) + " · " +
-                pluralStringResource(R.plurals.liquid_plays, tile.plays, tile.plays)
-            artwork = tile.image?.resize(144, 144)
-            circular = true
-            onClick = { actions.open(tile.artist) }
-            onLongClick = { actions.menu(tile.artist) }
-        }
-        is PlaylistTile -> {
-            title = tile.playlist.title
-            meta = stringResource(if (tile.pinned) R.string.home_tile_pinned else R.string.home_tile_playlist) + " · " +
-                pluralStringResource(R.plurals.home_songs, tile.playlist.songCount, tile.playlist.songCount)
-            artwork = tile.playlist.thumbnails.firstOrNull()
-            onClick = { actions.open(tile.playlist) }
-            onLongClick = { actions.menu(tile.playlist) }
-        }
-        is LikedTile -> {
-            title = stringResource(R.string.home_tile_liked)
-            meta = pluralStringResource(R.plurals.home_songs, tile.count, tile.count)
-            icon = Icons.Rounded.Favorite
-            onClick = { nav.navigate("auto_playlist/liked") }
-        }
-        is DownloadsTile -> {
-            title = stringResource(R.string.home_tile_downloads)
-            meta = pluralStringResource(R.plurals.home_songs, tile.count, tile.count)
-            icon = Icons.Rounded.DownloadDone
-            onClick = { nav.navigate("auto_playlist/downloaded") }
-        }
-        is DeviceTile -> {
-            title = stringResource(R.string.home_tile_device)
-            meta = pluralStringResource(R.plurals.home_songs, tile.count, tile.count)
-            icon = Icons.Rounded.PhoneAndroid
-            onClick = { nav.navigate("local_songs") }
-        }
-    }
-    val interaction = remember { MutableInteractionSource() }
     Row(
-        modifier = modifier
-            .heightIn(min = 60.dp)
-            .clip(RoundedCornerShape(12.dp))
+        modifier
+            .clip(RoundedCornerShape(10.dp))
             .combinedClickable(
-                interactionSource = interaction,
+                interactionSource = remember { MutableInteractionSource() },
                 indication = rememberRowHighlight(),
+                role = Role.Button,
                 onClick = onClick,
-                onLongClick = onLongClick,
             )
-            .semantics(mergeDescendants = true) {}
-            .padding(vertical = 4.dp),
+            .semantics(mergeDescendants = true) {},
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (icon != null) {
-            Box(
-                Modifier
-                    .size(52.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(colors.accent.copy(alpha = 0.14f)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(icon, null, tint = colors.accent, modifier = Modifier.size(24.dp))
-            }
-        } else {
-            Artwork(
-                model = artwork,
-                shape = if (circular) CircleShape else RoundedCornerShape(8.dp),
-                modifier = Modifier.size(52.dp),
-            )
+        Box(
+            Modifier
+                .size(44.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(colors.accent.copy(alpha = 0.14f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, null, tint = colors.accent, modifier = Modifier.size(22.dp))
         }
         Column(
             Modifier
@@ -359,87 +223,92 @@ private fun LatelyCell(tile: LatelyTile, actions: LiquidActions, modifier: Modif
                 .padding(start = 10.dp),
         ) {
             Text(title, style = LiquidTypography.subheadline.copy(fontWeight = FontWeight.SemiBold), color = colors.label, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(meta, style = LiquidTypography.caption1, color = colors.secondaryLabel, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(pluralStringResource(R.plurals.home_songs, count, count), style = LiquidTypography.caption1, color = colors.secondaryLabel, maxLines = 1)
         }
+        if (alone) Icon(Icons.Rounded.ChevronRight, null, tint = colors.tertiaryLabel, modifier = Modifier.size(24.dp))
     }
 }
 
-// ---------------------------------------------------------------------------------------
-// Your Rotation — ranked, vertical, with the numbers that ranked it
-// ---------------------------------------------------------------------------------------
+@Composable
+private fun RecentTile(tile: LatelyTile, actions: LiquidActions) {
+    val nav = actions.navController
+    when (tile) {
+        is PinnedTile -> {
+            val item = remember(tile) { runCatching { tile.item.toYTItem() }.getOrNull() }
+            MediaTile(
+                title = tile.item.title,
+                subtitle = tile.item.subtitle,
+                artwork = tile.item.thumbnailUrl?.resize(544, 544),
+                circular = item is ArtistItem,
+                width = if (item is ArtistItem) ArtistWidth else RecentWidth,
+                onClick = { item?.let(actions::open) },
+                onLongClick = item?.let { { actions.menu(it) } },
+            )
+        }
+        is AlbumTile -> MediaTile(
+            title = tile.album.title,
+            subtitle = tile.album.artists.firstOrNull()?.name,
+            artwork = tile.album.thumbnailUrl?.resize(544, 544),
+            width = RecentWidth,
+            onClick = { actions.open(tile.album) },
+            onLongClick = { actions.menu(tile.album) },
+        )
+        is ArtistTile -> MediaTile(
+            title = tile.artist.title,
+            subtitle = null,
+            artwork = tile.image?.resize(544, 544),
+            circular = true,
+            width = ArtistWidth,
+            onClick = { actions.open(tile.artist) },
+            onLongClick = { actions.menu(tile.artist) },
+        )
+        is PlaylistTile -> MediaTile(
+            title = tile.playlist.title,
+            subtitle = stringResource(R.string.home_tile_playlist),
+            artwork = tile.playlist.thumbnails.firstOrNull(),
+            width = RecentWidth,
+            onClick = { actions.open(tile.playlist) },
+            onLongClick = { actions.menu(tile.playlist) },
+        )
+        is LikedTile -> GlyphTile(
+            title = stringResource(R.string.home_tile_liked),
+            count = tile.count,
+            icon = Icons.Rounded.Favorite,
+            onClick = { nav.navigate("auto_playlist/liked") },
+        )
+        is DownloadsTile, is DeviceTile -> Unit
+    }
+}
 
 @Composable
-internal fun RotationList(
-    section: RotationSection,
-    activeId: String?,
-    isPlaying: Boolean,
-    actions: LiquidActions,
-) {
+private fun GlyphTile(title: String, count: Int, icon: ImageVector, onClick: () -> Unit) {
+    val accent = Liquid.colors.accent
+    MediaTile(
+        title = title,
+        subtitle = pluralStringResource(R.plurals.home_songs, count, count),
+        artwork = null,
+        width = TileWidth,
+        onClick = onClick,
+        badge = {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(artworkRadius(TileWidth)))
+                    .background(Brush.linearGradient(listOf(accent, accent.copy(alpha = 0.6f)))),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icon, null, tint = Color.White, modifier = Modifier.size(52.dp))
+            }
+        },
+    )
+}
+
+@Composable
+internal fun RotationGrid(section: RotationSection, activeId: String?, isPlaying: Boolean, actions: LiquidActions) {
     val title = stringResource(R.string.home_rotation)
     val songs = remember(section) { section.songs.map { it.song } }
-    HomeHeader(
-        title = title,
-        subtitle = stringResource(R.string.home_rotation_subtitle),
-        trailing = { HeaderPlay(onClick = { actions.playSongs(title, songs, origin = RotationOrigin) }) },
-    )
-    val shown = section.songs.take(6)
-    shown.forEachIndexed { index, ranked ->
-        val song = ranked.song
-        SongRow(
-            songId = song.id,
-            title = song.title,
-            subtitle = song.artistLine() + " · " + pluralStringResource(R.plurals.home_plays_month, ranked.monthPlays, ranked.monthPlays),
-            artwork = song.thumbnailUrl,
-            leadingRank = index + 1,
-            isActive = song.id == activeId,
-            isPlaying = isPlaying,
-            explicit = song.song.explicit,
-            onClick = {
-                if (song.id == activeId) actions.togglePlayPause() else actions.playSongs(title, songs, index, origin = RotationOrigin)
-            },
-            onLongClick = { actions.menu(song) },
-            onMore = { actions.menu(song) },
-            showSeparator = index < shown.lastIndex,
-            artworkSize = 48.dp,
-        )
-    }
-}
-
-// ---------------------------------------------------------------------------------------
-// Around this time — the listener's own pattern, and moods to choose from
-// ---------------------------------------------------------------------------------------
-
-@Composable
-private fun aroundTitle(daypart: Daypart) = stringResource(
-    when (daypart) {
-        Daypart.Morning -> R.string.home_around_morning
-        Daypart.Afternoon -> R.string.home_around_afternoon
-        Daypart.Evening -> R.string.home_around_evening
-        Daypart.Night -> R.string.home_around_night
-    }
-)
-
-/**
- * What the listener actually plays at this hour, as the songs themselves.
- *
- * This used to be a grey panel with a four-up mosaic and a sentence counting the songs —
- * a summary of a thing instead of the thing. The paged grid shows real titles the listener
- * recognises, which is both more useful and less like a dashboard tile.
- */
-@Composable
-internal fun AroundNowCard(
-    section: AroundNowSection,
-    activeId: String?,
-    isPlaying: Boolean,
-    actions: LiquidActions,
-) {
-    val title = aroundTitle(section.daypart)
-    HomeHeader(
-        title = title,
-        subtitle = daypartEyebrow(section.daypart),
-        trailing = { HeaderPlay(onClick = { actions.playSongs(title, section.songs, shuffle = true, origin = AroundNowOrigin) }, label = stringResource(R.string.liquid_shuffle)) },
-    )
-    SongGrid(items = section.songs.take(12), key = { it.id }, rows = 3) { song, index, modifier, last ->
+    HomeHeader(title)
+    SongGrid(items = songs, key = { it.id }, rows = 3) { song, index, modifier, last ->
         SongRow(
             songId = song.id,
             title = song.title,
@@ -449,7 +318,7 @@ internal fun AroundNowCard(
             isPlaying = isPlaying,
             explicit = song.song.explicit,
             onClick = {
-                if (song.id == activeId) actions.togglePlayPause() else actions.playSongs(title, section.songs, index, origin = AroundNowOrigin)
+                if (song.id == activeId) actions.togglePlayPause() else actions.playSongs(title, songs, index, origin = RotationOrigin)
             },
             onLongClick = { actions.menu(song) },
             onMore = { actions.menu(song) },
@@ -461,43 +330,22 @@ internal fun AroundNowCard(
     }
 }
 
-// ---------------------------------------------------------------------------------------
-// Keep listening — the thread out of the last thing played
-// ---------------------------------------------------------------------------------------
-
-/**
- * The first personal shelf any listener ever sees, and the one that needs the least to
- * exist: one counted play.
- *
- * Its heading is written from what the play actually supports. An artist heard once gets
- * "More from <artist>", which is a true statement about a song that was played, not a
- * claim about taste. Only when the same artist has been come back to does the wording
- * step up ([AffinityTier]), and it never reaches "artists you love" from a single listen.
- * The whole section retires on its own once the rotation has something better to say.
- */
 @Composable
 internal fun ContinueShelf(section: ContinueSection, activeId: String?, actions: LiquidActions) {
     val name = section.throughName
-    val title = when {
-        section.kind == ContinueKind.Artist && name != null -> when (section.tier) {
-            AffinityTier.Favourite -> stringResource(R.string.home_continue_favourite, name)
-            AffinityTier.Warming -> stringResource(R.string.home_continue_warming, name)
-            AffinityTier.Exploring -> stringResource(R.string.home_continue_artist, name)
-        }
-        else -> stringResource(R.string.home_continue_related, section.seed.title)
+    val title = if (section.kind == ContinueKind.Artist && name != null) {
+        stringResource(R.string.home_continue_artist, name)
+    } else {
+        stringResource(R.string.home_continue_related, section.seed.title)
     }
-    HomeHeader(
-        title = title,
-        subtitle = stringResource(R.string.home_continue_subtitle, section.seed.title),
-        trailing = { HeaderPlay(onClick = { actions.playSongs(title, section.songs) }) },
-    )
+    HomeHeader(title)
     Shelf(items = section.songs, key = { it.id }) { song ->
         MediaTile(
             songId = song.id,
             title = song.title,
             subtitle = song.artistLine(),
             artwork = song.thumbnailUrl?.resize(544, 544),
-            width = 148.dp,
+            width = TileWidth,
             titleColor = if (song.id == activeId) Liquid.colors.accent else Liquid.colors.label,
             onClick = { actions.playSongs(title, section.songs, section.songs.indexOf(song), origin = ContinueOrigin) },
             onLongClick = { actions.menu(song) },
@@ -505,50 +353,85 @@ internal fun ContinueShelf(section: ContinueSection, activeId: String?, actions:
     }
 }
 
-// ---------------------------------------------------------------------------------------
-// Discover — never played, each with its reason
-// ---------------------------------------------------------------------------------------
+internal fun discoverOrigin(picks: List<DiscoverPick>) = PlaybackOrigin(
+    RecSurface.HomeDiscover,
+    picks.mapNotNull { pick -> pick.source?.let { pick.song.id to it.name } }.toMap(),
+)
 
-/**
- * Never-played songs, each tied to one the listener has.
- *
- * The heading is written from the data rather than stamped on it: when most of the shelf
- * came from one song or one artist it says so by name, and when the seeds are spread
- * across a whole history it falls back to the plain editorial title. Nothing here reads
- * "Because you listened to X" over a shelf that has nothing to do with X.
- */
 @Composable
-internal fun DiscoverShelf(section: DiscoverSection, actions: LiquidActions, onPlayed: () -> Unit) {
-    val title = when {
-        section.lead != null -> stringResource(R.string.home_discover_like_song, section.lead!!.title)
-        section.leadArtist != null -> stringResource(R.string.home_discover_like_artist, section.leadArtist!!)
-        else -> stringResource(R.string.home_discover)
+internal fun DiscoverShelf(section: DiscoverSection, activeId: String?, actions: LiquidActions, onPlayed: () -> Unit) {
+    PicksShelf(stringResource(R.string.home_discover), section.picks, activeId, actions, onPlayed)
+}
+
+@Composable
+internal fun MoreLikeShelf(
+    section: MoreLikeSection,
+    asList: Boolean,
+    activeId: String?,
+    isPlaying: Boolean,
+    actions: LiquidActions,
+    onPlayed: () -> Unit,
+) {
+    val title = stringResource(R.string.home_continue_related, section.artist)
+    if (!asList) {
+        PicksShelf(title, section.picks, activeId, actions, onPlayed, width = RecentWidth)
+        return
     }
     val songs = remember(section) { section.picks.map { it.song } }
-    val origin = remember(section) {
-        PlaybackOrigin(
-            RecSurface.HomeDiscover,
-            section.picks.mapNotNull { pick -> pick.source?.let { pick.song.id to it.name } }.toMap(),
+    val origin = remember(section) { discoverOrigin(section.picks) }
+    HomeHeader(title)
+    SongGrid(items = songs, key = { it.id }, rows = 3) { song, index, modifier, last ->
+        SongRow(
+            songId = song.id,
+            title = song.title,
+            subtitle = song.artistLine(),
+            artwork = song.thumbnailUrl,
+            isActive = song.id == activeId,
+            isPlaying = isPlaying,
+            explicit = song.song.explicit,
+            onClick = {
+                if (song.id == activeId) {
+                    actions.togglePlayPause()
+                } else {
+                    onPlayed()
+                    actions.playSongs(title, songs, index, origin = origin)
+                }
+            },
+            onLongClick = { actions.menu(song) },
+            onMore = { actions.menu(song) },
+            showSeparator = !last,
+            startPadding = 0.dp,
+            artworkSize = 48.dp,
+            modifier = modifier,
         )
     }
-    HomeHeader(
-        title = title,
-        subtitle = stringResource(R.string.home_discover_subtitle),
-        trailing = {
-            HeaderPlay(label = stringResource(R.string.home_play_all), onClick = {
-                onPlayed()
-                actions.playSongs(title, songs, origin = origin)
-            })
-        },
-    )
-    Shelf(items = section.picks, key = { it.song.id }) { pick ->
-        DiscoverTile(
-            pick = pick,
+}
+
+@Composable
+private fun PicksShelf(
+    title: String,
+    picks: List<DiscoverPick>,
+    activeId: String?,
+    actions: LiquidActions,
+    onPlayed: () -> Unit,
+    width: androidx.compose.ui.unit.Dp = TileWidth,
+) {
+    val songs = remember(picks) { picks.map { it.song } }
+    val origin = remember(picks) { discoverOrigin(picks) }
+    HomeHeader(title)
+    Shelf(items = songs, key = { it.id }) { song ->
+        MediaTile(
+            songId = song.id,
+            title = song.title,
+            subtitle = song.artistLine(),
+            artwork = song.thumbnailUrl?.resize(544, 544),
+            width = width,
+            titleColor = if (song.id == activeId) Liquid.colors.accent else Liquid.colors.label,
             onClick = {
                 onPlayed()
-                actions.playSongs(title, songs, section.picks.indexOf(pick), origin = origin)
+                actions.playSongs(title, songs, songs.indexOf(song), origin = origin)
             },
-            onLongClick = { actions.menu(pick.song) },
+            onLongClick = { actions.menu(song) },
         )
     }
 }
@@ -611,230 +494,44 @@ private fun DiscoverTile(pick: DiscoverPick, onClick: () -> Unit, onLongClick: (
     }
 }
 
-// ---------------------------------------------------------------------------------------
-// Go deeper — one of the listener's artists, opened up
-// ---------------------------------------------------------------------------------------
+@Composable
+internal fun MoreFromArtistShelf(section: DeepDiveSection, actions: LiquidActions) {
+    val digest = section.digest
+    if (section.albums.isNotEmpty()) {
+        ArtistHeader(
+            title = stringResource(R.string.home_continue_artist, digest.name),
+            photo = digest.thumbnail,
+            onClick = { actions.navController.navigate("artist/${digest.artistId}") },
+        )
+        Shelf(items = section.albums, key = { it.id }) { album -> YouTubeTile(album, actions, width = AlbumWidth) }
+    }
+    if (section.related.size >= 3) {
+        HomeHeader(stringResource(R.string.home_similar_to, digest.name))
+        Shelf(items = section.related, key = { it.id }) { artist -> YouTubeTile(artist, actions, width = ArtistWidth) }
+    }
+}
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-internal fun DeepDiveBlock(section: DeepDiveSection, actions: LiquidActions) {
+private fun ArtistHeader(title: String, photo: String?, onClick: () -> Unit) {
     val colors = Liquid.colors
-    val digest = section.digest
     val interaction = remember { MutableInteractionSource() }
     Row(
         Modifier
-            .padding(start = PageMargin, end = PageMargin - 4.dp, top = 28.dp, bottom = 4.dp)
+            .padding(start = PageMargin, end = PageMargin - 4.dp, top = 28.dp, bottom = 12.dp)
             .fillMaxWidth()
             .pressScale(interaction, 0.98f)
-            .combinedClickable(interactionSource = interaction, indication = null) {
-                actions.navController.navigate("artist/${digest.artistId}")
-            }
+            .combinedClickable(interactionSource = interaction, indication = null, onClick = onClick)
             .semantics(mergeDescendants = true) { heading() },
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Artwork(model = digest.thumbnail?.resize(240, 240), shape = CircleShape, modifier = Modifier.size(58.dp))
-        Column(
-            Modifier
-                .weight(1f)
-                .padding(start = 14.dp),
-        ) {
-            Eyebrow(stringResource(R.string.home_deep_eyebrow), colors.accent)
-            Text(digest.name, style = LiquidTypography.title2, color = colors.label, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(
-                pluralStringResource(
-                    if (section.fromLibrary) R.plurals.home_deep_meta_saved else R.plurals.home_deep_meta,
-                    section.songsHeard,
-                    section.songsHeard,
-                ),
-                style = LiquidTypography.footnote,
-                color = colors.secondaryLabel,
-                maxLines = 1,
-            )
-        }
+        Artwork(model = photo?.resize(160, 160), shape = CircleShape, modifier = Modifier.size(48.dp))
+        Spacer(Modifier.width(12.dp))
+        Text(title, style = LiquidTypography.title2, color = colors.label, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
         Icon(Icons.Rounded.ChevronRight, null, tint = colors.secondaryLabel, modifier = Modifier.size(26.dp))
     }
-    if (section.albums.isNotEmpty()) {
-        SubLabel(stringResource(R.string.home_deep_albums))
-        Shelf(items = section.albums, key = { it.id }) { album -> YouTubeTile(album, actions, width = 140.dp) }
-    }
-    if (section.related.isNotEmpty()) {
-        SubLabel(stringResource(R.string.home_deep_related, digest.name))
-        Shelf(items = section.related, key = { it.id }) { artist -> YouTubeTile(artist, actions, width = 104.dp) }
-    }
 }
 
-// ---------------------------------------------------------------------------------------
-// The charts — the source's own ranking, named as the source names it
-// ---------------------------------------------------------------------------------------
-
-/**
- * The charts, as a chart rather than as an API response.
- *
- * Three things do the work. The rank is set in the display cut at 22pt and right-aligned,
- * so the numbers form a real column and the top three carry full-strength label colour
- * while the rest recede — the page reads as a ranking at a glance, before any title is
- * read. The movement flag beside each row is Shiny's own: YouTube publishes today's chart
- * and nothing else, so a climb or a fall can only come from comparing two of our own
- * fetches, and it appears only from the second day onwards ([ChartMove.Unknown] draws
- * nothing rather than inventing a "new"). And the source is named in full, verbatim,
- * with its age — this is YouTube's ranking, presented, not Shiny's ranking, implied.
- */
-@Composable
-internal fun ChartsBlock(
-    section: ChartsSection,
-    activeId: String?,
-    isPlaying: Boolean,
-    actions: LiquidActions,
-    onOpenChart: () -> Unit,
-) {
-    val colors = Liquid.colors
-    var selected by rememberSaveable { mutableIntStateOf(0) }
-    val index = selected.coerceIn(0, section.charts.lastIndex)
-    val chart = section.charts[index]
-    val now = System.currentTimeMillis()
-    val refreshed = if (now - section.refreshedAt < 60_000) {
-        stringResource(R.string.home_just_now)
-    } else {
-        DateUtils.getRelativeTimeSpanString(section.refreshedAt, now, DateUtils.MINUTE_IN_MILLIS).toString()
-            .let { if (Locale.getDefault().language == "en") it.replaceFirstChar { c -> c.lowercase() } else it }
-    }
-    HomeHeader(stringResource(R.string.home_charts), subtitle = stringResource(R.string.home_charts_source, refreshed))
-    if (section.charts.size > 1) {
-        val global = stringResource(R.string.home_charts_global)
-        LiquidSegmentedControl(
-            items = section.charts.map { c ->
-                if (c.scope == "ZZ") global
-                else runCatching { Locale.Builder().setRegion(c.scope).build().displayCountry }.getOrNull()?.ifBlank { null } ?: c.scope
-            },
-            selectedIndex = index,
-            onSelect = {
-                selected = it
-                onOpenChart()
-            },
-            modifier = Modifier
-                .padding(horizontal = PageMargin)
-                .padding(bottom = 10.dp)
-                .fillMaxWidth(),
-        )
-    }
-    Eyebrow(
-        text = chart.title,
-        color = colors.tertiaryLabel,
-        modifier = Modifier.padding(horizontal = PageMargin, vertical = 6.dp),
-    )
-    val shown = remember(chart) { chart.songs.take(5) }
-    shown.forEachIndexed { i, song ->
-        val position = song.chartPosition ?: (i + 1)
-        SongRow(
-            songId = song.id,
-            title = song.title,
-            subtitle = song.artists.joinToString { it.name },
-            artwork = song.thumbnail,
-            leadingRank = position,
-            leadingRankStyle = ChartRankStyle,
-            leadingRankColor = if (position <= 3) colors.label else colors.secondaryLabel,
-            isActive = song.id == activeId,
-            isPlaying = isPlaying,
-            explicit = song.explicit,
-            trailing = { ChartMovement(chart.moveOf(song.id, position)) },
-            onClick = {
-                if (song.id == activeId) actions.togglePlayPause() else actions.playSongItems(chart.title, chart.songs, i)
-            },
-            onLongClick = { actions.menu(song) },
-            onMore = { actions.menu(song) },
-            showSeparator = i < shown.lastIndex,
-            artworkSize = 52.dp,
-        )
-    }
-    SeeAllRow(stringResource(R.string.home_charts_full)) {
-        onOpenChart()
-        actions.navController.navigate("online_playlist/${chart.playlistId}")
-    }
-}
-
-/** The chart rank: display cut, right-aligned, so the numerals stack into a column. */
-private val ChartRankStyle = LiquidTypography.title2.copy(fontSize = 21.sp, textAlign = TextAlign.End)
-
-/**
- * How far a song moved since the last chart Shiny held. Nothing is drawn until there is a
- * previous day to compare against, and nothing is drawn for a song that has not moved —
- * an unbroken column of "–" is noise, and the absence of a flag already says "steady".
- */
-@Composable
-private fun ChartMovement(move: ChartMove) {
-    val colors = Liquid.colors
-    val (glyph, places, tint) = when (move) {
-        is ChartMove.Up -> Triple("▲", move.places.toString(), colors.green)
-        is ChartMove.Down -> Triple("▼", move.places.toString(), colors.gray)
-        ChartMove.New -> Triple(null, stringResource(R.string.home_chart_new), colors.accent)
-        ChartMove.Steady, ChartMove.Unknown -> return
-    }
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(start = 6.dp, end = 2.dp),
-    ) {
-        if (glyph != null) {
-            Text(glyph, style = LiquidTypography.caption2.copy(fontSize = 8.sp), color = tint)
-            Spacer(Modifier.width(2.dp))
-        }
-        Text(
-            text = places,
-            style = LiquidTypography.caption2.copy(fontWeight = FontWeight.Bold),
-            color = tint,
-            maxLines = 1,
-        )
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun SeeAllRow(text: String, onClick: () -> Unit) {
-    val colors = Liquid.colors
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .heightIn(min = 48.dp)
-            .combinedClickable(indication = rememberRowHighlight(), interactionSource = remember { MutableInteractionSource() }, role = Role.Button, onClick = onClick)
-            .padding(horizontal = PageMargin),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(text, style = LiquidTypography.subheadline.copy(fontWeight = FontWeight.SemiBold), color = colors.accent, modifier = Modifier.weight(1f))
-        Icon(Icons.Rounded.ChevronRight, null, tint = colors.accent, modifier = Modifier.size(22.dp))
-    }
-}
-
-@Composable
-internal fun RediscoverShelf(section: RediscoverSection, actions: LiquidActions) {
-    val title = stringResource(R.string.home_rediscover)
-    val songs = remember(section) { section.songs.map { it.song } }
-    HomeHeader(
-        title = title,
-        subtitle = stringResource(R.string.home_rediscover_subtitle),
-        trailing = { HeaderPlay(onClick = { actions.playSongs(title, songs) }) },
-    )
-    Shelf(items = section.songs, key = { it.song.id }) { ranked ->
-        MediaTile(
-            songId = ranked.song.id,
-            title = ranked.song.title,
-            subtitle = stringResource(R.string.home_last_played, monthYear(ranked.lastPlayed)),
-            artwork = ranked.song.thumbnailUrl?.resize(544, 544),
-            width = 140.dp,
-            onClick = { actions.playSongs(title, songs, songs.indexOf(ranked.song), origin = RediscoverOrigin) },
-            onLongClick = { actions.menu(ranked.song) },
-        )
-    }
-}
-
-// ---------------------------------------------------------------------------------------
-// The listener's services — Spotify and YouTube Music, each in a row of its own
-// ---------------------------------------------------------------------------------------
-
-/** YouTube's red, as the sign-in header draws it. */
-private val YouTubeMusicRed = Color(0xFFFF0033)
-
-private val ServiceTileWidth = 150.dp
-
-/** One tile of a service's row: its liked songs first, then that service's own mixes. */
 private sealed interface ServiceTile {
     val key: String
 
@@ -851,11 +548,6 @@ private sealed interface ServiceTile {
     }
 }
 
-/**
- * The listener's Spotify: their Liked Songs, then the mixes Spotify made for them, each opening
- * the library playlist its songs were matched into. Only Spotify's music — YouTube Music has its
- * own row. Spotify's covers are its own URLs, not Google's, so they are shown as served.
- */
 @Composable
 internal fun SpotifyShelf(section: SpotifySection, actions: LiquidActions) {
     val tiles = remember(section) {
@@ -863,7 +555,6 @@ internal fun SpotifyShelf(section: SpotifySection, actions: LiquidActions) {
     }
     HomeHeader(
         title = stringResource(R.string.home_spotify_title),
-        subtitle = stringResource(R.string.home_spotify_subtitle),
         trailing = { SpotifyMark() },
     )
     Shelf(items = tiles, key = { it.key }) { tile ->
@@ -873,9 +564,9 @@ internal fun SpotifyShelf(section: SpotifySection, actions: LiquidActions) {
             }
             is ServiceTile.SpotifyMix -> MediaTile(
                 title = tile.mix.name,
-                subtitle = tile.mix.description ?: pluralStringResource(R.plurals.n_song, tile.mix.songCount, tile.mix.songCount),
+                subtitle = pluralStringResource(R.plurals.n_song, tile.mix.songCount, tile.mix.songCount),
                 artwork = tile.mix.imageUrl,
-                width = ServiceTileWidth,
+                width = TileWidth,
                 onClick = { actions.navController.navigate("local_playlist/${tile.mix.localPlaylistId}") },
             )
             is ServiceTile.YouTubeMix -> Unit
@@ -883,10 +574,6 @@ internal fun SpotifyShelf(section: SpotifySection, actions: LiquidActions) {
     }
 }
 
-/**
- * The signed-in YouTube Music account: its liked songs, then the mixes YouTube Music made for
- * it (Supermix, Discover Mix...). Only YouTube Music's music — Spotify has its own row.
- */
 @Composable
 internal fun YouTubeShelf(section: YouTubeSection, actions: LiquidActions) {
     val tiles = remember(section) {
@@ -894,7 +581,6 @@ internal fun YouTubeShelf(section: YouTubeSection, actions: LiquidActions) {
     }
     HomeHeader(
         title = stringResource(R.string.home_youtube_title),
-        subtitle = stringResource(R.string.home_youtube_subtitle),
         trailing = { YouTubeMark() },
     )
     Shelf(items = tiles, key = { it.key }) { tile ->
@@ -906,7 +592,7 @@ internal fun YouTubeShelf(section: YouTubeSection, actions: LiquidActions) {
                 title = tile.playlist.title,
                 subtitle = tile.playlist.subtitleText(),
                 artwork = tile.playlist.thumbnail?.resize(544, 544),
-                width = ServiceTileWidth,
+                width = TileWidth,
                 onClick = { actions.open(tile.playlist) },
                 onLongClick = { actions.menu(tile.playlist) },
             )
@@ -915,17 +601,13 @@ internal fun YouTubeShelf(section: YouTubeSection, actions: LiquidActions) {
     }
 }
 
-/**
- * A service's liked songs as the first sleeve of its row: the four latest covers, and a heart
- * in the service's own colour so the two rows' Liked Songs are never mistaken for each other.
- */
 @Composable
 private fun LikedSongsTile(liked: HomeLikedSongs, tint: Color, onClick: () -> Unit) {
     MediaTile(
         title = stringResource(R.string.home_tile_liked),
         subtitle = pluralStringResource(R.plurals.home_songs, liked.count, liked.count),
         artwork = null,
-        width = ServiceTileWidth,
+        width = TileWidth,
         onClick = onClick,
         badge = {
             CoverMosaic(liked.covers, tint)
@@ -945,13 +627,12 @@ private fun LikedSongsTile(liked: HomeLikedSongs, tint: Color, onClick: () -> Un
     )
 }
 
-/** Four covers two by two; with fewer, the newest alone; with none, the service's colour. */
 @Composable
 private fun CoverMosaic(covers: List<String>, tint: Color) {
     Box(
         Modifier
             .fillMaxSize()
-            .clip(RoundedCornerShape(artworkRadius(ServiceTileWidth)))
+            .clip(RoundedCornerShape(artworkRadius(TileWidth)))
             .background(Brush.linearGradient(listOf(tint.copy(alpha = 0.85f), tint.copy(alpha = 0.45f)))),
     ) {
         when {
@@ -979,7 +660,6 @@ private fun CoverMosaic(covers: List<String>, tint: Color) {
     }
 }
 
-/** Spotify's own mark in its green, beside the row's title. */
 @Composable
 private fun SpotifyMark() {
     Icon(
@@ -990,7 +670,6 @@ private fun SpotifyMark() {
     )
 }
 
-/** YouTube Music's red disc and play glyph, as the sign-in page draws it. */
 @Composable
 private fun YouTubeMark() {
     Box(
@@ -1003,135 +682,3 @@ private fun YouTubeMark() {
         Icon(painterResource(R.drawable.play), null, tint = Color.White, modifier = Modifier.size(14.dp))
     }
 }
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-internal fun AlbumsInProgressShelf(section: AlbumsInProgressSection, actions: LiquidActions) {
-    val colors = Liquid.colors
-    HomeHeader(stringResource(R.string.home_albums_started))
-    Shelf(items = section.albums, key = { it.album.id }) { progress ->
-        val interaction = remember { MutableInteractionSource() }
-        Column(
-            Modifier
-                .width(140.dp)
-                .pressScale(interaction, 0.965f)
-                .combinedClickable(
-                    interactionSource = interaction,
-                    indication = null,
-                    onClick = { actions.open(progress.album) },
-                    onLongClick = { actions.menu(progress.album) },
-                )
-                .semantics(mergeDescendants = true) {},
-        ) {
-            Artwork(
-                model = progress.album.thumbnailUrl?.resize(544, 544),
-                shape = RoundedCornerShape(artworkRadius(140.dp)),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(1f),
-            )
-            Spacer(Modifier.height(8.dp))
-            ProgressLine(progress.heard.toFloat() / progress.total)
-            Spacer(Modifier.height(6.dp))
-            Text(progress.album.title, style = LiquidTypography.footnote.copy(fontWeight = FontWeight.Medium), color = colors.label, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(
-                stringResource(R.string.home_album_progress, progress.heard, progress.total),
-                style = LiquidTypography.footnote,
-                color = colors.secondaryLabel,
-                maxLines = 1,
-            )
-        }
-    }
-}
-
-@Composable
-internal fun RecentlyAddedGrid(section: RecentlyAddedSection, activeId: String?, isPlaying: Boolean, actions: LiquidActions) {
-    val title = stringResource(R.string.liquid_recently_added)
-    HomeHeader(
-        title = title,
-        subtitle = stringResource(R.string.home_recently_added_subtitle),
-        trailing = { HeaderPlay(onClick = { actions.playSongs(title, section.songs) }) },
-    )
-    SongGrid(items = section.songs, key = { it.id }, rows = 3) { song, index, modifier, last ->
-        SongRow(
-            songId = song.id,
-            title = song.title,
-            subtitle = song.artistLine(),
-            artwork = song.thumbnailUrl,
-            isActive = song.id == activeId,
-            isPlaying = isPlaying,
-            explicit = song.song.explicit,
-            onClick = { if (song.id == activeId) actions.togglePlayPause() else actions.playSongs(title, section.songs, index) },
-            onLongClick = { actions.menu(song) },
-            onMore = { actions.menu(song) },
-            showSeparator = !last,
-            startPadding = 0.dp,
-            artworkSize = 48.dp,
-            modifier = modifier,
-        )
-    }
-}
-
-/**
- * Everything that plays with no network at all.
- *
- * The sleeves stand in a crate across the page keyline and the sentence sits under them —
- * no panel, because the shelf above and the shelf below are already the page's rhythm and
- * a grey rectangle here just interrupts it.
- */
-@Composable
-internal fun ReadyOfflineCard(section: ReadyOfflineSection, actions: LiquidActions) {
-    val colors = Liquid.colors
-    val title = stringResource(R.string.home_ready_offline)
-    val total = section.localSongs + section.downloadedSongs
-    HomeHeader(
-        title = title,
-        subtitle = stringResource(R.string.home_ready_offline_split, section.downloadedSongs, section.localSongs),
-        trailing = { HeaderPlay(onClick = { actions.playSongs(title, section.songs) }) },
-    )
-    Column(Modifier.padding(horizontal = PageMargin)) {
-        CoverStrip(section.songs.mapNotNull { it.thumbnailUrl }.distinct().take(7))
-        Spacer(Modifier.height(14.dp))
-        Text(
-            text = pluralStringResource(R.plurals.home_ready_offline_body, total, total),
-            style = LiquidTypography.headline,
-            color = colors.label,
-        )
-        Spacer(Modifier.height(12.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            LiquidButton(
-                text = stringResource(R.string.liquid_play),
-                icon = Icons.Rounded.PlayArrow,
-                tone = ButtonTone.Filled,
-                height = 40.dp,
-                onClick = { actions.playSongs(title, section.songs) },
-            )
-            LiquidButton(
-                text = stringResource(R.string.liquid_shuffle),
-                icon = Icons.Rounded.Shuffle,
-                tone = ButtonTone.Tinted,
-                height = 40.dp,
-                onClick = { actions.playSongs(title, section.songs, shuffle = true) },
-            )
-        }
-    }
-}
-
-/** Covers overlapping in a row, like sleeves standing in a crate. */
-@Composable
-private fun CoverStrip(covers: List<String>) {
-    val size = 44.dp
-    Box(Modifier.height(size)) {
-        covers.forEachIndexed { i, cover ->
-            Artwork(
-                model = cover.resize(144, 144),
-                shape = RoundedCornerShape(8.dp),
-                modifier = Modifier
-                    .offset(x = size * 0.72f * i)
-                    .size(size),
-            )
-        }
-    }
-}
-
-// ---------------------------------------------------------------------------------------

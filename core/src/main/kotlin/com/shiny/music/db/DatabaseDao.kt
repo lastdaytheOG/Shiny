@@ -1888,17 +1888,40 @@ interface DatabaseDao {
                EXISTS (SELECT 1 FROM playlist_song_map psm
                        WHERE psm.songId = s.id AND psm.playlistId LIKE 'SPOTIFY_MIX_%') AS inMix,
                EXISTS (SELECT 1 FROM playlist_song_map psm
-                       WHERE psm.songId = s.id AND psm.playlistId LIKE 'SPOTIFY_TOP_%') AS inTop
+                       WHERE psm.songId = s.id AND psm.playlistId LIKE 'SPOTIFY_TOP_%') AS inTop,
+               EXISTS (SELECT 1 FROM playlist_song_map psm
+                       WHERE psm.songId = s.id AND psm.playlistId = 'SPOTIFY_LIKED_SONGS') AS spotifyLiked
         FROM song s
         WHERE s.isLocal = 0
           AND (s.liked = 1 OR s.inLibrary IS NOT NULL OR s.id IN (
                 SELECT psm.songId FROM playlist_song_map psm JOIN playlist p ON p.id = psm.playlistId
-                WHERE p.bookmarkedAt IS NOT NULL OR p.id LIKE 'SPOTIFY_MIX_%' OR p.id LIKE 'SPOTIFY_TOP_%'))
+                WHERE p.bookmarkedAt IS NOT NULL OR p.id LIKE 'SPOTIFY_MIX_%' OR p.id LIKE 'SPOTIFY_TOP_%'
+                   OR p.id = 'SPOTIFY_LIKED_SONGS'))
         ORDER BY s.liked DESC, COALESCE(s.likedDate, s.inLibrary) DESC
         LIMIT :limit
         """
     )
     suspend fun homeSavedSongs(limit: Int): List<HomeSavedSong>
+
+    @Query(
+        """
+        SELECT s.id AS songId,
+               s.liked AS liked,
+               (s.inLibrary IS NOT NULL) AS inLibrary,
+               EXISTS (SELECT 1 FROM playlist_song_map other JOIN playlist p ON p.id = other.playlistId
+                       WHERE other.songId = s.id AND p.bookmarkedAt IS NOT NULL) AS inPlaylist,
+               EXISTS (SELECT 1 FROM playlist_song_map other
+                       WHERE other.songId = s.id AND other.playlistId LIKE 'SPOTIFY_MIX_%') AS inMix,
+               EXISTS (SELECT 1 FROM playlist_song_map other
+                       WHERE other.songId = s.id AND other.playlistId LIKE 'SPOTIFY_TOP_%') AS inTop,
+               1 AS spotifyLiked
+        FROM playlist_song_map psm JOIN song s ON s.id = psm.songId
+        WHERE psm.playlistId = 'SPOTIFY_LIKED_SONGS' AND s.isLocal = 0
+        ORDER BY psm.position
+        LIMIT :limit
+        """
+    )
+    suspend fun homeSpotifyLikedSongs(limit: Int): List<HomeSavedSong>
 
     /** Artists across everything the listener chose, device files and downloads included. */
     @Query(
@@ -1906,16 +1929,17 @@ interface DatabaseDao {
         SELECT sam.artistId AS artistId,
                a.name AS name,
                COUNT(DISTINCT s.id) AS songs,
-               SUM(CASE WHEN s.liked = 1 THEN 1 ELSE 0 END) AS liked
+               SUM(CASE WHEN s.liked = 1 OR s.id IN (SELECT songId FROM playlist_song_map WHERE playlistId = 'SPOTIFY_LIKED_SONGS') THEN 1 ELSE 0 END) AS liked
         FROM song s
         JOIN song_artist_map sam ON sam.songId = s.id
         JOIN artist a ON a.id = sam.artistId
         WHERE s.liked = 1 OR s.inLibrary IS NOT NULL OR s.isLocal = 1 OR s.isDownloaded = 1
            OR s.id IN (
                 SELECT psm.songId FROM playlist_song_map psm JOIN playlist p ON p.id = psm.playlistId
-                WHERE p.bookmarkedAt IS NOT NULL OR p.id LIKE 'SPOTIFY_MIX_%' OR p.id LIKE 'SPOTIFY_TOP_%')
+                WHERE p.bookmarkedAt IS NOT NULL OR p.id LIKE 'SPOTIFY_MIX_%' OR p.id LIKE 'SPOTIFY_TOP_%'
+                   OR p.id = 'SPOTIFY_LIKED_SONGS')
         GROUP BY sam.artistId
-        ORDER BY SUM(CASE WHEN s.liked = 1 THEN 1 ELSE 0 END) * 2 + COUNT(DISTINCT s.id) DESC
+        ORDER BY liked * 2 + COUNT(DISTINCT s.id) DESC
         LIMIT :limit
         """
     )

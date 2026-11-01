@@ -63,7 +63,11 @@ class HomeSignalsLoader(
         // What the listener chose without playing: the taste Shiny can read on day one.
         // Read before the first-launch check, since a Spotify or YouTube import can bring
         // playlists and nothing else.
-        val saved = database.homeSavedSongs(limit = SAVED_SEED_POOL)
+        val saved = HomeRanking.mergeSaved(
+            database.homeSavedSongs(limit = SAVED_SEED_POOL),
+            database.homeSpotifyLikedSongs(limit = SAVED_SEED_POOL),
+            SAVED_SEED_POOL,
+        )
 
         val snapshot = pendingSnapshot.await()
         if (counts.events == 0 && counts.localSongs == 0 && counts.downloadedSongs == 0 &&
@@ -101,7 +105,6 @@ class HomeSignalsLoader(
         val daypartIds = HomeRanking.daypart(statList)
         val rediscoverIds = HomeRanking.rediscover(statList, now)
         val recentIds = HomeRanking.recent(statList)
-        val pendingInsights = async { if (snapshot.enabled) intelligence?.insights().orEmpty() else emptyList() }
         val heuristic = discovery(statList, seeds, ctx).filterNot { it.songId in savedSeeds }
         val recommendations = recommend(snapshot, seeds, statList, savedSeeds.keys, heuristic, ctx)
         val discovery = if (recommendations.isEmpty()) {
@@ -111,7 +114,6 @@ class HomeSignalsLoader(
                 HomeRelatedLink(seedId = rec.song.bestHitVia(), songId = rec.song.songId)
             }
         }
-        val replayedId = statList.filter { it.weekPlays >= 3 }.maxByOrNull { it.weekPlays }?.songId
 
         val songIds = buildSet {
             addAll(rotationIds)
@@ -119,7 +121,6 @@ class HomeSignalsLoader(
             addAll(rediscoverIds)
             addAll(recentIds)
             discovery.forEach { add(it.songId); add(it.seedId) }
-            replayedId?.let(::add)
         }
         val songs = songIds.chunked(500).flatMap { database.getSongsByIds(it) }.associateBy { it.id }
 
@@ -147,7 +148,6 @@ class HomeSignalsLoader(
             songs = songs,
             artists = artists,
             albums = albums,
-            recentlyAdded = database.homeRecentlyAdded(limit = 24),
             offlineSongs = if (hasOffline) database.homeOfflineSongs(limit = 120) else emptyList(),
             unexplored = database.homeUnexploredLibrary(seed = unexploredSeed(ctx.seed), limit = 40),
             playlists = playlists,
@@ -160,7 +160,6 @@ class HomeSignalsLoader(
             spotifyLiked = spotifyLiked,
             intelligence = snapshot,
             recommendations = recommendations.associateBy { it.song.songId },
-            insights = pendingInsights.await(),
         ).also {
             Timber.tag(IntelligenceRepository.TAG).d(
                 "home signals %d ms, personalised=%b",

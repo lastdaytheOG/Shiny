@@ -173,7 +173,6 @@ class HomeIntelligenceTest {
         )
         val discover = feed.sections.filterIsInstance<DiscoverSection>().single()
         assertTrue(discover.picks.all { it.because == null && it.reason == Reason.SimilarToArtist("Someone") })
-        assertNull(discover.lead)
     }
 
     @Test
@@ -202,6 +201,30 @@ class HomeIntelligenceTest {
     }
 
     @Test
+    fun `the style button belongs to a personalised mix only`() {
+        val songs = (0 until 24).map { song("s$it") }
+        val stats = songs.map { stat(it.id) }
+        fun hero(intelligence: IntelligenceSnapshot) = HomeFeedBuilder.build(signals(songs, stats, intelligence), null, ctx)
+            .sections.filterIsInstance<HeroMixSection>().single()
+        assertTrue(hero(snapshot()).styleable)
+        assertFalse(hero(IntelligenceSnapshot.Neutral).styleable)
+    }
+
+    @Test
+    fun `comfort gets no discovery mix or more-like shelves, every other style does`() {
+        val familiar = (0 until 24).map { song("f$it") }
+        val fresh = (0 until 60).map { song("n$it") }
+        val links = fresh.map { HomeRelatedLink(seedId = "f0", songId = it.id) }
+        fun sections(style: RecommendationStyle) = HomeFeedBuilder.build(
+            signals(familiar + fresh, familiar.map { stat(it.id) }, snapshot(style), links),
+            null,
+            ctx,
+        ).sections
+        assertTrue(sections(RecommendationStyle.Comfort).none { it is DiscoveryMixSection || it is MoreLikeSection })
+        assertTrue(sections(RecommendationStyle.Balanced).any { it is DiscoveryMixSection })
+    }
+
+    @Test
     fun `comfort with almost no history still gets a mix, so its style button stays`() {
         val familiar = (0 until 2).map { song("f$it") }
         val fresh = (0 until 24).map { song("n$it") }
@@ -214,31 +237,6 @@ class HomeIntelligenceTest {
         assertNotNull(hero)
         assertEquals(2, hero!!.familiar)
         assertTrue(hero.songs.size >= HomeFeedBuilder.MIN_HERO_LOW)
-    }
-
-    @Test
-    fun `the style button belongs to a personalised mix only`() {
-        val songs = (0 until 24).map { song("s$it") }
-        val stats = songs.map { stat(it.id) }
-        fun hero(intelligence: IntelligenceSnapshot) = HomeFeedBuilder.build(signals(songs, stats, intelligence), null, ctx)
-            .sections.filterIsInstance<HeroMixSection>().single()
-        assertTrue(hero(snapshot()).styleable)
-        assertFalse(hero(IntelligenceSnapshot.Neutral).styleable)
-    }
-
-    @Test
-    fun `the taste note appears only with evidence, and only when personalised`() {
-        val songs = (0 until 4).map { song("s$it") }
-        val stats = songs.map { stat(it.id) }
-        val insight = TasteInsight.ExploringMore(5, 5, 0.8)
-        val withInsight = signals(songs, stats, snapshot()).copy(insights = listOf(insight))
-        assertNotNull(HomeFeedBuilder.build(withInsight, null, ctx).sections.filterIsInstance<TasteNoteSection>().singleOrNull())
-
-        val empty = signals(songs, stats, snapshot())
-        assertNull(HomeFeedBuilder.build(empty, null, ctx).sections.filterIsInstance<TasteNoteSection>().singleOrNull())
-
-        val off = signals(songs, stats).copy(insights = listOf(insight))
-        assertNull(HomeFeedBuilder.build(off, null, ctx).sections.filterIsInstance<TasteNoteSection>().singleOrNull())
     }
 
     @Test
@@ -272,7 +270,7 @@ class HomeIntelligenceTest {
         val (surface, items) = HomeImpressions.of(hero)!!
         assertEquals(RecSurface.HomeMix, surface)
         assertEquals(HomeImpressions.VISIBLE_ON_A_SHELF, items.size)
-        assertNull(HomeImpressions.of(OfflineNoticeSection(3)))
+        assertNull(HomeImpressions.of(OfflineNoticeSection))
         assertNull(HomeImpressions.of(PickArtistsSection))
     }
 
