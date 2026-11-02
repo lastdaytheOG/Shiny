@@ -1,5 +1,10 @@
 package com.shiny.music.ui.liquid.screens
 
+import androidx.compose.ui.unit.sp
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.spring
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -268,46 +273,50 @@ private fun CollectionHeader(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = topInset + 58.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Box(
                 Modifier
+                    .align(Alignment.CenterHorizontally)
                     .size(coverSize)
-                    .shadow(28.dp, RoundedCornerShape(12.dp), ambientColor = Color.Black, spotColor = Color.Black)
-                    .clip(RoundedCornerShape(12.dp)),
+                    .shadow(28.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black, spotColor = Color.Black)
+                    .clip(RoundedCornerShape(20.dp)),
             ) {
                 if (!collage.isNullOrEmpty() && collage.size >= 4 && artwork == null) {
                     CollageCover(collage.take(4), Modifier.fillMaxSize())
                 } else {
                     Artwork(
                         model = artwork ?: collage?.firstOrNull(),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(20.dp),
                         placeholder = placeholder ?: androidx.compose.material.icons.Icons.Rounded.PlayArrow,
                         modifier = Modifier.fillMaxSize(),
                     )
                 }
             }
-            Spacer(Modifier.height(22.dp))
+            Spacer(Modifier.height(24.dp))
             Text(
                 text = title,
-                style = LiquidTypography.title2,
                 color = ink.primary,
-                textAlign = TextAlign.Center,
+                fontSize = 24.sp,
+                lineHeight = 28.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = (-1.2).sp,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(horizontal = 32.dp),
+                modifier = Modifier.padding(horizontal = HeaderInset),
             )
             if (!subtitle.isNullOrBlank()) {
                 val interaction = remember { MutableInteractionSource() }
                 Text(
                     text = subtitle,
-                    style = LiquidTypography.title3.copy(fontWeight = FontWeight.Normal),
                     color = ink.primary.copy(alpha = 0.86f),
-                    textAlign = TextAlign.Center,
+                    fontSize = 15.sp,
+                    lineHeight = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = (-0.5).sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier
-                        .padding(horizontal = 32.dp, vertical = 2.dp)
+                        .padding(horizontal = HeaderInset, vertical = 3.dp)
                         .then(
                             if (onSubtitleClick != null) {
                                 Modifier.combinedClickable(interactionSource = interaction, indication = null, onClick = onSubtitleClick)
@@ -320,19 +329,18 @@ private fun CollectionHeader(
             if (!meta.isNullOrBlank()) {
                 Text(
                     text = meta,
-                    style = LiquidTypography.footnote.copy(fontWeight = FontWeight.Medium),
                     color = ink.secondary,
-                    textAlign = TextAlign.Center,
+                    fontSize = 11.sp,
+                    lineHeight = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
-                    modifier = Modifier.padding(top = 4.dp),
+                    modifier = Modifier.padding(horizontal = HeaderInset, vertical = 2.dp),
                 )
             }
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(16.dp))
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = PageMargin),
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                modifier = Modifier.padding(horizontal = HeaderInset),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 CollectionButton(
                     text = stringResource(R.string.liquid_play),
@@ -340,17 +348,11 @@ private fun CollectionHeader(
                     onClick = onPlay,
                     enabled = playEnabled,
                     filled = true,
-                    modifier = Modifier.weight(1f),
                 )
-                CollectionButton(
-                    text = stringResource(R.string.liquid_shuffle),
-                    icon = Icons.Rounded.Shuffle,
-                    onClick = onShuffle,
-                    enabled = playEnabled,
-                    filled = false,
-                    modifier = Modifier.weight(1f),
-                )
+                Spacer(Modifier.width(9.dp))
+                ShuffleCircle(onClick = onShuffle, enabled = playEnabled)
                 if (onSmartShuffle != null) {
+                    Spacer(Modifier.width(6.dp))
                     SmartShuffleButton(onClick = onSmartShuffle, enabled = playEnabled)
                 }
             }
@@ -387,23 +389,64 @@ private fun CollectionButton(
 ) {
     val interaction = remember { MutableInteractionSource() }
     val press = rememberGlassPress(interaction)
-    val bg = if (filled) Color.White else Color.White.copy(alpha = 0.16f)
-    val fg = if (filled) Color.Black else Color.White
+    val bg = if (filled) PillFill else Color.White.copy(alpha = 0.16f)
+    val fg = if (filled) PillInk else Color.White
     Row(
         modifier = modifier
-            .height(48.dp)
-            .glassPressScale(press, -0.03f)
+            .height(38.dp)
+            .glassPressScale(press, -0.05f)
             .clip(CircleShape)
             .background(bg)
-            .combinedClickable(interactionSource = interaction, indication = null, enabled = enabled, onClick = onClick),
+            .combinedClickable(interactionSource = interaction, indication = null, enabled = enabled, onClick = onClick)
+            .padding(start = 18.dp, end = 22.dp)
+            .graphicsLayer { alpha = if (enabled) 1f else 0.45f },
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(icon, null, tint = fg, modifier = Modifier.size(21.dp))
+        Icon(icon, null, tint = fg, modifier = Modifier.size(20.dp))
         Spacer(Modifier.width(6.dp))
-        Text(text, style = LiquidTypography.headline, color = fg)
+        Text(text, color = fg, fontSize = 16.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.8).sp)
     }
 }
+
+// shuffle is a round button next to the pill, its arrows spin round once when tapped
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun ShuffleCircle(onClick: () -> Unit, enabled: Boolean) {
+    val interaction = remember { MutableInteractionSource() }
+    val press = rememberGlassPress(interaction)
+    val scope = rememberCoroutineScope()
+    val spin = remember { Animatable(0f) }
+    Box(
+        modifier = Modifier
+            .size(38.dp)
+            .glassPressScale(press, -0.08f)
+            .clip(CircleShape)
+            .background(PillFill)
+            .combinedClickable(interactionSource = interaction, indication = null, enabled = enabled) {
+                scope.launch {
+                    spin.snapTo(0f)
+                    spin.animateTo(1f, spring(dampingRatio = 0.62f, stiffness = 260f))
+                }
+                onClick()
+            }
+            .graphicsLayer { alpha = if (enabled) 1f else 0.45f },
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            Icons.Rounded.Shuffle,
+            contentDescription = stringResource(R.string.liquid_shuffle),
+            tint = PillInk,
+            modifier = Modifier
+                .size(19.dp)
+                .graphicsLayer { rotationZ = spin.value * 360f },
+        )
+    }
+}
+
+private val HeaderInset = 28.dp
+private val PillFill = Color.White.copy(alpha = 0.64f)
+private val PillInk = Color(0xFF2F2F2F)
 
 /**
  * Smart Shuffle as a round button at the end of the Play and Shuffle pair: the mark alone,
@@ -420,8 +463,8 @@ private fun SmartShuffleButton(onClick: () -> Unit, enabled: Boolean) {
     val explanation = stringResource(R.string.liquid_smart_shuffle_subtitle)
     Box(
         modifier = Modifier
-            .size(48.dp)
-            .glassPressScale(press, -0.06f)
+            .size(38.dp)
+            .glassPressScale(press, -0.08f)
             .clip(CircleShape)
             .background(Color.White.copy(alpha = 0.16f))
             .combinedClickable(
@@ -438,7 +481,7 @@ private fun SmartShuffleButton(onClick: () -> Unit, enabled: Boolean) {
             painter = rememberVectorPainter(glyph),
             contentDescription = label,
             modifier = Modifier
-                .size(24.dp)
+                .size(21.dp)
                 .graphicsLayer { alpha = if (enabled) 1f else 0.4f },
         )
     }

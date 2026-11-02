@@ -1,5 +1,6 @@
 package com.shiny.music.ui.liquid.screens
 
+import androidx.compose.ui.unit.sp
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -585,17 +586,17 @@ private fun HeroPlayButton(enabled: Boolean, onClick: () -> Unit) {
     val press = rememberGlassPress(interaction)
     Row(
         modifier = Modifier
-            .height(48.dp)
+            .height(44.dp)
             .glassPressScale(press, 0.05f)
             .clip(CircleShape)
-            .background(Color.White)
+            .background(Color.White.copy(alpha = 0.64f))
             .combinedClickable(interactionSource = interaction, indication = null, enabled = enabled, onClick = onClick)
-            .padding(horizontal = 34.dp),
+            .padding(start = 24.dp, end = 28.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(Icons.Rounded.PlayArrow, null, tint = Color.Black, modifier = Modifier.size(24.dp))
+        Icon(Icons.Rounded.PlayArrow, null, tint = Color(0xFF2F2F2F), modifier = Modifier.size(22.dp))
         Spacer(Modifier.width(6.dp))
-        Text(stringResource(R.string.liquid_play), style = LiquidTypography.headline, color = Color.Black)
+        Text(stringResource(R.string.liquid_play), color = Color(0xFF2F2F2F), fontSize = 16.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.8).sp)
     }
 }
 
