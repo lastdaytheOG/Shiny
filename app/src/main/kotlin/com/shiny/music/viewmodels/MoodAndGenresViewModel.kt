@@ -1,5 +1,10 @@
 package com.shiny.music.viewmodels
 
+import androidx.compose.runtime.mutableStateMapOf
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
+import kotlinx.coroutines.withContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.music.innertube.YouTube
@@ -40,7 +45,34 @@ constructor() : ViewModel() {
         }
     }
 
+    val covers = mutableStateMapOf<String, List<String>>()
+    private val requested = java.util.Collections.synchronizedSet(HashSet<String>())
+    private val gate = Semaphore(3)
+
+    // two playlist covers per card, fetched the first time a card shows and kept while the screen lives
+    fun requestCovers(browseId: String, params: String?) {
+        val key = coverKey(browseId, params)
+        if (!requested.add(key)) return
+        viewModelScope.launch(Dispatchers.IO) {
+            gate.withPermit {
+                YouTube.browse(browseId, params)
+                    .onSuccess { page ->
+                        val urls = page.items.asSequence()
+                            .flatMap { it.items.asSequence() }
+                            .mapNotNull { it.thumbnail }
+                            .distinct()
+                            .take(2)
+                            .toList()
+                        withContext(Dispatchers.Main) { if (urls.isNotEmpty()) covers[key] = urls }
+                    }
+                    .onFailure { requested.remove(key) }
+            }
+        }
+    }
+
     init {
         load()
     }
 }
+
+fun coverKey(browseId: String, params: String?): String = "$browseId|${params.orEmpty()}"

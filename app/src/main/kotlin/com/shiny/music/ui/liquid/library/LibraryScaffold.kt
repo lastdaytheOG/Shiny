@@ -121,6 +121,8 @@ fun LibraryScaffold(
     avatar: (@Composable () -> Unit)? = null,
     scrollToTopSignal: NavController? = null,
     overlay: @Composable BoxScope.() -> Unit = {},
+    onSearch: (String) -> Unit = {},
+    fieldTrailing: (@Composable () -> Unit)? = null,
     content: LazyListScope.() -> Unit,
 ) {
     val colors = Liquid.colors
@@ -255,7 +257,7 @@ fun LibraryScaffold(
                     layout(constraints.maxWidth, placeable.height) { placeable.place(0, 0) }
                 },
         ) {
-            LibrarySearchField(value = query, onValueChange = onQueryChange, placeholder = placeholder)
+            LibrarySearchField(value = query, onValueChange = onQueryChange, placeholder = placeholder, onSearch = onSearch, trailing = fieldTrailing)
         }
 
         if (avatar != null) {
@@ -302,6 +304,8 @@ fun LibrarySearchField(
     onValueChange: (String) -> Unit,
     placeholder: String,
     modifier: Modifier = Modifier,
+    onSearch: (String) -> Unit = {},
+    trailing: (@Composable () -> Unit)? = null,
 ) {
     val colors = Liquid.colors
     val palette = libraryPalette()
@@ -326,7 +330,10 @@ fun LibrarySearchField(
                 textStyle = TextStyle(color = colors.label, fontSize = 15.sp),
                 cursorBrush = SolidColor(colors.accent),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(onSearch = { focus.clearFocus() }),
+                keyboardActions = KeyboardActions(onSearch = {
+                    onSearch(value)
+                    focus.clearFocus()
+                }),
                 modifier = Modifier.fillMaxWidth(),
             )
         }
@@ -345,5 +352,6 @@ fun LibrarySearchField(
                 Icon(Icons.Rounded.Cancel, null, tint = palette.placeholder, modifier = Modifier.size(18.dp))
             }
         }
+        if (value.isEmpty() && trailing != null) trailing()
     }
 }

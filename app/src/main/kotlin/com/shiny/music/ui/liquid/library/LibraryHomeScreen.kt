@@ -179,7 +179,7 @@ fun LibraryHomeScreen(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun LibraryAvatar(imageUrl: String?, onClick: () -> Unit) {
+internal fun LibraryAvatar(imageUrl: String?, onClick: () -> Unit) {
     val colors = Liquid.colors
     val interaction = remember { MutableInteractionSource() }
     val label = stringResource(R.string.settings)

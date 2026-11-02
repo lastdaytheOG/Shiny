@@ -1,5 +1,16 @@
 package com.shiny.music.ui.liquid.screens
 
+import com.shiny.music.ui.liquid.library.LibraryScaffold
+import com.shiny.music.ui.liquid.library.LibraryAvatar
+import com.shiny.music.ui.liquid.library.LibraryChips
+import com.shiny.music.ui.liquid.library.LibraryRule
+import com.shiny.music.viewmodels.coverKey
+import com.music.innertube.utils.parseCookieString
+import com.shiny.music.constants.InnerTubeCookieKey
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.unit.sp
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
@@ -138,6 +149,7 @@ fun LiquidSearchScreen(
     suggestionViewModel: OnlineSearchSuggestionViewModel = hiltViewModel(),
     localViewModel: LocalSearchViewModel = hiltViewModel(),
     browseViewModel: MoodAndGenresViewModel = hiltViewModel(),
+    accountImageUrl: String? = null,
 ) {
     val actions = rememberLiquidActions(navController) ?: return
     val database = LocalDatabase.current
@@ -185,64 +197,38 @@ fun LiquidSearchScreen(
 
     val typing = query.isNotEmpty()
 
-    LargeTitlePage(
-        title = stringResource(R.string.liquid_search),
-        scrollToTopSignal = navController,
-    ) {
-        item(key = "field") {
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = PageMargin)
-                    .padding(top = 6.dp, bottom = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                LiquidSearchField(
-                    value = query,
-                    onValueChange = { query = it },
-                    placeholder = stringResource(R.string.liquid_search_placeholder),
-                    onSearch = submit,
-                    focusRequester = focusRequester,
-                    onFocusChange = { focused = it },
-                    modifier = Modifier.weight(1f),
-                    trailing = {
-                        Box(
-                            Modifier
-                                .size(34.dp)
-                                .combinedClickable(
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    indication = null,
-                                ) { navController.navigate("recognition") },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(Icons.Rounded.Mic, null, tint = Liquid.colors.secondaryLabel, modifier = Modifier.size(20.dp))
-                        }
-                    },
-                )
-                AnimatedVisibility(
-                    visible = focused || typing,
-                    enter = expandHorizontally() + fadeIn(),
-                    exit = shrinkHorizontally() + fadeOut(),
-                ) {
-                    Text(
-                        text = stringResource(android.R.string.cancel),
-                        style = LiquidTypography.body,
-                        color = Liquid.colors.accent,
-                        modifier = Modifier
-                            .padding(start = 12.dp)
-                            .combinedClickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                            ) {
-                                query = ""
-                                focusManager.clearFocus()
-                                keyboard?.hide()
-                            },
-                    )
-                }
-            }
-        }
+    val listState = rememberLazyListState()
+    val cookie by rememberPreference(InnerTubeCookieKey, "")
+    val loggedIn = remember(cookie) { "SAPISID" in parseCookieString(cookie) }
 
+    LibraryScaffold(
+        title = stringResource(R.string.liquid_search),
+        state = listState,
+        query = query,
+        onQueryChange = { query = it },
+        placeholder = stringResource(R.string.liquid_search_placeholder),
+        onSearch = submit,
+        scrollToTopSignal = navController,
+        avatar = {
+            LibraryAvatar(
+                imageUrl = if (loggedIn) accountImageUrl else null,
+                onClick = { navController.navigate("settings") },
+            )
+        },
+        fieldTrailing = {
+            Box(
+                Modifier
+                    .size(34.dp)
+                    .combinedClickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                    ) { navController.navigate("recognition") },
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Rounded.Mic, null, tint = Liquid.colors.secondaryLabel, modifier = Modifier.size(20.dp))
+            }
+        },
+    ) {
         if (typing) {
             typeaheadContent(
                 query = query,
@@ -261,6 +247,8 @@ fun LiquidSearchScreen(
                 history = viewState.history,
                 browseGroups = browseGroups,
                 browseFailed = browseFailed,
+                covers = browseViewModel.covers,
+                onCovers = browseViewModel::requestCovers,
                 onSubmit = submit,
                 onFill = { query = it },
                 onDeleteHistory = { h -> scope.launch(Dispatchers.IO) { database.query { delete(h) } } },
@@ -277,6 +265,8 @@ private fun LazyListScope.restingContent(
     history: List<SearchHistory>,
     browseGroups: List<MoodAndGenres>?,
     browseFailed: Boolean,
+    covers: Map<String, List<String>>,
+    onCovers: (String, String?) -> Unit,
     onSubmit: (String) -> Unit,
     onFill: (String) -> Unit,
     onDeleteHistory: (SearchHistory) -> Unit,
@@ -287,12 +277,23 @@ private fun LazyListScope.restingContent(
     val recent = history.take(6)
     if (recent.isNotEmpty()) {
         item(key = "recent_header") {
-            SectionHeader(
-                title = stringResource(R.string.liquid_recent_searches),
-                trailing = {
+            Column(Modifier.padding(top = 6.dp, bottom = 8.dp)) {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = PageMargin),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = stringResource(R.string.liquid_recent_searches),
+                        style = LiquidTypography.title1,
+                        color = Liquid.colors.label,
+                        modifier = Modifier.weight(1f),
+                    )
                     Text(
                         stringResource(R.string.liquid_clear),
-                        style = LiquidTypography.body,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold,
                         color = Liquid.colors.accent,
                         modifier = Modifier.combinedClickable(
                             interactionSource = remember { MutableInteractionSource() },
@@ -300,8 +301,10 @@ private fun LazyListScope.restingContent(
                             onClick = onClearHistory,
                         ),
                     )
-                },
-            )
+                }
+                Spacer(Modifier.height(12.dp))
+                LibraryRule()
+            }
         }
         items(recent, key = { "h_${it.id}_${it.query}" }) { h ->
             SuggestionRow(
@@ -317,7 +320,7 @@ private fun LazyListScope.restingContent(
     val groups = browseGroups
     when {
         groups != null -> groups.forEach { group ->
-            item(key = "browse_header_${group.title}") { SectionHeader(title = group.title) }
+            item(key = "browse_header_${group.title}") { MoodSectionTitle(group.title) }
             items(
                 group.items.distinctBy { it.title }.chunked(2),
                 key = { "bg_${group.title}_${it.first().title}" },
@@ -326,13 +329,16 @@ private fun LazyListScope.restingContent(
                     Modifier
                         .fillMaxWidth()
                         .padding(horizontal = PageMargin)
-                        .padding(bottom = ShelfGap),
-                    horizontalArrangement = Arrangement.spacedBy(ShelfGap),
+                        .padding(bottom = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     row.forEach { item ->
-                        CategoryRow(
+                        val key = coverKey(item.endpoint.browseId, item.endpoint.params)
+                        LaunchedEffect(key) { onCovers(item.endpoint.browseId, item.endpoint.params) }
+                        MoodCard(
                             title = item.title,
                             color = Color(item.stripeColor),
+                            covers = covers[key].orEmpty(),
                             onClick = { onBrowse(item) },
                             modifier = Modifier.weight(1f),
                         )
@@ -420,23 +426,18 @@ private fun LazyListScope.typeaheadContent(
     onFill: (String) -> Unit,
 ) {
     item(key = "scopes") {
-        LazyRow(
-            contentPadding = PaddingValues(horizontal = PageMargin),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(top = 2.dp, bottom = 10.dp),
-        ) {
-            items(SearchScope.entries, key = { it.name }) { s ->
-                ScopeCapsule(
-                    text = when (s) {
-                        SearchScope.All -> stringResource(R.string.liquid_search_scope_all)
-                        SearchScope.Catalogue -> stringResource(R.string.app_name)
-                        SearchScope.Library -> stringResource(R.string.liquid_library)
-                    },
-                    selected = s == searchScope,
-                    onClick = { onScope(s) },
-                )
-            }
-        }
+        LibraryChips(
+            labels = SearchScope.entries.map { s ->
+                when (s) {
+                    SearchScope.All -> stringResource(R.string.liquid_search_scope_all)
+                    SearchScope.Catalogue -> stringResource(R.string.app_name)
+                    SearchScope.Library -> stringResource(R.string.liquid_library)
+                }
+            },
+            selected = SearchScope.entries.indexOf(searchScope),
+            onSelect = { onScope(SearchScope.entries[it]) },
+            modifier = Modifier.padding(start = PageMargin, end = PageMargin, top = 2.dp, bottom = 12.dp),
+        )
     }
 
     // The listener's own music is on the device, so it answers first and it answers for
@@ -550,7 +551,8 @@ private fun SuggestionRow(
             Icon(icon, null, tint = colors.secondaryLabel, modifier = Modifier.size(20.dp))
             Text(
                 text = text,
-                style = LiquidTypography.body,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Medium,
                 color = colors.label,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -571,7 +573,6 @@ private fun SuggestionRow(
                 Icon(Icons.Rounded.NorthWest, null, tint = colors.tertiaryLabel, modifier = Modifier.size(18.dp))
             }
         }
-        Hairline(Modifier.align(Alignment.BottomStart), startIndent = PageMargin + 34.dp)
     }
 }
 
@@ -817,5 +818,94 @@ private fun TopResultCard(item: YTItem, actions: LiquidActions) {
             }
             Spacer(Modifier.width(4.dp))
         }
+    }
+}
+
+@Composable
+private fun MoodSectionTitle(title: String) {
+    Column(Modifier.padding(top = 18.dp, bottom = 16.dp)) {
+        Text(
+            text = title,
+            style = LiquidTypography.title1,
+            color = Liquid.colors.label,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(horizontal = PageMargin),
+        )
+        Spacer(Modifier.height(12.dp))
+        LibraryRule()
+    }
+}
+
+// each mood wears its own colour, and two of its playlists lean out of the right edge
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun MoodCard(
+    title: String,
+    color: Color,
+    covers: List<String>,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = Liquid.colors
+    val interaction = remember { MutableInteractionSource() }
+    val top = lerp(colors.secondaryBackground, color, if (colors.isDark) 0.52f else 0.26f)
+    val bottom = lerp(colors.secondaryBackground, color, if (colors.isDark) 0.22f else 0.12f)
+    Box(
+        modifier = modifier
+            .height(86.dp)
+            .pressScale(interaction, 0.96f)
+            .clip(RoundedCornerShape(18.dp))
+            .background(Brush.linearGradient(listOf(top, bottom)))
+            .combinedClickable(interactionSource = interaction, indication = null, onClick = onClick),
+    ) {
+        Text(
+            text = title,
+            color = colors.label,
+            fontSize = 19.sp,
+            lineHeight = 22.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = (-0.4).sp,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .padding(start = 16.dp, end = 56.dp),
+        )
+        MoodCovers(
+            covers = covers,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .offset(x = 4.dp, y = 8.dp),
+        )
+    }
+}
+
+@Composable
+private fun MoodCovers(covers: List<String>, modifier: Modifier = Modifier) {
+    if (covers.isEmpty()) return
+    val tile = 58.dp
+    val shape = RoundedCornerShape(12.dp)
+    Box(modifier.size(width = tile * 1.6f, height = tile + 8.dp)) {
+        covers.getOrNull(1)?.let { back ->
+            Artwork(
+                model = back.resize(180, 180),
+                shape = shape,
+                hairline = false,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .size(tile)
+                    .graphicsLayer { rotationZ = -12f },
+            )
+        }
+        Artwork(
+            model = covers[0].resize(180, 180),
+            shape = shape,
+            hairline = false,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .size(tile)
+                .graphicsLayer { rotationZ = 6f },
+        )
     }
 }

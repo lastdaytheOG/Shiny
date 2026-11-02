@@ -76,7 +76,10 @@ fun NavGraphBuilder.navigationBuilder(
     }
 
     screen(Screens.Search.route) {
-        com.shiny.music.ui.liquid.screens.LiquidSearchScreen(navController)
+        val home: com.shiny.music.viewmodels.HomeViewModel = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel(
+            viewModelStoreOwner = activity as androidx.activity.ComponentActivity,
+        )
+        com.shiny.music.ui.liquid.screens.LiquidSearchScreen(navController, accountImageUrl = home.accountImageUrl.collectAsState().value)
     }
 
     screen(Screens.Explore.route) {
