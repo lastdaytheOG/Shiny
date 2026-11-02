@@ -1,5 +1,8 @@
 package com.shiny.music.ui.liquid.library
 
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
@@ -123,6 +126,12 @@ fun LibraryScaffold(
     overlay: @Composable BoxScope.() -> Unit = {},
     onSearch: (String) -> Unit = {},
     fieldTrailing: (@Composable () -> Unit)? = null,
+    fieldLeading: (@Composable () -> Unit)? = null,
+    focusRequester: FocusRequester? = null,
+    onFieldFocus: (Boolean) -> Unit = {},
+    collapsed: Boolean = false,
+    clearOnBack: Boolean = true,
+    below: (@Composable () -> Unit)? = null,
     content: LazyListScope.() -> Unit,
 ) {
     val colors = Liquid.colors
@@ -132,19 +141,25 @@ fun LibraryScaffold(
     val status = statusBarHeight()
     val topBar = if (navigationButton != null) NavBarHeight else 18.dp
     val titleBlock = if (subtitle != null) 78.dp else 62.dp
-    val headerHeight = status + topBar + titleBlock + FieldHeight + 28.dp
+    val belowHeight = if (below != null) 52.dp else 0.dp
+    val headerHeight = status + topBar + titleBlock + FieldHeight + 28.dp + belowHeight
     val collapsedHeight = headerHeight - titleBlock
     val travelPx = with(density) { titleBlock.toPx() }
     val avatarReservePx = with(density) { (AvatarSize + 12.dp).toPx() }
     val avatarDropPx = with(density) { (FieldHeight / 2 - titleBlock / 2).toPx() }
     val collapse = rememberHeaderCollapse(state)
-    val progress = { collapse.value.coerceIn(0f, 1f) }
+    val forced = animateFloatAsState(
+        targetValue = if (collapsed) 1f else 0f,
+        animationSpec = tween(820, easing = CollapseEase),
+        label = "libraryForcedCollapse",
+    )
+    val progress = { maxOf(collapse.value, forced.value).coerceIn(0f, 1f) }
     val blurs = remember { HashMap<Int, RenderEffect>() }
     val focus = LocalFocusManager.current
 
     if (scrollToTopSignal != null) ScrollToTopEffect(scrollToTopSignal, state)
     // back clears the search first, only then leaves the page
-    BackHandler(enabled = query.isNotEmpty()) {
+    BackHandler(enabled = clearOnBack && query.isNotEmpty()) {
         onQueryChange("")
         focus.clearFocus()
     }
@@ -159,6 +174,7 @@ fun LibraryScaffold(
                 state = state,
                 modifier = Modifier
                     .fillMaxSize()
+                    .graphicsLayer { translationY = -forced.value * travelPx }
                     .layerBackdrop(backdrop),
                 contentPadding = PaddingValues(top = headerHeight, bottom = liquidBottomPadding()),
                 content = content,
@@ -257,7 +273,27 @@ fun LibraryScaffold(
                     layout(constraints.maxWidth, placeable.height) { placeable.place(0, 0) }
                 },
         ) {
-            LibrarySearchField(value = query, onValueChange = onQueryChange, placeholder = placeholder, onSearch = onSearch, trailing = fieldTrailing)
+            LibrarySearchField(
+                value = query,
+                onValueChange = onQueryChange,
+                placeholder = placeholder,
+                onSearch = onSearch,
+                trailing = fieldTrailing,
+                leading = fieldLeading,
+                focusRequester = focusRequester,
+                onFocusChange = onFieldFocus,
+            )
+        }
+
+        if (below != null) {
+            Box(
+                Modifier
+                    .padding(top = status + topBar + titleBlock + FieldHeight + 14.dp)
+                    .fillMaxWidth()
+                    .graphicsLayer { translationY = -progress() * travelPx },
+            ) {
+                below()
+            }
         }
 
         if (avatar != null) {
@@ -306,6 +342,9 @@ fun LibrarySearchField(
     modifier: Modifier = Modifier,
     onSearch: (String) -> Unit = {},
     trailing: (@Composable () -> Unit)? = null,
+    leading: (@Composable () -> Unit)? = null,
+    focusRequester: FocusRequester? = null,
+    onFocusChange: (Boolean) -> Unit = {},
 ) {
     val colors = Liquid.colors
     val palette = libraryPalette()
@@ -316,9 +355,13 @@ fun LibrarySearchField(
             .height(FieldHeight)
             .clip(CircleShape)
             .background(palette.field)
-            .padding(start = 20.dp, end = 8.dp),
+            .padding(start = if (leading != null) 12.dp else 20.dp, end = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        if (leading != null) {
+            leading()
+            Spacer(Modifier.width(8.dp))
+        }
         Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
             if (value.isEmpty()) {
                 Text(placeholder, color = palette.placeholder, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -334,7 +377,10 @@ fun LibrarySearchField(
                     onSearch(value)
                     focus.clearFocus()
                 }),
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
+                    .onFocusChanged { onFocusChange(it.isFocused) },
             )
         }
         AnimatedVisibility(

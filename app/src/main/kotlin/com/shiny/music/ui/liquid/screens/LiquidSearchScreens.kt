@@ -1,5 +1,28 @@
 package com.shiny.music.ui.liquid.screens
 
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Pause
+import coil3.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.asComposeRenderEffect
+import androidx.compose.ui.unit.Dp
+import com.shiny.music.ui.liquid.prewarmOnTouch
+import com.shiny.music.ui.liquid.ExplicitBadge
+import com.shiny.music.ui.liquid.library.libraryPalette
+import com.shiny.music.ui.liquid.library.libraryReveal
+import com.shiny.music.ui.liquid.library.LoadingDots
+import com.shiny.music.ui.liquid.library.LibraryEmptyLine
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import com.music.innertube.models.AlbumItem
+import com.music.innertube.models.PlaylistItem
 import com.shiny.music.ui.liquid.library.LibraryScaffold
 import com.shiny.music.ui.liquid.library.LibraryAvatar
 import com.shiny.music.ui.liquid.library.LibraryChips
@@ -200,6 +223,23 @@ fun LiquidSearchScreen(
     val listState = rememberLazyListState()
     val cookie by rememberPreference(InnerTubeCookieKey, "")
     val loggedIn = remember(cookie) { "SAPISID" in parseCookieString(cookie) }
+    var active by rememberSaveable { mutableStateOf(false) }
+    val engaged = active || typing
+    val reveal = remember { Animatable(1f) }
+    val seen = remember { booleanArrayOf(engaged) }
+    LaunchedEffect(engaged) {
+        if (seen[0] == engaged) return@LaunchedEffect
+        seen[0] = engaged
+        reveal.snapTo(0f)
+        reveal.animateTo(1f, tween(460))
+    }
+    val progress = { reveal.value }
+
+    // back steps out of typing before it leaves the page
+    BackHandler(enabled = active && !typing) {
+        active = false
+        focusManager.clearFocus()
+    }
 
     LibraryScaffold(
         title = stringResource(R.string.liquid_search),
@@ -209,11 +249,26 @@ fun LiquidSearchScreen(
         placeholder = stringResource(R.string.liquid_search_placeholder),
         onSearch = submit,
         scrollToTopSignal = navController,
+        collapsed = engaged,
+        focusRequester = focusRequester,
+        onFieldFocus = { if (it) active = true },
         avatar = {
             LibraryAvatar(
                 imageUrl = if (loggedIn) accountImageUrl else null,
                 onClick = { navController.navigate("settings") },
             )
+        },
+        fieldLeading = if (engaged) {
+            {
+                RowGlyph(Icons.AutoMirrored.Rounded.ArrowBack, size = 20.dp) {
+                    query = ""
+                    active = false
+                    focusManager.clearFocus()
+                    keyboard?.hide()
+                }
+            }
+        } else {
+            null
         },
         fieldTrailing = {
             Box(
@@ -229,8 +284,8 @@ fun LiquidSearchScreen(
             }
         },
     ) {
-        if (typing) {
-            typeaheadContent(
+        when {
+            typing -> typeaheadContent(
                 query = query,
                 searchScope = searchScope,
                 onScope = { searchScope = it },
@@ -241,9 +296,17 @@ fun LiquidSearchScreen(
                 isPlaying = isPlaying,
                 onSubmit = submit,
                 onFill = { query = it },
+                reveal = progress,
             )
-        } else {
-            restingContent(
+            active -> historyContent(
+                history = viewState.history,
+                reveal = progress,
+                onSubmit = submit,
+                onFill = { query = it },
+                onDelete = { h -> scope.launch(Dispatchers.IO) { database.query { delete(h) } } },
+                onClear = { scope.launch(Dispatchers.IO) { database.query { clearSearchHistory() } } },
+            )
+            else -> restingContent(
                 history = viewState.history,
                 browseGroups = browseGroups,
                 browseFailed = browseFailed,
@@ -257,6 +320,45 @@ fun LiquidSearchScreen(
                 onRetryBrowse = browseViewModel::load,
             )
         }
+    }
+}
+
+private fun LazyListScope.historyContent(
+    history: List<SearchHistory>,
+    reveal: () -> Float,
+    onSubmit: (String) -> Unit,
+    onFill: (String) -> Unit,
+    onDelete: (SearchHistory) -> Unit,
+    onClear: () -> Unit,
+) {
+    if (history.isEmpty()) return
+    item(key = "history_header") {
+        SearchHeader(
+            title = stringResource(R.string.liquid_recent_searches),
+            modifier = Modifier.libraryReveal(reveal, 0),
+            trailing = {
+                Text(
+                    stringResource(R.string.liquid_clear),
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Liquid.colors.accent,
+                    modifier = Modifier.combinedClickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onClear,
+                    ),
+                )
+            },
+        )
+    }
+    items(history.take(12), key = { "h_${it.id}_${it.query}" }) { h ->
+        HistoryRow(
+            text = h.query,
+            onClick = { onSubmit(h.query) },
+            onDelete = { onDelete(h) },
+            onFill = { onFill(h.query) },
+            modifier = Modifier.libraryReveal(reveal, 1),
+        )
     }
 }
 
@@ -274,49 +376,6 @@ private fun LazyListScope.restingContent(
     onBrowse: (MoodAndGenres.Item) -> Unit,
     onRetryBrowse: () -> Unit,
 ) {
-    val recent = history.take(6)
-    if (recent.isNotEmpty()) {
-        item(key = "recent_header") {
-            Column(Modifier.padding(top = 6.dp, bottom = 8.dp)) {
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = PageMargin),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = stringResource(R.string.liquid_recent_searches),
-                        style = LiquidTypography.title1,
-                        color = Liquid.colors.label,
-                        modifier = Modifier.weight(1f),
-                    )
-                    Text(
-                        stringResource(R.string.liquid_clear),
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Liquid.colors.accent,
-                        modifier = Modifier.combinedClickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                            onClick = onClearHistory,
-                        ),
-                    )
-                }
-                Spacer(Modifier.height(12.dp))
-                LibraryRule()
-            }
-        }
-        items(recent, key = { "h_${it.id}_${it.query}" }) { h ->
-            SuggestionRow(
-                text = h.query,
-                icon = Icons.Rounded.History,
-                onClick = { onSubmit(h.query) },
-                onFill = { onFill(h.query) },
-                onLongClick = { onDeleteHistory(h) },
-            )
-        }
-    }
-
     val groups = browseGroups
     when {
         groups != null -> groups.forEach { group ->
@@ -424,6 +483,7 @@ private fun LazyListScope.typeaheadContent(
     isPlaying: Boolean,
     onSubmit: (String) -> Unit,
     onFill: (String) -> Unit,
+    reveal: () -> Float,
 ) {
     item(key = "scopes") {
         LibraryChips(
@@ -436,12 +496,10 @@ private fun LazyListScope.typeaheadContent(
             },
             selected = SearchScope.entries.indexOf(searchScope),
             onSelect = { onScope(SearchScope.entries[it]) },
-            modifier = Modifier.padding(start = PageMargin, end = PageMargin, top = 2.dp, bottom = 12.dp),
+            modifier = Modifier.padding(start = PageMargin, end = PageMargin, top = 2.dp, bottom = 14.dp),
         )
     }
 
-    // The listener's own music is on the device, so it answers first and it answers for
-    // certain — but only the first few of it, unless they asked for the library scope.
     val wantsLibrary = searchScope != SearchScope.Catalogue
     val libraryHits = if (!wantsLibrary) {
         emptyList()
@@ -449,75 +507,327 @@ private fun LazyListScope.typeaheadContent(
         listOf(LocalFilter.SONG, LocalFilter.ALBUM, LocalFilter.ARTIST, LocalFilter.PLAYLIST)
             .flatMap { local.map[it].orEmpty() }
     }
-    val shownLibrary = if (searchScope == SearchScope.Library) libraryHits else libraryHits.take(5)
+    val shownLibrary = if (searchScope == SearchScope.Library) libraryHits else libraryHits.take(4)
     val lyricHits = when {
         !wantsLibrary -> emptyList()
         searchScope == SearchScope.Library -> local.lyrics
         else -> local.lyrics.take(3)
     }
+    val online = searchScope != SearchScope.Library
+    val suggestions = if (online) viewState.suggestions.distinct().take(6) else emptyList()
+    val topItems = if (online) viewState.items else emptyList()
+    var first = true
+
+    if (suggestions.isNotEmpty()) {
+        item(key = "sug_header") {
+            SearchHeader(stringResource(R.string.liquid_search_suggestions), Modifier.libraryReveal(reveal, 0), ruleAbove = false)
+        }
+        items(suggestions, key = { "sg_$it" }) { text ->
+            SuggestionPill(text = text, onClick = { onSubmit(text) }, onFill = { onFill(text) }, modifier = Modifier.libraryReveal(reveal, 1))
+        }
+        first = false
+    }
+
+    if (topItems.isNotEmpty()) {
+        val ruleAbove = !first
+        item(key = "items_header") {
+            Spacer(Modifier.height(10.dp))
+            SearchHeader(stringResource(R.string.liquid_top_result), Modifier.libraryReveal(reveal, 1), ruleAbove = ruleAbove)
+        }
+        items(topItems, key = { "i_${it.id}" }) { item ->
+            YouTubeResultRow(item, actions, isActive = item.id == activeId, artSize = 44.dp, rule = false, modifier = Modifier.libraryReveal(reveal, 2))
+        }
+        first = false
+    }
 
     if (shownLibrary.isNotEmpty()) {
+        val ruleAbove = !first
         item(key = "lib_header") {
-            SectionHeader(
-                title = stringResource(R.string.liquid_search_in_library),
-                onClick = if (searchScope == SearchScope.All && libraryHits.size > shownLibrary.size) {
-                    { onScope(SearchScope.Library) }
-                } else {
-                    null
-                },
-            )
+            Spacer(Modifier.height(10.dp))
+            SearchHeader(stringResource(R.string.liquid_search_in_library), Modifier.libraryReveal(reveal, 2), ruleAbove = ruleAbove)
         }
         items(shownLibrary, key = { "lib_${it.id}" }) { item ->
-            LocalResultRow(item, actions, isActive = item.id == activeId, isPlaying = isPlaying)
+            LocalSearchRow(item, actions, isActive = item.id == activeId, modifier = Modifier.libraryReveal(reveal, 3))
         }
+        first = false
     }
 
     if (lyricHits.isNotEmpty()) {
-        item(key = "lyric_header") { SectionHeader(title = stringResource(R.string.liquid_search_in_lyrics)) }
+        val ruleAbove = !first
+        item(key = "lyric_header") {
+            Spacer(Modifier.height(10.dp))
+            SearchHeader(stringResource(R.string.liquid_search_in_lyrics), ruleAbove = ruleAbove)
+        }
         items(lyricHits, key = { "ly_${it.id}" }) { song ->
-            LocalResultRow(song, actions, isActive = song.id == activeId, isPlaying = isPlaying)
+            LocalSearchRow(song, actions, isActive = song.id == activeId)
         }
+        first = false
     }
 
-    if (searchScope != SearchScope.Library) {
-        // History first: a query already run is the likeliest one meant again.
-        val completions = (viewState.history.map { it.query } + viewState.suggestions).distinct().take(6)
-        if (completions.isNotEmpty()) {
-            item(key = "sug_header") { SectionHeader(title = stringResource(R.string.liquid_search_suggestions)) }
-            items(completions, key = { "sg_$it" }) { text ->
-                SuggestionRow(
-                    text = text,
-                    icon = if (viewState.history.any { it.query == text }) Icons.Rounded.History else Icons.Rounded.Search,
-                    onClick = { onSubmit(text) },
-                    onFill = { onFill(text) },
-                )
-            }
-        }
-
-        if (viewState.items.isNotEmpty()) {
-            item(key = "items_header") { SectionHeader(title = stringResource(R.string.liquid_top_results)) }
-            items(viewState.items, key = { "i_${it.id}" }) { item ->
-                ResultRow(item, actions, isActive = item.id == activeId, isPlaying = isPlaying)
-            }
-        }
-    }
-
-    val catalogueSilent = viewState.items.isEmpty() && viewState.suggestions.isEmpty() && viewState.history.isEmpty()
-    val nothing = shownLibrary.isEmpty() && lyricHits.isEmpty() &&
-        (searchScope == SearchScope.Library || catalogueSilent)
-    if (nothing) {
-        item(key = "empty") {
-            EmptyState(
-                icon = if (searchScope == SearchScope.Library) Icons.Rounded.LibraryMusic else Icons.Rounded.Search,
-                title = "“$query”",
-                message = if (searchScope == SearchScope.Library) {
-                    stringResource(R.string.liquid_search_offline_body)
+    if (first) {
+        item(key = "waiting") {
+            Box(Modifier.fillMaxWidth().height(180.dp), contentAlignment = Alignment.Center) {
+                if (searchScope == SearchScope.Library) {
+                    Text(stringResource(R.string.local_songs_no_matches_title), color = Liquid.colors.secondaryLabel, fontSize = 13.sp)
                 } else {
-                    stringResource(R.string.liquid_no_results_body)
-                },
+                    LoadingDots()
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SearchHeader(
+    title: String,
+    modifier: Modifier = Modifier,
+    ruleAbove: Boolean = true,
+    trailing: (@Composable () -> Unit)? = null,
+) {
+    Column(
+        modifier
+            .fillMaxWidth()
+            .padding(horizontal = PageMargin),
+    ) {
+        if (ruleAbove) {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(libraryPalette().rule),
+            )
+            Spacer(Modifier.height(18.dp))
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = title,
+                color = Liquid.colors.label,
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = (-0.6).sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+            trailing?.invoke()
+        }
+        Spacer(Modifier.height(14.dp))
+    }
+}
+
+@Composable
+private fun RowGlyph(icon: ImageVector, size: Dp = 16.dp, onClick: () -> Unit) {
+    Box(
+        Modifier
+            .size(30.dp)
+            .clip(CircleShape)
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(icon, null, tint = Liquid.colors.secondaryLabel, modifier = Modifier.size(size))
+    }
+}
+
+// a suggestion sits on its own soft pill, the arrow drops it into the field to keep typing
+@Composable
+private fun SuggestionPill(text: String, onClick: () -> Unit, onFill: () -> Unit, modifier: Modifier = Modifier) {
+    val interaction = remember { MutableInteractionSource() }
+    Row(
+        modifier
+            .fillMaxWidth()
+            .padding(horizontal = PageMargin, vertical = 4.dp)
+            .pressScale(interaction, 0.98f)
+            .clip(RoundedCornerShape(14.dp))
+            .background(libraryPalette().tile)
+            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
+            .padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = text,
+            color = Liquid.colors.label,
+            fontSize = 15.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        Spacer(Modifier.width(12.dp))
+        RowGlyph(Icons.Rounded.NorthWest, onClick = onFill)
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun HistoryRow(text: String, onClick: () -> Unit, onDelete: () -> Unit, onFill: () -> Unit, modifier: Modifier = Modifier) {
+    Row(
+        modifier
+            .fillMaxWidth()
+            .combinedClickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = rememberRowHighlight(),
+                onClick = onClick,
+            )
+            .padding(horizontal = PageMargin, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Rounded.History, null, tint = Liquid.colors.secondaryLabel, modifier = Modifier.size(20.dp))
+        Spacer(Modifier.width(14.dp))
+        Text(
+            text = text,
+            color = Liquid.colors.label,
+            fontSize = 15.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        RowGlyph(Icons.Rounded.Close, onClick = onDelete)
+        Spacer(Modifier.width(4.dp))
+        RowGlyph(Icons.Rounded.NorthWest, onClick = onFill)
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun SearchResultRow(
+    title: String,
+    subtitle: String?,
+    artwork: Any?,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    round: Boolean = false,
+    active: Boolean = false,
+    explicit: Boolean = false,
+    artSize: Dp = 46.dp,
+    rule: Boolean = true,
+    songId: String? = null,
+) {
+    val colors = Liquid.colors
+    val haptics = LocalHapticFeedback.current
+    Column(modifier) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .prewarmOnTouch(songId)
+                .combinedClickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = rememberRowHighlight(),
+                    onClick = onClick,
+                    onLongClick = {
+                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onLongClick()
+                    },
+                )
+                .padding(horizontal = PageMargin, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Artwork(
+                model = artwork,
+                shape = if (round) CircleShape else RoundedCornerShape(8.dp),
+                hairline = false,
+                modifier = Modifier.size(artSize),
+            )
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    color = if (active) colors.accent else colors.label,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = (-0.3).sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                if (!subtitle.isNullOrBlank() || explicit) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (explicit) {
+                            ExplicitBadge(color = colors.secondaryLabel)
+                            Spacer(Modifier.width(5.dp))
+                        }
+                        Text(
+                            text = subtitle.orEmpty(),
+                            color = colors.secondaryLabel,
+                            fontSize = 12.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+            }
+        }
+        if (rule) {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = PageMargin)
+                    .height(1.dp)
+                    .background(libraryPalette().rule),
             )
         }
     }
+}
+
+private fun clock(seconds: Int): String = "%d:%02d".format(seconds / 60, seconds % 60)
+
+@Composable
+private fun ytSubtitle(item: YTItem): String {
+    val dot = " · "
+    return when (item) {
+        is SongItem -> listOfNotNull(item.artists.joinToString { it.name }.takeIf { it.isNotBlank() }, item.duration?.let(::clock)).joinToString(dot)
+        is AlbumItem -> listOfNotNull(stringResource(R.string.liquid_album), item.artists?.joinToString { it.name }?.takeIf { it.isNotBlank() }).joinToString(dot)
+        is ArtistItem -> stringResource(R.string.liquid_artist)
+        is PlaylistItem -> listOfNotNull(stringResource(R.string.liquid_playlist), item.author?.name).joinToString(dot)
+    }
+}
+
+@Composable
+private fun YouTubeResultRow(
+    item: YTItem,
+    actions: LiquidActions,
+    isActive: Boolean,
+    modifier: Modifier = Modifier,
+    artSize: Dp = 46.dp,
+    rule: Boolean = true,
+) {
+    SearchResultRow(
+        title = item.title,
+        subtitle = ytSubtitle(item),
+        artwork = item.thumbnail?.resize(240, 240),
+        round = item is ArtistItem,
+        active = isActive,
+        explicit = item.explicit,
+        artSize = artSize,
+        rule = rule,
+        songId = (item as? SongItem)?.id,
+        onClick = { actions.open(item) },
+        onLongClick = { actions.menu(item) },
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun LocalSearchRow(item: LocalItem, actions: LiquidActions, isActive: Boolean, modifier: Modifier = Modifier, rule: Boolean = false) {
+    SearchResultRow(
+        title = item.title,
+        subtitle = when (item) {
+            is Song -> item.artists.joinToString { it.name }
+            is Album -> listOf(stringResource(R.string.liquid_album), item.artists.joinToString { it.name }).filter { it.isNotBlank() }.joinToString(" · ")
+            is Playlist -> pluralStringResource(R.plurals.liquid_songs_count, item.songCount, item.songCount)
+            is Artist -> stringResource(R.string.liquid_artist)
+        },
+        artwork = when (item) {
+            is Playlist -> item.thumbnails.firstOrNull()
+            else -> item.thumbnailUrl
+        },
+        round = item is Artist,
+        active = isActive,
+        artSize = 44.dp,
+        rule = rule,
+        songId = (item as? Song)?.id,
+        onClick = { actions.open(item) },
+        onLongClick = { actions.menu(item) },
+        modifier = modifier,
+    )
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -642,18 +952,12 @@ private fun shelfTitle(shelf: SearchShelf) = when (shelf) {
     SearchShelf.Playlists -> stringResource(R.string.playlists)
 }
 
-/**
- * The results page.
- *
- * The catalogue is ranked by how closely it matches the query, and the listener's own music is
- * put above it whenever any of it matches: a search that started online is still a search, and
- * hiding a song already on the phone behind a scope switch is the wrong answer.
- */
 @Composable
 fun LiquidSearchResultScreen(
     navController: NavController,
     viewModel: OnlineSearchViewModel = hiltViewModel(),
     localViewModel: LocalSearchViewModel = hiltViewModel(),
+    accountImageUrl: String? = null,
 ) {
     val actions = rememberLiquidActions(navController) ?: return
     val mediaMetadata by actions.playerConnection.mediaMetadata.collectAsState()
@@ -661,16 +965,23 @@ fun LiquidSearchResultScreen(
     val filter by viewModel.filter.collectAsState()
     val local by localViewModel.result.collectAsState()
     val listState = rememberLazyListState()
+    val database = LocalDatabase.current
+    val scope = rememberCoroutineScope()
+    val pauseHistory by rememberPreference(PauseSearchHistoryKey, false)
+    val cookie by rememberPreference(InnerTubeCookieKey, "")
+    val loggedIn = remember(cookie) { "SAPISID" in parseCookieString(cookie) }
+    var field by rememberSaveable { mutableStateOf(viewModel.query) }
 
     LaunchedEffect(viewModel.query) { localViewModel.query.value = viewModel.query }
 
     val scopes = listOf(
-        Scope(stringResource(R.string.liquid_top_results), null),
+        Scope(stringResource(R.string.liquid_search_scope_all), null),
         Scope(stringResource(R.string.songs), YouTube.SearchFilter.FILTER_SONG),
-        Scope(stringResource(R.string.albums), YouTube.SearchFilter.FILTER_ALBUM),
         Scope(stringResource(R.string.artists), YouTube.SearchFilter.FILTER_ARTIST),
-        Scope(stringResource(R.string.playlists), YouTube.SearchFilter.FILTER_COMMUNITY_PLAYLIST),
         Scope(stringResource(R.string.liquid_videos), YouTube.SearchFilter.FILTER_VIDEO),
+        Scope(stringResource(R.string.albums), YouTube.SearchFilter.FILTER_ALBUM),
+        Scope(stringResource(R.string.playlists), YouTube.SearchFilter.FILTER_COMMUNITY_PLAYLIST),
+        Scope(stringResource(R.string.library_search_featured), YouTube.SearchFilter.FILTER_FEATURED_PLAYLIST),
     )
 
     LaunchedEffect(listState, filter) {
@@ -681,64 +992,87 @@ fun LiquidSearchResultScreen(
             }
     }
 
-    LargeTitlePage(
-        title = viewModel.query,
-        state = listState,
-        navigationButton = { LiquidBackButton(onClick = { navController.navigateUp() }) },
-    ) {
-        item(key = "scopes") {
-            LazyRow(
-                contentPadding = PaddingValues(horizontal = PageMargin),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(top = 4.dp, bottom = 8.dp),
-            ) {
-                items(scopes, key = { it.label }) { s ->
-                    ScopeCapsule(
-                        text = s.label,
-                        selected = filter?.value == s.filter?.value,
-                        onClick = { viewModel.filter.value = s.filter },
-                    )
-                }
-            }
+    // a new search from this page replaces it instead of stacking another results page on top
+    val resubmit: (String) -> Unit = { text ->
+        val q = text.trim()
+        if (q.isNotEmpty() && q != viewModel.query) {
+            if (!pauseHistory) scope.launch(Dispatchers.IO) { database.query { insert(SearchHistory(query = q)) } }
+            navController.popBackStack()
+            navController.navigate("search/${URLEncoder.encode(q, "UTF-8")}")
         }
+    }
 
+    LibraryScaffold(
+        title = stringResource(R.string.liquid_search),
+        state = listState,
+        query = field,
+        onQueryChange = { field = it },
+        placeholder = stringResource(R.string.liquid_search_placeholder),
+        onSearch = resubmit,
+        clearOnBack = false,
+        avatar = {
+            LibraryAvatar(
+                imageUrl = if (loggedIn) accountImageUrl else null,
+                onClick = { navController.navigate("settings") },
+            )
+        },
+        fieldLeading = {
+            RowGlyph(Icons.AutoMirrored.Rounded.ArrowBack, size = 20.dp) { navController.navigateUp() }
+        },
+        below = {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+            ) {
+                LibraryChips(
+                    labels = scopes.map { it.label },
+                    selected = scopes.indexOfFirst { it.filter?.value == filter?.value }.coerceAtLeast(0),
+                    onSelect = { viewModel.filter.value = scopes[it].filter },
+                    modifier = Modifier.padding(horizontal = PageMargin),
+                )
+            }
+        },
+    ) {
         if (filter == null) {
             val libraryHits = listOf(LocalFilter.SONG, LocalFilter.ALBUM, LocalFilter.ARTIST, LocalFilter.PLAYLIST)
                 .flatMap { local.map[it].orEmpty() }
                 .take(4)
             if (libraryHits.isNotEmpty()) {
-                item(key = "lib_header") { SectionHeader(title = stringResource(R.string.liquid_search_in_library)) }
+                item(key = "lib_header") { SearchHeader(stringResource(R.string.liquid_search_in_library), ruleAbove = false) }
                 items(libraryHits, key = { "lib_${it.id}" }) { item ->
-                    LocalResultRow(item, actions, isActive = item.id == mediaMetadata?.id, isPlaying = isPlaying)
+                    LocalSearchRow(item, actions, isActive = item.id == mediaMetadata?.id, rule = true)
                 }
+                item(key = "lib_gap") { Spacer(Modifier.height(18.dp)) }
             }
 
             val summary = viewModel.summary
             val top = summary?.top
             when {
                 summary == null -> item(key = "loading") {
-                    Box(Modifier.fillMaxWidth().padding(48.dp), contentAlignment = Alignment.Center) { ActivityIndicator() }
+                    Box(Modifier.fillMaxWidth().height(220.dp), contentAlignment = Alignment.Center) { LoadingDots() }
                 }
 
                 top == null -> if (libraryHits.isEmpty()) {
-                    item(key = "empty") {
-                        EmptyState(
-                            icon = Icons.Rounded.Search,
-                            title = stringResource(R.string.liquid_no_results),
-                            message = stringResource(R.string.liquid_no_results_body),
-                        )
-                    }
+                    item(key = "empty") { LibraryEmptyLine(stringResource(R.string.liquid_no_results)) }
                 }
 
                 else -> {
+                    item(key = "top_header") {
+                        SearchHeader(stringResource(R.string.liquid_top_results), ruleAbove = libraryHits.isNotEmpty())
+                    }
                     item(key = "top_card") {
-                        SectionHeader(title = stringResource(R.string.liquid_top_result))
-                        TopResultCard(top, actions)
+                        TopResultCard(top, actions, active = top.id == mediaMetadata?.id, playing = isPlaying)
+                        Spacer(Modifier.height(22.dp))
                     }
                     summary.sections.forEach { section ->
-                        item(key = "sum_header_${section.shelf}") { SectionHeader(title = shelfTitle(section.shelf)) }
-                        items(section.items, key = { "sum_${section.shelf}_${it.id.ifBlank { "t:${it.title}" }}" }) { item ->
-                            ResultRow(item, actions, isActive = item.id == mediaMetadata?.id, isPlaying = isPlaying)
+                        val rows = section.items.filter { it.id != top.id }
+                        if (rows.isNotEmpty()) {
+                            item(key = "sum_header_${section.shelf}") { SearchHeader(shelfTitle(section.shelf)) }
+                            items(rows, key = { "sum_${section.shelf}_${it.id.ifBlank { "t:${it.title}" }}" }) { item ->
+                                YouTubeResultRow(item, actions, isActive = item.id == mediaMetadata?.id)
+                            }
+                            item(key = "sum_gap_${section.shelf}") { Spacer(Modifier.height(18.dp)) }
                         }
                     }
                 }
@@ -747,76 +1081,133 @@ fun LiquidSearchResultScreen(
             val page = viewModel.viewStateMap[filter?.value]
             when {
                 page == null -> item(key = "loading_f") {
-                    Box(Modifier.fillMaxWidth().padding(48.dp), contentAlignment = Alignment.Center) { ActivityIndicator() }
+                    Box(Modifier.fillMaxWidth().height(220.dp), contentAlignment = Alignment.Center) { LoadingDots() }
                 }
 
-                page.items.isEmpty() -> item(key = "empty_f") {
-                    EmptyState(
-                        icon = Icons.Rounded.Search,
-                        title = stringResource(R.string.liquid_no_results),
-                        message = stringResource(R.string.liquid_no_results_body),
-                    )
-                }
+                page.items.isEmpty() -> item(key = "empty_f") { LibraryEmptyLine(stringResource(R.string.liquid_no_results)) }
 
                 else -> items(page.items, key = { "f_${it.id}" }) { item ->
-                    ResultRow(item, actions, isActive = item.id == mediaMetadata?.id, isPlaying = isPlaying)
+                    YouTubeResultRow(item, actions, isActive = item.id == mediaMetadata?.id)
                 }
             }
         }
     }
 }
 
-/** The single likeliest match, given a card of its own as the Music app does. */
+// the likeliest match gets a card of its own, its cover blurred behind it
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun TopResultCard(item: YTItem, actions: LiquidActions) {
-    val colors = Liquid.colors
+private fun TopResultCard(item: YTItem, actions: LiquidActions, active: Boolean, playing: Boolean) {
     val interaction = remember { MutableInteractionSource() }
-    Row(
-        modifier = Modifier
+    val blur = remember {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            android.graphics.RenderEffect.createBlurEffect(70f, 70f, android.graphics.Shader.TileMode.CLAMP).asComposeRenderEffect()
+        } else {
+            null
+        }
+    }
+    val kind = when (item.searchKind()) {
+        SearchKind.Song -> stringResource(R.string.liquid_song)
+        SearchKind.MusicVideo -> stringResource(R.string.liquid_music_video)
+        SearchKind.Video, SearchKind.Unsupported -> stringResource(R.string.liquid_video)
+        SearchKind.Album -> stringResource(R.string.liquid_album)
+        SearchKind.Artist -> stringResource(R.string.liquid_artist)
+        SearchKind.Playlist -> stringResource(R.string.liquid_playlist)
+    }
+    val detail = listOfNotNull(
+        kind,
+        item.subtitleText()?.takeIf { it.isNotBlank() },
+        (item as? SongItem)?.duration?.let(::clock),
+    ).joinToString(" · ")
+    Box(
+        Modifier
             .padding(horizontal = PageMargin)
-            .padding(bottom = 10.dp)
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
+            .pressScale(interaction, 0.98f)
+            .clip(RoundedCornerShape(18.dp))
+            .background(Color(0xFF151517))
             .combinedClickable(
                 interactionSource = interaction,
-                indication = rememberRowHighlight(),
+                indication = null,
                 onClick = { actions.open(item) },
                 onLongClick = { actions.menu(item) },
-            )
-            .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            ),
     ) {
-        Artwork(
-            model = item.thumbnail?.resize(400, 400),
-            shape = if (item is ArtistItem) CircleShape else RoundedCornerShape(10.dp),
-            modifier = Modifier.size(92.dp),
-        )
-        Column(
-            Modifier
-                .weight(1f)
-                .padding(start = 16.dp),
-        ) {
-            Text(item.title, style = LiquidTypography.title3, color = colors.label, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            item.subtitleText()?.takeIf { it.isNotBlank() }?.let {
-                Text(it, style = LiquidTypography.subheadline, color = colors.secondaryLabel, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
-        }
-        if (item !is ArtistItem) {
+        if (item.thumbnail != null) {
+            AsyncImage(
+                model = item.thumbnail?.resize(256, 256),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .matchParentSize()
+                    .graphicsLayer {
+                        alpha = 0.55f
+                        renderEffect = blur
+                    },
+            )
             Box(
                 Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .combinedClickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = { actions.open(item) },
+                    .matchParentSize()
+                    .background(
+                        Brush.verticalGradient(
+                            0f to Color.Black.copy(alpha = 0.35f),
+                            0.55f to Color.Black.copy(alpha = 0.62f),
+                            1f to Color.Black.copy(alpha = 0.88f),
+                        ),
                     ),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(Icons.Rounded.PlayArrow, null, tint = colors.accent, modifier = Modifier.size(28.dp))
+            )
+        }
+        Column(Modifier.padding(16.dp)) {
+            Artwork(
+                model = item.thumbnail?.resize(400, 400),
+                shape = if (item is ArtistItem) CircleShape else RoundedCornerShape(10.dp),
+                hairline = false,
+                modifier = Modifier.size(108.dp),
+            )
+            Spacer(Modifier.height(14.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        text = item.title,
+                        color = Color.White,
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = (-0.4).sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        text = detail,
+                        color = Color.White.copy(alpha = 0.62f),
+                        fontSize = 12.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                if (item !is ArtistItem) {
+                    val play = remember { MutableInteractionSource() }
+                    Spacer(Modifier.width(12.dp))
+                    Box(
+                        Modifier
+                            .size(46.dp)
+                            .pressScale(play, 0.9f)
+                            .clip(CircleShape)
+                            .background(Color.White)
+                            .clickable(interactionSource = play, indication = null) {
+                                if (active) actions.togglePlayPause() else actions.open(item)
+                            },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = if (active && playing) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                            contentDescription = null,
+                            tint = Color.Black,
+                            modifier = Modifier.size(24.dp),
+                        )
+                    }
+                }
             }
-            Spacer(Modifier.width(4.dp))
         }
     }
 }

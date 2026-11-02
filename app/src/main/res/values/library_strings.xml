@@ -56,4 +56,5 @@
     <string name="library_find_album">Find an album or its artist</string>
     <string name="library_find_playlist">Find a playlist by name</string>
     <string name="library_find_added">Find a song listed here</string>
+    <string name="library_search_featured">Featured</string>
 </resources>

@@ -1,5 +1,6 @@
 package com.shiny.music.ui.liquid.library
 
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.animateColorAsState
@@ -719,5 +720,37 @@ fun LibraryEmptyLine(text: String, modifier: Modifier = Modifier) {
             fontWeight = FontWeight.Medium,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
         )
+    }
+}
+
+// three dots breathing one after another while results are on their way
+@Composable
+fun LoadingDots(modifier: Modifier = Modifier) {
+    val transition = androidx.compose.animation.core.rememberInfiniteTransition(label = "loadingDots")
+    val ink = Liquid.colors.label
+    Row(modifier, horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+        repeat(3) { index ->
+            val phase by transition.animateFloat(
+                initialValue = 0f,
+                targetValue = 1f,
+                animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+                    animation = tween(900, delayMillis = index * 150, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+                    repeatMode = androidx.compose.animation.core.RepeatMode.Reverse,
+                ),
+                label = "loadingDot",
+            )
+            Box(
+                Modifier
+                    .size(7.dp)
+                    .graphicsLayer {
+                        alpha = 0.3f + 0.7f * phase
+                        val s = 0.75f + 0.25f * phase
+                        scaleX = s
+                        scaleY = s
+                    }
+                    .clip(CircleShape)
+                    .background(ink),
+            )
+        }
     }
 }
