@@ -1,5 +1,7 @@
 package com.shiny.music.ui.liquid.screens
 
+import com.shiny.music.home.RecommendationRowSection
+import com.shiny.music.ui.liquid.home.RecommendationShelf
 import androidx.activity.compose.ReportDrawnWhen
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -307,6 +309,7 @@ private fun HomeShelf(
         is DeepDiveSection -> MoreFromArtistShelf(section, actions)
         is SpotifySection -> SpotifyShelf(section, actions)
         is YouTubeSection -> YouTubeShelf(section, actions)
+        is RecommendationRowSection -> RecommendationShelf(section, activeId, actions)
         PickArtistsSection -> PickArtistsCard(onPick = onPickArtists, onDismiss = onDismissPickArtists)
         else -> Unit
     }
@@ -343,7 +346,7 @@ internal fun YouTubeTile(
     isActive: Boolean = false,
     width: androidx.compose.ui.unit.Dp = 164.dp,
 ) {
-    MediaTile(
+    com.shiny.music.ui.liquid.home.HomeCard(
         songId = (item as? com.music.innertube.models.SongItem)?.id,
         title = item.title,
         subtitle = item.subtitleText(),
@@ -358,7 +361,7 @@ internal fun YouTubeTile(
 
 @Composable
 internal fun LocalTile(item: LocalItem, actions: LiquidActions, width: androidx.compose.ui.unit.Dp = 164.dp) {
-    MediaTile(
+    com.shiny.music.ui.liquid.home.HomeCard(
         songId = (item as? com.shiny.music.db.entities.Song)?.id,
         title = item.title,
         subtitle = item.subtitleText(),

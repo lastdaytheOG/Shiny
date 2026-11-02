@@ -57,4 +57,11 @@
     <string name="library_find_playlist">Find a playlist by name</string>
     <string name="library_find_added">Find a song listed here</string>
     <string name="library_search_featured">Featured</string>
+    <string name="home_kicker_more_like">More like</string>
+    <string name="home_kicker_more_from">More from</string>
+    <string name="home_kicker_similar">Similar to</string>
+    <string name="home_kicker_because_like">Because you like</string>
+    <string name="home_kicker_listen">Because you listen to</string>
+    <string name="home_kicker_try">Try something new</string>
+    <string name="home_new_from_artists">New from your artists</string>
 </resources>
