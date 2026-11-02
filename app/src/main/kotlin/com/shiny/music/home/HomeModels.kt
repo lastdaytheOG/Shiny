@@ -86,6 +86,8 @@ data class HomeContext(
      */
     val youtubeSignedIn: Boolean = false,
     val pickArtistsDismissed: Boolean = true,
+    /** Home's YouTube Music section offers to sign in. */
+    val offerYouTube: Boolean = false,
 )
 
 /**
@@ -136,6 +138,10 @@ data class HomeSignals(
     val likedCovers: List<String> = emptyList(),
     /** The imported Spotify Liked Songs; null when the listener never imported them. */
     val spotifyLiked: Playlist? = null,
+    /** The playlists that came from YouTube Music, most recently updated first. */
+    val youtubePlaylists: List<Playlist> = emptyList(),
+    /** The cover of the song added to the library last, for the Recently Added shortcut. */
+    val latestAddedCover: String? = null,
     val intelligence: IntelligenceSnapshot = IntelligenceSnapshot.Neutral,
     val recommendations: Map<String, Recommendation> = emptyMap(),
 ) {
@@ -365,13 +371,35 @@ data object OfflineNoticeSection : HomeSection {
     override val key get() = "offline_notice"
 }
 
-/** Quick way back into what was just playing: albums, artists, playlists, pins. */
+/** Quick way back into what was just playing: albums, songs, playlists. */
 data class LatelySection(val tiles: List<LatelyTile>) : HomeSection {
     override val key get() = "lately"
 }
 
+/** The albums, artists and songs pinned to Home. Pinned playlists are among the shortcuts. */
+data class PinnedSection(val tiles: List<LatelyTile>) : HomeSection {
+    override val key get() = "pinned"
+}
+
+/** The artists played most recently, kept low on the page. */
+data class RecentArtistsSection(val tiles: List<ArtistTile>) : HomeSection {
+    override val key get() = "recent_artists"
+}
+
 sealed interface LatelyTile {
     val key: String
+}
+
+data class SongTile(val song: Song) : LatelyTile {
+    override val key get() = "song_${song.id}"
+}
+
+data class RecentlyAddedTile(val cover: String? = null) : LatelyTile {
+    override val key get() = "recently_added"
+}
+
+data class HistoryTile(val cover: String? = null) : LatelyTile {
+    override val key get() = "history"
 }
 
 data class PinnedTile(val item: SpeedDialItem) : LatelyTile {
@@ -390,15 +418,15 @@ data class PlaylistTile(val playlist: Playlist) : LatelyTile {
     override val key get() = "playlist_${playlist.id}"
 }
 
-data class LikedTile(val count: Int) : LatelyTile {
+data class LikedTile(val count: Int, val fromSpotify: Boolean = false) : LatelyTile {
     override val key get() = "liked"
 }
 
-data class DownloadsTile(val count: Int) : LatelyTile {
+data class DownloadsTile(val count: Int, val cover: String? = null) : LatelyTile {
     override val key get() = "downloads"
 }
 
-data class DeviceTile(val count: Int) : LatelyTile {
+data class DeviceTile(val count: Int, val cover: String? = null) : LatelyTile {
     override val key get() = "device"
 }
 
@@ -409,7 +437,7 @@ fun combineDeviceTiles(tiles: List<LatelyTile>): List<LatelyTile> {
     var placed = false
     return tiles.mapNotNull { tile ->
         when (tile) {
-            is DownloadsTile, is DeviceTile -> if (placed) null else DeviceTile(device + downloads).also { placed = true }
+            is DownloadsTile, is DeviceTile -> if (placed) null else DeviceTile(device + downloads, tiles.firstNotNullOfOrNull { (it as? DeviceTile)?.cover ?: (it as? DownloadsTile)?.cover }).also { placed = true }
             else -> tile
         }
     }
@@ -464,7 +492,7 @@ data class MoreLikeSection(val artist: String, val picks: List<DiscoverPick>) : 
     override val key get() = "more_like_$artist"
 }
 
-/** Downloads and files on the phone, a tap from Home; absent while there are none. */
+/** Liked Songs, downloads, device files, Recently Added, History and pinned playlists, a tap from Home; each absent while empty. */
 data class ShortcutsSection(val tiles: List<LatelyTile>) : HomeSection {
     override val key get() = "shortcuts"
 }
@@ -513,17 +541,29 @@ data class SpotifySection(
     /** The imported Liked Songs; null when they were never imported. */
     val liked: HomeLikedSongs?,
     val mixes: List<HomeSpotifyMix>,
+    /** Discover Weekly, Release Radar and their like, which get a row of their own. */
+    val discoveries: List<HomeSpotifyMix> = emptyList(),
 ) : HomeSection {
     override val key get() = "spotify"
 }
 
-/** The signed-in YouTube Music account: its liked songs, then the mixes it made for them. */
+/** The signed-in YouTube Music account: liked songs and mixes, its discovery mixes, its playlists. */
 data class YouTubeSection(
     val liked: HomeLikedSongs?,
     val mixes: List<PlaylistItem>,
+    val discoveries: List<PlaylistItem> = emptyList(),
+    val playlists: List<Playlist> = emptyList(),
+    /** Signed out: the heading carries a Sign In button and there is nothing under it. */
+    val signIn: Boolean = false,
 ) : HomeSection {
     override val key get() = "youtube"
+    val promptOnly get() = signIn
 }
+
+private val DiscoveryPlaylistNames = listOf("discover", "radar", "fresh finds", "new music", "new release")
+
+/** The services give their discovery playlists no mark of their own, so they are told apart by name. */
+fun isDiscoveryPlaylist(name: String): Boolean = name.lowercase().let { lower -> DiscoveryPlaylistNames.any { it in lower } }
 
 /** The songs of a section Home shows as one Top Picks card; empty for every other section. */
 val HomeSection.pickSongs: List<Song>

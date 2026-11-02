@@ -144,31 +144,58 @@ lens; *Frosted* blurs harder with a calmer lens and no dispersion. The finish co
   — a feed assembled by `HomeFeedBuilder` from real listening only. Music first, one plain
   title per shelf, no subtitles, reason lines, stat counts, eyebrows or prose.
 
-  **The mix bar** opens the page: a rounded band in the mix's own colour (fixed per mix, never
-  taken from a cover) with three fanned covers, the day's mix (*First Light / Daylight / Golden
-  Hour / Afterglow*), its artists, a sliders disc for the recommendation style and a play disc.
+  **Ambient light.** The top of the page takes its colour from the card in focus: a gradient
+  (`HomeAmbience`) behind the status bar and large title that melts into the ground over 640dp.
+  As the carousel is swiped the colour moves to the next card's, and as the page scrolls the field
+  drifts up at about half speed and fades out. It is drawn from scroll state in the draw phase, so
+  neither gesture recomposes anything. In Light it is a pale tint of the cover under black type.
 
-  **Top Picks** follows: cards that are Shiny's own mix artwork, not one album's cover: a
-  gradient in that mix's colours, three small real covers at the size they were requested, the
-  mix's name set large, its artists and a play disc. Tapping plays; tapping the card that is
-  already playing pauses. The cards are **Discovery Mix** (not for the Comfort style), the
-  hour's habit (*Your Evenings*), *Long Time No Hear*, or *Your Music* for a listener with no
-  history. No recommended song appears in two places.
+  **The hero carousel** opens the page: the day's mix (*First Light / Daylight / Golden Hour /
+  Afterglow*) as the first card, then **Discovery Mix** (not for the Comfort style), the hour's
+  habit (*Your Evenings*), *Long Time No Hear*, or *Your Music* for a listener with no history.
+  Cards snap to the centre, about 78% of the screen wide, up to 340dp, with the neighbours showing
+  either side. Each is the lead cover, square and uncropped, melting into a flat tone taken from
+  that cover (`heroTone`: held to a luminance of 0.08 and muted 14%, so it never reads as an
+  alarm; a cover with no colour gets `#242427`), the mix's name set at 26sp over the melt with
+  one line of artists, and a white play disc. The first card also carries the sliders glyph for
+  the recommendation style. Tapping plays; tapping the one already playing pauses. Neighbours sit
+  at 93% and half strength and the type slides against the card as it moves, all from the list's
+  scroll position inside `graphicsLayer`. No recommended song appears in two places.
 
-  Below it, **Downloads** and **On This Device** as two flat cells with no heading, then
-  **Recently Played ›** (square tiles and round artists; opens History), then one row each for
-  **Spotify** and **YouTube Music** (liked songs, then mixes; they never mix, and appear only
-  once connected or imported). Then the recommendations in `HomeOrder`'s scored order, each with
-  its own shape so the page never settles into one rhythm: **Your Rotation** (a paged song grid),
-  **Fresh Discoveries** (tiles), **More Like X** (a song grid or smaller tiles, never a list right
-  after a list), **More from X ›** (the artist's photo in the heading, larger albums), **Similar to
-  X** (round artists). An artist with no photo is left out rather than drawn as a blank circle.
-  There is no resume card: the mini player already is one.
+  **Shortcuts** follow: **Liked Songs** (a rose plate with a heart; Spotify's when there are no
+  others), **Downloads**, **On This Device**, **Recently Added** (its own page: new albums and
+  playlists, then new songs), **History**, then every playlist pinned with **Pin to Home**, in a
+  two-column grid of 58dp cells with a real cover flush at the left and the name in bold. With an
+  odd number the first cell takes the whole row, so the grid never ends on a hole. A shortcut with
+  nothing behind it is left out. Long press a pinned playlist to unpin it.
+
+  **Pinned** holds the pinned albums, songs and artists in a three-column grid, the shape of Apple
+  Music's pins: albums and songs square, artists round, one centred line of name. Long press opens
+  the menu that unpins it. Twelve pins at most, and a pinned item does not repeat further down.
+
+  Then **Fresh Discoveries**, whose place is fixed rather than scored, **Recently Played ›** (albums,
+  then songs, then playlists; opens History), then the services, each with its logo in the heading
+  and a faint wash of its colour falling from the top of its block: **Spotify** (liked songs and
+  mixes), **Spotify Discoveries** (Discover Weekly, Release Radar and the like, told apart by name),
+  **YouTube Music** (liked songs and mixes), **YouTube Music Discoveries** and **YouTube Music
+  Playlists**. Spotify and YouTube never mix. A service with nothing but its liked songs gets one
+  flat row instead of a lone tile. Spotify appears once linked, when its liked songs arrive by themselves, or once imported;
+  signed out, YouTube Music is its heading with a Sign In button. Then the recommendations in `HomeOrder`'s scored order, each
+  with its own shape: **Your Rotation** (a paged song grid), **More Like X** (a song grid or smaller
+  tiles, never a list right after a list), **More from X ›** (the artist's photo in the heading,
+  large albums), **Similar to X** (round artists). **Recent Artists** closes the page. An artist with
+  no photo is left out rather than drawn as a blank circle. There is no resume card: the mini player
+  already is one.
+
+  Each section rises 22dp and fades up over 620ms the first time it is placed in a session, once
+  only, never on the way back up. Instant transitions turns off the rise and the carousel's colour
+  fades. Tiles keep to three sizes: 200dp (albums), 168dp (shelves), 124dp (recents, artists,
+  smaller shelves). Headings are `title2`, 34dp above and 12dp below.
 
   **Personalisation is a slope, not a door.** `HomeTaste` turns the history into continuous
   weights, and every section minimum is scaled by confidence rather than tested against a
-  threshold. Sections move only within five fixed bands (Opening · Immediate · Services · Core ·
-  Library).
+  threshold. Sections move only within fixed bands (Opening · Shortcuts · Pinned · Discoveries ·
+  Immediate · Services · Core · Library · Artists).
 - **New**, **Library** (one flat list of accent-glyph category rows with grey counts, no
   panels, a gap before History/Stats/Together/Recognition; pushed category pages with a ⋯
   sort menu, Songs also searchable; Recently Added grid. Settings → Library & Home can fold

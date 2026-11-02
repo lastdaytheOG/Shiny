@@ -387,30 +387,38 @@ class SpotifyImportRepository @Inject constructor(
             matched.size
         }
 
+    suspend fun hasLikedSongs(): Boolean = database.getPlaylistById(LIKED_SONGS_PLAYLIST_ID) != null
+
     /**
-     * Brings the imported Spotify Liked Songs up to date, so a song liked on Spotify reaches
-     * Shiny's Home. Only for a listener who imported them: with no such playlist it returns
-     * null and asks Spotify nothing. Songs matched before come from the match cache, so a
-     * daily run only searches the new likes. An empty answer leaves the playlist as it was.
+     * Brings the Spotify Liked Songs into Shiny and up to date, so linking an account is enough
+     * for them to reach Home. The first time, the newest ones are mirrored before the rest, so
+     * Home has them while a long list is still being matched. Songs matched before come from the
+     * match cache, so a daily run only searches the new likes. An empty answer changes nothing.
      */
     suspend fun refreshLikedSongs(): Int? =
         withContext(Dispatchers.IO) {
-            val existing = database.getPlaylistById(LIKED_SONGS_PLAYLIST_ID) ?: return@withContext null
+            val existing = database.getPlaylistById(LIKED_SONGS_PLAYLIST_ID)
             ensureAuthenticated()
-            val title = existing.playlist.name
-            val tracks = fetchAllTracks(SpotifyImportSource.LikedSongs(title = title, trackCount = 0))
-            if (tracks.isEmpty()) return@withContext existing.songCount
-            val matched = matchTracks(
-                sourceIndex = 0,
-                sourceCount = 1,
-                sourceTitle = title,
-                tracks = tracks,
-                onProgress = {},
-            )
-            if (matched.isEmpty()) return@withContext existing.songCount
-            mirrorPlaylist(LIKED_SONGS_PLAYLIST_ID, title, existing.playlist.thumbnailUrl, matched.map { it.metadata })
-            matched.size
+            val title = existing?.playlist?.name ?: context.getString(R.string.spotify_liked_songs)
+            val thumbnail = existing?.playlist?.thumbnailUrl
+            if (existing == null) mirrorLiked(title, thumbnail, LIKED_FIRST_BATCH)
+            mirrorLiked(title, thumbnail, Int.MAX_VALUE) ?: database.getPlaylistById(LIKED_SONGS_PLAYLIST_ID)?.songCount
         }
+
+    private suspend fun mirrorLiked(title: String, thumbnail: String?, maxTracks: Int): Int? {
+        val tracks = fetchAllTracks(SpotifyImportSource.LikedSongs(title = title, trackCount = 0), maxTracks)
+        if (tracks.isEmpty()) return null
+        val matched = matchTracks(
+            sourceIndex = 0,
+            sourceCount = 1,
+            sourceTitle = title,
+            tracks = tracks,
+            onProgress = {},
+        )
+        if (matched.isEmpty()) return null
+        mirrorPlaylist(LIKED_SONGS_PLAYLIST_ID, title, thumbnail, matched.map { it.metadata })
+        return matched.size
+    }
 
     /**
      * Deletes the hidden playlists [mirrorMix] and [mirrorTopTracks] made. They shape Home's
@@ -850,6 +858,7 @@ class SpotifyImportRepository @Inject constructor(
     companion object {
         /** The library playlist an import of Spotify's Liked Songs fills. */
         const val LIKED_SONGS_PLAYLIST_ID = "SPOTIFY_LIKED_SONGS"
+        private const val LIKED_FIRST_BATCH = 100
 
         private const val MAX_CONCURRENT_MATCHES = 4
         private const val MAX_CONCURRENT_SPOTIFY_COUNT_REQUESTS = 4

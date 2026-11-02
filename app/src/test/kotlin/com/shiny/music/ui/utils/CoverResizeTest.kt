@@ -23,6 +23,12 @@ class CoverResizeTest {
     }
 
     @Test
+    fun `a cover drawn larger than a tile gets enough pixels to stay sharp`() {
+        assertEquals("$bare=w720-h720", cover.resize(800, 800))
+        assertEquals("$bare=w720-h720", cover.resize(545, 545))
+    }
+
+    @Test
     fun `video stills are left to their own variants`() {
         val still = "https://i.ytimg.com/vi/x/hqdefault.jpg"
         assertEquals("https://i.ytimg.com/vi/x/mqdefault.jpg", still.resize(175, 175))

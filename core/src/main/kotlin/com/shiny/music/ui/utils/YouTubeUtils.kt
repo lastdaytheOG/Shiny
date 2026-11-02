@@ -78,5 +78,6 @@ private fun ytImgVariantFor(requested: Int): String = when {
 private fun googleSizeFor(requested: Int): Int = when {
     requested >= 1000 -> 1200
     requested in 1..240 -> 226
+    requested > 544 -> 720
     else -> 500
 }

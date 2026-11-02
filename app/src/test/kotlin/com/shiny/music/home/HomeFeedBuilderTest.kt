@@ -262,11 +262,15 @@ class HomeFeedBuilderTest {
             playlists = listOf(liked, other),
         )
         listOf(true, false).forEach { online ->
-            val tiles = HomeFeedBuilder.build(sig, null, ctx(online = online)).find<LatelySection>()!!.tiles
+            val feed = HomeFeedBuilder.build(sig, null, ctx(online = online))
+            val tiles = feed.find<ShortcutsSection>()!!.tiles
+            assertNull("a playlist is a shortcut, not in the pin grid", feed.find<PinnedSection>())
             // Opened as a YouTube playlist, a library id is an empty page: never a PinnedTile.
             assertTrue(tiles.none { it is PinnedTile })
             val forLiked = tiles.filterIsInstance<PlaylistTile>().filter { it.playlist.id == liked.id }
             assertEquals("exactly one tile for the pinned playlist (online=$online)", 1, forLiked.size)
+            val lately = feed.find<LatelySection>()?.tiles.orEmpty()
+            assertTrue("not a second time in Lately", lately.none { it.key == "playlist_${liked.id}" })
         }
     }
 
@@ -276,9 +280,9 @@ class HomeFeedBuilderTest {
             pinned = listOf(pin("PLyoutube")),
             playlists = listOf(libraryPlaylist("LPa", 3), libraryPlaylist("LPb", 4)),
         )
-        val online = HomeFeedBuilder.build(sig, null, ctx()).find<LatelySection>()!!.tiles
+        val online = HomeFeedBuilder.build(sig, null, ctx()).find<ShortcutsSection>()!!.tiles
         assertEquals(1, online.count { it is PinnedTile })
-        val offline = HomeFeedBuilder.build(sig, null, ctx(online = false)).find<LatelySection>()?.tiles.orEmpty()
+        val offline = HomeFeedBuilder.build(sig, null, ctx(online = false)).find<ShortcutsSection>()?.tiles.orEmpty()
         assertTrue(offline.none { it is PinnedTile })
     }
 
@@ -383,12 +387,12 @@ class HomeFeedBuilderTest {
         val kinds = feed.kinds()
         assertEquals("HeroMixSection", kinds.first())
         assertTrue(kinds.indexOf("AroundNowSection") < kinds.indexOf("RotationSection"))
-        assertTrue(kinds.indexOf("RotationSection") < kinds.indexOf("DiscoverSection"))
+        assertTrue(kinds.indexOf("DiscoverSection") < kinds.indexOf("RotationSection"))
         assertNotNull(feed.find<RediscoverSection>())
     }
 
     @Test
-    fun `mornings lead with the familiar, afternoons with discovery`() {
+    fun `Fresh Discoveries sits above the rotation at every hour`() {
         val (library, plays) = establishedLibrary()
         fun order(now: Long): List<String?> {
             val c = ctx(now = now, seed = 3)
@@ -396,7 +400,7 @@ class HomeFeedBuilderTest {
         }
         val am = order(morning)
         val pm = order(afternoon)
-        assertTrue(am.indexOf("RotationSection") < am.indexOf("DiscoverSection"))
+        assertTrue(am.indexOf("DiscoverSection") < am.indexOf("RotationSection"))
         assertTrue(pm.indexOf("DiscoverSection") < pm.indexOf("RotationSection"))
     }
 
@@ -825,6 +829,111 @@ class HomeFeedBuilderTest {
     }
 
     @Test
+    fun `liked songs lead the shortcuts, and open Spotify's when there are no others`() {
+        val own = HomeFeedBuilder.build(HomeSignals.Empty.copy(counts = likedCounts(40)), null, ctx())
+        assertEquals(LikedTile(40), own.find<ShortcutsSection>()!!.tiles.first())
+
+        val spotify = HomeFeedBuilder.build(HomeSignals.Empty.copy(spotifyLiked = spotifyLiked(206)), null, ctx())
+        assertEquals(LikedTile(206, fromSpotify = true), spotify.find<ShortcutsSection>()!!.tiles.first())
+
+        val pinned = HomeFeedBuilder.build(
+            HomeSignals.Empty.copy(pinned = listOf(pin("PLyoutube"), SpeedDialItem(id = "MPalbum", title = "Album", type = "ALBUM"))),
+            null,
+            ctx(),
+        )
+        assertEquals(listOf("pin_PLyoutube"), pinned.find<ShortcutsSection>()!!.tiles.map { it.key })
+        assertEquals("albums stay in the pin grid", listOf("pin_MPalbum"), pinned.find<PinnedSection>()!!.tiles.map { it.key })
+    }
+
+    @Test
+    fun `recently added and history join the shortcuts once they have something to show`() {
+        val sig = HomeSignals.Empty.copy(
+            counts = HomeLibraryCounts(localSongs = 4, downloadedSongs = 6, likedSongs = 0, librarySongs = 9, events = 3, playlists = 0),
+        )
+        assertEquals(
+            listOf(DownloadsTile(6), DeviceTile(4), RecentlyAddedTile(), HistoryTile()),
+            HomeFeedBuilder.build(sig, null, ctx()).find<ShortcutsSection>()!!.tiles,
+        )
+    }
+
+    @Test
+    fun `recently played artists leave Recently Played for their own shelf at the foot of the page`() {
+        val (library, plays) = establishedLibrary()
+        val c = ctx()
+        val base = signals(library + relatedSongs(), plays, c, related())
+        val seen = Artist(ArtistEntity(id = "UCseen", name = "Seen", thumbnailUrl = "t"), 0)
+        val other = Artist(ArtistEntity(id = "UCother", name = "Other", thumbnailUrl = "t"), 0)
+        val noPhoto = Artist(ArtistEntity(id = "UCblank", name = "Blank"), 0)
+        fun stat(id: String) = HomeArtistStat(id, plays = 9, weekPlays = 2, monthPlays = 9, lastPlayed = evening - hour, songs = 5)
+        val feed = HomeFeedBuilder.build(
+            base.copy(
+                artists = base.artists + listOf(seen, other, noPhoto).associateBy { it.id },
+                artistStats = base.artistStats + listOf(stat(seen.id), stat(other.id), stat(noPhoto.id)),
+            ),
+            charts(),
+            c,
+        )
+        val shelf = feed.find<RecentArtistsSection>()!!
+        assertTrue(shelf.tiles.map { it.artist.id }.containsAll(listOf(seen.id, other.id)))
+        assertTrue("no blank circles", shelf.tiles.none { it.artist.id == noPhoto.id })
+        assertTrue(feed.find<LatelySection>()?.tiles.orEmpty().none { it is ArtistTile })
+        assertEquals("RecentArtistsSection", feed.kinds().last())
+    }
+
+    @Test
+    fun `Spotify discovery playlists get their own row and the mixes stay in the Spotify row`() {
+        fun named(id: String, name: String) = mix(id, 50).copy(name = name)
+        val feed = HomeFeedBuilder.build(
+            HomeSignals.Empty,
+            charts(),
+            ctx(),
+            spotifyMixes = listOf(named("1", "Daily Mix 1"), named("2", "Discover Weekly"), named("3", "Release Radar"), named("4", "daylist")),
+        )
+        val spotify = feed.find<SpotifySection>()!!
+        assertEquals(listOf("Daily Mix 1", "daylist"), spotify.mixes.map { it.name })
+        assertEquals(listOf("Discover Weekly", "Release Radar"), spotify.discoveries.map { it.name })
+    }
+
+    @Test
+    fun `signed out, YouTube Music offers to sign in, but that alone never replaces the quiet start`() {
+        val c = ctx().copy(offerYouTube = true)
+        val feed = HomeFeedBuilder.build(HomeSignals.Empty, null, c)
+        assertTrue(feed.find<YouTubeSection>()!!.signIn)
+        assertNotNull(feed.find<StartHereSection>())
+        val offline = HomeFeedBuilder.build(HomeSignals.Empty, null, c.copy(online = false))
+        assertNull("it needs the network", offline.find<YouTubeSection>())
+    }
+
+    @Test
+    fun `YouTube Music shows its playlists and discovery mixes in rows of their own`() {
+        val fromYouTube = libraryPlaylist("PLyt", 9).let { it.copy(playlist = it.playlist.copy(browseId = "VLPLyt")) }
+        val pinnedOne = libraryPlaylist("PLpin", 9).let { it.copy(playlist = it.playlist.copy(browseId = "VLPLpin")) }
+        val sig = HomeSignals.Empty.copy(
+            youtubePlaylists = listOf(fromYouTube, pinnedOne),
+            playlists = listOf(fromYouTube, libraryPlaylist("LPa", 3), libraryPlaylist("LPb", 4)),
+            pinned = listOf(pin(pinnedOne.id)),
+            pinnedPlaylists = mapOf(pinnedOne.id to pinnedOne),
+        )
+        val remote = charts().copy(
+            youtubeMixes = listOf(youtubeMix("1"), youtubeMix("2").copy(title = "Discover Mix"), youtubeMix("3").copy(title = "New Release Mix")),
+        )
+        val feed = HomeFeedBuilder.build(sig, remote, ctx(youtubeSignedIn = true))
+        val youtube = feed.find<YouTubeSection>()!!
+        assertEquals(listOf("My Mix 1"), youtube.mixes.map { it.title })
+        assertEquals(listOf("Discover Mix", "New Release Mix"), youtube.discoveries.map { it.title })
+        assertEquals("a pinned playlist stays among the shortcuts", listOf(fromYouTube.id), youtube.playlists.map { it.id })
+        val lately = feed.find<LatelySection>()?.tiles.orEmpty()
+        assertTrue("not a second time in Lately", lately.none { it.key == "playlist_${fromYouTube.id}" })
+        assertNull("signed out, none of it", HomeFeedBuilder.build(sig, remote, ctx()).find<YouTubeSection>())
+    }
+
+    @Test
+    fun `Spotify with nothing to show has no section and no connect prompt`() {
+        val feed = HomeFeedBuilder.build(HomeSignals.Empty, null, ctx().copy(offerYouTube = true))
+        assertNull(feed.find<SpotifySection>())
+    }
+
+    @Test
     fun `downloads and device files are a tap from Home, online or not, and never in recently played`() {
         val noPhoto = Artist(ArtistEntity(id = "UCnophoto", name = "No Photo"), 0)
         val played = HomeArtistStat("UCnophoto", plays = 9, weekPlays = 2, monthPlays = 9, lastPlayed = evening - hour, songs = 5)
@@ -864,7 +973,7 @@ class HomeFeedBuilderTest {
     }
 
     @Test
-    fun `the listener's services come before the recommendations, however well Shiny knows them`() {
+    fun `Fresh Discoveries comes first, then the listener's services, however well Shiny knows them`() {
         val (library, plays) = establishedLibrary()
         val c = ctx(seed = 3, youtubeSignedIn = true)
         val sig = signals(library + relatedSongs(), plays, c, related()).copy(spotifyLiked = spotifyLiked(206), likedCovers = listOf("y1"))
@@ -873,7 +982,7 @@ class HomeFeedBuilderTest {
         val services = maxOf(kinds.indexOf("SpotifySection"), kinds.indexOf("YouTubeSection"))
         assertTrue(kinds.indexOf("SpotifySection") >= 0 && kinds.indexOf("YouTubeSection") >= 0)
         assertTrue("before the rotation", services < kinds.indexOf("RotationSection"))
-        assertTrue("before fresh discoveries", services < kinds.indexOf("DiscoverSection"))
+        assertTrue("after fresh discoveries", kinds.indexOf("DiscoverSection") < kinds.indexOf("SpotifySection"))
     }
 
     @Test

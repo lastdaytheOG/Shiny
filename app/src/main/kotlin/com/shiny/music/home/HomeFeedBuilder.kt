@@ -50,6 +50,9 @@ object HomeFeedBuilder {
     const val MIN_DISCOVER_HIGH = 5
     const val MIN_REDISCOVER = 5
     const val MIN_SPOTIFY_MIX_SONGS = 5
+    const val MAX_PINNED = 12
+    const val MAX_RECENT_ARTISTS = 10
+    private const val RECENT_WINDOW_MS = 21 * HOME_DAY_MS
     const val MIN_DISCOVERY_MIX = 8
     const val MIN_MORE_LIKE = 4
 
@@ -169,11 +172,31 @@ object HomeFeedBuilder {
 
         if (!ctx.online) sections[HomeSlot.OfflineNotice] = OfflineNoticeSection
 
+        val pins = pinTiles(signals, ctx)
+        val (pinnedPlaylists, otherPins) = pins.partition { it is PlaylistTile || (it as? PinnedTile)?.item?.type == "PLAYLIST" }
         val shortcuts = buildList {
-            if (signals.counts.downloadedSongs > 0) add(DownloadsTile(signals.counts.downloadedSongs))
-            if (signals.counts.localSongs > 0) add(DeviceTile(signals.counts.localSongs))
+            val spotifyLikes = signals.spotifyLiked?.songCount ?: 0
+            if (signals.counts.likedSongs > 0) {
+                add(LikedTile(signals.counts.likedSongs))
+            } else if (spotifyLikes > 0) {
+                add(LikedTile(spotifyLikes, fromSpotify = true))
+            }
+            if (signals.counts.downloadedSongs > 0) {
+                add(DownloadsTile(signals.counts.downloadedSongs, signals.offlineSongs.firstOrNull { it.song.isDownloaded }?.thumbnailUrl))
+            }
+            if (signals.counts.localSongs > 0) {
+                add(DeviceTile(signals.counts.localSongs, signals.offlineSongs.firstOrNull { it.song.isLocal }?.thumbnailUrl))
+            }
+            if (signals.counts.librarySongs > 0 || signals.counts.playlists > 0) add(RecentlyAddedTile(signals.latestAddedCover))
+            if (signals.counts.events > 0) {
+                add(HistoryTile(signals.recentIds.firstNotNullOfOrNull { signals.songs[it]?.thumbnailUrl }))
+            }
+            addAll(pinnedPlaylists)
         }
         if (shortcuts.isNotEmpty()) sections[HomeSlot.Shortcuts] = ShortcutsSection(shortcuts)
+
+        if (otherPins.isNotEmpty()) sections[HomeSlot.Pinned] = PinnedSection(otherPins)
+        recentArtists(signals, remote, ctx)?.let { sections[HomeSlot.RecentArtists] = it }
 
         val wantsNew = !(intel.enabled && intel.style == RecommendationStyle.Comfort)
         val onDisplay = discover.map { it.song.id }.toSet() + continueIds + hero?.songs?.map { it.id }.orEmpty()
@@ -216,9 +239,10 @@ object HomeFeedBuilder {
 
         // Lately leaves out what a service row already leads with.
         lately(
-            signals, remote, ctx,
-            likedShown = youtube?.liked != null,
-            playlistsShown = setOfNotNull(signals.spotifyLiked?.id?.takeIf { spotify?.liked != null }),
+            signals, ctx,
+            playlistsShown = setOfNotNull(signals.spotifyLiked?.id?.takeIf { spotify?.liked != null }) +
+                youtube?.playlists.orEmpty().map { it.id },
+            recentSongs = resolve(signals.recentIds),
         )?.let { sections[HomeSlot.Lately] = it }
 
         if (rotation.size >= HomeTaste.minimum(confidence, MIN_ROTATION_LOW, MIN_ROTATION_HIGH)) {
@@ -240,13 +264,15 @@ object HomeFeedBuilder {
         }
 
         spotify?.let { sections[HomeSlot.Spotify] = it }
-        youtube?.let { sections[HomeSlot.YouTube] = it }
+        youtube?.takeUnless { it.promptOnly }?.let { sections[HomeSlot.YouTube] = it }
 
         if (rediscover.size >= MIN_REDISCOVER) sections[HomeSlot.Rediscover] = RediscoverSection(rediscover.map(::ranked))
 
         if (sections.keys.all { it == HomeSlot.OfflineNotice || it == HomeSlot.PickArtists }) {
             sections[HomeSlot.Opening] = StartHereSection(deviceSongs = emptyList(), online = ctx.online)
         }
+
+        youtube?.let { sections[HomeSlot.YouTube] = it }
 
         val feed = HomeOrder.order(sections.keys, ctx, taste).mapNotNull { sections[it] }
         return HomeFeed(feed, profile, ctx.daypart, ctx.online, taste)
@@ -387,61 +413,61 @@ object HomeFeedBuilder {
     private fun artistImage(signals: HomeSignals, remote: HomeRemote?, artistId: String): String? =
         signals.artists[artistId]?.artist?.thumbnailUrl ?: remote?.artists?.get(artistId)?.thumbnail
 
+    private fun pinnedIds(signals: HomeSignals, ctx: HomeContext): Set<String> =
+        if (ctx.showPinned) signals.pinned.map { it.id }.toSet() else emptySet()
+
+    /**
+     * A pinned library playlist is that playlist, marked pinned: it opens its songs and plays
+     * offline. Other pins are YouTube items, which offline would open to nothing.
+     */
+    private fun pinTiles(signals: HomeSignals, ctx: HomeContext): List<LatelyTile> {
+        if (!ctx.showPinned) return emptyList()
+        return signals.pinned.take(MAX_PINNED).mapNotNull { pin ->
+            val local = signals.pinnedPlaylists[pin.id]
+            when {
+                local != null -> PlaylistTile(local)
+                ctx.online -> PinnedTile(pin)
+                else -> null
+            }
+        }
+    }
+
+    /** Only artists with a photo: the shelf would otherwise show blank circles. */
+    private fun recentArtists(signals: HomeSignals, remote: HomeRemote?, ctx: HomeContext): RecentArtistsSection? {
+        val pinned = pinnedIds(signals, ctx)
+        val tiles = signals.artistStats
+            .filter { ctx.nowMs - it.lastPlayed <= RECENT_WINDOW_MS && it.songs >= 2 && it.artistId !in pinned }
+            .sortedByDescending { it.lastPlayed }
+            .mapNotNull { st ->
+                val artist = signals.artists[st.artistId] ?: return@mapNotNull null
+                if (!ctx.online && !artist.artist.isLocal) return@mapNotNull null
+                val image = artistImage(signals, remote, st.artistId) ?: return@mapNotNull null
+                ArtistTile(artist, image)
+            }
+            .take(MAX_RECENT_ARTISTS)
+        return tiles.takeIf { it.size >= 2 }?.let(::RecentArtistsSection)
+    }
+
     private fun lately(
         signals: HomeSignals,
-        remote: HomeRemote?,
         ctx: HomeContext,
-        likedShown: Boolean,
         playlistsShown: Set<String>,
+        recentSongs: List<Song>,
     ): LatelySection? {
-        val now = ctx.nowMs
-        val window = 21 * HOME_DAY_MS
+        val pinned = pinnedIds(signals, ctx)
         val tiles = mutableListOf<LatelyTile>()
-
-        // A pinned library playlist is that playlist, marked pinned — one tile that opens its
-        // songs, and it plays offline. Other pins are YouTube items; offline they would open
-        // to nothing. The library playlists added further down share its key, so the
-        // distinctBy at the end keeps just this one.
-        if (ctx.showPinned) {
-            signals.pinned.take(4).forEach { pin ->
-                val local = signals.pinnedPlaylists[pin.id]
-                when {
-                    local != null -> tiles += PlaylistTile(local)
-                    ctx.online -> tiles += PinnedTile(pin)
-                }
-            }
+        signals.albumStats.sortedByDescending { it.lastPlayed }.forEach { st ->
+            if (tiles.size >= 6 || ctx.nowMs - st.lastPlayed > RECENT_WINDOW_MS || st.albumId in pinned) return@forEach
+            val album = signals.albums[st.albumId] ?: return@forEach
+            if (!ctx.online && !album.album.isLocal) return@forEach
+            tiles += AlbumTile(album)
         }
-        val pinnedIds = signals.pinned.map { it.id }.toSet()
-
-        // Albums and artists interleaved by when they were last played.
-        val recent = buildList<Pair<Long, LatelyTile>> {
-            signals.albumStats.forEach { st ->
-                if (now - st.lastPlayed > window || st.albumId in pinnedIds) return@forEach
-                val album = signals.albums[st.albumId] ?: return@forEach
-                if (!ctx.online && !album.album.isLocal) return@forEach
-                add(st.lastPlayed to AlbumTile(album))
-            }
-            signals.artistStats.forEach { st ->
-                if (now - st.lastPlayed > window || st.songs < 2 || st.artistId in pinnedIds) return@forEach
-                val artist = signals.artists[st.artistId] ?: return@forEach
-                if (!ctx.online && !artist.artist.isLocal) return@forEach
-                val image = artistImage(signals, remote, st.artistId) ?: return@forEach
-                add(st.lastPlayed to ArtistTile(artist, image))
-            }
-        }.sortedByDescending { it.first }.map { it.second }
-
-        // At most two artists, so the grid stays mostly things that play.
-        var artists = 0
-        recent.forEach { tile ->
-            if (tiles.size >= 6) return@forEach
-            if (tile is ArtistTile) {
-                if (artists >= 2) return@forEach
-                artists++
-            }
-            tiles += tile
-        }
-        signals.playlists.filterNot { it.id in playlistsShown }.take(2).forEach { if (tiles.size < 7) tiles += PlaylistTile(it) }
-        if (ctx.online && !likedShown && signals.counts.likedSongs >= 5) tiles += LikedTile(signals.counts.likedSongs)
+        val shownAlbums = tiles.filterIsInstance<AlbumTile>().map { it.album.id }.toSet()
+        recentSongs.asSequence()
+            .filter { it.id !in pinned && it.song.albumId !in shownAlbums }
+            .take((6 - tiles.size).coerceAtLeast(0))
+            .forEach { tiles += SongTile(it) }
+        signals.playlists.filterNot { it.id in playlistsShown || it.id in pinned }.take(2).forEach { tiles += PlaylistTile(it) }
 
         return tiles.distinctBy { it.key }.take(8).takeIf { it.size >= 2 }?.let(::LatelySection)
     }
@@ -520,24 +546,30 @@ object HomeFeedBuilder {
             .distinctBy { it.lowercase() }
             .take(limit)
 
-    /** Spotify's row: the imported Liked Songs, then the mixes whose songs are matched. */
+    /**
+     * Spotify's section: the imported Liked Songs and the mixes whose songs are matched, then
+     * its discovery playlists in a row of their own.
+     */
     private fun spotifySection(signals: HomeSignals, mixes: List<HomeSpotifyMix>): SpotifySection? {
         val liked = signals.spotifyLiked?.takeIf { it.songCount > 0 }
             ?.let { HomeLikedSongs(it.songCount, it.songThumbnails.filterNotNull().distinct().take(4)) }
-        val ready = mixes.filter { it.songCount >= MIN_SPOTIFY_MIX_SONGS }
-        if (liked == null && ready.isEmpty()) return null
-        return SpotifySection(liked, ready)
+        val (discoveries, own) = mixes.filter { it.songCount >= MIN_SPOTIFY_MIX_SONGS }.partition { isDiscoveryPlaylist(it.name) }
+        if (liked == null && own.isEmpty() && discoveries.isEmpty()) return null
+        return SpotifySection(liked, own, discoveries)
     }
 
     /**
-     * YouTube Music's row, only while signed in: the account's liked songs (synced into
-     * Shiny's likes), then the mixes YouTube Music made for it.
+     * YouTube Music's section: the account's liked songs (synced into Shiny's likes) and the
+     * mixes YouTube Music made for it, its discovery mixes, then its playlists. Signed out, it
+     * offers to sign in.
      */
     private fun youtubeSection(signals: HomeSignals, remote: HomeRemote?, ctx: HomeContext): YouTubeSection? {
-        if (!ctx.youtubeSignedIn) return null
+        if (!ctx.youtubeSignedIn) return if (ctx.offerYouTube) YouTubeSection(null, emptyList(), signIn = true) else null
         val liked = signals.counts.likedSongs.takeIf { it > 0 }?.let { HomeLikedSongs(it, signals.likedCovers) }
-        val mixes = remote?.youtubeMixes.orEmpty()
-        if (liked == null && mixes.isEmpty()) return null
-        return YouTubeSection(liked, mixes)
+        val (discoveries, mixes) = remote?.youtubeMixes.orEmpty().partition { isDiscoveryPlaylist(it.title) }
+        val pinned = pinnedIds(signals, ctx)
+        val playlists = signals.youtubePlaylists.filterNot { it.id in pinned }
+        if (liked == null && mixes.isEmpty() && discoveries.isEmpty() && playlists.isEmpty()) return null
+        return YouTubeSection(liked, mixes, discoveries, playlists)
     }
 }

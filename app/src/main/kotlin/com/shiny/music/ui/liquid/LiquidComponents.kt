@@ -412,12 +412,15 @@ fun SectionHeader(
     trailing: (@Composable () -> Unit)? = null,
     color: Color = Liquid.colors.label,
     secondaryColor: Color = Liquid.colors.secondaryLabel,
+    titleStyle: TextStyle = LiquidTypography.title2,
+    top: Dp = 26.dp,
+    bottom: Dp = 10.dp,
 ) {
     val interaction = remember { MutableInteractionSource() }
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(start = PageMargin, end = PageMargin - 4.dp, top = 26.dp, bottom = 10.dp),
+            .padding(start = PageMargin, end = PageMargin - 4.dp, top = top, bottom = bottom),
         verticalAlignment = Alignment.Bottom,
     ) {
         Column(
@@ -445,7 +448,7 @@ fun SectionHeader(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = title,
-                    style = LiquidTypography.title2,
+                    style = titleStyle,
                     color = color,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,

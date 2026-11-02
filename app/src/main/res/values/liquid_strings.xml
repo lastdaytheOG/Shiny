@@ -236,6 +236,12 @@
     <string name="home_quiet_offline_body">Downloaded songs play here with no connection.</string>
     <string name="home_offline_title">You are offline</string>
     <string name="home_top_picks">Top Picks</string>
+    <string name="home_pinned">Pinned</string>
+    <string name="home_recent_artists">Recent Artists</string>
+    <string name="home_spotify_discoveries">Spotify Discoveries</string>
+    <string name="home_youtube_discoveries">YouTube Music Discoveries</string>
+    <string name="home_youtube_playlists">YouTube Music Playlists</string>
+    <string name="home_sign_in">Sign In</string>
     <string name="home_discovery_mix">Discovery Mix</string>
     <string name="home_discover">Fresh Discoveries</string>
     <string name="home_similar_to">Similar to %1$s</string>

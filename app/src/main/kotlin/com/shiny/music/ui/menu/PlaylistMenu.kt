@@ -507,6 +507,46 @@ val editable: Boolean = playlist.playlist.isEditable == true
                         Material3MenuItemData(
                             title = {
                                 Text(
+                                    text = stringResource(if (isPinned) R.string.unpin_from_speed_dial else R.string.pin_to_speed_dial)
+                                )
+                            },
+                            icon = {
+                                if (isPinned) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.ic_push_pin),
+                                        contentDescription = null,
+                                    )
+                                } else {
+                                    Icon(
+                                        imageVector = LiquidIcons.Pin,
+                                        contentDescription = null,
+                                    )
+                                }
+                            },
+                            onClick = {
+                                coroutineScope.launch(Dispatchers.IO) {
+                                    if (isPinned) {
+                                        database.speedDialDao.delete(playlist.id)
+                                    } else {
+                                        database.speedDialDao.insert(
+                                            SpeedDialItem(
+                                                id = playlist.id,
+                                                title = playlist.playlist.name,
+                                                subtitle = null,
+                                                thumbnailUrl = playlist.thumbnails.firstOrNull(),
+                                                type = "PLAYLIST"
+                                            )
+                                        )
+                                    }
+                                }
+                                onDismiss()
+                            }
+                        )
+                    )
+                    add(
+                        Material3MenuItemData(
+                            title = {
+                                Text(
                                     text = if (livePlaylist.isPinned) stringResource(R.string.unpin_playlist) else stringResource(R.string.pin_playlist)
                                 )
                             },
@@ -527,39 +567,6 @@ val editable: Boolean = playlist.playlist.isEditable == true
                             onClick = {
                                 database.query {
                                     update(livePlaylist.copy(isPinned = !livePlaylist.isPinned))
-                                }
-                                onDismiss()
-                            }
-                        )
-                    )
-                    add(
-                        Material3MenuItemData(
-                            title = {
-                                Text(
-                                    text = if (isPinned) "Unpin from Speed dial" else "Pin to Speed dial"
-                                )
-                            },
-                            icon = {
-                                Icon(
-                                    painter = painterResource(if (isPinned) R.drawable.remove else R.drawable.add),
-                                    contentDescription = null,
-                                )
-                            },
-                            onClick = {
-                                coroutineScope.launch(Dispatchers.IO) {
-                                    if (isPinned) {
-                                        database.speedDialDao.delete(playlist.id)
-                                    } else {
-                                        database.speedDialDao.insert(
-                                            SpeedDialItem(
-                                                id = playlist.id,
-                                                title = playlist.playlist.name,
-                                                subtitle = null,
-                                                thumbnailUrl = playlist.thumbnails.firstOrNull(),
-                                                type = "PLAYLIST"
-                                            )
-                                        )
-                                    }
                                 }
                                 onDismiss()
                             }

@@ -273,9 +273,12 @@ class HomeViewModel @Inject constructor(
         chartScopes = prefs?.chartScopes,
         youtubeSignedIn = prefs?.youtubeSignedIn ?: false,
         pickArtistsDismissed = prefs?.pickArtistsDismissed ?: true,
+        offerYouTube = prefs != null && !prefs.youtubeSignedIn,
     )
 
     val scroll = ListScroll()
+
+    val revealed = HashSet<String>()
 
     private val viewers = mutableSetOf<Any>()
 
@@ -354,7 +357,8 @@ class HomeViewModel @Inject constructor(
                 online,
                 lastSignals.map { s -> s?.let { HomeFeedBuilder.topArtists(it, 6, remote.state.value?.artistIds.orEmpty()).map { a -> a.artistId } } }.distinctUntilChanged(),
                 prefs.map { it.chartScopes to it.accountKey }.distinctUntilChanged(),
-            ) { isVisible, isOnline, _, _ -> isVisible && isOnline }
+                spotifyShown,
+            ) { isVisible, isOnline, _, _, _ -> isVisible && isOnline }
                 .filter { it }
                 .collect { refreshRemote(force = false) }
         }

@@ -97,6 +97,9 @@ interface DatabaseDao {
     @Query("SELECT * FROM song ORDER BY totalPlayTime DESC LIMIT :limit")
     fun topSongs(limit: Int): Flow<List<Song>>
 
+    @Query("SELECT thumbnailUrl FROM song WHERE inLibrary IS NOT NULL AND thumbnailUrl IS NOT NULL ORDER BY inLibrary DESC LIMIT 1")
+    suspend fun latestLibraryCover(): String?
+
     fun songs(
         sortType: SongSortType,
         descending: Boolean,
@@ -2021,6 +2024,7 @@ interface DatabaseDao {
                (SELECT COUNT(*) FROM playlist WHERE bookmarkedAt IS NOT NULL) || ':' ||
                (SELECT COUNT(*) FROM playlist_song_map) || ':' ||
                (SELECT COUNT(*) FROM music_feedback) || ':' ||
+               (SELECT COUNT(*) FROM speed_dial_item) || ':' ||
                IFNULL((SELECT MAX(lastUpdateTime) FROM playlist WHERE bookmarkedAt IS NOT NULL), 0)
         """
     )

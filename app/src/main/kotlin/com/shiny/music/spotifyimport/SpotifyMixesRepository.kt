@@ -261,7 +261,9 @@ class SpotifyMixesRepository @Inject constructor(
      * on the next refresh; any other failure waits the day, like the top tracks.
      */
     private suspend fun syncLiked(now: Long) {
-        if (now - (_state.value?.likedSyncedAt ?: 0L) < LIKED_TTL_MS) return
+        val brought = spotifyImport.hasLikedSongs()
+        if (brought && now - (_state.value?.likedSyncedAt ?: 0L) < LIKED_TTL_MS) return
+        if (!brought && (likedFirstTried || context.dataStore.data.first()[SpotifyHomeMixesKey] == false)) return
         val count = try {
             spotifyImport.refreshLikedSongs()
         } catch (e: CancellationException) {
@@ -271,9 +273,12 @@ class SpotifyMixesRepository @Inject constructor(
             reportException(e)
             null
         }
-        Timber.tag("SpotifyMixes").d("liked songs: ${count ?: "not imported or refused"}")
+        Timber.tag("SpotifyMixes").d("liked songs: ${count ?: "none matched or refused"}")
+        likedFirstTried = true
         publish { it.copy(likedSyncedAt = now) }
     }
+
+    private var likedFirstTried = false
 
     /** The request never got an answer: an I/O failure anywhere in the chain. */
     private fun isOffline(e: Throwable): Boolean =

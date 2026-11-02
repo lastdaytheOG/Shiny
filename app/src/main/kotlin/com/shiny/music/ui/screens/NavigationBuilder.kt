@@ -135,6 +135,10 @@ fun NavGraphBuilder.navigationBuilder(
         com.shiny.music.ui.liquid.screens.LiquidHistoryScreen(navController)
     }
 
+    screen("recently_added") {
+        com.shiny.music.ui.liquid.screens.LiquidRecentlyAddedScreen(navController)
+    }
+
     screen("ambient_mode") {
         AmbientModeScreen(navController)
     }

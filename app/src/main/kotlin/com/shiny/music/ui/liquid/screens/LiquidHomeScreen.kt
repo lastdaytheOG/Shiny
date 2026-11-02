@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyItemScope
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Person
@@ -61,6 +62,8 @@ import com.shiny.music.home.LatelySection
 import com.shiny.music.home.MoreLikeSection
 import com.shiny.music.home.OfflineNoticeSection
 import com.shiny.music.home.PickArtistsSection
+import com.shiny.music.home.PinnedSection
+import com.shiny.music.home.RecentArtistsSection
 import com.shiny.music.home.RotationSection
 import com.shiny.music.home.ShortcutsSection
 import com.shiny.music.home.SpotifySection
@@ -81,19 +84,23 @@ import com.shiny.music.ui.liquid.appearance.LocalShinyAppearance
 import com.shiny.music.ui.liquid.appearance.PageTransitions
 import com.shiny.music.ui.liquid.home.ContinueShelf
 import com.shiny.music.ui.liquid.home.DiscoverShelf
-import com.shiny.music.ui.liquid.home.MixBar
+import com.shiny.music.ui.liquid.home.HeroCarousel
+import com.shiny.music.ui.liquid.home.HeroSkeleton
+import com.shiny.music.ui.liquid.home.HomeAmbience
+import com.shiny.music.ui.liquid.home.HomeHeroState
+import com.shiny.music.ui.liquid.home.rememberReveal
 import com.shiny.music.ui.liquid.home.MoreFromArtistShelf
 import com.shiny.music.ui.liquid.home.MoreLikeShelf
 import com.shiny.music.ui.liquid.home.OfflineNotice
 import com.shiny.music.ui.liquid.home.PickArtistsCard
+import com.shiny.music.ui.liquid.home.PinnedShelf
 import com.shiny.music.ui.liquid.home.QuietStart
+import com.shiny.music.ui.liquid.home.RecentArtistsShelf
 import com.shiny.music.ui.liquid.home.RecentlyPlayedShelf
 import com.shiny.music.ui.liquid.home.RecommendationStyleSheet
 import com.shiny.music.ui.liquid.home.RotationGrid
 import com.shiny.music.ui.liquid.home.ShortcutsRow
 import com.shiny.music.ui.liquid.home.SpotifyShelf
-import com.shiny.music.ui.liquid.home.TopPicks
-import com.shiny.music.ui.liquid.home.TopPicksSkeleton
 import com.shiny.music.ui.liquid.home.YouTubeShelf
 import com.shiny.music.ui.liquid.rememberLiquidActions
 import com.shiny.music.ui.liquid.rememberListState
@@ -133,6 +140,8 @@ fun LiquidHomeScreen(
 
     val listState = rememberListState(viewModel.scroll)
     val pullState = rememberPullToRefreshState()
+    val heroList = rememberLazyListState()
+    val hero = remember(heroList) { HomeHeroState(heroList) }
 
     val (topPicks, shelves) = remember(feed) { feed?.sections.orEmpty().partition { it.isTopPick } }
     val mix = remember(shelves) { shelves.filterIsInstance<HeroMixSection>().firstOrNull() }
@@ -179,6 +188,7 @@ fun LiquidHomeScreen(
             title = stringResource(R.string.liquid_home),
             state = listState,
             scrollToTopSignal = navController,
+            behind = { HomeAmbience(hero, listState, reduceMotion) },
             titleAccessory = {
                 AccountAvatar(
                     imageUrl = if (isLoggedIn) accountImageUrl else null,
@@ -187,47 +197,35 @@ fun LiquidHomeScreen(
             },
         ) {
             if (feed == null) {
-                item(key = "skeleton_picks", contentType = "skeleton_picks") { TopPicksSkeleton() }
-                item(key = "skeleton_shelf", contentType = "skeleton") { SkeletonShelf(tile = 150.dp) }
+                item(key = "skeleton_hero", contentType = "skeleton_hero") { HeroSkeleton() }
+                item(key = "skeleton_shelf", contentType = "skeleton") { SkeletonShelf(tile = 156.dp) }
                 return@LargeTitlePage
             }
 
             if (OfflineNoticeSection in shelves) {
                 item(key = OfflineNoticeSection.key, contentType = "offline") {
-                    HomeItem(reduceMotion) { OfflineNotice() }
+                    HomeItem(reduceMotion, OfflineNoticeSection.key, viewModel.revealed) { OfflineNotice() }
                 }
             }
 
-            if (mix != null) {
-                item(key = mix.key, contentType = "mix_bar") {
-                    NoteShown(mix, viewModel)
-                    HomeItem(reduceMotion) {
-                        MixBar(
-                            section = mix,
+            if (mix != null || topPicks.isNotEmpty()) {
+                item(key = "hero", contentType = "hero") {
+                    HomeItem(reduceMotion, "hero", viewModel.revealed) {
+                        HeroCarousel(
+                            hero = hero,
+                            mix = mix,
+                            picks = topPicks,
+                            takenCovers = mixCovers,
                             queueTitle = queueTitle,
                             isPlaying = isPlaying,
                             reduceMotion = reduceMotion,
                             actions = actions,
+                            onPlayedDiscovery = { viewModel.note(HomeInterest.Kind.Discovery) },
                             onChooseStyle = {
                                 menuState.show {
                                     RecommendationStyleSheet(viewModel.intelligence, onDone = menuState::dismiss)
                                 }
                             },
-                        )
-                    }
-                }
-            }
-
-            if (topPicks.isNotEmpty()) {
-                item(key = "top_picks", contentType = "top_picks") {
-                    HomeItem(reduceMotion) {
-                        TopPicks(
-                            sections = topPicks,
-                            queueTitle = queueTitle,
-                            isPlaying = isPlaying,
-                            actions = actions,
-                            onPlayedDiscovery = { viewModel.note(HomeInterest.Kind.Discovery) },
-                            takenCovers = mixCovers,
                             onShown = { section -> NoteShown(section, viewModel) },
                         )
                     }
@@ -237,7 +235,7 @@ fun LiquidHomeScreen(
             shelves.filterNot { it is OfflineNoticeSection || it is HeroMixSection }.forEach { section ->
                 item(key = section.key, contentType = section::class.simpleName) {
                     NoteShown(section, viewModel)
-                    HomeItem(reduceMotion) {
+                    HomeItem(reduceMotion, section.key, viewModel.revealed) {
                         HomeShelf(
                             section = section,
                             asList = section.key in listShelves,
@@ -266,10 +264,11 @@ private fun NoteShown(section: HomeSection, viewModel: HomeViewModel) {
 }
 
 @Composable
-private fun LazyItemScope.HomeItem(reduceMotion: Boolean, content: @Composable () -> Unit) {
+private fun LazyItemScope.HomeItem(reduceMotion: Boolean, key: String, revealed: MutableSet<String>, content: @Composable () -> Unit) {
     Column(
         Modifier
             .fillMaxWidth()
+            .then(rememberReveal(key, revealed, reduceMotion))
             .then(
                 if (reduceMotion) {
                     Modifier
@@ -298,6 +297,8 @@ private fun HomeShelf(
     when (section) {
         is StartHereSection -> QuietStart(section.online)
         is ShortcutsSection -> ShortcutsRow(section, actions)
+        is PinnedSection -> PinnedShelf(section, actions)
+        is RecentArtistsSection -> RecentArtistsShelf(section, actions)
         is LatelySection -> RecentlyPlayedShelf(section, actions)
         is ContinueSection -> ContinueShelf(section, activeId, actions)
         is RotationSection -> RotationGrid(section, activeId, isPlaying, actions)

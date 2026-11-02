@@ -55,7 +55,10 @@ class HomeSignalsLoader(
         val pinnedPlaylists = pinned.filter { it.type == "PLAYLIST" }
             .mapNotNull { database.getPlaylistById(it.id) }
             .associateBy { it.id }
-        val playlists = database.playlistsByUpdatedDateAsc().first().asReversed().take(3)
+        val allPlaylists = database.playlistsByUpdatedDateAsc().first().asReversed()
+        val playlists = allPlaylists.take(3)
+        val youtubePlaylists = allPlaylists.filter { it.playlist.browseId != null && !it.playlist.isLocal }.take(12)
+        val latestAddedCover = database.latestLibraryCover()
         // What leads each service's row: the imported Spotify Liked Songs and the likes' covers.
         val spotifyLiked = database.getPlaylistById(SpotifyImportRepository.LIKED_SONGS_PLAYLIST_ID)
         val likedCovers = if (counts.likedSongs > 0) database.homeLikedCovers(limit = LIKED_COVERS) else emptyList()
@@ -80,6 +83,8 @@ class HomeSignalsLoader(
                 pinned = pinned,
                 pinnedPlaylists = pinnedPlaylists,
                 playlists = playlists,
+                youtubePlaylists = youtubePlaylists,
+                latestAddedCover = latestAddedCover,
                 likedCovers = likedCovers,
                 spotifyLiked = spotifyLiked,
                 intelligence = snapshot,
@@ -151,6 +156,8 @@ class HomeSignalsLoader(
             offlineSongs = if (hasOffline) database.homeOfflineSongs(limit = 120) else emptyList(),
             unexplored = database.homeUnexploredLibrary(seed = unexploredSeed(ctx.seed), limit = 40),
             playlists = playlists,
+            youtubePlaylists = youtubePlaylists,
+            latestAddedCover = latestAddedCover,
             pinned = pinned,
             pinnedPlaylists = pinnedPlaylists,
             seeds = seeds,

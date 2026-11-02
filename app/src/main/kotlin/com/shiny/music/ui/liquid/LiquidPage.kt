@@ -72,6 +72,7 @@ fun LargeTitlePage(
     titleAccessory: (@Composable RowScope.() -> Unit)? = null,
     scrollToTopSignal: NavController? = null,
     bottomPadding: Dp = liquidBottomPadding(),
+    behind: @Composable BoxScope.() -> Unit = {},
     content: LazyListScope.() -> Unit,
 ) {
     val colors = Liquid.colors
@@ -89,6 +90,7 @@ fun LargeTitlePage(
             .fillMaxSize()
             .background(background)
     ) {
+        behind()
         CompositionLocalProvider(LocalLiquidBackdrop provides null) {
             LazyColumn(
                 state = state,

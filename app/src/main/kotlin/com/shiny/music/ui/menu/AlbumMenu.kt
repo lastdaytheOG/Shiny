@@ -416,7 +416,7 @@ fun AlbumMenu(
                     Material3MenuItemData(
                         title = { 
                             Text(
-                                text = if (isPinned) "Unpin from Speed dial" else "Pin to Speed dial" 
+                                text = stringResource(if (isPinned) R.string.unpin_from_speed_dial else R.string.pin_to_speed_dial) 
                             ) 
                         },
                         icon = {

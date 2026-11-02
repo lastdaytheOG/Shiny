@@ -7,9 +7,11 @@ import com.shiny.music.constants.AlbumSortType
 import com.shiny.music.constants.HideExplicitKey
 import com.shiny.music.constants.HideVideoSongsKey
 import com.shiny.music.constants.PlaylistSortType
+import com.shiny.music.constants.SongSortType
 import com.shiny.music.db.MusicDatabase
 import com.shiny.music.db.entities.LibraryCounts
 import com.shiny.music.db.entities.LocalItem
+import com.shiny.music.db.entities.Song
 import com.shiny.music.utils.dataStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -46,17 +48,36 @@ class LiquidLibraryViewModel @Inject constructor(
         combine(
             database.albums(AlbumSortType.CREATE_DATE, true),
             database.playlists(PlaylistSortType.CREATE_DATE, true),
-        ) { albums, playlists ->
-            val a = albums.take(12)
-            val p = playlists.filter { it.songCount > 0 }.take(4)
-            buildList<LocalItem> {
-                var ai = 0
-                var pi = 0
-                while (size < 16 && (ai < a.size || pi < p.size)) {
-                    if (ai < a.size) add(a[ai++])
-                    if (ai < a.size) add(a[ai++])
-                    if (pi < p.size) add(p[pi++])
-                }
-            }
+        ) { albums, playlists -> interleave(albums.take(12), playlists.filter { it.songCount > 0 }.take(4), 16) }
+            .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    val recentlyAddedPage: StateFlow<List<LocalItem>> =
+        combine(
+            database.albums(AlbumSortType.CREATE_DATE, true),
+            database.playlists(PlaylistSortType.CREATE_DATE, true),
+        ) { albums, playlists -> interleave(albums.take(30), playlists.filter { it.songCount > 0 }.take(10), 40) }
+            .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    val recentlyAddedSongs: StateFlow<List<Song>> =
+        combine(
+            database.songs(SongSortType.CREATE_DATE, true),
+            context.dataStore.data
+                .map { (it[HideExplicitKey] ?: false) to (it[HideVideoSongsKey] ?: false) }
+                .distinctUntilChanged(),
+        ) { songs, (hideExplicit, hideVideos) ->
+            songs.asSequence()
+                .filterNot { (hideExplicit && it.song.explicit) || (hideVideos && it.song.isVideo) }
+                .take(50)
+                .toList()
         }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    private fun interleave(albums: List<LocalItem>, playlists: List<LocalItem>, limit: Int): List<LocalItem> = buildList {
+        var ai = 0
+        var pi = 0
+        while (size < limit && (ai < albums.size || pi < playlists.size)) {
+            if (ai < albums.size) add(albums[ai++])
+            if (ai < albums.size) add(albums[ai++])
+            if (pi < playlists.size) add(playlists[pi++])
+        }
+    }
 }
