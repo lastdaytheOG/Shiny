@@ -69,4 +69,6 @@
     <string name="home_kicker_listen">Because you listen to</string>
     <string name="home_kicker_try">Try something new</string>
     <string name="home_new_from_artists">New from your artists</string>
+    <string name="home_most_played">Most Played</string>
+    <string name="home_artist_list">Artist List</string>
 </resources>

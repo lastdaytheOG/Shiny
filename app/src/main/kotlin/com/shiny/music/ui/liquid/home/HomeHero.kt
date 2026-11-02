@@ -1,5 +1,8 @@
 package com.shiny.music.ui.liquid.home
 
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -288,10 +291,10 @@ internal fun HeroCarousel(
     LaunchedEffect(cards.size, reduceMotion) {
         if (reduceMotion || cards.size < 2) return@LaunchedEffect
         while (true) {
-            delay(6500)
+            delay(5500)
             if (!dragging) {
                 val next = (hero.pos.value.roundToInt() + 1).let { if (it > last) 0 else it }
-                hero.pos.animateTo(next.toFloat(), HeroGlide)
+                hero.pos.animateTo(next.toFloat(), HeroSlide)
             }
         }
     }
@@ -316,12 +319,14 @@ internal fun HeroCarousel(
 
     BoxWithConstraints(Modifier.fillMaxWidth()) {
         val density = LocalDensity.current
-        val side = (maxWidth * 0.56f).coerceAtMost(260.dp)
-        val height = (maxWidth * 1.22f).coerceAtMost(560.dp)
+        // laid out on a 402 wide frame and scaled to the screen
+        val unit = maxWidth / 402.dp
+        val side = 221.dp * unit
+        val height = LocalConfiguration.current.screenHeightDp.dp * HeroHeightFraction
         val sidePx = with(density) { side.toPx() }
         val widthPx = with(density) { maxWidth.toPx() }
-        val heightPx = with(density) { height.toPx() }
-        val textWidth = maxWidth * 0.56f
+        val unitPx = with(density) { (1.dp * unit).toPx() }
+        val textWidth = maxWidth + 28.dp * unit - 187.dp * unit - HomeInset - 12.dp
 
         Box(
             Modifier
@@ -359,7 +364,8 @@ internal fun HeroCarousel(
                         side = side,
                         sidePx = sidePx,
                         widthPx = widthPx,
-                        heightPx = heightPx,
+                        unitPx = unitPx,
+                        corner = 25.dp * unit,
                         cover = cover,
                         onClick = {
                             if (index == current) {
@@ -388,7 +394,7 @@ internal fun HeroCarousel(
                 },
                 modifier = Modifier
                     .align(Alignment.BottomStart)
-                    .padding(start = PageMargin, bottom = 26.dp)
+                    .padding(start = HomeInset, bottom = 56.dp)
                     .width(textWidth),
                 label = "heroText",
             ) { _ ->
@@ -407,8 +413,12 @@ internal fun HeroCarousel(
 
 private val HeroGlide = spring<Float>(dampingRatio = 0.84f, stiffness = 160f)
 
-// where a card sits in the stack: the current one big against the right edge, the others
-// smaller above and below it, all read in the draw phase so a swipe recomposes nothing
+internal const val HeroHeightFraction = 0.6f
+private val HeroSlide = tween<Float>(1150, easing = CubicBezierEasing(0.32f, 0f, 0.15f, 1f))
+private const val HeroDim = 0.36f
+
+// the current card big against the right edge and a little off it, the others smaller above
+// and below. all of it is read in the draw phase so a swipe recomposes nothing
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun HeroStackCard(
@@ -417,7 +427,8 @@ private fun HeroStackCard(
     side: Dp,
     sidePx: Float,
     widthPx: Float,
-    heightPx: Float,
+    unitPx: Float,
+    corner: Dp,
     cover: String?,
     onClick: () -> Unit,
 ) {
@@ -430,27 +441,35 @@ private fun HeroStackCard(
         val tones = cachedArtworkTones(toneUrl) ?: loadArtworkTones(context, toneUrl) ?: return@LaunchedEffect
         hero.tones[index] = heroTone(tones.deep, tones.vivid)
     }
+    val shape = remember(corner) { RoundedCornerShape(corner) }
     val interaction = remember { MutableInteractionSource() }
     Box(
         Modifier
             .size(side)
             .graphicsLayer {
                 val d = index - hero.pos.value
-                val away = abs(d).coerceAtMost(2.2f)
-                val scale = 1f - 0.17f * away.coerceAtMost(1.4f)
+                val away = abs(d)
+                val near = away.coerceAtMost(1f)
+                val scale = 1f - (1f - 187f / 221f) * near
                 scaleX = scale
                 scaleY = scale
-                translationX = widthPx - sidePx * 0.86f + away * sidePx * 0.06f
-                translationY = heightPx * 0.38f - sidePx / 2f + d * sidePx * 1.04f
-                alpha = (1.35f - 0.55f * away).coerceIn(0f, 1f)
-                shadowElevation = (1f - away.coerceAtMost(1f)) * 18.dp.toPx()
-                shape = HeroCardShape
+                transformOrigin = TransformOrigin(1f, 0.5f)
+                translationX = widthPx + 28f * unitPx - sidePx
+                val offset = (near * 221f + (away - 1f).coerceAtLeast(0f) * 207f) * unitPx
+                translationY = 230.5f * unitPx - sidePx / 2f + if (d < 0) -offset else offset
+                alpha = if (away > 2.6f) 0f else 1f
+                this.shape = shape
                 clip = true
+            }
+            .drawWithContent {
+                drawContent()
+                val near = abs(index - hero.pos.value).coerceAtMost(1f)
+                if (near > 0f) drawRect(Color.Black, alpha = HeroDim * near)
             }
             .pressScale(interaction, 0.97f)
             .combinedClickable(interactionSource = interaction, indication = null, onClick = onClick),
     ) {
-        Artwork(model = model, shape = HeroCardShape, hairline = false, modifier = Modifier.fillMaxSize())
+        Artwork(model = model, shape = shape, hairline = false, modifier = Modifier.fillMaxSize())
     }
 }
 
@@ -469,58 +488,31 @@ private fun HeroText(
     val fill = if (colors.isDark) Color.White.copy(alpha = 0.64f) else Color.Black.copy(alpha = 0.08f)
     val ink = if (colors.isDark) Color(0xFF2F2F2F) else colors.label
     Column {
-        Text(
-            text = kicker,
-            color = colors.label.copy(alpha = 0.55f),
-            fontSize = 21.sp,
-            lineHeight = 24.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = (-0.8).sp,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Text(
-            text = title,
-            color = colors.label,
-            fontSize = 33.sp,
-            lineHeight = 36.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = (-1.4).sp,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-        )
+        Text(kicker, style = HomeLabelStyle, color = colors.label.copy(alpha = 0.69f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(title, style = HomeTitleStyle, color = colors.label, maxLines = 2, overflow = TextOverflow.Ellipsis)
         if (artists.isNotBlank()) {
-            Text(
-                text = artists,
-                color = colors.secondaryLabel,
-                fontSize = 13.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(top = 2.dp),
-            )
+            Text(artists, style = HomeCardSubtitleStyle, color = colors.label.copy(alpha = 0.5f), maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 2.dp))
         }
         Spacer(Modifier.height(14.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Row(
                 Modifier
-                    .height(40.dp)
+                    .height(34.dp)
                     .pressScale(interaction, 0.94f)
                     .clip(CircleShape)
                     .background(fill)
                     .combinedClickable(interactionSource = interaction, indication = null, role = Role.Button, onClick = onPlay)
-                    .padding(start = 14.dp, end = 18.dp),
+                    .padding(start = 10.dp, end = 14.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Crossfade(targetState = playing, animationSpec = tween(180), label = "heroPlay") { on ->
-                    Icon(if (on) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, null, tint = ink, modifier = Modifier.size(22.dp))
+                    Icon(if (on) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, null, tint = ink, modifier = Modifier.size(20.dp))
                 }
-                Spacer(Modifier.width(6.dp))
+                Spacer(Modifier.width(5.dp))
                 Text(
                     text = stringResource(if (playing) R.string.pause else R.string.liquid_play),
+                    style = HomeLabelStyle,
                     color = ink,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = (-0.6).sp,
                 )
             }
             if (onChooseStyle != null) {

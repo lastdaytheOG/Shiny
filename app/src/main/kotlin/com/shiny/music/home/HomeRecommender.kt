@@ -343,20 +343,27 @@ class HomeRecommender(private val database: MusicDatabase) {
     }
 }
 
-// where the engine's rows sit among the rest of Home: after recently and most played, a first
-// round of rows, then the artist list and similar artists, then the rest
+data class HistorySection(val songs: List<com.shiny.music.db.entities.Song>) : HomeSection {
+    override val key get() = "history"
+}
+
+data class ArtistListSection(val artists: List<DeepDiveSection>) : HomeSection {
+    override val key get() = "artist_list"
+}
+
+// home keeps only its own sections, in this order: recently and most played, two rows of picks,
+// history, two more rows, the artist list, then the rest of the rows
 object HomeArrangement {
-    fun arrange(feed: HomeFeed, rows: List<RecommendationRowSection>): HomeFeed {
-        if (rows.isEmpty()) return feed
+    fun arrange(feed: HomeFeed, rows: List<RecommendationRowSection>, history: List<com.shiny.music.db.entities.Song>): HomeFeed {
         val s = feed.sections
+        val top = s.filter { it is OfflineNoticeSection || it is HeroMixSection || it.isTopPick || it is StartHereSection }
         val lately = s.filterIsInstance<LatelySection>()
         val rotation = s.filterIsInstance<RotationSection>()
-        val artistList = s.filterIsInstance<RecentArtistsSection>()
-        val deep = s.filterIsInstance<DeepDiveSection>()
-        val others = s.filterNot {
-            it is LatelySection || it is RotationSection || it is RecentArtistsSection || it is DeepDiveSection ||
-                it is DiscoverSection || it is MoreLikeSection || it is ContinueSection
-        }
-        return feed.copy(sections = others + lately + rotation + rows.take(4) + artistList + deep + rows.drop(4))
+        val artists = s.filterIsInstance<DeepDiveSection>().filter { it.related.size >= 2 }
+        val historyRow = listOfNotNull(history.takeIf { it.size >= 3 }?.let { HistorySection(it.take(18)) })
+        val artistList = listOfNotNull(artists.takeIf { it.isNotEmpty() }?.let { ArtistListSection(it) })
+        return feed.copy(
+            sections = top + lately + rotation + rows.take(2) + historyRow + rows.drop(2).take(2) + artistList + rows.drop(4),
+        )
     }
 }

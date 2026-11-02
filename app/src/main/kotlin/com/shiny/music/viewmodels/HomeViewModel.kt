@@ -270,7 +270,9 @@ class HomeViewModel @Inject constructor(
         if (System.currentTimeMillis() - recommendedAt > 30 * 60_000L) refreshRecommendations(force = true)
     }
 
-    val homeFeed: StateFlow<HomeFeed?> = combine(feed, recommendations) { f, rows -> f?.let { HomeArrangement.arrange(it, rows) } }
+    val homeFeed: StateFlow<HomeFeed?> = combine(feed, recommendations, database.libraryDao.recentHistory(24)) { f, rows, history ->
+        f?.let { HomeArrangement.arrange(it, rows, history) }
+    }
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 

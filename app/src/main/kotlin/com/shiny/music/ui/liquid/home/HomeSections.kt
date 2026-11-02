@@ -119,10 +119,10 @@ import com.shiny.music.ui.theme.pressScale
 import com.shiny.music.ui.utils.resize
 import com.shiny.music.utils.rememberPreference
 
-private val TileWidth = 150.dp
-private val RecentWidth = 150.dp
-private val ArtistWidth = 140.dp
-private val AlbumWidth = 180.dp
+private val TileWidth = HomeCardSize
+private val RecentWidth = HomeCardSize
+private val ArtistWidth = HomeCardSize
+private val AlbumWidth = HomeCardSize
 private val ShortcutHeight = 58.dp
 private val HomeHeadingStyle = LiquidTypography.title2
 private val HomeHeadingTop = 34.dp
@@ -140,51 +140,7 @@ internal fun HomeHeader(
     onClick: (() -> Unit)? = null,
     trailing: (@Composable () -> Unit)? = null,
 ) {
-    val colors = Liquid.colors
-    val interaction = remember { MutableInteractionSource() }
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .padding(start = PageMargin, end = PageMargin, top = 30.dp, bottom = 14.dp)
-            .semantics(mergeDescendants = true) { heading() },
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Row(
-            Modifier
-                .weight(1f)
-                .then(
-                    if (onClick != null) {
-                        Modifier
-                            .pressScale(interaction, 0.97f)
-                            .combinedClickable(interactionSource = interaction, indication = null, onClick = onClick)
-                    } else {
-                        Modifier
-                    }
-                ),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(Modifier.weight(1f, fill = false)) {
-                Text(
-                    text = title,
-                    color = colors.label.copy(alpha = 0.82f),
-                    fontSize = 26.sp,
-                    lineHeight = 30.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = (-1).sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                if (!subtitle.isNullOrBlank()) {
-                    Text(subtitle, color = colors.secondaryLabel, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
-            }
-            if (onClick != null) {
-                Spacer(Modifier.width(4.dp))
-                Icon(Icons.Rounded.ChevronRight, null, tint = colors.label.copy(alpha = 0.55f), modifier = Modifier.size(26.dp))
-            }
-        }
-        trailing?.invoke()
-    }
+    HomeSectionTitle(title = title, onClick = onClick)
 }
 
 // the feed's cards: big squircles, the title and the artist underneath
@@ -206,7 +162,8 @@ internal fun HomeCard(
     songId: String? = null,
 ) {
     val interaction = remember { MutableInteractionSource() }
-    val shape = if (circular) CircleShape else RoundedCornerShape(width * 0.25f)
+    val shape = if (circular) CircleShape else RoundedCornerShape(HomeCardRadius)
+    val label = Liquid.colors.label
     Column(
         modifier
             .width(width)
@@ -224,28 +181,25 @@ internal fun HomeCard(
             Artwork(model = artwork, shape = shape, placeholder = placeholder, hairline = false, modifier = Modifier.fillMaxSize())
             badge?.invoke(this)
         }
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(8.dp))
         Text(
             text = title,
-            color = titleColor,
-            fontSize = 15.sp,
-            lineHeight = 18.sp,
-            fontWeight = FontWeight.SemiBold,
-            letterSpacing = (-0.4).sp,
+            style = HomeCardTitleStyle,
+            color = if (titleColor == label) label.copy(alpha = 0.92f) else titleColor,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             textAlign = if (circular) TextAlign.Center else TextAlign.Start,
+            modifier = Modifier.fillMaxWidth(),
         )
         if (!subtitle.isNullOrBlank()) {
             Text(
                 text = subtitle,
-                color = subtitleColor,
-                fontSize = 13.5.sp,
-                lineHeight = 17.sp,
-                fontWeight = FontWeight.Medium,
+                style = HomeCardSubtitleStyle,
+                color = label.copy(alpha = 0.5f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 textAlign = if (circular) TextAlign.Center else TextAlign.Start,
+                modifier = Modifier.fillMaxWidth(),
             )
         }
     }
@@ -283,7 +237,7 @@ internal fun RecentlyPlayedShelf(section: LatelySection, actions: LiquidActions)
         title = title,
         onClick = { actions.navController.navigate("history") },
     )
-    Shelf(items = tiles, key = { it.key }) { tile ->
+    HomeRow(items = tiles, key = { it.key }) { tile ->
         when (tile) {
             is SongTile -> HomeCard(
                 songId = tile.song.id,
@@ -390,7 +344,7 @@ private fun PinnedItemTile(tile: PinnedTile, actions: LiquidActions, width: andr
 @Composable
 internal fun RecentArtistsShelf(section: RecentArtistsSection, actions: LiquidActions) {
     HomeHeader(stringResource(R.string.home_recent_artists))
-    Shelf(items = section.tiles, key = { it.key }) { tile -> RecentTile(tile, actions) }
+    HomeRow(items = section.tiles, key = { it.key }) { tile -> RecentTile(tile, actions) }
 }
 
 @Composable
@@ -570,29 +524,21 @@ private fun RecentTile(tile: LatelyTile, actions: LiquidActions) {
 
 @Composable
 internal fun RotationGrid(section: RotationSection, activeId: String?, isPlaying: Boolean, actions: LiquidActions) {
-    val title = stringResource(R.string.home_rotation)
+    val title = stringResource(R.string.home_most_played)
     val songs = remember(section) { section.songs.map { it.song } }
-    HomeHeader(title)
-    SongGrid(items = songs, key = { it.id }, rows = 3) { song, index, modifier, last ->
-        SongRow(
+    HomeSectionTitle(title, onClick = { actions.navController.navigate("stats") })
+    HomeTrackGrid(items = songs, key = { it.id }) { song, index, modifier ->
+        HomeTrackRow(
             songId = song.id,
             title = song.title,
             subtitle = song.artistLine(),
-            artwork = song.thumbnailUrl,
+            artwork = song.thumbnailUrl?.resize(240, 240),
             isActive = song.id == activeId,
-            isPlaying = isPlaying,
-            explicit = song.song.explicit,
             onClick = {
                 if (song.id == activeId) actions.togglePlayPause() else actions.playSongs(title, songs, index, origin = RotationOrigin)
             },
             onLongClick = { actions.menu(song) },
-            onMore = { actions.menu(song) },
-            showSeparator = !last,
-            startPadding = 0.dp,
-            artworkSize = 56.dp,
-            leadingRank = index + 1,
-            leadingRankStyle = TextStyle(fontSize = 26.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.8).sp),
-            leadingRankWidth = 40.dp,
+            rank = index + 1,
             modifier = modifier,
         )
     }
@@ -607,7 +553,7 @@ internal fun ContinueShelf(section: ContinueSection, activeId: String?, actions:
         stringResource(R.string.home_continue_related, section.seed.title)
     }
     HomeHeader(title)
-    Shelf(items = section.songs, key = { it.id }) { song ->
+    HomeRow(items = section.songs, key = { it.id }) { song ->
         HomeCard(
             songId = song.id,
             title = song.title,
@@ -689,7 +635,7 @@ private fun PicksShelf(
     val songs = remember(picks) { picks.map { it.song } }
     val origin = remember(picks) { discoverOrigin(picks) }
     if (kicker != null && name != null) ArtistHeader(kicker = kicker, name = name, photo = null, onClick = null) else HomeHeader(title)
-    Shelf(items = songs, key = { it.id }) { song ->
+    HomeRow(items = songs, key = { it.id }) { song ->
         HomeCard(
             songId = song.id,
             title = song.title,
@@ -722,7 +668,7 @@ internal fun NewToYouShelf(picks: List<NewToYouPick>, actions: LiquidActions) {
         trailing = { HeaderPlay(label = stringResource(R.string.home_play_all), onClick = { actions.playSongs(title, songs, origin = origin) }) },
         modifier = Modifier.semantics { heading() },
     )
-    Shelf(items = picks, key = { it.song.id }) { pick ->
+    HomeRow(items = picks, key = { it.song.id }) { pick ->
         DiscoverTile(
             pick = DiscoverPick(pick.song, null, pick.recommendation.reason, pick.recommendation.source),
             onClick = { actions.playSongs(title, songs, songs.indexOf(pick.song), origin = origin) },
@@ -775,57 +721,25 @@ internal fun MoreFromArtistShelf(section: DeepDiveSection, actions: LiquidAction
             photo = digest.thumbnail,
             onClick = { actions.navController.navigate("artist/${digest.artistId}") },
         )
-        Shelf(items = section.albums, key = { it.id }) { album -> YouTubeTile(album, actions, width = AlbumWidth) }
+        HomeRow(items = section.albums, key = { it.id }) { album -> YouTubeTile(album, actions, width = AlbumWidth) }
     }
     if (section.related.size >= 3) {
         ArtistHeader(kicker = stringResource(R.string.home_kicker_similar), name = digest.name, photo = digest.thumbnail, onClick = null)
-        Shelf(items = section.related, key = { it.id }) { artist -> YouTubeTile(artist, actions, width = ArtistWidth) }
+        HomeRow(items = section.related, key = { it.id }) { artist -> YouTubeTile(artist, actions, width = ArtistWidth) }
     }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun ArtistHeader(kicker: String, name: String, photo: String?, onClick: (() -> Unit)?) {
-    val colors = Liquid.colors
-    val interaction = remember { MutableInteractionSource() }
-    Row(
-        Modifier
-            .padding(start = PageMargin, end = PageMargin - 4.dp, top = 30.dp, bottom = 14.dp)
-            .fillMaxWidth()
-            .then(
-                if (onClick != null) {
-                    Modifier
-                        .pressScale(interaction, 0.98f)
-                        .combinedClickable(interactionSource = interaction, indication = null, onClick = onClick)
-                } else {
-                    Modifier
-                }
-            )
-            .semantics(mergeDescendants = true) { heading() },
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        if (photo != null) {
-            Artwork(model = photo.resize(160, 160), shape = CircleShape, hairline = false, modifier = Modifier.size(44.dp))
-            Spacer(Modifier.width(12.dp))
-        }
-        Column(Modifier.weight(1f, fill = false)) {
-            Text(kicker, color = colors.secondaryLabel, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1)
-            Text(
-                text = name,
-                color = colors.label.copy(alpha = 0.9f),
-                fontSize = 24.sp,
-                lineHeight = 27.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = (-0.9).sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-        if (onClick != null) {
-            Spacer(Modifier.width(4.dp))
-            Icon(Icons.Rounded.ChevronRight, null, tint = colors.label.copy(alpha = 0.55f), modifier = Modifier.size(26.dp))
-        }
-    }
+internal fun ArtistHeader(kicker: String, name: String, photo: String?, onClick: (() -> Unit)?) {
+    HomeSectionTitle(
+        title = name,
+        label = kicker,
+        thumbnail = photo?.let { url ->
+            { Artwork(model = url.resize(120, 120), shape = CircleShape, hairline = false, modifier = Modifier.size(30.dp)) }
+        },
+        onClick = onClick,
+    )
 }
 
 private sealed interface ServiceTile {
@@ -858,7 +772,7 @@ internal fun SpotifyShelf(section: SpotifySection, actions: LiquidActions) {
             if (lone != null) {
                 LoneLikedSongs(lone.liked, SpotifyGreen, openLiked)
             } else {
-                Shelf(items = tiles, key = { it.key }) { tile ->
+                HomeRow(items = tiles, key = { it.key }) { tile ->
                     when (tile) {
                         is ServiceTile.Liked -> LikedSongsTile(tile.liked, SpotifyGreen, openLiked)
                         is ServiceTile.SpotifyMix -> SpotifyMixTile(tile.mix, actions)
@@ -869,7 +783,7 @@ internal fun SpotifyShelf(section: SpotifySection, actions: LiquidActions) {
         }
         if (section.discoveries.isNotEmpty()) {
             ServiceHeader(title = stringResource(R.string.home_spotify_discoveries), mark = { SpotifyMark() })
-            Shelf(items = section.discoveries, key = { it.spotifyId }) { mix -> SpotifyMixTile(mix, actions) }
+            HomeRow(items = section.discoveries, key = { it.spotifyId }) { mix -> SpotifyMixTile(mix, actions) }
         }
     }
 }
@@ -972,7 +886,7 @@ internal fun YouTubeShelf(section: YouTubeSection, actions: LiquidActions) {
         if (lone != null) {
             LoneLikedSongs(lone.liked, YouTubeMusicRed, openLiked)
         } else if (tiles.isNotEmpty()) {
-            Shelf(items = tiles, key = { it.key }) { tile ->
+            HomeRow(items = tiles, key = { it.key }) { tile ->
                 when (tile) {
                     is ServiceTile.Liked -> LikedSongsTile(tile.liked, YouTubeMusicRed, openLiked)
                     is ServiceTile.YouTubeMix -> YouTubeMixTile(tile.playlist, actions)
@@ -982,11 +896,11 @@ internal fun YouTubeShelf(section: YouTubeSection, actions: LiquidActions) {
         }
         if (section.discoveries.isNotEmpty()) {
             ServiceHeader(title = stringResource(R.string.home_youtube_discoveries), mark = { YouTubeMark() })
-            Shelf(items = section.discoveries, key = { it.id }) { mix -> YouTubeMixTile(mix, actions) }
+            HomeRow(items = section.discoveries, key = { it.id }) { mix -> YouTubeMixTile(mix, actions) }
         }
         if (section.playlists.isNotEmpty()) {
             ServiceHeader(title = stringResource(R.string.home_youtube_playlists), mark = { YouTubeMark() })
-            Shelf(items = section.playlists, key = { it.id }) { playlist -> PlaylistCoverTile(playlist, actions) }
+            HomeRow(items = section.playlists, key = { it.id }) { playlist -> PlaylistCoverTile(playlist, actions) }
         }
     }
 }
@@ -1134,7 +1048,7 @@ internal fun RecommendationShelf(section: RecommendationRowSection, activeId: St
         RecRowKind.Genre -> ArtistHeader(kicker = stringResource(R.string.home_kicker_listen), name = section.subject, photo = null, onClick = null)
         RecRowKind.NewGenre -> ArtistHeader(kicker = stringResource(R.string.home_kicker_try), name = section.subject, photo = null, onClick = null)
     }
-    Shelf(items = section.items, key = { it.id }) { item ->
+    HomeRow(items = section.items, key = { it.id }) { item ->
         val subtitle = when (item) {
             is AlbumItem -> listOfNotNull(item.artists?.firstOrNull()?.name, item.year?.toString()).joinToString(" · ")
             is SongItem -> item.artists.joinToString { it.name }

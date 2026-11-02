@@ -1,5 +1,13 @@
 package com.shiny.music.ui.liquid.screens
 
+import com.shiny.music.home.HistorySection
+import com.shiny.music.home.ArtistListSection
+import com.shiny.music.ui.liquid.home.HistoryShelf
+import com.shiny.music.ui.liquid.home.ArtistListShelf
+import com.shiny.music.ui.liquid.home.HomePage
+import com.shiny.music.ui.liquid.home.HeroHeightFraction
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import com.shiny.music.home.RecommendationRowSection
 import com.shiny.music.ui.liquid.home.RecommendationShelf
 import androidx.activity.compose.ReportDrawnWhen
@@ -144,6 +152,7 @@ fun LiquidHomeScreen(
     val listState = rememberListState(viewModel.scroll)
     val pullState = rememberPullToRefreshState()
     val heroList = rememberLazyListState()
+    val heroHeightPx = with(LocalDensity.current) { (LocalConfiguration.current.screenHeightDp.dp * HeroHeightFraction).toPx() }
     val hero = remember(heroList) { HomeHeroState(heroList) }
 
     val (topPicks, shelves) = remember(feed) { feed?.sections.orEmpty().partition { it.isTopPick } }
@@ -187,12 +196,12 @@ fun LiquidHomeScreen(
         indicator = { RefreshIndicator(pullState, isRefreshing) },
         modifier = Modifier.fillMaxSize(),
     ) {
-        LargeTitlePage(
-            title = stringResource(R.string.liquid_home),
+        HomePage(
             state = listState,
-            scrollToTopSignal = navController,
+            heroHeightPx = heroHeightPx,
+            navController = navController,
             behind = { HomeAmbience(hero, listState, reduceMotion) },
-            titleAccessory = {
+            avatar = {
                 AccountAvatar(
                     imageUrl = if (isLoggedIn) accountImageUrl else null,
                     onClick = { navController.navigate("settings") },
@@ -202,7 +211,7 @@ fun LiquidHomeScreen(
             if (feed == null) {
                 item(key = "skeleton_hero", contentType = "skeleton_hero") { HeroSkeleton() }
                 item(key = "skeleton_shelf", contentType = "skeleton") { SkeletonShelf(tile = 156.dp) }
-                return@LargeTitlePage
+                return@HomePage
             }
 
             if (OfflineNoticeSection in shelves) {
@@ -235,7 +244,7 @@ fun LiquidHomeScreen(
                 }
             }
 
-            shelves.filterNot { it is OfflineNoticeSection || it is HeroMixSection || it is SpotifySection || it is YouTubeSection || it is ShortcutsSection || it is PinnedSection }.forEach { section ->
+            shelves.filterNot { it is OfflineNoticeSection || it is HeroMixSection }.forEach { section ->
                 item(key = section.key, contentType = section::class.simpleName) {
                     NoteShown(section, viewModel)
                     HomeItem(reduceMotion, section.key, viewModel.revealed) {
@@ -311,6 +320,8 @@ private fun HomeShelf(
         is SpotifySection -> SpotifyShelf(section, actions)
         is YouTubeSection -> YouTubeShelf(section, actions)
         is RecommendationRowSection -> RecommendationShelf(section, activeId, actions)
+        is HistorySection -> HistoryShelf(section, activeId, actions)
+        is ArtistListSection -> ArtistListShelf(section, actions)
         PickArtistsSection -> PickArtistsCard(onPick = onPickArtists, onDismiss = onDismissPickArtists)
         else -> Unit
     }
@@ -324,7 +335,7 @@ private fun AccountAvatar(imageUrl: String?, onClick: () -> Unit) {
     val label = stringResource(R.string.settings)
     Box(
         modifier = Modifier
-            .size(38.dp)
+            .size(36.dp)
             .pressScale(interaction, 0.9f)
             .clip(CircleShape)
             .background(colors.gray5)
