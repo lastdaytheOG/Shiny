@@ -276,47 +276,38 @@ private fun artistsLine(songs: List<Song>): String =
         .take(3)
         .joinToString()
 
-private sealed interface HeroPage {
-    val key: String
-}
+// one slide of the top of home: what it is, why it's there, and what play does
+internal class HeroCard(
+    val key: String,
+    val label: String,
+    val labelCover: String?,
+    val labelName: String?,
+    val roundCover: Boolean,
+    val title: String,
+    val art: String?,
+    val mediaId: String?,
+    val play: () -> Unit,
+)
 
-private class ArtPage(val section: HomeSection, val songs: List<Song>, val art: String?) : HeroPage {
-    override val key get() = section.key
-}
+private data object GachaKey
 
-private data object GachaPage : HeroPage {
-    override val key get() = "gacha"
-}
-
-// the top of Home: one full-bleed slide at a time, each blurring into the next, with the
-// random plays stack as one of the slides
+// the top of home: one full-bleed slide at a time, each blurring into the next, with the
+// random plays stack second so the first turn shows it
 @Composable
 internal fun HeroCarousel(
     hero: HomeHeroState,
-    mix: HeroMixSection?,
-    picks: List<HomeSection>,
-    takenCovers: List<String>,
-    queueTitle: String?,
+    cards: List<HeroCard>,
+    gacha: List<HeroCard>,
+    activeId: String?,
     isPlaying: Boolean,
     reduceMotion: Boolean,
     actions: LiquidActions,
-    onPlayedDiscovery: () -> Unit,
-    onChooseStyle: () -> Unit,
-    onShown: @Composable (HomeSection) -> Unit,
 ) {
-    val slides = remember(mix, picks) {
-        (listOfNotNull<HomeSection>(mix) + picks).mapNotNull { section ->
-            val songs = if (section is HeroMixSection) section.songs else section.pickSongs
-            if (songs.isEmpty()) return@mapNotNull null
-            val art = (if (section is HeroMixSection) section.barCovers().firstOrNull() else null) ?: songs.first().thumbnailUrl
-            ArtPage(section, songs, art?.resize(1200, 1200))
+    val pages: List<Any> = remember(cards, gacha) {
+        buildList {
+            addAll(cards)
+            if (gacha.size >= 4) add(minOf(1, size), GachaKey)
         }
-    }
-    val pool = remember(slides) { slides.flatMap { it.songs }.distinctBy { it.id }.shuffled(kotlin.random.Random(slides.size)).take(12) }
-    val pages = remember(slides, pool) {
-        val list = ArrayList<HeroPage>(slides)
-        if (pool.size >= 4) list.add(minOf(1, list.size), GachaPage)
-        list
     }
     if (pages.isEmpty()) return
     val n = pages.size
@@ -330,7 +321,6 @@ internal fun HeroCarousel(
         val raw = (i - hero.pos.value) % n
         return ((raw + n + n / 2f) % n) - n / 2f
     }
-    val current by remember(n) { derivedStateOf { Math.floorMod(hero.pos.value.roundToInt(), n) } }
     val visible by remember(n) { derivedStateOf { (0 until n).filter { abs(distance(it)) < 0.999f } } }
 
     LaunchedEffect(n, reduceMotion) {
@@ -338,27 +328,6 @@ internal fun HeroCarousel(
         while (true) {
             delay(5500)
             if (!dragging && !busy) hero.pos.animateTo(hero.pos.value.roundToInt() + 1f, HeroFade)
-        }
-    }
-
-    (pages[current] as? ArtPage)?.let { onShown(it.section) }
-
-    val play: (ArtPage, String) -> Unit = { page, title ->
-        val section = page.section
-        val songs = page.songs
-        if (queueTitle == title) {
-            actions.togglePlayPause()
-        } else {
-            when (section) {
-                is HeroMixSection -> actions.playSongs(title, songs, origin = MixOrigin)
-                is DiscoveryMixSection -> {
-                    onPlayedDiscovery()
-                    actions.playSongs(title, songs, origin = discoverOrigin(section.picks))
-                }
-                is AroundNowSection -> actions.playSongs(title, songs, shuffle = true, origin = AroundNowOrigin)
-                is RediscoverSection -> actions.playSongs(title, songs, origin = RediscoverOrigin)
-                else -> actions.playSongs(title, songs)
-            }
         }
     }
 
@@ -387,7 +356,7 @@ internal fun HeroCarousel(
     ) {
         visible.forEach { index ->
             val page = pages[index]
-            key(page.key) {
+            key(if (page is HeroCard) page.key else "gacha") {
                 Box(
                     Modifier
                         .fillMaxSize()
@@ -400,22 +369,15 @@ internal fun HeroCarousel(
                             renderEffect = heroBlur(away * 28f)
                         },
                 ) {
-                    when (page) {
-                        is ArtPage -> {
-                            val title = cardTitle(page.section)
-                            HeroArtSlide(
-                                page = page,
-                                playing = queueTitle == title && isPlaying,
-                                onPlay = { play(page, title) },
-                            )
-                        }
-                        GachaPage -> HeroGacha(
-                            pool = pool,
-                            queueTitle = queueTitle,
-                            isPlaying = isPlaying,
-                            actions = actions,
-                            onBusy = { busy = it },
+                    if (page is HeroCard) {
+                        val playing = page.mediaId != null && page.mediaId == activeId
+                        HeroArtSlide(
+                            card = page,
+                            playing = playing && isPlaying,
+                            onPlay = { if (playing) actions.togglePlayPause() else page.play() },
                         )
+                    } else {
+                        HeroGacha(pool = gacha, activeId = activeId, isPlaying = isPlaying, actions = actions, onBusy = { busy = it })
                     }
                 }
             }
@@ -435,10 +397,8 @@ private val GachaRoll = CubicBezierEasing(0.15f, 0.45f, 0.2f, 1f)
 private const val HeroDim = 0.36f
 
 @Composable
-private fun HeroArtSlide(page: ArtPage, playing: Boolean, onPlay: () -> Unit) {
+private fun HeroArtSlide(card: HeroCard, playing: Boolean, onPlay: () -> Unit) {
     val background = Liquid.colors.background
-    val lead = page.songs.first()
-    val artist = lead.artists.firstOrNull()
     val scrim = remember(background) {
         Brush.verticalGradient(
             0f to Color.Black.copy(alpha = 0.45f),
@@ -449,22 +409,18 @@ private fun HeroArtSlide(page: ArtPage, playing: Boolean, onPlay: () -> Unit) {
         )
     }
     Box(Modifier.fillMaxSize()) {
-        AsyncImage(
-            model = page.art,
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize(),
-        )
+        AsyncImage(model = card.art, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
         Box(
             Modifier
                 .fillMaxSize()
                 .background(scrim),
         )
         HeroInfo(
-            kicker = heroKicker(page.section),
-            artistName = if (page.section is DiscoveryMixSection) artist?.name else null,
-            artistPhoto = if (page.section is DiscoveryMixSection) artist?.thumbnailUrl else null,
-            title = if (page.section is HeroMixSection) cardTitle(page.section) else songLine(lead),
+            kicker = if (playing) stringResource(R.string.home_now_playing) else card.label,
+            labelName = if (playing) null else card.labelName,
+            labelCover = card.labelCover,
+            roundCover = card.roundCover,
+            title = card.title,
             buttonText = stringResource(if (playing) R.string.pause else R.string.liquid_play),
             buttonIcon = if (playing) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
             onButton = onPlay,
@@ -473,16 +429,12 @@ private fun HeroArtSlide(page: ArtPage, playing: Boolean, onPlay: () -> Unit) {
     }
 }
 
-private fun songLine(song: Song): String {
-    val artist = song.artists.firstOrNull()?.name
-    return if (artist.isNullOrBlank()) song.title else "${song.title} - $artist"
-}
-
 @Composable
 private fun HeroInfo(
     kicker: String,
-    artistName: String?,
-    artistPhoto: String?,
+    labelName: String?,
+    labelCover: String?,
+    roundCover: Boolean,
     title: String,
     buttonText: String,
     buttonIcon: ImageVector,
@@ -493,11 +445,18 @@ private fun HeroInfo(
     Column(modifier.padding(start = HomeInset, end = HomeInset, bottom = 62.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(kicker, style = HeroKickerStyle, color = Color.White.copy(alpha = 0.69f), maxLines = 1)
-            if (artistName != null) {
+            if (labelName != null) {
                 Spacer(Modifier.width(5.dp))
-                Artwork(model = artistPhoto?.resize(60, 60), shape = CircleShape, hairline = false, modifier = Modifier.size(15.dp))
-                Spacer(Modifier.width(4.dp))
-                Text(artistName, style = HeroKickerStyle.copy(fontWeight = FontWeight.Bold), color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                if (labelCover != null) {
+                    Artwork(
+                        model = labelCover.resize(60, 60),
+                        shape = if (roundCover) CircleShape else RoundedCornerShape(3.dp),
+                        hairline = false,
+                        modifier = Modifier.size(15.dp),
+                    )
+                    Spacer(Modifier.width(4.dp))
+                }
+                Text(labelName, style = HeroKickerStyle.copy(fontWeight = FontWeight.Bold), color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
         Text(title, style = HomeTitleStyle, color = Color.White, maxLines = 2, overflow = TextOverflow.Ellipsis)
@@ -526,20 +485,19 @@ private val HeroKickerStyle = TextStyle(fontWeight = FontWeight.Medium, fontSize
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun HeroGacha(
-    pool: List<Song>,
-    queueTitle: String?,
+    pool: List<HeroCard>,
+    activeId: String?,
     isPlaying: Boolean,
     actions: LiquidActions,
     onBusy: (Boolean) -> Unit,
 ) {
-    val title = stringResource(R.string.home_gacha_title)
     val scope = rememberCoroutineScope()
     val haptics = LocalHapticFeedback.current
     val spin = remember { Animatable(0f) }
     var rolling by remember { mutableStateOf(false) }
-    var landed by remember { mutableStateOf<Song?>(null) }
+    var landed by remember { mutableStateOf<HeroCard?>(null) }
     val n = pool.size
-    val playingIt = landed != null && queueTitle == title
+    val playingIt = landed?.mediaId != null && landed?.mediaId == activeId
 
     fun roll() {
         if (rolling) return
@@ -549,16 +507,16 @@ private fun HeroGacha(
         scope.launch {
             val target = spin.value.roundToInt() + 18 + kotlin.random.Random.nextInt(n)
             spin.animateTo(target.toFloat(), tween(4200, easing = GachaRoll))
-            val song = pool[Math.floorMod(target, n)]
+            val card = pool[Math.floorMod(target, n)]
             haptics.performHapticFeedback(HapticFeedbackType.Confirm)
-            landed = song
+            landed = card
             rolling = false
-            actions.playSongs(title, listOf(song))
+            card.play()
             delay(4000)
             onBusy(false)
         }
     }
-    val tap = { if (landed != null && playingIt) actions.togglePlayPause() else roll() }
+    val tap = { if (playingIt) actions.togglePlayPause() else roll() }
 
     BoxWithConstraints(
         Modifier
@@ -575,7 +533,7 @@ private fun HeroGacha(
         for (k in -2..2) {
             val slot = base + k
             key(slot) {
-                val song = pool[Math.floorMod(slot, n)]
+                val card = pool[Math.floorMod(slot, n)]
                 val interaction = remember { MutableInteractionSource() }
                 Box(
                     Modifier
@@ -601,7 +559,7 @@ private fun HeroGacha(
                         }
                         .combinedClickable(interactionSource = interaction, indication = null, onClick = tap),
                 ) {
-                    Artwork(model = song.thumbnailUrl?.resize(600, 600), shape = shape, hairline = false, modifier = Modifier.fillMaxSize())
+                    Artwork(model = card.art?.resize(600, 600), shape = shape, hairline = false, modifier = Modifier.fillMaxSize())
                 }
             }
         }
@@ -623,18 +581,19 @@ private fun HeroGacha(
             drawPath(path, GachaPointerColor)
             drawPath(path, GachaPointerColor, style = Stroke(width = r * 2f, join = StrokeJoin.Round))
         }
-        val song = landed
+        val card = landed
         HeroInfo(
             kicker = stringResource(
                 when {
-                    song == null -> R.string.home_gacha_kicker
+                    card == null -> R.string.home_gacha_kicker
                     playingIt && isPlaying -> R.string.home_now_playing
                     else -> R.string.home_gacha_got
                 },
             ),
-            artistName = null,
-            artistPhoto = null,
-            title = song?.let(::songLine) ?: title,
+            labelName = null,
+            labelCover = null,
+            roundCover = false,
+            title = card?.title ?: stringResource(R.string.home_gacha_title),
             buttonText = stringResource(if (rolling) R.string.home_gacha_rolling else R.string.home_gacha_roll),
             buttonIcon = Icons.Rounded.Casino,
             onButton = { roll() },
@@ -648,17 +607,6 @@ private val GachaGlow = Brush.verticalGradient(
     0.45f to Color(0xFF5B5059),
     0.8f to Color(0xFF231F23),
     1f to Color.Transparent,
-)
-
-@Composable
-private fun heroKicker(section: HomeSection): String = stringResource(
-    when (section) {
-        is HeroMixSection -> R.string.home_kicker_mix
-        is DiscoveryMixSection -> R.string.home_kicker_listen
-        is AroundNowSection -> R.string.home_kicker_around
-        is RediscoverSection -> R.string.home_kicker_on_repeat
-        else -> R.string.home_kicker_start
-    },
 )
 
 @OptIn(ExperimentalFoundationApi::class)
