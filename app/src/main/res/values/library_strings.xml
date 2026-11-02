@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="library_tab_all">All</string>
+    <string name="library_tab_local">Local</string>
+    <string name="library_tab_imported">Imported</string>
+    <string name="library_search_all">Search your library</string>
+    <string name="library_search_local">Search local music</string>
+    <string name="library_search_cached">Search cached music</string>
+    <string name="library_search_imported">Search imported playlists</string>
+    <string name="library_search_artists">Search artists</string>
+    <string name="library_search_albums">Search albums</string>
+    <string name="library_search_playlists">Search playlists</string>
+    <string name="library_pinned">Pinned</string>
+    <string name="library_more">More</string>
+    <string name="library_history_caption">Everything you played</string>
+    <string name="library_stats_caption">Your listening, counted</string>
+    <string name="library_together_caption">Play along with friends</string>
+    <string name="library_recognition_caption">Name the song nearby</string>
+    <string name="library_device_title">Songs on this phone</string>
+    <string name="library_device_caption">On this device</string>
+    <string name="library_all_local">All local music</string>
+    <string name="library_local_empty">Nothing downloaded or on this phone yet</string>
+    <string name="library_manage_local">Manage local</string>
+    <string name="library_cached_empty">Nothing cached yet. Songs you play stay here while there is room.</string>
+    <string name="library_all_cached">All cached music</string>
+    <string name="library_manage_cache">Manage cache</string>
+    <string name="library_import_title">Bring your music over</string>
+    <string name="library_import_caption">Playlists and liked songs from Spotify</string>
+    <string name="library_import_action">Import</string>
+    <string name="library_from">From %1$s</string>
+    <string name="library_manage_imports">Manage imports</string>
+    <string name="library_no_results">Nothing in your library matches “%1$s”</string>
+    <string name="library_kind_artist">Artist</string>
+    <string name="library_kind_album">Album</string>
+    <string name="library_kind_playlist">Playlist</string>
+    <plurals name="library_artists_count">
+        <item quantity="one">%d artist</item>
+        <item quantity="other">%d artists</item>
+    </plurals>
+    <plurals name="library_albums_count">
+        <item quantity="one">%d album</item>
+        <item quantity="other">%d albums</item>
+    </plurals>
+    <plurals name="library_playlists_count">
+        <item quantity="one">%d playlist</item>
+        <item quantity="other">%d playlists</item>
+    </plurals>
+    <string name="library_songs_subtitle">All songs in your library</string>
+    <string name="library_artists_subtitle">All artists in your library</string>
+    <string name="library_albums_subtitle">All albums in your library</string>
+    <string name="library_playlists_subtitle">All your playlists</string>
+    <string name="library_added_title">Added</string>
+    <string name="library_added_subtitle">Recently</string>
+    <string name="library_find_song">Find a song by its title or artist</string>
+    <string name="library_find_artist">Find an artist by name</string>
+    <string name="library_find_album">Find an album or its artist</string>
+    <string name="library_find_playlist">Find a playlist by name</string>
+    <string name="library_find_added">Find a song listed here</string>
+</resources>

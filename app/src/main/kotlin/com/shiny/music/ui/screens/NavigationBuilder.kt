@@ -12,6 +12,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.TopAppBarScrollBehavior
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.navigation.NavGraphBuilder
@@ -88,28 +89,33 @@ fun NavGraphBuilder.navigationBuilder(
     }
 
     screen(Screens.Library.route) {
-        com.shiny.music.ui.liquid.screens.LiquidLibraryScreen(
+        val owner = activity as androidx.activity.ComponentActivity
+        val home: com.shiny.music.viewmodels.HomeViewModel = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel(viewModelStoreOwner = owner)
+        com.shiny.music.ui.liquid.library.LibraryHomeScreen(
             navController = navController,
-            viewModel = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel(
-                viewModelStoreOwner = activity as androidx.activity.ComponentActivity,
-            ),
+            accountImageUrl = home.accountImageUrl.collectAsState().value,
+            viewModel = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel(viewModelStoreOwner = owner),
         )
     }
 
     screen("library/playlists") {
-        com.shiny.music.ui.liquid.screens.LiquidLibraryPlaylistsScreen(navController)
+        com.shiny.music.ui.liquid.library.LibraryPlaylistsPage(navController)
     }
 
     screen("library/artists") {
-        com.shiny.music.ui.liquid.screens.LiquidLibraryArtistsScreen(navController)
+        com.shiny.music.ui.liquid.library.LibraryArtistsPage(navController)
     }
 
     screen("library/albums") {
-        com.shiny.music.ui.liquid.screens.LiquidLibraryAlbumsScreen(navController)
+        com.shiny.music.ui.liquid.library.LibraryAlbumsPage(navController)
     }
 
     screen("library/songs") {
-        com.shiny.music.ui.liquid.screens.LiquidLibrarySongsScreen(navController)
+        com.shiny.music.ui.liquid.library.LibrarySongsPage(navController)
+    }
+
+    screen("library/added") {
+        com.shiny.music.ui.liquid.library.LibraryAddedPage(navController)
     }
 
     // Listen Together: its own tab (no back button) or pushed from Library, Now Playing,

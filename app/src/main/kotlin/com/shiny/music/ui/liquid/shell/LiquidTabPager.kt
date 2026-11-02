@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -31,7 +32,7 @@ import com.shiny.music.ui.liquid.LocalPageIsCurrent
 import com.shiny.music.ui.liquid.appearance.LocalShinyAppearance
 import com.shiny.music.ui.liquid.appearance.PageTransitions
 import com.shiny.music.ui.liquid.screens.LiquidHomeScreen
-import com.shiny.music.ui.liquid.screens.LiquidLibraryScreen
+import com.shiny.music.ui.liquid.library.LibraryHomeScreen
 import com.shiny.music.ui.liquid.screens.LiquidNewScreen
 import com.shiny.music.ui.screens.Screens
 import kotlinx.coroutines.launch
@@ -211,7 +212,7 @@ fun LiquidTopLevelPager(
                         when (index) {
                             0 -> LiquidHomeScreen(navController, homeViewModel)
                             1 -> LiquidNewScreen(navController)
-                            2 -> LiquidLibraryScreen(navController)
+                            2 -> LibraryHomeScreen(navController, homeViewModel.accountImageUrl.collectAsState().value)
                         }
                     }
                 }
