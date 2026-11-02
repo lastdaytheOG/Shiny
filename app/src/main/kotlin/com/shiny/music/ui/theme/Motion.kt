@@ -1,5 +1,12 @@
 package com.shiny.music.ui.theme
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.interaction.PressInteraction
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.graphicsLayer
+import kotlinx.coroutines.launch
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -63,14 +70,36 @@ fun Modifier.pressScale(
     interactionSource: InteractionSource,
     pressedScale: Float = 0.96f,
 ): Modifier = composed {
-    val pressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(
-        targetValue = if (pressed) pressedScale else 1f,
-        animationSpec = AppMotion.Snappy,
-        label = "pressScale",
-    )
-    scale(scale)
+    val scale = remember { Animatable(1f) }
+    LaunchedEffect(interactionSource, pressedScale) {
+        var held = 0
+        interactionSource.interactions.collect { interaction ->
+            when (interaction) {
+                is PressInteraction.Press -> {
+                    held++
+                    launch { scale.animateTo(pressedScale, PressIn) }
+                }
+                is PressInteraction.Release, is PressInteraction.Cancel -> {
+                    held = (held - 1).coerceAtLeast(0)
+                    if (held == 0) {
+                        launch {
+                            // a quick tap lets go before the squish shows, so play it first
+                            if (scale.value > pressedScale + (1f - pressedScale) * 0.35f) scale.animateTo(pressedScale, tween(70))
+                            scale.animateTo(1f, PressOut)
+                        }
+                    }
+                }
+            }
+        }
+    }
+    graphicsLayer {
+        scaleX = scale.value
+        scaleY = scale.value
+    }
 }
+
+private val PressIn = spring<Float>(dampingRatio = 1f, stiffness = 1500f)
+private val PressOut = spring<Float>(dampingRatio = 0.42f, stiffness = 480f)
 
 /** Convenience for call sites that only need the animated value. */
 @Composable

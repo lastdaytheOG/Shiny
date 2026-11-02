@@ -1,5 +1,6 @@
 package com.shiny.music.ui.liquid
 
+import androidx.compose.animation.core.tween
 import android.os.Build
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
@@ -216,19 +217,29 @@ fun Modifier.liquidGlass(
  */
 @Stable
 class GlassPress internal constructor(internal val animatable: Animatable<Float, *>) {
-    val value: Float get() = animatable.value
+    val value: Float get() = animatable.value.coerceIn(0f, 1f)
+    internal val raw: Float get() = animatable.value
 }
 
 @Composable
 fun rememberGlassPress(interactionSource: InteractionSource): GlassPress {
     val animatable = remember { Animatable(0f) }
     LaunchedEffect(interactionSource) {
+        var held = 0
         interactionSource.interactions.collect { interaction ->
-            launch {
-                when (interaction) {
-                    is PressInteraction.Press -> animatable.animateTo(1f, spring(dampingRatio = 0.62f, stiffness = 900f))
-                    is PressInteraction.Release, is PressInteraction.Cancel ->
-                        animatable.animateTo(0f, spring(dampingRatio = 0.55f, stiffness = 380f))
+            when (interaction) {
+                is PressInteraction.Press -> {
+                    held++
+                    launch { animatable.animateTo(1f, spring(dampingRatio = 1f, stiffness = 1500f)) }
+                }
+                is PressInteraction.Release, is PressInteraction.Cancel -> {
+                    held = (held - 1).coerceAtLeast(0)
+                    if (held == 0) {
+                        launch {
+                            if (animatable.value < 0.65f) animatable.animateTo(1f, tween(70))
+                            animatable.animateTo(0f, spring(dampingRatio = 0.42f, stiffness = 480f))
+                        }
+                    }
                 }
             }
         }
@@ -237,9 +248,10 @@ fun rememberGlassPress(interactionSource: InteractionSource): GlassPress {
 }
 
 /** Scales a glass element up slightly while pressed, like iOS 26 controls. */
+// every glass control squishes in under the finger and springs back past its size a little
 fun Modifier.glassPressScale(press: GlassPress, amount: Float = 0.08f): Modifier =
     graphicsLayer {
-        val s = 1f + amount * press.value
+        val s = 1f - kotlin.math.abs(amount) * 1.5f * press.raw
         scaleX = s
         scaleY = s
     }

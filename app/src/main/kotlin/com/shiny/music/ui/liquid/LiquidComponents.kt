@@ -126,27 +126,50 @@ fun liquidBottomPadding(extra: Dp = 24.dp): Dp = LocalLiquidBottomInset.current 
  * The iOS table-cell highlight: a flat fill that appears on touch-down and fades on
  * release. No ripple — a ripple is the single most Android thing a list can do.
  */
-class LiquidHighlight(private val color: Color) : IndicationNodeFactory {
+class LiquidHighlight(
+    private val color: Color,
+    private val corner: Dp = 0.dp,
+    private val insetX: Dp = 0.dp,
+    private val insetY: Dp = 0.dp,
+) : IndicationNodeFactory {
     override fun create(interactionSource: InteractionSource): DelegatableNode =
-        HighlightNode(interactionSource, color)
+        HighlightNode(interactionSource, color, corner, insetX, insetY)
 
-    override fun equals(other: Any?): Boolean = other is LiquidHighlight && other.color == color
-    override fun hashCode(): Int = color.hashCode()
+    override fun equals(other: Any?): Boolean =
+        other is LiquidHighlight && other.color == color && other.corner == corner &&
+            other.insetX == insetX && other.insetY == insetY
+
+    override fun hashCode(): Int =
+        ((color.hashCode() * 31 + corner.hashCode()) * 31 + insetX.hashCode()) * 31 + insetY.hashCode()
 }
 
 private class HighlightNode(
     private val interactionSource: InteractionSource,
     private val color: Color,
+    private val corner: Dp,
+    private val insetX: Dp,
+    private val insetY: Dp,
 ) : Node(), DrawModifierNode {
-    private val alpha = Animatable(0f)
+    private val strength = Animatable(0f)
 
     override fun onAttach() {
         coroutineScope.launch {
+            var held = 0
             interactionSource.interactions.collect { interaction ->
                 when (interaction) {
-                    is PressInteraction.Press -> launch { alpha.snapTo(1f); invalidateDraw() }
-                    is PressInteraction.Release, is PressInteraction.Cancel -> launch {
-                        alpha.animateTo(0f, tween(durationMillis = 280)) { invalidateDraw() }
+                    is PressInteraction.Press -> {
+                        held++
+                        launch { strength.animateTo(1f, tween(90)) { invalidateDraw() } }
+                    }
+                    is PressInteraction.Release, is PressInteraction.Cancel -> {
+                        held = (held - 1).coerceAtLeast(0)
+                        if (held == 0) {
+                            launch {
+                                // a quick tap would let go before the box shows, so it flashes first
+                                if (strength.value < 1f) strength.animateTo(1f, tween(70)) { invalidateDraw() }
+                                strength.animateTo(0f, tween(340)) { invalidateDraw() }
+                            }
+                        }
                     }
                 }
             }
@@ -154,16 +177,32 @@ private class HighlightNode(
     }
 
     override fun ContentDrawScope.draw() {
-        val a = alpha.value
-        if (a > 0f) drawRect(color.copy(alpha = color.alpha * a))
+        val s = strength.value
+        if (s > 0f) {
+            val tint = color.copy(alpha = color.alpha * s)
+            if (corner == 0.dp) {
+                drawRect(tint)
+            } else {
+                val dx = insetX.toPx()
+                val dy = insetY.toPx()
+                drawRoundRect(
+                    color = tint,
+                    topLeft = Offset(dx, dy),
+                    size = Size(size.width - dx * 2f, size.height - dy * 2f),
+                    cornerRadius = CornerRadius(corner.toPx()),
+                )
+            }
+        }
         drawContent()
     }
 }
 
+// rows get a soft rounded box a little in from the edges instead of a full width grey bar
 @Composable
 fun rememberRowHighlight(): LiquidHighlight {
-    val color = Liquid.colors.fill
-    return remember(color) { LiquidHighlight(color) }
+    val colors = Liquid.colors
+    val color = if (colors.isDark) Color.White.copy(alpha = 0.11f) else Color.Black.copy(alpha = 0.06f)
+    return remember(color) { LiquidHighlight(color, corner = 16.dp, insetX = 8.dp, insetY = 1.dp) }
 }
 
 /** Corner radius for artwork of a given edge length — covers stay crisp, never card-like. */
