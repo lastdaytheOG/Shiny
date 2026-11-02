@@ -19,6 +19,7 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteOpenHelper
 import com.shiny.music.db.daos.IntelligenceDao
+import com.shiny.music.db.daos.LibraryDao
 import com.shiny.music.db.daos.SpeedDialDao
 import com.shiny.music.db.entities.AlbumArtistMap
 import com.shiny.music.db.entities.AlbumEntity
@@ -60,6 +61,9 @@ class MusicDatabase(
 
     val intelligenceDao: IntelligenceDao
         get() = delegate.intelligenceDao
+
+    val libraryDao: LibraryDao
+        get() = delegate.libraryDao
 
     val openHelper: SupportSQLiteOpenHelper
         get() = delegate.openHelper
@@ -178,6 +182,7 @@ abstract class InternalDatabase : RoomDatabase() {
     abstract val dao: DatabaseDao
     abstract val speedDialDao: SpeedDialDao
     abstract val intelligenceDao: IntelligenceDao
+    abstract val libraryDao: LibraryDao
 
     companion object {
         const val DB_NAME = "song.db"
