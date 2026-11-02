@@ -661,7 +661,7 @@ fun SongRow(
                 indication = rememberRowHighlight(),
                 enabled = enabled,
                 onClick = onClick,
-                onLongClick = onLongClick,
+                onLongClick = onLongClick ?: onMore,
             ),
     ) {
         Row(
@@ -688,14 +688,15 @@ fun SongRow(
                 Box(Modifier.size(artworkSize)) {
                     Artwork(
                         model = rowArtwork,
-                        shape = if (circularArtwork) CircleShape else RoundedCornerShape(artworkRadius(artworkSize).coerceAtLeast(5.dp)),
+                        shape = if (circularArtwork) CircleShape else RoundedCornerShape(artworkSize * 0.2f),
+                        hairline = false,
                         modifier = Modifier.fillMaxSize(),
                     )
                     if (isActive) {
                         Box(
                             Modifier
                                 .matchParentSize()
-                                .clip(if (circularArtwork) CircleShape else RoundedCornerShape(artworkRadius(artworkSize).coerceAtLeast(5.dp)))
+                                .clip(if (circularArtwork) CircleShape else RoundedCornerShape(artworkSize * 0.2f))
                                 .background(Color.Black.copy(alpha = 0.42f)),
                             contentAlignment = Alignment.Center,
                         ) {
@@ -720,12 +721,15 @@ fun SongRow(
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(start = if (showArtwork) 13.dp else 6.dp, end = 4.dp),
+                    .padding(start = if (showArtwork) 16.dp else 6.dp, end = 4.dp),
                 verticalArrangement = Arrangement.Center,
             ) {
                 Text(
                     text = title,
-                    style = LiquidTypography.body.copy(fontSize = 16.sp, lineHeight = 21.sp),
+                    fontSize = 14.sp,
+                    lineHeight = 17.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = (-0.4).sp,
                     color = if (isActive && !showArtwork) accent else if (enabled) titleColor else titleColor.copy(alpha = 0.4f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -738,7 +742,10 @@ fun SongRow(
                         }
                         Text(
                             text = subtitle.orEmpty(),
-                            style = LiquidTypography.subheadline.copy(fontSize = 14.sp, lineHeight = 18.sp),
+                            fontSize = 11.5.sp,
+                            lineHeight = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            letterSpacing = (-0.2).sp,
                             color = subtitleColor,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -749,18 +756,8 @@ fun SongRow(
             if (trailing != null) {
                 trailing()
             }
-            if (onMore != null) {
-                MoreButton(onClick = onMore, tint = titleColor)
-            } else {
-                Spacer(Modifier.width(PageMargin - 4.dp))
-            }
-        }
-        if (showSeparator) {
-            Hairline(
-                modifier = Modifier.align(Alignment.BottomStart),
-                startIndent = startPadding + leadingWidth + (if (leadingRank != null) leadingRankWidth else 0.dp) + if (showArtwork) 13.dp else 6.dp,
-                color = separatorColor,
-            )
+            // no dots on rows any more, holding the row opens the same menu
+            Spacer(Modifier.width(PageMargin - 4.dp))
         }
     }
 }
