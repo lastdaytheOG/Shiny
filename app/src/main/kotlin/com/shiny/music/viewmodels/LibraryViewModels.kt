@@ -60,6 +60,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
@@ -84,9 +85,9 @@ constructor(
             .map {
                 Triple(
                     Triple(
-                        it.getOrNull(SongFilterKey).toEnum(SongFilter.LIKED),
-                        it.getOrNull(SongSortTypeKey).toEnum(SongSortType.CREATE_DATE),
-                        (it.getOrNull(SongSortDescendingKey) ?: true),
+                        it.getOrNull(SongFilterKey).toEnum(SongFilter.LIBRARY),
+                        it.getOrNull(SongSortTypeKey).toEnum(SongSortType.NAME),
+                        (it.getOrNull(SongSortDescendingKey) ?: false),
                     ),
                     it.getOrNull(ExportedSongIdsKey) ?: "",
                     Pair(it.getOrNull(HideExplicitKey) ?: false, it.getOrNull(HideVideoSongsKey) ?: false)
@@ -106,6 +107,26 @@ constructor(
                     }
                 }
             }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    // the songs page shows everything you have: saved, downloaded, on the phone and imported
+    val everySong =
+        context.dataStore.data
+            .map {
+                Triple(
+                    it.getOrNull(SongSortTypeKey).toEnum(SongSortType.NAME),
+                    it.getOrNull(SongSortDescendingKey) ?: false,
+                    (it.getOrNull(HideExplicitKey) ?: false) to (it.getOrNull(HideVideoSongsKey) ?: false),
+                )
+            }.distinctUntilChanged()
+            .flatMapLatest { (sortType, descending, hide) ->
+                database.libraryDao.everySong().map { songs ->
+                    songs.filterExplicit(hide.first)
+                        .filterVideoSongs(hide.second)
+                        .sortedWith(songOrder(sortType))
+                        .let { if (descending) it.reversed() else it }
+                }
+            }.flowOn(Dispatchers.Default)
+            .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     fun syncLikedSongs() {
         viewModelScope.launch(Dispatchers.IO) { syncUtils.syncLikedSongs() }
@@ -133,8 +154,8 @@ constructor(
             .map {
                 Triple(
                     it.getOrNull(ArtistFilterKey).toEnum(ArtistFilter.LIKED),
-                    it.getOrNull(ArtistSortTypeKey).toEnum(ArtistSortType.CREATE_DATE),
-                    it.getOrNull(ArtistSortDescendingKey) ?: true,
+                    it.getOrNull(ArtistSortTypeKey).toEnum(ArtistSortType.NAME),
+                    it.getOrNull(ArtistSortDescendingKey) ?: false,
                 )
             }.distinctUntilChanged()
             .flatMapLatest { (filter, sortType, descending) ->
@@ -147,6 +168,9 @@ constructor(
     fun sync() {
         viewModelScope.launch(Dispatchers.IO) { syncUtils.syncArtistsSubscriptions() }
     }
+
+    val libraryArtists = database.artists(ArtistSortType.NAME, false)
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
@@ -178,6 +202,9 @@ constructor(
     database: MusicDatabase,
     private val syncUtils: SyncUtils,
 ) : ViewModel() {
+    val libraryAlbums = database.albums(AlbumSortType.CREATE_DATE, true)
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
     val allAlbums =
         context.dataStore.data
             .map {
@@ -460,4 +487,15 @@ class LibraryViewModel
 constructor() : ViewModel() {
     private val curScreen = mutableStateOf(LibraryFilter.LIBRARY)
     val filter: MutableState<LibraryFilter> = curScreen
+}
+
+// sorting for that merged list, it doesn't come out of one query so the db can't sort it
+fun songOrder(sort: SongSortType): Comparator<Song> {
+    val collator = java.text.Collator.getInstance(java.util.Locale.getDefault()).apply { strength = java.text.Collator.PRIMARY }
+    return when (sort) {
+        SongSortType.CREATE_DATE -> compareBy { it.song.inLibrary ?: it.song.dateDownload }
+        SongSortType.NAME -> compareBy(collator) { it.song.title }
+        SongSortType.ARTIST -> compareBy(collator) { it.artists.firstOrNull()?.name.orEmpty() }
+        SongSortType.PLAY_TIME -> compareBy { it.song.totalPlayTime }
+    }
 }
