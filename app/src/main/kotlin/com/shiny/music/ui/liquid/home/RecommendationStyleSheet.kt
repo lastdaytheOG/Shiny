@@ -34,6 +34,7 @@ fun RecommendationStyleSheet(intelligence: IntelligenceRepository, onDone: () ->
             modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 12.dp),
         )
         Material3MenuGroup(
+            descriptions = true,
             items = RecommendationStyle.entries.map { style ->
                 Material3MenuItemData(
                     title = { Text(styleName(style)) },

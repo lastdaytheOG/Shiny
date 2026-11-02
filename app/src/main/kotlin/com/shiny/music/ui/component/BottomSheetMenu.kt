@@ -137,16 +137,10 @@ fun BottomSheetMenu(
     background: Color = BottomSheetDefaults.ContainerColor,
 ) {
     val focusManager = LocalFocusManager.current
-    val context = LocalContext.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
     val liquid = Liquid.colors
-    // An iOS sheet: a deep ground the menu's panels are raised off, with the continuous
-    // corner of a modal card.
-    val sheetColor = if (background == BottomSheetDefaults.ContainerColor) liquid.sheetBackground else background
-    val dark = liquid.isDark
-    // The colour the sheet takes from the artwork its menu is about (see MenuHeader).
-    val atmosphere = remember { SheetAtmosphere() }
-    LaunchedEffect(atmosphere) { atmosphere.follow(context) }
+    // flat dark sheet, the colour wash from the artwork made every menu look different
+    val sheetColor = if (background == BottomSheetDefaults.ContainerColor) menuSurface() else background
     // Fully open, the sheet stops short of the status bar and the page shows above it,
     // instead of running under the clock.
     val topGap = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + SheetTopGap
@@ -160,20 +154,19 @@ fun BottomSheetMenu(
         sheetState = sheetState,
         containerColor = sheetColor,
         contentColor = liquid.label,
-        shape = RoundedCornerShape(topStart = 36.dp, topEnd = 36.dp),
-        scrimColor = Color.Black.copy(alpha = 0.4f),
+        shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp),
+        scrimColor = Color.Black.copy(alpha = 0.5f),
         dragHandle = {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(SheetHandleBand)
-                    .sheetAtmosphere(atmosphere, dark),
+                    .height(SheetHandleBand),
                 contentAlignment = Alignment.Center,
             ) {
                 Box(
                     modifier = Modifier
                         .size(width = 36.dp, height = 5.dp)
-                        .background(liquid.tertiaryLabel, CircleShape)
+                        .background(liquid.label.copy(alpha = 0.22f), CircleShape)
                 )
             }
         },
@@ -189,17 +182,13 @@ fun BottomSheetMenu(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
-                // Its slice starts under the handle's, and runs on over the sheet's bottom inset.
-                .sheetAtmosphere(atmosphere, dark, top = SheetHandleBand, below = SheetFootBleed)
         ) {
-            CompositionLocalProvider(LocalSheetAtmosphere provides atmosphere) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = PanelMargin)
-                ) {
-                    state.content(this)
-                }
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = PanelMargin)
+            ) {
+                state.content(this)
             }
         }
     }
@@ -211,5 +200,3 @@ private val SheetTopGap = 8.dp
 /** The strip at the head of a sheet that holds its grabber. */
 private val SheetHandleBand = 24.dp
 
-/** Taller than any navigation bar: how far the sheet's colour runs past its content. */
-private val SheetFootBleed = 96.dp

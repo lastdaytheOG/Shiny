@@ -2,6 +2,11 @@
 
 package com.shiny.music.ui.component
 
+import androidx.compose.foundation.background
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.basicMarquee
@@ -162,10 +167,13 @@ fun NewMenuSectionHeader(
 }
 
 
-/**
- * The quick actions at the top of a menu, as iOS lays them out: equal tiles side by
- * side, glyph over a short label, each one a panel like the groups of rows below.
- */
+@Composable
+fun menuSurface(): Color = if (com.shiny.music.ui.liquid.Liquid.colors.isDark) Color(0xFF0B0B0C) else Color(0xFFF2F2F7)
+
+@Composable
+fun menuRowSurface(): Color = if (com.shiny.music.ui.liquid.Liquid.colors.isDark) Color(0xFF161619) else Color.White
+
+// the big cards at the top of a menu, for the things people open the menu for
 @Composable
 fun NewActionGrid(
     actions: List<NewAction>,
@@ -173,13 +181,16 @@ fun NewActionGrid(
     columns: Int = 3
 ) {
     val colors = com.shiny.music.ui.liquid.Liquid.colors
+    val surface = menuRowSurface()
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(ActionTileGap)
     ) {
         actions.chunked(columns).forEach { row ->
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(androidx.compose.foundation.layout.IntrinsicSize.Min),
                 horizontalArrangement = Arrangement.spacedBy(ActionTileGap)
             ) {
                 row.forEach { action ->
@@ -190,33 +201,37 @@ fun NewActionGrid(
                     }
                     val interaction = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
                     val tint = if (action.contentColor != Color.Unspecified) action.contentColor else colors.label
+                    val ink = if (action.enabled) tint else tint.copy(alpha = 0.35f)
                     Column(
                         modifier = Modifier
                             .weight(1f)
-                            .height(ActionTileHeight)
+                            .fillMaxHeight()
+                            .heightIn(min = if (columns <= 2) 112.dp else 96.dp)
                             .pressScale(interaction, 0.97f)
-                            .liquidPanel(TileShape, fill = action.backgroundColor)
+                            .clip(ActionCardShape)
+                            .background(if (action.backgroundColor != Color.Unspecified) action.backgroundColor else surface)
                             .clickable(
                                 interactionSource = interaction,
-                                indication = com.shiny.music.ui.liquid.rememberRowHighlight(),
+                                indication = null,
                                 enabled = action.enabled,
                             ) { performAction = true }
-                            .padding(horizontal = 6.dp, vertical = 8.dp)
-                            .semantics { role = Role.Button },
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                            .semantics { role = Role.Button }
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.SpaceBetween
                     ) {
                         androidx.compose.runtime.CompositionLocalProvider(
-                            androidx.compose.material3.LocalContentColor provides if (action.enabled) tint else tint.copy(alpha = 0.35f)
+                            androidx.compose.material3.LocalContentColor provides ink
                         ) {
-                            Box(Modifier.size(PanelGlyph), contentAlignment = Alignment.Center) { action.icon() }
+                            Box(Modifier.size(24.dp), contentAlignment = Alignment.Center) { action.icon() }
                         }
-                        Spacer(Modifier.height(6.dp))
+                        Spacer(Modifier.height(16.dp))
                         Text(
                             text = action.text,
-                            style = com.shiny.music.ui.liquid.LiquidTypography.footnote.copy(fontWeight = FontWeight.Medium),
-                            color = if (action.enabled) tint else tint.copy(alpha = 0.35f),
-                            maxLines = 1,
+                            fontSize = 15.sp,
+                            lineHeight = 19.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = ink,
+                            maxLines = 2,
                             overflow = TextOverflow.Ellipsis
                         )
                     }
@@ -227,22 +242,14 @@ fun NewActionGrid(
     }
 }
 
-private val ActionTileHeight = 72.dp
+private val ActionCardShape = RoundedCornerShape(18.dp)
 private val ActionTileGap = 10.dp
 
 /** Between the panels of a menu, and between its tiles and its first panel. */
 val MenuGroupGap = 12.dp
 
-/** Edge of the artwork at the head of a menu. */
-val MenuHeaderArtwork = 88.dp
+val MenuHeaderArtwork = 60.dp
 
-/**
- * The head of a menu: what the sheet is about. Its artwork, its name, and up to two quieter
- * lines under it (the artist and album of a song, the length of a playlist).
- *
- * [atmosphere] names the artwork the sheet takes its colour from; leave it null for a sheet
- * that should stay neutral. [artwork] is drawn in a [MenuHeaderArtwork] square.
- */
 @Composable
 fun MenuHeader(
     title: String,
@@ -262,18 +269,25 @@ fun MenuHeader(
             .padding(top = 4.dp, bottom = 20.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.size(MenuHeaderArtwork), contentAlignment = Alignment.Center) { artwork() }
+        Box(
+            Modifier
+                .size(MenuHeaderArtwork)
+                .clip(RoundedCornerShape(16.dp))
+                .background(menuRowSurface()),
+            contentAlignment = Alignment.Center,
+        ) { artwork() }
         Column(
             modifier = Modifier
                 .weight(1f)
-                .padding(start = 16.dp),
+                .padding(start = 14.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = title,
-                    style = com.shiny.music.ui.liquid.LiquidTypography.title3,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
                     color = colors.label,
-                    maxLines = 2,
+                    maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false),
                 )
@@ -284,28 +298,28 @@ fun MenuHeader(
             if (!subtitle.isNullOrBlank()) {
                 Text(
                     text = subtitle,
-                    style = com.shiny.music.ui.liquid.LiquidTypography.callout,
-                    color = colors.secondaryLabel,
+                    fontSize = 13.sp,
+                    color = colors.label.copy(alpha = 0.6f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(top = 2.dp),
                 )
             }
             if (!detail.isNullOrBlank()) {
                 Text(
                     text = detail,
-                    style = com.shiny.music.ui.liquid.LiquidTypography.footnote,
-                    color = colors.secondaryLabel,
+                    fontSize = 12.sp,
+                    color = colors.label.copy(alpha = 0.5f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(top = 3.dp),
                 )
             }
         }
-        trailing?.invoke()
+        if (trailing != null) {
+            Spacer(Modifier.width(10.dp))
+            trailing()
+        }
     }
 }
-
 
 data class NewAction(
     val icon: @Composable () -> Unit,

@@ -2,6 +2,14 @@
 
 package com.shiny.music.ui.component
 
+import androidx.compose.foundation.background
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+import com.shiny.music.ui.theme.pressScale
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -44,59 +52,89 @@ enum class MenuGlyphs {
     Leading,
 }
 
-/**
- * A group of menu actions, drawn as one panel: hairlines between rows starting under the
- * text, the label on the left and the glyph on the right — the arrangement of a context
- * menu, not a stack of separate cards. [glyphs] moves the glyphs to the leading edge for a
- * group that is mostly places to go.
- */
 @Composable
 fun Material3MenuGroup(
     items: List<Material3MenuItemData>,
     modifier: Modifier = Modifier,
-    glyphs: MenuGlyphs = MenuGlyphs.Trailing,
+    glyphs: MenuGlyphs = MenuGlyphs.Leading,
+    descriptions: Boolean = false,
 ) {
-    val colors = Liquid.colors
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .liquidPanel()
             .animateContentSize(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        items.forEachIndexed { index, item ->
-            val interaction = remember { MutableInteractionSource() }
-            val glyphLeads = item.leadsWithGlyph(glyphs)
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .then(
-                        if (item.onClick != null) {
-                            Modifier.clickable(
-                                interactionSource = interaction,
-                                indication = rememberRowHighlight(),
-                                onClick = item.onClick,
-                            )
-                        } else {
-                            Modifier
-                        }
-                    ),
-            ) {
-                if (item.customComposable != null) {
-                    item.customComposable.invoke()
+        items.forEach { item -> MenuPillRow(item, descriptions) }
+    }
+}
+
+// every option is its own pill now, no shared panel and no hairlines between rows
+@Composable
+private fun MenuPillRow(item: Material3MenuItemData, descriptions: Boolean) {
+    val colors = Liquid.colors
+    val enabled = item.onClick != null || item.customComposable != null || item.trailingContent != null
+    val base = if (item.destructive) colors.destructive else colors.label
+    val ink = if (enabled) base else base.copy(alpha = 0.35f)
+    val interaction = remember { MutableInteractionSource() }
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .pressScale(interaction, 0.98f)
+            .clip(MenuPillShape)
+            .background(menuRowSurface())
+            .then(
+                if (item.onClick != null) {
+                    Modifier.clickable(interactionSource = interaction, indication = null, onClick = item.onClick)
                 } else {
-                    Material3MenuItemRow(item = item, glyphLeads = glyphLeads)
+                    Modifier
                 }
-                if (index != items.lastIndex) {
-                    Hairline(
-                        modifier = Modifier
-                            .align(Alignment.BottomStart)
-                            .padding(end = PanelPadding),
-                        startIndent = if (glyphLeads && item.icon != null) {
-                            PanelPadding + PanelGlyph + PanelGlyphGap
-                        } else {
-                            PanelPadding
-                        },
-                        color = colors.panelSeparator,
+            ),
+    ) {
+        if (item.customComposable != null) {
+            item.customComposable.invoke()
+            return@Box
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 50.dp)
+                .padding(horizontal = 14.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            item.icon?.let { icon ->
+                CompositionLocalProvider(LocalContentColor provides ink) {
+                    Box(Modifier.size(20.dp), contentAlignment = Alignment.Center) { icon() }
+                }
+                Spacer(modifier = Modifier.width(14.dp))
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                CompositionLocalProvider(LocalContentColor provides ink) {
+                    ProvideTextStyle(TextStyle(fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = ink)) {
+                        item.title?.invoke()
+                    }
+                }
+                // menus stay one line per option, sheets that explain choices turn this on
+                if (descriptions) {
+                    item.description?.let { desc ->
+                        ProvideTextStyle(TextStyle(fontSize = 12.sp, color = colors.label.copy(alpha = 0.55f))) {
+                            desc()
+                        }
+                    }
+                }
+            }
+            when {
+                item.trailingContent != null -> {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    item.trailingContent.invoke()
+                }
+                item.chevron -> {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Icon(
+                        imageVector = Icons.Rounded.ChevronRight,
+                        contentDescription = null,
+                        tint = colors.tertiaryLabel,
+                        modifier = Modifier.size(20.dp),
                     )
                 }
             }
@@ -104,75 +142,7 @@ fun Material3MenuGroup(
     }
 }
 
-/**
- * With something at the trailing edge (a switch, a value, a chevron) the glyph moves to the
- * leading edge, as in Settings; otherwise it sits where the group puts its glyphs.
- */
-private fun Material3MenuItemData.leadsWithGlyph(glyphs: MenuGlyphs): Boolean =
-    glyphs == MenuGlyphs.Leading || trailingContent != null || chevron
-
-@Composable
-private fun Material3MenuItemRow(
-    item: Material3MenuItemData,
-    glyphLeads: Boolean,
-) {
-    val colors = Liquid.colors
-    val ink = if (item.destructive) colors.destructive else colors.label
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = MenuRowMinHeight)
-            .padding(horizontal = PanelPadding, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        if (glyphLeads) {
-            item.icon?.let { icon ->
-                CompositionLocalProvider(LocalContentColor provides ink) {
-                    Box(Modifier.size(PanelGlyph), contentAlignment = Alignment.Center) { icon() }
-                }
-                Spacer(modifier = Modifier.width(PanelGlyphGap))
-            }
-        }
-        Column(modifier = Modifier.weight(1f)) {
-            CompositionLocalProvider(LocalContentColor provides ink) {
-                ProvideTextStyle(LiquidTypography.body.copy(color = ink)) {
-                    item.title?.invoke()
-                }
-            }
-            item.description?.let { desc ->
-                ProvideTextStyle(LiquidTypography.footnote.copy(color = colors.secondaryLabel)) {
-                    desc()
-                }
-            }
-        }
-        when {
-            item.trailingContent != null -> {
-                Spacer(modifier = Modifier.width(8.dp))
-                item.trailingContent.invoke()
-            }
-
-            item.chevron -> {
-                Spacer(modifier = Modifier.width(8.dp))
-                Icon(
-                    imageVector = Icons.Rounded.ChevronRight,
-                    contentDescription = null,
-                    tint = colors.tertiaryLabel,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-
-            !glyphLeads -> item.icon?.let { icon ->
-                Spacer(modifier = Modifier.width(12.dp))
-                CompositionLocalProvider(LocalContentColor provides ink) {
-                    Box(Modifier.size(PanelGlyph), contentAlignment = Alignment.Center) { icon() }
-                }
-            }
-        }
-    }
-}
-
-/** A row with one line of text; a second line grows it. */
-private val MenuRowMinHeight = 56.dp
+private val MenuPillShape = RoundedCornerShape(16.dp)
 
 data class Material3MenuItemData(
     val icon: (@Composable () -> Unit)? = null,
@@ -182,8 +152,6 @@ data class Material3MenuItemData(
     val cardColors: CardColors? = null,
     val trailingContent: (@Composable () -> Unit)? = null,
     val customComposable: (@Composable () -> Unit)? = null,
-    /** The row opens another page: it ends in a chevron, and its glyph leads. */
     val chevron: Boolean = false,
-    /** The row removes something for good: its label and glyph are drawn in the warning colour. */
     val destructive: Boolean = false,
 )

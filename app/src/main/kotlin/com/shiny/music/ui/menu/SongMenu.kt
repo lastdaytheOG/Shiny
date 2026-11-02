@@ -2,6 +2,9 @@
 
 package com.shiny.music.ui.menu
 
+import com.shiny.music.ui.utils.resize
+import com.shiny.music.ui.component.MenuHeader
+import androidx.compose.foundation.layout.fillMaxSize
 import android.content.Intent
 import android.content.res.Configuration
 import androidx.compose.animation.core.animateFloatAsState
@@ -298,27 +301,33 @@ fun SongMenu(
         }
     }
 
-    SongListItem(
-        song = song,
-        badges = {},
-        shape = MaterialTheme.shapes.large,
-        color = androidx.compose.ui.graphics.Color.Transparent,
-        trailingContent = {
-            IconButton(
-                onClick = {
-                    val s = song.song.toggleLike()
-                    database.query {
-                        update(s)
-                    }
-                    syncUtils.likeSong(s)
-                },
+    MenuHeader(
+        title = song.song.title,
+        subtitle = song.artists.joinToString(", ") { it.name },
+        explicit = song.song.explicit,
+        trailing = {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(42.dp)
+                    .clip(CircleShape)
+                    .clickable {
+                        val s = song.song.toggleLike()
+                        database.query { update(s) }
+                        syncUtils.likeSong(s)
+                    },
             ) {
                 LikeGlyph(liked = song.song.liked, size = 24.dp)
             }
         },
-    )
-
-    Spacer(modifier = Modifier.height(12.dp))
+    ) {
+        coil3.compose.AsyncImage(
+            model = song.song.thumbnailUrl?.resize(240, 240),
+            contentDescription = null,
+            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+            modifier = Modifier.fillMaxSize(),
+        )
+    }
 
     val bottomSheetPageState = LocalBottomSheetPageState.current
     val configuration = LocalConfiguration.current
@@ -333,101 +342,144 @@ fun SongMenu(
             bottom = 8.dp + WindowInsets.systemBars.asPaddingValues().calculateBottomPadding(),
         ),
     ) {
+        // download and play next are what people open this for, so they get the two cards
         item {
             NewActionGrid(
-                actions = listOfNotNull(
+                actions = listOf(
+                    when (download?.state) {
+                        Download.STATE_COMPLETED -> NewAction(
+                            icon = { Icon(painterResource(R.drawable.offline), contentDescription = null) },
+                            text = stringResource(R.string.remove_download),
+                            onClick = {
+                                DownloadService.sendRemoveDownload(context, ExoDownloadService::class.java, song.id, false)
+                            },
+                        )
+                        Download.STATE_QUEUED, Download.STATE_DOWNLOADING -> NewAction(
+                            icon = { CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp, color = LocalContentColor.current) },
+                            text = stringResource(R.string.downloading),
+                            onClick = {
+                                DownloadService.sendRemoveDownload(context, ExoDownloadService::class.java, song.id, false)
+                            },
+                        )
+                        else -> NewAction(
+                            icon = { Icon(painterResource(R.drawable.download), contentDescription = null) },
+                            text = stringResource(R.string.action_download),
+                            onClick = {
+                                val downloadRequest = DownloadRequest
+                                    .Builder(song.id, song.id.toUri())
+                                    .setCustomCacheKey(song.id)
+                                    .setData(song.song.title.toByteArray())
+                                    .build()
+                                DownloadService.sendAddDownload(context, ExoDownloadService::class.java, downloadRequest, false)
+                            },
+                        )
+                    },
                     NewAction(
-                        icon = {
-                            Icon(
-                                painter = painterResource(R.drawable.radio),
-                                contentDescription = null,
-                                modifier = Modifier.size(28.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        },
-                        text = stringResource(R.string.start_radio),
+                        icon = { Icon(painterResource(R.drawable.playlist_play), contentDescription = null) },
+                        text = stringResource(R.string.play_next),
                         onClick = {
                             onDismiss()
-                            playerConnection.playQueue(YouTubeQueue.radio(song.toMediaMetadata()))
-                        }
-                    ),
-                    NewAction(
-                        icon = {
-                            Icon(
-                                painter = painterResource(R.drawable.playlist_add),
-                                contentDescription = null,
-                                modifier = Modifier.size(28.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            playerConnection.playNext(song.toMediaItem())
                         },
-                        text = stringResource(R.string.add_to_an_playlist),
-                        onClick = { showChoosePlaylistDialog = true }
                     ),
-                    NewAction(
-                        icon = {
-                            Icon(
-                                painter = painterResource(R.drawable.share),
-                                contentDescription = null,
-                                modifier = Modifier.size(22.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        },
-                        text = stringResource(R.string.share),
-                        onClick = {
-                            context.shareSong(song.toMediaMetadata())
-                            onDismiss()
-                        }
-                    )
                 ),
-                columns = 3,
-                modifier = Modifier.padding(horizontal = 4.dp, vertical = 16.dp)
+                columns = 2,
             )
         }
+
+        item { Spacer(modifier = Modifier.height(10.dp)) }
+
         item {
             Material3MenuGroup(
                 items = listOfNotNull(
                     Material3MenuItemData(
-                        title = { Text(text = stringResource(R.string.edit)) },
-                        description = { Text(text = stringResource(R.string.edit_song)) },
-                        icon = {
-                            Icon(
-                                painter = painterResource(R.drawable.edit),
-                                contentDescription = null,
-                            )
-                        },
-                        onClick = { 
-                            showEditDialog = true
-                        }
+                        title = { Text(text = stringResource(R.string.add_to_an_playlist)) },
+                        icon = { Icon(painterResource(R.drawable.playlist_add), contentDescription = null) },
+                        onClick = { showChoosePlaylistDialog = true },
                     ),
                     Material3MenuItemData(
-                        title = { Text(text = stringResource(R.string.play_next)) },
-                        description = { Text(text = stringResource(R.string.play_next_desc)) },
-                        icon = {
-                            Icon(
-                                painter = painterResource(R.drawable.playlist_play),
-                                contentDescription = null,
-                            )
+                        title = { Text(text = stringResource(R.string.share)) },
+                        icon = { Icon(painterResource(R.drawable.share), contentDescription = null) },
+                        onClick = {
+                            context.shareSong(song.toMediaMetadata())
+                            onDismiss()
                         },
+                    ),
+                    song.song.albumId?.let { albumId ->
+                        Material3MenuItemData(
+                            title = { Text(text = stringResource(R.string.view_album)) },
+                            icon = { Icon(painterResource(R.drawable.album), contentDescription = null) },
+                            onClick = {
+                                onDismiss()
+                                navController.navigate("album/$albumId")
+                            },
+                        )
+                    },
+                    Material3MenuItemData(
+                        title = { Text(text = stringResource(R.string.view_artist)) },
+                        icon = { Icon(painterResource(R.drawable.artist), contentDescription = null) },
+                        onClick = {
+                            if (song.artists.size == 1) {
+                                navController.navigate("artist/${song.artists[0].id}")
+                                onDismiss()
+                            } else {
+                                showSelectArtistDialog = true
+                            }
+                        },
+                    ),
+                ),
+            )
+        }
+
+        item { Spacer(modifier = Modifier.height(12.dp)) }
+
+        item {
+            Material3MenuGroup(
+                items = listOf(
+                    Material3MenuItemData(
+                        title = { Text(text = stringResource(R.string.edit)) },
+                        icon = { Icon(painterResource(R.drawable.edit), contentDescription = null) },
+                        onClick = { showEditDialog = true },
+                    ),
+                    Material3MenuItemData(
+                        title = { Text(text = stringResource(R.string.liquid_play)) },
+                        icon = { Icon(painterResource(R.drawable.play), contentDescription = null) },
                         onClick = {
                             onDismiss()
-                            playerConnection.playNext(song.toMediaItem())
-                        }
+                            playerConnection.playQueue(
+                                com.shiny.music.playback.queues.ListQueue(
+                                    title = song.song.title,
+                                    items = listOf(song.toMediaItem()),
+                                ),
+                            )
+                        },
+                    ),
+                ),
+            )
+        }
+
+        item { Spacer(modifier = Modifier.height(12.dp)) }
+
+        item {
+            Material3MenuGroup(
+                items = listOf(
+                    Material3MenuItemData(
+                        title = { Text(text = stringResource(R.string.start_radio)) },
+                        icon = { Icon(painterResource(R.drawable.radio), contentDescription = null) },
+                        onClick = {
+                            onDismiss()
+                            playerConnection.playQueue(YouTubeQueue.radio(song.toMediaMetadata()))
+                        },
                     ),
                     Material3MenuItemData(
                         title = { Text(text = stringResource(R.string.add_to_queue)) },
-                        description = { Text(text = stringResource(R.string.add_to_queue_desc)) },
-                        icon = {
-                            Icon(
-                                painter = painterResource(R.drawable.queue_music),
-                                contentDescription = null,
-                            )
-                        },
+                        icon = { Icon(painterResource(R.drawable.queue_music), contentDescription = null) },
                         onClick = {
                             onDismiss()
                             playerConnection.addToQueue(song.toMediaItem())
-                        }
-                    )
-                )
+                        },
+                    ),
+                ),
             )
         }
 
@@ -587,86 +639,6 @@ fun SongMenu(
         item { Spacer(modifier = Modifier.height(12.dp)) }
 
         item {
-            Material3MenuGroup(
-                items = listOf(
-                    when (download?.state) {
-                        Download.STATE_COMPLETED -> {
-                            Material3MenuItemData(
-                                title = {
-                                    Text(
-                                        text = stringResource(R.string.remove_download)
-                                    )
-                                },
-                                icon = {
-                                    Icon(
-                                        painter = painterResource(R.drawable.offline),
-                                        contentDescription = null
-                                    )
-                                },
-                                onClick = {
-                                    DownloadService.sendRemoveDownload(
-                                        context,
-                                        ExoDownloadService::class.java,
-                                        song.id,
-                                        false,
-                                    )
-                                }
-                            )
-                        }
-                        Download.STATE_QUEUED, Download.STATE_DOWNLOADING -> {
-                            Material3MenuItemData(
-                                title = { Text(text = stringResource(R.string.downloading)) },
-                                icon = {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(24.dp),
-                                        strokeWidth = 2.dp
-                                    )
-                                },
-                                onClick = {
-                                    DownloadService.sendRemoveDownload(
-                                        context,
-                                        ExoDownloadService::class.java,
-                                        song.id,
-                                        false,
-                                    )
-                                }
-                            )
-                        }
-                        else -> {
-                            Material3MenuItemData(
-                                title = { Text(text = stringResource(R.string.action_download)) },
-                                description = { Text(text = stringResource(R.string.download_desc)) },
-                                icon = {
-                                    Icon(
-                                        painter = painterResource(R.drawable.download),
-                                        contentDescription = null,
-                                    )
-                                },
-                                onClick = {
-                                    val downloadRequest =
-                                        DownloadRequest
-                                            .Builder(song.id, song.id.toUri())
-                                            .setCustomCacheKey(song.id)
-                                            .setData(song.song.title.toByteArray())
-                                            .build()
-                                    DownloadService.sendAddDownload(
-                                        context,
-                                        ExoDownloadService::class.java,
-                                        downloadRequest,
-                                        false,
-                                    )
-                                }
-                            )
-                        }
-                    }
-                )
-            )
-        }
-
-        item { Spacer(modifier = Modifier.height(12.dp)) }
-        item {
-            // Every song exports: files on this device directly, streamed songs from their
-            // download or cache, or fetched fresh (see AudioExporter).
             val exportable = com.shiny.music.export.AudioExporter.isEligible(song.id)
             Material3MenuGroup(
                 items = listOf(
@@ -731,68 +703,18 @@ fun SongMenu(
 
         item {
             Material3MenuGroup(
-                items = buildList {
-                    add(
-                        Material3MenuItemData(
-                            title = { Text(text = stringResource(R.string.view_artist)) },
-                            description = { Text(text = song.artists.joinToString { it.name }) },
-                            icon = {
-                                Icon(
-                                    painter = painterResource(R.drawable.artist),
-                                    contentDescription = null,
-                                )
-                            },
-                            onClick = {
-                                if (song.artists.size == 1) {
-                                    navController.navigate("artist/${song.artists[0].id}")
-                                    onDismiss()
-                                } else {
-                                    showSelectArtistDialog = true
-                                }
+                items = listOf(
+                    Material3MenuItemData(
+                        title = { Text(text = stringResource(R.string.details)) },
+                        icon = { Icon(painterResource(R.drawable.info), contentDescription = null) },
+                        onClick = {
+                            onDismiss()
+                            bottomSheetPageState.show {
+                                ShowMediaInfo(song.id)
                             }
-                        )
-                    )
-                    if (song.song.albumId != null) {
-                        add(
-                            Material3MenuItemData(
-                                title = { Text(text = stringResource(R.string.view_album)) },
-                                description = {
-                                    song.song.albumName?.let {
-                                        Text(text = it)
-                                    }
-                                },
-                                icon = {
-                                    Icon(
-                                        painter = painterResource(R.drawable.album),
-                                        contentDescription = null,
-                                    )
-                                },
-                                onClick = {
-                                    onDismiss()
-                                    navController.navigate("album/${song.song.albumId}")
-                                }
-                            )
-                        )
-                    }
-                    add(
-                        Material3MenuItemData(
-                            title = { Text(text = stringResource(R.string.details)) },
-                            description = { Text(text = stringResource(R.string.details_desc)) },
-                            icon = {
-                                Icon(
-                                    painter = painterResource(R.drawable.info),
-                                    contentDescription = null,
-                                )
-                            },
-                            onClick = {
-                                onDismiss()
-                                bottomSheetPageState.show {
-                                    ShowMediaInfo(song.id)
-                                }
-                            }
-                        )
-                    )
-                }
+                        },
+                    ),
+                ),
             )
         }
     }

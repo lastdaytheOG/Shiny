@@ -79,6 +79,7 @@ fun RecommendationFeedbackSheet(target: FeedbackTarget, onDone: () -> Unit) {
 
     Column {
         Material3MenuGroup(
+            descriptions = true,
             glyphs = MenuGlyphs.Leading,
             items = buildList {
                 add(
@@ -126,6 +127,7 @@ fun RecommendationFeedbackSheet(target: FeedbackTarget, onDone: () -> Unit) {
         )
         Spacer(Modifier.height(12.dp))
         Material3MenuGroup(
+            descriptions = true,
             glyphs = MenuGlyphs.Leading,
             items = buildList {
                 add(
