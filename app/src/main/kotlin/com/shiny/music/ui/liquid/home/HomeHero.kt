@@ -1,5 +1,25 @@
 package com.shiny.music.ui.liquid.home
 
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.core.spring
+import androidx.compose.runtime.derivedStateOf
+import kotlin.math.roundToInt
+import kotlinx.coroutines.delay
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
@@ -113,16 +133,9 @@ private const val TonePx = 240
 @Stable
 internal class HomeHeroState(val list: LazyListState) {
     val tones = mutableStateMapOf<Int, HeroTone>()
+    val pos = Animatable(0f)
 
-    fun position(): Float {
-        val info = list.layoutInfo
-        val items = info.visibleItemsInfo
-        if (items.isEmpty()) return 0f
-        val centre = (info.viewportStartOffset + info.viewportEndOffset) / 2f
-        val nearest = items.minBy { abs(it.offset + it.size / 2f - centre) }
-        val step = (nearest.size + info.mainAxisItemSpacing).coerceAtLeast(1)
-        return nearest.index + (centre - (nearest.offset + nearest.size / 2f)) / step
-    }
+    fun position(): Float = pos.value
 
     fun field(pale: Boolean): Color {
         val at = position().coerceAtLeast(0f)
@@ -264,77 +277,152 @@ internal fun HeroCarousel(
 ) {
     val pickCovers = remember(picks, takenCovers) { topPickCovers(picks, takenCovers) }
     val cards = remember(mix, picks) { listOfNotNull<HomeSection>(mix) + picks }
-    BoxWithConstraints(
-        Modifier
-            .fillMaxWidth()
-            .padding(top = 10.dp),
-    ) {
-        val width = (maxWidth * 0.78f).coerceAtMost(HeroMaxWidth)
-        LazyRow(
-            state = hero.list,
-            contentPadding = PaddingValues(horizontal = (maxWidth - width) / 2),
-            horizontalArrangement = Arrangement.spacedBy(HeroGap),
-            flingBehavior = rememberSnapFlingBehavior(hero.list, SnapPosition.Center),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            itemsIndexed(cards, key = { _, section -> section.key }, contentType = { _, _ -> "hero_card" }) { index, section ->
-                onShown(section)
-                val title = cardTitle(section)
-                val songs = remember(section) { if (section is HeroMixSection) section.songs else section.pickSongs }
-                val artists = remember(section) { artistsLine(songs) }
-                val cover = remember(section, pickCovers) {
-                    if (section is HeroMixSection) section.barCovers().firstOrNull() else pickCovers[section.key]?.firstOrNull()
+    if (cards.isEmpty()) return
+    val scope = rememberCoroutineScope()
+    val haptics = LocalHapticFeedback.current
+    var dragging by remember { mutableStateOf(false) }
+    val last = cards.lastIndex
+    val current by remember(cards) { derivedStateOf { hero.pos.value.roundToInt().coerceIn(0, last) } }
+
+    // turns on its own while nobody is touching it, and holds still for reduced motion
+    LaunchedEffect(cards.size, reduceMotion) {
+        if (reduceMotion || cards.size < 2) return@LaunchedEffect
+        while (true) {
+            delay(6500)
+            if (!dragging) {
+                val next = (hero.pos.value.roundToInt() + 1).let { if (it > last) 0 else it }
+                hero.pos.animateTo(next.toFloat(), HeroGlide)
+            }
+        }
+    }
+
+    val play: (HomeSection, String, List<Song>) -> Unit = { section, title, songs ->
+        if (queueTitle == title) {
+            actions.togglePlayPause()
+        } else {
+            when (section) {
+                is HeroMixSection -> actions.playSongs(title, songs, origin = MixOrigin)
+                is DiscoveryMixSection -> {
+                    onPlayedDiscovery()
+                    actions.playSongs(title, songs, origin = discoverOrigin(section.picks))
                 }
-                val active = queueTitle == title
-                HeroCard(
-                    index = index,
-                    hero = hero,
-                    width = width,
+                is AroundNowSection -> actions.playSongs(title, songs, shuffle = true, origin = AroundNowOrigin)
+                is RediscoverSection -> actions.playSongs(title, songs, origin = RediscoverOrigin)
+                is StartHereSection -> actions.playSongs(title, songs)
+                else -> Unit
+            }
+        }
+    }
+
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val density = LocalDensity.current
+        val side = (maxWidth * 0.56f).coerceAtMost(260.dp)
+        val height = (maxWidth * 1.22f).coerceAtMost(560.dp)
+        val sidePx = with(density) { side.toPx() }
+        val widthPx = with(density) { maxWidth.toPx() }
+        val heightPx = with(density) { height.toPx() }
+        val textWidth = maxWidth * 0.56f
+
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(height)
+                .clipToBounds()
+                .pointerInput(cards.size) {
+                    detectHorizontalDragGestures(
+                        onDragStart = { dragging = true },
+                        onDragEnd = {
+                            dragging = false
+                            val target = hero.pos.value.roundToInt().coerceIn(0, last)
+                            haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                            scope.launch { hero.pos.animateTo(target.toFloat(), HeroGlide) }
+                        },
+                        onDragCancel = {
+                            dragging = false
+                            scope.launch { hero.pos.animateTo(hero.pos.value.roundToInt().coerceIn(0, last).toFloat(), HeroGlide) }
+                        },
+                    ) { change, dx ->
+                        change.consume()
+                        scope.launch { hero.pos.snapTo((hero.pos.value - dx / (sidePx * 1.1f)).coerceIn(-0.35f, last + 0.35f)) }
+                    }
+                },
+        ) {
+            cards.forEachIndexed { index, section ->
+                key(section.key) {
+                    val cardName = cardTitle(section)
+                    val cover = remember(section, pickCovers) {
+                        if (section is HeroMixSection) section.barCovers().firstOrNull() else pickCovers[section.key]?.firstOrNull()
+                    }
+                    HeroStackCard(
+                        index = index,
+                        hero = hero,
+                        side = side,
+                        sidePx = sidePx,
+                        widthPx = widthPx,
+                        heightPx = heightPx,
+                        cover = cover,
+                        onClick = {
+                            if (index == current) {
+                                play(section, cardName, if (section is HeroMixSection) section.songs else section.pickSongs)
+                            } else {
+                                scope.launch { hero.pos.animateTo(index.toFloat(), HeroGlide) }
+                            }
+                        },
+                    )
+                }
+            }
+
+            val section = cards[current]
+            onShown(section)
+            val title = cardTitle(section)
+            val songs = remember(section) { if (section is HeroMixSection) section.songs else section.pickSongs }
+            val artists = remember(section) { artistsLine(songs) }
+            val active = queueTitle == title
+
+            AnimatedContent(
+                targetState = current,
+                transitionSpec = {
+                    val up = targetState > initialState
+                    (fadeIn(tween(260, delayMillis = 60)) + slideInVertically(spring(dampingRatio = 0.86f, stiffness = 380f)) { if (up) it / 5 else -it / 5 }) togetherWith
+                        (fadeOut(tween(160)) + slideOutVertically(tween(200)) { if (up) -it / 6 else it / 6 })
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(start = PageMargin, bottom = 26.dp)
+                    .width(textWidth),
+                label = "heroText",
+            ) { _ ->
+                HeroText(
+                    kicker = heroKicker(section),
                     title = title,
                     artists = artists,
-                    cover = cover,
                     playing = active && isPlaying,
-                    reduceMotion = reduceMotion,
+                    onPlay = { play(section, title, songs) },
                     onChooseStyle = if (section is HeroMixSection && section.styleable) onChooseStyle else null,
-                    onClick = {
-                        if (active) {
-                            actions.togglePlayPause()
-                        } else {
-                            when (section) {
-                                is HeroMixSection -> actions.playSongs(title, songs, origin = MixOrigin)
-                                is DiscoveryMixSection -> {
-                                    onPlayedDiscovery()
-                                    actions.playSongs(title, songs, origin = discoverOrigin(section.picks))
-                                }
-                                is AroundNowSection -> actions.playSongs(title, songs, shuffle = true, origin = AroundNowOrigin)
-                                is RediscoverSection -> actions.playSongs(title, songs, origin = RediscoverOrigin)
-                                is StartHereSection -> actions.playSongs(title, songs)
-                                else -> Unit
-                            }
-                        }
-                    },
                 )
             }
         }
     }
 }
 
+private val HeroGlide = spring<Float>(dampingRatio = 0.84f, stiffness = 160f)
+
+// where a card sits in the stack: the current one big against the right edge, the others
+// smaller above and below it, all read in the draw phase so a swipe recomposes nothing
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun HeroCard(
+private fun HeroStackCard(
     index: Int,
     hero: HomeHeroState,
-    width: Dp,
-    title: String,
-    artists: String,
+    side: Dp,
+    sidePx: Float,
+    widthPx: Float,
+    heightPx: Float,
     cover: String?,
-    playing: Boolean,
-    reduceMotion: Boolean,
-    onChooseStyle: (() -> Unit)?,
     onClick: () -> Unit,
 ) {
     val context = LocalContext.current
-    val px = with(LocalDensity.current) { width.roundToPx() }
+    val px = with(LocalDensity.current) { side.roundToPx() }
     val model = remember(cover, px) { cover?.resize(px * 4 / 3, px * 4 / 3) }
     val toneUrl = remember(cover) { cover?.resize(TonePx, TonePx) }
     LaunchedEffect(toneUrl, index) {
@@ -342,91 +430,119 @@ private fun HeroCard(
         val tones = cachedArtworkTones(toneUrl) ?: loadArtworkTones(context, toneUrl) ?: return@LaunchedEffect
         hero.tones[index] = heroTone(tones.deep, tones.vivid)
     }
-    val band = animateColorAsState(
-        targetValue = hero.tones[index]?.band ?: NeutralBand,
-        animationSpec = if (reduceMotion) snap() else tween(500),
-        label = "heroBand",
-    )
     val interaction = remember { MutableInteractionSource() }
-    val label = stringResource(if (playing) R.string.pause else R.string.liquid_play)
     Box(
         Modifier
-            .size(width = width, height = width + HeroOverlap)
+            .size(side)
             .graphicsLayer {
-                val away = abs(index - hero.position()).coerceAtMost(1f)
-                val scale = 1f - 0.07f * away
+                val d = index - hero.pos.value
+                val away = abs(d).coerceAtMost(2.2f)
+                val scale = 1f - 0.17f * away.coerceAtMost(1.4f)
                 scaleX = scale
                 scaleY = scale
-                alpha = 1f - 0.5f * away
+                translationX = widthPx - sidePx * 0.86f + away * sidePx * 0.06f
+                translationY = heightPx * 0.38f - sidePx / 2f + d * sidePx * 1.04f
+                alpha = (1.35f - 0.55f * away).coerceIn(0f, 1f)
+                shadowElevation = (1f - away.coerceAtMost(1f)) * 18.dp.toPx()
+                shape = HeroCardShape
+                clip = true
             }
-            .pressScale(interaction, 0.98f)
-            .clip(HeroShape)
-            .drawBehind { drawRect(band.value) }
-            .combinedClickable(
-                interactionSource = interaction,
-                indication = null,
-                onClickLabel = label,
-                onClick = onClick,
-            )
-            .semantics { contentDescription = "$title. $artists" },
+            .pressScale(interaction, 0.97f)
+            .combinedClickable(interactionSource = interaction, indication = null, onClick = onClick),
     ) {
-        Artwork(
-            model = model,
-            shape = RectangleShape,
-            hairline = false,
-            modifier = Modifier.size(width),
+        Artwork(model = model, shape = HeroCardShape, hairline = false, modifier = Modifier.fillMaxSize())
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun HeroText(
+    kicker: String,
+    title: String,
+    artists: String,
+    playing: Boolean,
+    onPlay: () -> Unit,
+    onChooseStyle: (() -> Unit)?,
+) {
+    val colors = Liquid.colors
+    val interaction = remember { MutableInteractionSource() }
+    val fill = if (colors.isDark) Color.White.copy(alpha = 0.64f) else Color.Black.copy(alpha = 0.08f)
+    val ink = if (colors.isDark) Color(0xFF2F2F2F) else colors.label
+    Column {
+        Text(
+            text = kicker,
+            color = colors.label.copy(alpha = 0.55f),
+            fontSize = 21.sp,
+            lineHeight = 24.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = (-0.8).sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
-        Box(
-            Modifier
-                .size(width)
-                .drawBehind {
-                    val colour = band.value
-                    drawRect(
-                        Brush.verticalGradient(
-                            0.52f to colour.copy(alpha = 0f),
-                            0.82f to colour.copy(alpha = 0.86f),
-                            1f to colour,
-                        ),
-                    )
-                },
+        Text(
+            text = title,
+            color = colors.label,
+            fontSize = 33.sp,
+            lineHeight = 36.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = (-1.4).sp,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
         )
-        Row(
-            Modifier
-                .align(Alignment.BottomStart)
-                .fillMaxWidth()
-                .padding(start = 18.dp, end = 14.dp, bottom = 16.dp),
-            verticalAlignment = Alignment.Bottom,
-        ) {
-            Column(
+        if (artists.isNotBlank()) {
+            Text(
+                text = artists,
+                color = colors.secondaryLabel,
+                fontSize = 13.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+        }
+        Spacer(Modifier.height(14.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
                 Modifier
-                    .weight(1f)
-                    .padding(end = 8.dp)
-                    .graphicsLayer { translationX = (index - hero.position()) * 42.dp.toPx() },
-            ) {
-                Text(title, style = HeroTitleStyle, color = Color.White, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                Spacer(Modifier.height(2.dp))
-                Text(artists, style = HeroArtistsStyle, color = Color.White.copy(alpha = 0.82f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
-            if (onChooseStyle != null) StyleButton(onChooseStyle)
-            Box(
-                Modifier
-                    .size(HeroDisc)
+                    .height(40.dp)
+                    .pressScale(interaction, 0.94f)
                     .clip(CircleShape)
-                    .background(Color.White),
-                contentAlignment = Alignment.Center,
+                    .background(fill)
+                    .combinedClickable(interactionSource = interaction, indication = null, role = Role.Button, onClick = onPlay)
+                    .padding(start = 14.dp, end = 18.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Crossfade(targetState = playing, animationSpec = tween(180), label = "heroPlay") { on ->
-                    Icon(
-                        imageVector = if (on) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                        contentDescription = null,
-                        tint = Color.Black,
-                        modifier = Modifier.size(30.dp),
-                    )
+                    Icon(if (on) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, null, tint = ink, modifier = Modifier.size(22.dp))
                 }
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    text = stringResource(if (playing) R.string.pause else R.string.liquid_play),
+                    color = ink,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = (-0.6).sp,
+                )
+            }
+            if (onChooseStyle != null) {
+                Spacer(Modifier.width(6.dp))
+                StyleButton(onChooseStyle)
             }
         }
     }
 }
+
+@Composable
+private fun heroKicker(section: HomeSection): String = stringResource(
+    when (section) {
+        is HeroMixSection -> R.string.home_kicker_mix
+        is DiscoveryMixSection -> R.string.home_kicker_discovery
+        is AroundNowSection -> R.string.home_kicker_around
+        is RediscoverSection -> R.string.home_kicker_rediscover
+        else -> R.string.home_kicker_start
+    },
+)
+
+private val HeroCardShape = RoundedCornerShape(30.dp)
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -443,7 +559,7 @@ private fun StyleButton(onClick: () -> Unit) {
             .semantics { contentDescription = label },
         contentAlignment = Alignment.Center,
     ) {
-        Icon(Icons.Rounded.Tune, null, tint = Color.White, modifier = Modifier.size(24.dp))
+        Icon(Icons.Rounded.Tune, null, tint = Liquid.colors.label, modifier = Modifier.size(24.dp))
     }
 }
 

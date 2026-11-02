@@ -60,6 +60,11 @@
     <string name="home_kicker_more_like">More like</string>
     <string name="home_kicker_more_from">More from</string>
     <string name="home_kicker_similar">Similar to</string>
+    <string name="home_kicker_mix">Made for you</string>
+    <string name="home_kicker_discovery">Something new</string>
+    <string name="home_kicker_around">Right now</string>
+    <string name="home_kicker_rediscover">Back in rotation</string>
+    <string name="home_kicker_start">Start here</string>
     <string name="home_kicker_because_like">Because you like</string>
     <string name="home_kicker_listen">Because you listen to</string>
     <string name="home_kicker_try">Try something new</string>
