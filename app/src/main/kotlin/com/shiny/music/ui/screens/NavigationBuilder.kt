@@ -247,6 +247,17 @@ fun NavGraphBuilder.navigationBuilder(
     }
 
     screen(
+        route = "artist/{artistId}/similar",
+        arguments = listOf(
+            navArgument("artistId") {
+                type = NavType.StringType
+            },
+        ),
+    ) { entry ->
+        com.shiny.music.ui.liquid.screens.LiquidArtistSimilarScreen(navController, entry.arguments?.getString("artistId").orEmpty())
+    }
+
+    screen(
         route = "artist/{artistId}/songs",
         arguments = listOf(
             navArgument("artistId") {
