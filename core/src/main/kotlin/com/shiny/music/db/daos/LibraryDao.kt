@@ -28,6 +28,10 @@ interface LibraryDao {
     fun eventCount(): Flow<Int>
 
     @Transaction
+    @Query("SELECT song.* FROM song JOIN (SELECT songId, MAX(timestamp) AS lastPlayed FROM event GROUP BY songId) e ON e.songId = song.id ORDER BY e.lastPlayed DESC LIMIT :limit")
+    fun recentHistory(limit: Int): Flow<List<Song>>
+
+    @Transaction
     @Query("SELECT * FROM song WHERE $EVERY_SONG")
     fun everySong(): Flow<List<Song>>
 
