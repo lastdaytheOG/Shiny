@@ -1,8 +1,22 @@
 package com.shiny.music.viewmodels
 
-import com.shiny.music.home.HomeRecommender
+import com.shiny.music.home.artistGroups
+import com.shiny.music.home.HomeSources
+import com.shiny.music.home.HomeFeedStore
+import com.shiny.music.home.HomeLive
+import com.shiny.music.home.RecRowKind
 import com.shiny.music.home.RecommendationRowSection
-import com.shiny.music.home.HomeArrangement
+import com.shiny.music.home.TasteMath
+import com.shiny.music.home.ListeningSignals
+import com.shiny.music.playback.PlayerConnection
+import com.shiny.music.models.MediaMetadata
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.supervisorScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.update
+import android.os.SystemClock
+import java.util.concurrent.ConcurrentHashMap
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -249,32 +263,220 @@ class HomeViewModel @Inject constructor(
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    private val recommender = HomeRecommender(database)
-    val recommendations = MutableStateFlow<List<RecommendationRowSection>>(emptyList())
-    @Volatile private var recommendedAt = 0L
-    private var playsAtBuild = -1
+    private val sources = HomeSources(database)
+    private val store = HomeFeedStore(context)
+    val live = MutableStateFlow(HomeLive())
+    private val categoryParts = ConcurrentHashMap<RecRowKind, List<RecommendationRowSection>>()
+    private val loadMutex = Mutex()
+    private val listeningRefresh = Mutex()
+    @Volatile private var reloadRequested = false
+    @Volatile private var lastLoadAt = 0L
 
-    // rebuilt from listening after four more plays, never more than once a minute; a failed
-    // build keeps the rows already on screen
-    fun refreshRecommendations(force: Boolean = false) {
-        val now = System.currentTimeMillis()
-        if (!force && now - recommendedAt < 60_000) return
-        recommendedAt = now
-        viewModelScope.launch {
-            val rows = runCatching { recommender.build() }.getOrNull()
-            if (!rows.isNullOrEmpty()) recommendations.value = rows
+    val homeFeed: StateFlow<HomeFeed?> get() = feed
+
+    // init, pull to refresh and a listening refresh can all ask at once; a request landing
+    // mid-load just queues one more pass
+    private suspend fun load() {
+        if (!loadMutex.tryLock()) {
+            reloadRequested = true
+            return
+        }
+        try {
+            do {
+                reloadRequested = false
+                loadOnce()
+            } while (reloadRequested)
+        } finally {
+            loadMutex.unlock()
         }
     }
 
-    fun onHomeShown() {
-        if (System.currentTimeMillis() - recommendedAt > 30 * 60_000L) refreshRecommendations(force = true)
+    private suspend fun loadOnce() {
+        ListeningSignals.markRefreshed()
+        sources.forgetPages()
+        loadLocal()
+        if (online.value) {
+            context.dataStore.data.first()[InnerTubeCookieKey]?.takeIf { it.isNotEmpty() }?.let { YouTube.cookie = it }
+            // each source on its own, one failing request must not take the others down
+            supervisorScope {
+                launchSafely { loadDiscover() }
+                launchSafely { loadSimilar() }
+                launchSafely {
+                    val v = sources.community()
+                    if (v.isNotEmpty()) {
+                        live.update { it.copy(community = v) }
+                        store.saveCommunity(v)
+                    }
+                }
+                launchSafely {
+                    val v = sources.youtubeHome()
+                    if (v.isNotEmpty()) {
+                        live.update { it.copy(shelves = v) }
+                        store.saveShelves(v)
+                    }
+                }
+                launchSafely {
+                    // youtube's chart page is empty in some regions; the charts home already keeps stand in
+                    val v = sources.hits().ifEmpty { remote.state.value?.charts?.firstOrNull()?.songs?.take(20).orEmpty() }
+                    if (v.isNotEmpty()) {
+                        live.update { it.copy(hits = v) }
+                        store.saveHits(v)
+                    }
+                }
+                launchSafely { loadVideos() }
+                launchSafely { loadCategories() }
+                launchSafely {
+                    val v = sources.starter()
+                    live.update { it.copy(starter = v) }
+                }
+                if (YouTube.cookie != null) {
+                    launchSafely {
+                        val v = sources.accountPlaylists()
+                        if (v.isNotEmpty()) live.update { it.copy(accountPlaylists = v) }
+                    }
+                }
+            }
+        }
+        live.update { it.copy(loaded = true) }
+        lastLoadAt = SystemClock.elapsedRealtime()
+        live.value.let { l ->
+            android.util.Log.d("HomeFeed", "loaded: discover=${l.discover.size} similar=${l.similar.size} community=${l.community.size} live=${l.liveShows.size} videos=${l.musicVideos.size} rows=${l.categories.size} shelves=${l.shelves.size} hits=${l.hits.size} playlists=${l.accountPlaylists.size}")
+        }
     }
 
-    val homeFeed: StateFlow<HomeFeed?> = combine(feed, recommendations, database.libraryDao.recentHistory(24)) { f, rows, history ->
-        f?.let { HomeArrangement.arrange(it, rows, history) }
+    private suspend fun loadLocal() {
+        val l = sources.local(HomeLive())
+        live.update {
+            it.copy(
+                lastPlayed = l.lastPlayed,
+                history = l.history,
+                mostPlayed = l.mostPlayed,
+                forgotten = l.forgotten,
+                keepListening = l.keepListening,
+                localPlaylists = l.localPlaylists,
+            )
+        }
     }
-        .flowOn(Dispatchers.Default)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    private suspend fun loadDiscover() {
+        val v = sources.discover()
+        if (v.isNotEmpty()) live.update { it.copy(discover = v) }
+    }
+
+    private suspend fun loadSimilar() {
+        val v = sources.similar()
+        if (v.isNotEmpty()) live.update { it.copy(similar = v, artistGroups = artistGroups(v)) }
+    }
+
+    private suspend fun loadVideos() {
+        val (liveShows, videos) = sources.artistVideos()
+        // nothing back keeps what's on screen
+        if (liveShows.isNotEmpty()) {
+            live.update { it.copy(liveShows = liveShows) }
+            store.saveLive(liveShows)
+        }
+        if (videos.isNotEmpty()) {
+            live.update { it.copy(musicVideos = videos) }
+            store.saveVideos(videos)
+        }
+    }
+
+    // each kind shows as soon as it's ready instead of waiting on the slowest
+    private suspend fun loadCategories() {
+        val r = sources.recommender
+        val profile = r.profile()
+        val artistSeeds = profile.topArtists.take(8).shuffled().take(3)
+        supervisorScope {
+            launchSafely { publish(RecRowKind.BecauseYouLike, r.becauseYouLike(profile, profile.songSeeds.take(4))) }
+            launchSafely { publish(RecRowKind.MoreLike, r.moreLike(profile, artistSeeds)) }
+            launchSafely {
+                val g = r.genres(profile)
+                publish(RecRowKind.Genre, g.filter { it.kind == RecRowKind.Genre })
+                publish(RecRowKind.NewGenre, g.filter { it.kind == RecRowKind.NewGenre })
+            }
+            launchSafely { r.newFromArtists(profile)?.let { publish(RecRowKind.NewReleases, listOf(it)) } }
+        }
+        live.value.categories.takeIf { it.isNotEmpty() }?.let(store::saveCategories)
+    }
+
+    // an empty result is a failed request, so the rows on screen stay
+    @Synchronized
+    private fun publish(kind: RecRowKind, rows: List<RecommendationRowSection>) {
+        if (rows.isEmpty()) return
+        categoryParts[kind] = rows
+        val arranged = TasteMath.arrange(categoryParts.toMap())
+        live.update { it.copy(categories = arranged) }
+    }
+
+    private fun CoroutineScope.launchSafely(block: suspend () -> Unit) = launch(Dispatchers.IO) {
+        try {
+            block()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            android.util.Log.w("HomeFeed", "a home source failed", e)
+            reportException(e)
+        }
+    }
+
+    // home refreshes itself when listening says it's worth it: two skips or four songs heard
+    // through rebuild the rows grown from listening, half an hour away reloads the whole page.
+    // never more than once a minute and never on top of a load already running
+    fun onListeningBreak() {
+        val since = SystemClock.elapsedRealtime() - lastLoadAt
+        if (lastLoadAt == 0L || since < 60_000L || loadMutex.isLocked || listeningRefresh.isLocked) return
+        val stale = since > 30 * 60_000L
+        val moved = ListeningSignals.skipsSinceRefresh >= 2 || ListeningSignals.playsSinceRefresh >= 4
+        if (!stale && !moved) return
+        viewModelScope.launch(Dispatchers.IO) { if (stale) load() else refreshFromListening() }
+    }
+
+    // only what grows from listening; youtube's feed and the charts don't change with a skip
+    private suspend fun refreshFromListening() {
+        if (!listeningRefresh.tryLock()) return
+        try {
+            ListeningSignals.markRefreshed()
+            lastLoadAt = SystemClock.elapsedRealtime()
+            sources.forgetPages()
+            loadLocal()
+            if (!online.value) return
+            supervisorScope {
+                launchSafely { loadDiscover() }
+                launchSafely { loadCategories() }
+                launchSafely { loadVideos() }
+            }
+        } finally {
+            listeningRefresh.unlock()
+        }
+    }
+
+    private var listening: Job? = null
+    private var listeningTo: PlayerConnection? = null
+
+    // follows the player to tell skips from songs heard through
+    fun attachPlayer(connection: PlayerConnection) {
+        if (listeningTo === connection) return
+        listeningTo = connection
+        listening?.cancel()
+        listening = viewModelScope.launch {
+            var current: MediaMetadata? = null
+            var playedMs = 0L
+            var since = -1L
+            combine(connection.mediaMetadata, connection.isPlaying) { m, p -> m to p }.collect { (m, playing) ->
+                val now = SystemClock.elapsedRealtime()
+                if (since >= 0) {
+                    playedMs += now - since
+                    since = -1L
+                }
+                if (m?.id != current?.id) {
+                    current?.let { c -> ListeningSignals.onTrackLeft(c.id, c.artists.map { it.name }, c.duration * 1000L, playedMs) }
+                    current = m
+                    playedMs = 0L
+                }
+                if (playing && m != null) since = now
+            }
+        }
+    }
 
     /**
      * Records that the listener reached for one kind of content, so Home can lead with it
@@ -315,6 +517,7 @@ class HomeViewModel @Inject constructor(
     fun setVisible(viewer: Any, isVisible: Boolean) {
         if (isVisible) viewers += viewer else viewers -= viewer
         visible.value = viewers.isNotEmpty()
+        if (isVisible) onListeningBreak()
     }
 
     /**
@@ -327,7 +530,6 @@ class HomeViewModel @Inject constructor(
         if (!online.value) return
         // Matching a mix's songs takes a while and must not hold the pull-to-refresh spinner;
         // the repository ignores the call while a refresh of its own is still running.
-        viewModelScope.launch { spotifyMixes.refresh(force) }
         val p = prefs.first()
         val signals = lastSignals.value
         try {
@@ -362,7 +564,7 @@ class HomeViewModel @Inject constructor(
             try {
                 isRefreshing.value = true
                 refreshNonce.value++
-                withTimeoutOrNull(REFRESH_CEILING_MS) { refreshRemote(force = true) }
+                withTimeoutOrNull(REFRESH_CEILING_MS) { load() }
             } finally {
                 isRefreshing.value = false
             }
@@ -371,16 +573,22 @@ class HomeViewModel @Inject constructor(
     }
 
     init {
-        refreshRecommendations(force = true)
-        viewModelScope.launch {
-            database.libraryDao.eventCount().collect { n ->
-                if (playsAtBuild < 0) {
-                    playsAtBuild = n
-                } else if (n - playsAtBuild >= 4) {
-                    playsAtBuild = n
-                    refreshRecommendations()
-                }
+        ListeningSignals.init(context)
+        // last launch's feed first, so home opens full
+        viewModelScope.launch(Dispatchers.IO) {
+            val restored = store.restore(HomeLive())
+            restored.categories.groupBy { it.kind }.forEach { (kind, rows) -> categoryParts.putIfAbsent(kind, rows) }
+            live.update {
+                it.copy(
+                    community = it.community.ifEmpty { restored.community },
+                    liveShows = it.liveShows.ifEmpty { restored.liveShows },
+                    musicVideos = it.musicVideos.ifEmpty { restored.musicVideos },
+                    categories = it.categories.ifEmpty { restored.categories },
+                    shelves = it.shelves.ifEmpty { restored.shelves },
+                    hits = it.hits.ifEmpty { restored.hits },
+                )
             }
+            load()
         }
         viewModelScope.launch { remote.restore() }
         viewModelScope.launch { spotifyMixes.restore() }
@@ -401,7 +609,10 @@ class HomeViewModel @Inject constructor(
                 spotifyShown,
             ) { isVisible, isOnline, _, _, _ -> isVisible && isOnline }
                 .filter { it }
-                .collect { refreshRemote(force = false) }
+                .collect {
+                    delay(20_000)
+                    refreshRemote(force = false)
+                }
         }
 
         viewModelScope.launch(Dispatchers.IO) { syncUtils.tryAutoSync() }
