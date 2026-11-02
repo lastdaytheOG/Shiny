@@ -71,4 +71,11 @@
     <string name="home_new_from_artists">New from your artists</string>
     <string name="home_most_played">Most Played</string>
     <string name="home_artist_list">Artist List</string>
+    <string name="home_gacha_title">Random plays</string>
+    <string name="home_gacha_kicker">Gacha here!</string>
+    <string name="home_gacha_got">You got</string>
+    <string name="home_now_playing">Now playing</string>
+    <string name="home_gacha_roll">roll!!</string>
+    <string name="home_gacha_rolling">rolling!!</string>
+    <string name="home_kicker_on_repeat">On repeat</string>
 </resources>

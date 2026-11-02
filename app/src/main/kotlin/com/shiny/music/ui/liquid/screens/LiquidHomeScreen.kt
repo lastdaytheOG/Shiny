@@ -200,7 +200,7 @@ fun LiquidHomeScreen(
             state = listState,
             heroHeightPx = heroHeightPx,
             navController = navController,
-            behind = { HomeAmbience(hero, listState, reduceMotion) },
+            behind = {},
             avatar = {
                 AccountAvatar(
                     imageUrl = if (isLoggedIn) accountImageUrl else null,
