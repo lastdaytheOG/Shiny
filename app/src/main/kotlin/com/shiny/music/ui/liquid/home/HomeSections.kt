@@ -1041,12 +1041,19 @@ internal fun RecommendationShelf(section: RecommendationRowSection, activeId: St
         RecRowKind.NewReleases -> stringResource(R.string.home_new_from_artists)
         else -> section.subject
     }
+    val browse: (() -> Unit)? = section.browseId?.let { id ->
+        if (section.kind == RecRowKind.MoreLike) {
+            { actions.navController.navigate("artist/$id") }
+        } else {
+            { actions.openBrowse(com.music.innertube.models.BrowseEndpoint(browseId = id, params = section.params)) }
+        }
+    }
     when (section.kind) {
         RecRowKind.NewReleases -> HomeHeader(stringResource(R.string.home_new_from_artists))
         RecRowKind.BecauseYouLike -> ArtistHeader(kicker = stringResource(R.string.home_kicker_because_like), name = section.subject, photo = section.photo, onClick = null)
-        RecRowKind.MoreLike -> ArtistHeader(kicker = stringResource(R.string.home_kicker_more_like), name = section.subject, photo = section.photo, onClick = null)
-        RecRowKind.Genre -> ArtistHeader(kicker = stringResource(R.string.home_kicker_listen), name = section.subject, photo = null, onClick = null)
-        RecRowKind.NewGenre -> ArtistHeader(kicker = stringResource(R.string.home_kicker_try), name = section.subject, photo = null, onClick = null)
+        RecRowKind.MoreLike -> ArtistHeader(kicker = stringResource(R.string.home_kicker_more_like), name = section.subject, photo = section.photo, onClick = browse)
+        RecRowKind.Genre -> ArtistHeader(kicker = stringResource(R.string.home_kicker_listen), name = section.subject, photo = null, onClick = browse)
+        RecRowKind.NewGenre -> ArtistHeader(kicker = stringResource(R.string.home_kicker_try), name = section.subject, photo = null, onClick = browse)
     }
     HomeRow(items = section.items, key = { it.id }) { item ->
         val subtitle = when (item) {

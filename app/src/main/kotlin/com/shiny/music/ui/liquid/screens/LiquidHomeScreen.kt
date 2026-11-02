@@ -1,5 +1,15 @@
 package com.shiny.music.ui.liquid.screens
 
+import com.shiny.music.ui.liquid.home.MostPlayedShelf
+import com.shiny.music.ui.liquid.home.ForgottenShelf
+import com.shiny.music.ui.liquid.home.HistoryRows
+import com.shiny.music.ui.liquid.home.CommunityShelf
+import com.shiny.music.ui.liquid.home.VideoShelf
+import com.shiny.music.ui.liquid.home.YourPlaylistsShelf
+import com.shiny.music.ui.liquid.home.YouTubeShelfRow
+import com.shiny.music.ui.liquid.home.HitsShelf
+import com.shiny.music.ui.liquid.home.rememberHeroCards
+import com.shiny.music.ui.liquid.home.rememberGachaPool
 import com.shiny.music.home.HistorySection
 import com.shiny.music.home.ArtistListSection
 import com.shiny.music.ui.liquid.home.HistoryShelf
@@ -139,7 +149,11 @@ fun LiquidHomeScreen(
     val queueTitle by playerConnection.queueTitle.collectAsState()
 
     val feed by viewModel.homeFeed.collectAsState()
-    LaunchedEffect(Unit) { viewModel.onHomeShown() }
+    val live by viewModel.live.collectAsState()
+    val accountName by viewModel.accountName.collectAsState()
+    LaunchedEffect(playerConnection) { viewModel.attachPlayer(playerConnection) }
+    val heroCards = rememberHeroCards(live, actions)
+    val gachaPool = rememberGachaPool(live, actions)
     ReportDrawnWhen {
         (feed != null).also { ready -> if (ready) PerfTrace.homeReadyEnd() }
     }
@@ -208,7 +222,7 @@ fun LiquidHomeScreen(
                 )
             },
         ) {
-            if (feed == null) {
+            if (feed == null && !live.loaded && live.categories.isEmpty()) {
                 item(key = "skeleton_hero", contentType = "skeleton_hero") { HeroSkeleton() }
                 item(key = "skeleton_shelf", contentType = "skeleton") { SkeletonShelf(tile = 156.dp) }
                 return@HomePage
@@ -220,47 +234,74 @@ fun LiquidHomeScreen(
                 }
             }
 
-            if (mix != null || topPicks.isNotEmpty()) {
+            val activeId = mediaMetadata?.id
+            if (heroCards.isNotEmpty() || gachaPool.size >= 4) {
                 item(key = "hero", contentType = "hero") {
                     HomeItem(reduceMotion, "hero", viewModel.revealed) {
                         HeroCarousel(
                             hero = hero,
-                            mix = mix,
-                            picks = topPicks,
-                            takenCovers = mixCovers,
-                            queueTitle = queueTitle,
+                            cards = heroCards,
+                            gacha = gachaPool,
+                            activeId = activeId,
                             isPlaying = isPlaying,
                             reduceMotion = reduceMotion,
                             actions = actions,
-                            onPlayedDiscovery = { viewModel.note(HomeInterest.Kind.Discovery) },
-                            onChooseStyle = {
-                                menuState.show {
-                                    RecommendationStyleSheet(viewModel.intelligence, onDone = menuState::dismiss)
-                                }
-                            },
-                            onShown = { section -> NoteShown(section, viewModel) },
                         )
                     }
                 }
             }
 
-            shelves.filterNot { it is OfflineNoticeSection || it is HeroMixSection }.forEach { section ->
-                item(key = section.key, contentType = section::class.simpleName) {
-                    NoteShown(section, viewModel)
-                    HomeItem(reduceMotion, section.key, viewModel.revealed) {
-                        HomeShelf(
-                            section = section,
-                            asList = section.key in listShelves,
-                            actions = actions,
-                            activeId = mediaMetadata?.id,
-                            isPlaying = isPlaying,
-                            onPlayedDiscovery = { viewModel.note(HomeInterest.Kind.Discovery) },
-                            onPickArtists = { navController.navigate("settings/recommendations/artists") },
-                            onDismissPickArtists = viewModel::dismissPickArtists,
-                        )
-                    }
+            fun block(key: String, content: @Composable () -> Unit) {
+                item(key = key, contentType = key) {
+                    HomeItem(reduceMotion, key, viewModel.revealed) { content() }
                 }
             }
+
+            // the picks are dealt out between home's own rows
+            val cats = live.categories
+            var next = 0
+            fun picks(count: Int = 1) = repeat(count) {
+                val row = cats.getOrNull(next) ?: return@repeat
+                next++
+                item(key = row.key, contentType = "rec") {
+                    HomeItem(reduceMotion, row.key, viewModel.revealed) { RecommendationShelf(row, activeId, actions) }
+                }
+            }
+
+            shelves.filterIsInstance<StartHereSection>().firstOrNull()?.takeIf { live.history.isEmpty() && live.mostPlayed.isEmpty() }?.let { start ->
+                block("start_here") { QuietStart(start.online) }
+            }
+            shelves.filterIsInstance<LatelySection>().firstOrNull()?.let { lately ->
+                block("recently_played") { RecentlyPlayedShelf(lately, actions) }
+            }
+            if (live.mostPlayed.isNotEmpty()) block("most_played") { MostPlayedShelf(live.mostPlayed, activeId, actions) }
+            picks()
+            if (live.community.isNotEmpty()) block("community") { CommunityShelf(live.community, actions) }
+            if (live.history.isNotEmpty()) block("history") { HistoryRows(live.history, activeId, actions) }
+            picks()
+            if (live.liveShows.isNotEmpty()) block("live_shows") { VideoShelf(stringResource(R.string.home_live_shows), live.liveShows, activeId, actions) }
+            picks()
+            if (live.artistGroups.isNotEmpty()) block("artist_list") { ArtistListShelf(live.artistGroups, actions) }
+            picks()
+            if (live.accountPlaylists.isNotEmpty() || live.localPlaylists.isNotEmpty()) {
+                block("your_playlists") {
+                    YourPlaylistsShelf(
+                        accountName = if (isLoggedIn) accountName else stringResource(R.string.home_guest),
+                        accountImage = if (isLoggedIn) accountImageUrl else null,
+                        online = live.accountPlaylists,
+                        local = live.localPlaylists,
+                        actions = actions,
+                    )
+                }
+            }
+            picks()
+            if (live.forgotten.isNotEmpty()) block("dont_forget") { ForgottenShelf(live.forgotten, activeId, actions) }
+            picks()
+            if (live.musicVideos.isNotEmpty()) block("music_videos") { VideoShelf(stringResource(R.string.home_music_videos), live.musicVideos, activeId, actions) }
+            picks(cats.size)
+            live.shelves.firstOrNull()?.let { first -> block("yt_0_${first.title}") { YouTubeShelfRow(first, activeId, actions) } }
+            if (live.hits.isNotEmpty()) block("all_time_hits") { HitsShelf(live.hits, activeId, actions) }
+            live.shelves.drop(1).forEachIndexed { index, shelf -> block("yt_${index + 1}_${shelf.title}") { YouTubeShelfRow(shelf, activeId, actions) } }
 
             item(key = "home_footer") { Spacer(Modifier.height(20.dp)) }
         }
@@ -321,7 +362,7 @@ private fun HomeShelf(
         is YouTubeSection -> YouTubeShelf(section, actions)
         is RecommendationRowSection -> RecommendationShelf(section, activeId, actions)
         is HistorySection -> HistoryShelf(section, activeId, actions)
-        is ArtistListSection -> ArtistListShelf(section, actions)
+        is ArtistListSection -> Unit
         PickArtistsSection -> PickArtistsCard(onPick = onPickArtists, onDismiss = onDismissPickArtists)
         else -> Unit
     }

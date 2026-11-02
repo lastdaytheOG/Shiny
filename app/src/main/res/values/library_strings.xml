@@ -78,4 +78,24 @@
     <string name="home_gacha_roll">roll!!</string>
     <string name="home_gacha_rolling">rolling!!</string>
     <string name="home_kicker_on_repeat">On repeat</string>
+    <string name="home_from_community">From the community</string>
+    <string name="home_live_shows">Live Shows</string>
+    <string name="home_music_videos">Music Videos for You</string>
+    <string name="home_your_playlists">Your playlists</string>
+    <string name="home_dont_forget">Don\'t forget these songs</string>
+    <string name="home_all_time_hits">All-time hits</string>
+    <string name="home_guest">Guest</string>
+    <string name="home_hero_continue">Continue</string>
+    <string name="home_hero_recent">Recently played</string>
+    <string name="home_hero_back">Back in rotation</string>
+    <string name="home_hero_may_like">You may also like</string>
+    <string name="home_hero_played">Because you played</string>
+    <string name="home_hero_inspired">Inspired by</string>
+    <string name="similar_small_line">similar to</string>
+    <string name="similar_artists">Similar Artist</string>
+    <string name="similar_playlists">Featured Playlist</string>
+    <string name="similar_songs">Featured songs</string>
+    <string name="similar_albums">New from them</string>
+    <string name="similar_start_line">START OF THE LINE</string>
+    <string name="similar_empty">Nothing to show here yet</string>
 </resources>

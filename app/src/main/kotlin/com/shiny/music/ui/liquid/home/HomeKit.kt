@@ -1,5 +1,20 @@
 package com.shiny.music.ui.liquid.home
 
+import com.shiny.music.home.ArtistGroup
+import com.shiny.music.home.SimilarPicks
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.layout.requiredSize
+import com.shiny.music.ui.liquid.cachedArtworkTones
+import com.shiny.music.ui.liquid.loadArtworkTones
+import com.music.innertube.models.YTItem
+import com.shiny.music.home.SimilarRow
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
@@ -378,95 +393,85 @@ internal fun HistoryShelf(section: HistorySection, activeId: String?, actions: L
     }
 }
 
-// one big card per artist you play: who they are, their records, then artists like them
+// one box per artist: who they are, then five things around them. the whole box opens the
+// similar page, which leads with these same picks
 @Composable
-internal fun ArtistListShelf(section: ArtistListSection, actions: LiquidActions) {
+internal fun ArtistListShelf(groups: List<ArtistGroup>, actions: LiquidActions) {
     HomeSectionTitle(stringResource(R.string.home_artist_list))
-    BoxWithConstraints(Modifier.fillMaxWidth()) {
-        val width = maxWidth - HomeInset - 50.dp
-        val state = rememberLazyListState()
-        LazyRow(
-            state = state,
-            contentPadding = PaddingValues(horizontal = HomeInset),
-            horizontalArrangement = Arrangement.spacedBy(HomeGap),
-            flingBehavior = rememberSnapFlingBehavior(state, SnapPosition.Start),
-        ) {
-            items(section.artists, key = { it.key }) { ArtistListCard(it, width, actions) }
-        }
-    }
+    HomeRow(items = groups, key = { "${it.artistId}_${it.artistName}" }) { ArtistListCard(it, actions) }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
+private val ArtistBoxFallbacks = listOf(
+    listOf(Color(0xFF2B1B38), Color(0xFF151521), Color.Black),
+    listOf(Color(0xFF1B2838), Color(0xFF0F1521), Color.Black),
+    listOf(Color(0xFF381B24), Color(0xFF1F0F15), Color.Black),
+    listOf(Color(0xFF1B382D), Color(0xFF0F1F17), Color.Black),
+    listOf(Color(0xFF2D2B55), Color(0xFF151521), Color.Black),
+)
+
 @Composable
-private fun ArtistListCard(section: DeepDiveSection, width: Dp, actions: LiquidActions) {
-    val colors = Liquid.colors
-    val digest = section.digest
+private fun ArtistListCard(group: ArtistGroup, actions: LiquidActions) {
+    val context = LocalContext.current
+    val fallback = ArtistBoxFallbacks[(group.artistName.hashCode() and 0x7FFFFFFF) % ArtistBoxFallbacks.size]
+    var tones by remember(group) { mutableStateOf<List<Color>>(emptyList()) }
+    // the box takes its colours from the artist and the first two picks, darkened
+    LaunchedEffect(group) {
+        val urls = listOfNotNull(group.artistPhoto) + group.items.take(2).mapNotNull { it.thumbnail }
+        tones = urls.mapNotNull { url ->
+            val small = url.resize(120, 120)
+            (cachedArtworkTones(small) ?: loadArtworkTones(context, small))?.vivid
+        }.distinct().take(3)
+    }
+    val c1 by animateColorAsState(tones.getOrNull(0)?.let { lerp(it, Color.Black, 0.65f) } ?: fallback[0], tween(800), label = "box1")
+    val c2 by animateColorAsState(tones.getOrNull(1)?.let { lerp(it, Color.Black, 0.75f) } ?: fallback[1], tween(800), label = "box2")
+    val c3 by animateColorAsState(tones.getOrNull(2)?.let { lerp(it, Color.Black, 0.85f) } ?: fallback[2], tween(800), label = "box3")
     val interaction = remember { MutableInteractionSource() }
-    Column(
+    Box(
         Modifier
-            .width(width)
+            .width(276.dp)
             .height(344.dp)
-            .clip(RoundedCornerShape(30.dp))
-            .background(colors.label.copy(alpha = 0.05f))
-            .padding(top = 25.dp),
+            .pressScale(interaction, 0.97f)
+            .clip(RoundedCornerShape(20.dp))
+            .drawBehind { drawRect(Brush.verticalGradient(listOf(c1, c2, c3))) }
+            .clickable(interactionSource = interaction, indication = null) {
+                group.artistId?.let { id ->
+                    SimilarPicks.put(id, group)
+                    actions.navController.navigate("artist/$id/similar")
+                }
+            },
     ) {
-        Row(
-            Modifier
-                .padding(horizontal = 24.dp)
-                .pressScale(interaction, 0.98f)
-                .combinedClickable(interactionSource = interaction, indication = null) { actions.navController.navigate("artist/${digest.artistId}") },
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Artwork(model = digest.thumbnail?.resize(200, 200), shape = CircleShape, hairline = false, modifier = Modifier.size(52.dp))
-            Spacer(Modifier.width(16.dp))
-            Column {
-                Text(stringResource(R.string.home_kicker_similar), style = HomeLabelStyle.copy(fontSize = 13.sp, lineHeight = 16.sp), color = colors.label.copy(alpha = 0.69f), maxLines = 1)
-                Text(digest.name, style = HomeTitleStyle, color = colors.label, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Column(Modifier.fillMaxSize()) {
+            Row(Modifier.padding(start = 24.dp, top = 24.dp, end = 24.dp), verticalAlignment = Alignment.CenterVertically) {
+                Artwork(model = group.artistPhoto?.resize(200, 200), shape = CircleShape, hairline = false, modifier = Modifier.size(52.dp))
+                Spacer(Modifier.width(16.dp))
+                Column {
+                    Text(stringResource(R.string.home_kicker_similar), fontSize = 12.sp, fontWeight = FontWeight.Medium, color = Color.White.copy(alpha = 0.7f), maxLines = 1)
+                    Text(group.artistName, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+            }
+            Spacer(Modifier.height(24.dp))
+            Row(
+                Modifier
+                    .padding(start = 24.dp)
+                    .wrapContentWidth(Alignment.Start, unbounded = true),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                group.items.take(3).forEach { item ->
+                    Artwork(model = item.thumbnail?.resize(300, 300), shape = RoundedCornerShape(16.dp), hairline = false, modifier = Modifier.requiredSize(96.dp))
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+            Row(
+                Modifier
+                    .padding(start = 24.dp)
+                    .offset(y = 20.dp)
+                    .wrapContentWidth(Alignment.Start, unbounded = true),
+                horizontalArrangement = Arrangement.spacedBy(20.dp),
+            ) {
+                group.items.drop(3).take(2).forEach { item ->
+                    Artwork(model = item.thumbnail?.resize(480, 480), shape = CircleShape, hairline = false, modifier = Modifier.requiredSize(160.dp))
+                }
             }
         }
-        Spacer(Modifier.height(24.dp))
-        LazyRow(
-            contentPadding = PaddingValues(start = 24.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            items(section.albums, key = { it.id }) { album -> ArtistListAlbum(album, actions) }
-        }
-        Spacer(Modifier.height(22.dp))
-        LazyRow(
-            contentPadding = PaddingValues(start = 24.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            items(section.related, key = { it.id }) { artist -> ArtistListCircle(artist, actions) }
-        }
     }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun ArtistListAlbum(album: AlbumItem, actions: LiquidActions) {
-    val interaction = remember { MutableInteractionSource() }
-    Artwork(
-        model = album.thumbnail.resize(300, 300),
-        shape = RoundedCornerShape(22.dp),
-        hairline = false,
-        modifier = Modifier
-            .size(96.dp)
-            .pressScale(interaction, 0.95f)
-            .combinedClickable(interactionSource = interaction, indication = null, onLongClick = { actions.menu(album) }) { actions.open(album) },
-    )
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun ArtistListCircle(artist: ArtistItem, actions: LiquidActions) {
-    val interaction = remember { MutableInteractionSource() }
-    Artwork(
-        model = artist.thumbnail?.resize(480, 480),
-        shape = CircleShape,
-        hairline = false,
-        modifier = Modifier
-            .size(160.dp)
-            .pressScale(interaction, 0.96f)
-            .combinedClickable(interactionSource = interaction, indication = null, onLongClick = { actions.menu(artist) }) { actions.open(artist) },
-    )
 }
