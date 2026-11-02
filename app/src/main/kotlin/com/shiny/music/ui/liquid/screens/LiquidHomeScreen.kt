@@ -234,7 +234,7 @@ fun LiquidHomeScreen(
                 }
             }
 
-            shelves.filterNot { it is OfflineNoticeSection || it is HeroMixSection }.forEach { section ->
+            shelves.filterNot { it is OfflineNoticeSection || it is HeroMixSection || it is SpotifySection || it is YouTubeSection || it is ShortcutsSection || it is PinnedSection }.forEach { section ->
                 item(key = section.key, contentType = section::class.simpleName) {
                     NoteShown(section, viewModel)
                     HomeItem(reduceMotion, section.key, viewModel.revealed) {
