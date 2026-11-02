@@ -130,7 +130,8 @@ fun LiquidHomeScreen(
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
     val queueTitle by playerConnection.queueTitle.collectAsState()
 
-    val feed by viewModel.feed.collectAsState()
+    val feed by viewModel.homeFeed.collectAsState()
+    LaunchedEffect(Unit) { viewModel.onHomeShown() }
     ReportDrawnWhen {
         (feed != null).also { ready -> if (ready) PerfTrace.homeReadyEnd() }
     }

@@ -1,5 +1,8 @@
 package com.shiny.music.viewmodels
 
+import com.shiny.music.home.HomeRecommender
+import com.shiny.music.home.RecommendationRowSection
+import com.shiny.music.home.HomeArrangement
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -246,6 +249,31 @@ class HomeViewModel @Inject constructor(
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
+    private val recommender = HomeRecommender(database)
+    val recommendations = MutableStateFlow<List<RecommendationRowSection>>(emptyList())
+    @Volatile private var recommendedAt = 0L
+    private var playsAtBuild = -1
+
+    // rebuilt from listening after four more plays, never more than once a minute; a failed
+    // build keeps the rows already on screen
+    fun refreshRecommendations(force: Boolean = false) {
+        val now = System.currentTimeMillis()
+        if (!force && now - recommendedAt < 60_000) return
+        recommendedAt = now
+        viewModelScope.launch {
+            val rows = runCatching { recommender.build() }.getOrNull()
+            if (!rows.isNullOrEmpty()) recommendations.value = rows
+        }
+    }
+
+    fun onHomeShown() {
+        if (System.currentTimeMillis() - recommendedAt > 30 * 60_000L) refreshRecommendations(force = true)
+    }
+
+    val homeFeed: StateFlow<HomeFeed?> = combine(feed, recommendations) { f, rows -> f?.let { HomeArrangement.arrange(it, rows) } }
+        .flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
     /**
      * Records that the listener reached for one kind of content, so Home can lead with it
      * next time. Cheap and debounced — safe to call straight from a tap handler.
@@ -341,6 +369,17 @@ class HomeViewModel @Inject constructor(
     }
 
     init {
+        refreshRecommendations(force = true)
+        viewModelScope.launch {
+            database.libraryDao.eventCount().collect { n ->
+                if (playsAtBuild < 0) {
+                    playsAtBuild = n
+                } else if (n - playsAtBuild >= 4) {
+                    playsAtBuild = n
+                    refreshRecommendations()
+                }
+            }
+        }
         viewModelScope.launch { remote.restore() }
         viewModelScope.launch { spotifyMixes.restore() }
         // The screen subscribes to the feed only after the first frame, about a second after
