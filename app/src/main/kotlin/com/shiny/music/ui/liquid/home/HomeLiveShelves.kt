@@ -213,6 +213,11 @@ internal fun YourPlaylistsShelf(accountName: String, accountImage: String?, onli
                 artwork = p.thumbnails.firstOrNull(),
                 onClick = { actions.navController.navigate("local_playlist/${p.id}") },
                 onLongClick = { actions.menu(p) },
+                badge = if (p.thumbnails.isEmpty()) {
+                    { EmptyPlaylistCover(p.title) }
+                } else {
+                    null
+                },
             )
             is PlaylistItem -> HomeCard(
                 title = p.title,
@@ -232,6 +237,7 @@ private fun pluralCount(n: Int): String = androidx.compose.ui.res.pluralStringRe
 internal fun YouTubeShelfRow(shelf: HomeShelf, activeId: String?, actions: LiquidActions) {
     HomeSectionTitle(
         title = shelf.title,
+        label = shelf.label,
         onClick = shelf.browseId?.let { id -> { actions.openBrowse(BrowseEndpoint(browseId = id, params = shelf.params)) } },
     )
     HomeRow(items = shelf.items, key = { it.id }) { YTCard(it, actions, activeId) }
@@ -241,4 +247,40 @@ internal fun YouTubeShelfRow(shelf: HomeShelf, activeId: String?, actions: Liqui
 internal fun HitsShelf(items: List<YTItem>, activeId: String?, actions: LiquidActions) {
     HomeSectionTitle(stringResource(R.string.home_all_time_hits))
     HomeRow(items = items, key = { it.id }) { YTCard(it, actions, activeId) }
+}
+
+@Composable
+internal fun JumpBackInShelf(items: List<YTItem>, activeId: String?, actions: LiquidActions) {
+    HomeSectionTitle(stringResource(R.string.home_jump_back_in))
+    HomeRow(items = items, key = { it.id }) { YTCard(it, actions, activeId) }
+}
+
+private val PlaylistPastels = listOf(
+    Color(0xFFDCEAF2) to Color(0xFF6FA3C7),
+    Color(0xFFF4D6D6) to Color(0xFFE0474C),
+    Color(0xFFE6E0F5) to Color(0xFF8E7CC3),
+    Color(0xFFDDF0E2) to Color(0xFF5FAF7A),
+    Color(0xFFF7E8CF) to Color(0xFFE09A3E),
+)
+
+// a playlist with nothing in it yet: a soft gradient with its name written on it
+@Composable
+private fun androidx.compose.foundation.layout.BoxScope.EmptyPlaylistCover(name: String) {
+    val (light, deep) = PlaylistPastels[(name.hashCode() and 0x7FFFFFFF) % PlaylistPastels.size]
+    Box(
+        Modifier
+            .matchParentSize()
+            .clip(RoundedCornerShape(HomeCardRadius))
+            .background(Brush.linearGradient(listOf(light, deep))),
+    ) {
+        Text(
+            name,
+            fontSize = 17.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF1C1C1E),
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(14.dp),
+        )
+    }
 }

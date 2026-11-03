@@ -353,6 +353,7 @@ class HomeViewModel @Inject constructor(
                 mostPlayed = l.mostPlayed,
                 forgotten = l.forgotten,
                 keepListening = l.keepListening,
+                jumpBackIn = l.jumpBackIn,
                 localPlaylists = l.localPlaylists,
             )
         }

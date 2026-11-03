@@ -1,5 +1,6 @@
 package com.shiny.music.ui.liquid.screens
 
+import com.shiny.music.ui.liquid.home.JumpBackInShelf
 import com.shiny.music.ui.liquid.home.heroScrollAway
 import com.shiny.music.ui.liquid.home.MostPlayedShelf
 import com.shiny.music.ui.liquid.home.ForgottenShelf
@@ -239,10 +240,12 @@ fun LiquidHomeScreen(
             if (heroCards.isNotEmpty() || gachaPool.size >= 4) {
                 item(key = "hero", contentType = "hero") {
                     HomeItem(reduceMotion, "hero", viewModel.revealed) {
+                        val heroProgress = {
+                            if (listState.firstVisibleItemIndex > 0) 1f else (listState.firstVisibleItemScrollOffset / heroHeightPx.coerceAtLeast(1f)).coerceIn(0f, 1f)
+                        }
                         HeroCarousel(
-                            modifier = if (reduceMotion) Modifier else Modifier.heroScrollAway {
-                                if (listState.firstVisibleItemIndex > 0) 1f else (listState.firstVisibleItemScrollOffset / heroHeightPx.coerceAtLeast(1f)).coerceIn(0f, 1f)
-                            },
+                            modifier = if (reduceMotion) Modifier else Modifier.heroScrollAway(heroProgress),
+                            scrollProgress = heroProgress,
                             hero = hero,
                             cards = heroCards,
                             gacha = gachaPool,
@@ -281,6 +284,7 @@ fun LiquidHomeScreen(
             if (live.mostPlayed.isNotEmpty()) block("most_played") { MostPlayedShelf(live.mostPlayed, activeId, actions) }
             picks()
             if (live.community.isNotEmpty()) block("community") { CommunityShelf(live.community, actions) }
+            if (live.jumpBackIn.isNotEmpty()) block("jump_back_in") { JumpBackInShelf(live.jumpBackIn, activeId, actions) }
             if (live.history.isNotEmpty()) block("history") { HistoryRows(live.history, activeId, actions) }
             picks()
             if (live.liveShows.isNotEmpty()) block("live_shows") { VideoShelf(stringResource(R.string.home_live_shows), live.liveShows, activeId, actions) }

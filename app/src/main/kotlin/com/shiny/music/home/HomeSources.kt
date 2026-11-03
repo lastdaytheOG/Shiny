@@ -46,7 +46,7 @@ data class CommunityPlaylist(val playlist: PlaylistItem, val songs: List<SongIte
 data class HomeVideo(val item: SongItem, val title: String, val subtitle: String)
 
 @Serializable
-data class HomeShelf(val title: String, val items: List<YTItem>, val browseId: String? = null, val params: String? = null)
+data class HomeShelf(val title: String, val items: List<YTItem>, val browseId: String? = null, val params: String? = null, val label: String? = null)
 
 // one artist and up to five things around them, for a box in the artist list
 data class ArtistGroup(val artistId: String?, val artistName: String, val artistPhoto: String?, val items: List<YTItem>)
@@ -100,6 +100,7 @@ data class HomeLive(
     val history: List<Song> = emptyList(),
     val forgotten: List<Song> = emptyList(),
     val keepListening: List<Song> = emptyList(),
+    val jumpBackIn: List<YTItem> = emptyList(),
     val localPlaylists: List<Playlist> = emptyList(),
     val discover: List<HeroDiscoverPick> = emptyList(),
     val similar: List<SimilarRow> = emptyList(),
@@ -161,7 +162,15 @@ class HomeSources(private val database: MusicDatabase) {
         val forgotten = database.forgottenFavorites().first().distinctBy { it.id }.shuffled().take(20)
         val keep = database.mostPlayedSongs(fromTimeStamp = daysAgo(14), limit = 15, offset = 5).first().shuffled().take(10)
         val playlists = database.playlistsByUpdatedDateAsc().first().distinctBy { it.id }
+        // pins first, then what you've had on these two weeks, topped up with your most played
+        val since = daysAgo(14)
+        val albums = database.mostPlayedAlbums(fromTimeStamp = since, limit = 8, offset = 2).first().filter { it.album.thumbnailUrl != null }.shuffled().take(5)
+        val artists = database.mostPlayedArtists(fromTimeStamp = since).first().filter { it.artist.isYouTubeArtist && it.artist.thumbnailUrl != null }.shuffled().take(5)
+        val pinned = runCatching { database.speedDialDao.getAll().first().map { it.toYTItem() } }.getOrDefault(emptyList())
+        val keepItems = (keep.map { it.asItem() } + albums.map { it.asItem() } + artists.map { it.asItem() }).shuffled()
+        val jump = (pinned + keepItems + mostPlayed.map { it.asItem() }).distinctBy { it.id }.take(27)
         return into.copy(
+            jumpBackIn = jump,
             lastPlayed = history.firstOrNull(),
             history = history,
             mostPlayed = mostPlayed,
@@ -325,7 +334,7 @@ class HomeSources(private val database: MusicDatabase) {
             val t = s.title.lowercase()
             if ("trending" in t || "community" in t) return@mapNotNull null
             val items = s.items.distinctBy { it.id }
-            if (items.isEmpty()) null else HomeShelf(s.title, items, s.endpoint?.browseId, s.endpoint?.params)
+            if (items.isEmpty()) null else HomeShelf(s.title, items, s.endpoint?.browseId, s.endpoint?.params, s.label?.takeIf { it.isNotBlank() })
         }
     }
 
@@ -348,6 +357,31 @@ class HomeSources(private val database: MusicDatabase) {
         }
     }
 }
+
+private fun Song.asItem(): YTItem = SongItem(
+    id = id,
+    title = title,
+    artists = artists.map { com.music.innertube.models.Artist(name = it.name, id = it.id) },
+    thumbnail = thumbnailUrl.orEmpty(),
+    explicit = song.explicit,
+)
+
+private fun Album.asItem(): YTItem = AlbumItem(
+    browseId = id,
+    playlistId = album.playlistId.orEmpty(),
+    title = title,
+    artists = artists.map { com.music.innertube.models.Artist(name = it.name, id = it.id) },
+    year = album.year,
+    thumbnail = thumbnailUrl.orEmpty(),
+)
+
+private fun Artist.asItem(): YTItem = ArtistItem(
+    id = id,
+    title = title,
+    thumbnail = thumbnailUrl,
+    shuffleEndpoint = null,
+    radioEndpoint = null,
+)
 
 object ArtistVideos {
     class Shelves(val videos: List<SongItem>, val live: List<SongItem>)
