@@ -574,6 +574,11 @@ class HomeViewModel @Inject constructor(
 
     init {
         ListeningSignals.init(context)
+        viewModelScope.launch {
+            remote.state.map { it?.charts?.firstOrNull()?.songs.orEmpty() }.filter { it.isNotEmpty() }.distinctUntilChanged().collect { songs ->
+                if (live.value.hits.isEmpty()) live.update { it.copy(hits = songs.take(20)) }
+            }
+        }
         // last launch's feed first, so home opens full
         viewModelScope.launch(Dispatchers.IO) {
             val restored = store.restore(HomeLive())
