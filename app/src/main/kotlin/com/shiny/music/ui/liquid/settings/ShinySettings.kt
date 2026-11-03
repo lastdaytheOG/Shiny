@@ -137,12 +137,14 @@ fun SettingsPage(
     state: LazyListState = rememberLazyListState(),
     background: Color = settingsGround(),
     search: Boolean = true,
+    hideBarOnScroll: Boolean = false,
     content: LazyListScope.() -> Unit,
 ) {
     LargeTitlePage(
         title = title,
         state = state,
         background = background,
+        hideBarOnScroll = hideBarOnScroll,
         navigationButton = { LiquidBackButton(onClick = { navController.navigateUp() }) },
         content = {
             if (search) {

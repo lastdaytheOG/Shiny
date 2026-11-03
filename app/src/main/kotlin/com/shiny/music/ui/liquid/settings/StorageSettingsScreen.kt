@@ -50,6 +50,8 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import okio.ByteString.Companion.encodeUtf8
 import timber.log.Timber
+import kotlin.math.roundToInt
+import androidx.compose.runtime.mutableFloatStateOf
 
 private val SongCacheSizes = listOf(0, 512, 1024, 2048, 4096, 8192, -1)
 private val ImageCacheSizes = listOf(0, 128, 256, 512, 1024, 2048)
@@ -175,16 +177,15 @@ fun StorageSettingsScreen(navController: NavController) {
     var confirmClearSongCache by remember { mutableStateOf(false) }
     var confirmClearImageCache by remember { mutableStateOf(false) }
 
-    SettingsPage(title = "Downloads & Storage", navController = navController) {
+    var songLimitIndex by remember(maxSongCacheSize) { mutableFloatStateOf(SongCacheSizes.indexOf(maxSongCacheSize).coerceAtLeast(0).toFloat()) }
+    var imageLimitIndex by remember(maxImageCacheSize) { mutableFloatStateOf(ImageCacheSizes.indexOf(maxImageCacheSize).let { if (it < 0) ImageCacheSizes.indexOf(App.DEFAULT_IMAGE_CACHE_MB) else it }.toFloat()) }
+
+    SettingsPage(title = "Downloads & Storage", navController = navController, search = false, hideBarOnScroll = true) {
         item(key = "downloads") {
-            SettingsSection(
-                title = "Downloads",
-                footer = "Kept offline until you remove them. They play only in Shiny.",
-            ) {
+            SettingsSection(title = "Downloads") {
                 SettingsRow(
                     title = "Download folder",
-                    subtitle = folder?.let { DownloadFolderStore.displayPath(it) }
-                        ?: "On this device",
+                    subtitle = folder?.let { DownloadFolderStore.displayPath(it) } ?: "On this device",
                     trailing = {
                         Text(
                             text = if (folder == null) "Choose" else "Change",
@@ -195,30 +196,20 @@ fun StorageSettingsScreen(navController: NavController) {
                     onClick = chooseFolder,
                 )
                 if (folder != null && !folderAccessible) {
-                    SettingsRow(
-                        title = "Folder unavailable",
-                        subtitle = "Tap to choose it again",
-                        destructive = true,
-                        onClick = chooseFolder,
+                    SettingsRow(title = "Folder unavailable", destructive = true, onClick = chooseFolder)
+                }
+                if (folder != null && notInFolder.isNotEmpty()) {
+                    val progress = moving
+                    SettingsActionRow(
+                        title = if (progress != null) "Moving ${progress.first} of ${progress.second}…" else "Move ${songCount(notInFolder.size)} here",
+                        enabled = progress == null && folderAccessible,
+                        onClick = { folderStore.startMove(notInFolder) },
                     )
                 }
                 SettingsValueRow(
                     title = "Downloaded songs",
                     value = if (completedIds.isEmpty()) "None" else "${songCount(completedIds.size)} · ${formatFileSize(downloadBytes)}",
                 )
-                if (folder != null && notInFolder.isNotEmpty()) {
-                    val progress = moving
-                    SettingsActionRow(
-                        title = if (progress != null) {
-                            "Moving ${progress.first} of ${progress.second}…"
-                        } else {
-                            "Move ${songCount(notInFolder.size)} into this folder"
-                        },
-                        subtitle = if (progress != null) null else "${formatFileSize(notInFolderBytes)} outside this folder",
-                        enabled = progress == null && folderAccessible,
-                        onClick = { folderStore.startMove(notInFolder) },
-                    )
-                }
                 SettingsToggleRow(
                     title = "Download liked songs",
                     checked = autoDownloadOnLike,
@@ -229,18 +220,33 @@ fun StorageSettingsScreen(navController: NavController) {
         }
 
         item(key = "cache") {
-            SettingsSection(
-                title = "Cache",
-                footer = "Clearing cache never removes downloads.",
-            ) {
-                SettingsValueRow(
-                    title = "Song cache",
-                    value = formatFileSize(songCacheSize),
+            SettingsSection(title = "Cache") {
+                SettingsValueRow(title = "Song cache", value = formatFileSize(songCacheSize))
+                SettingsValueRow(title = "Artwork cache", value = formatFileSize(imageCacheSize))
+                SettingsSliderRow(
+                    title = "Song cache limit",
+                    value = songLimitIndex,
+                    onValueChange = { songLimitIndex = it },
+                    valueRange = 0f..(SongCacheSizes.size - 1).toFloat(),
+                    steps = SongCacheSizes.size - 2,
+                    valueLabel = cacheLabel(SongCacheSizes[songLimitIndex.roundToInt().coerceIn(SongCacheSizes.indices)]),
+                    onValueChangeFinished = { maxSongCacheSize = SongCacheSizes[songLimitIndex.roundToInt().coerceIn(SongCacheSizes.indices)] },
                 )
-                SettingsValueRow(
-                    title = "Artwork cache",
-                    value = formatFileSize(imageCacheSize),
+                SettingsSliderRow(
+                    title = "Artwork cache limit",
+                    value = imageLimitIndex,
+                    onValueChange = { imageLimitIndex = it },
+                    valueRange = 0f..(ImageCacheSizes.size - 1).toFloat(),
+                    steps = ImageCacheSizes.size - 2,
+                    valueLabel = cacheLabel(ImageCacheSizes[imageLimitIndex.roundToInt().coerceIn(ImageCacheSizes.indices)]),
+                    onValueChangeFinished = { maxImageCacheSize = ImageCacheSizes[imageLimitIndex.roundToInt().coerceIn(ImageCacheSizes.indices)] },
+                    divider = false,
                 )
+            }
+        }
+
+        item(key = "management") {
+            SettingsSection(title = "Storage management") {
                 SettingsActionRow(
                     title = "Clear song cache",
                     onClick = { confirmClearSongCache = true },
@@ -250,36 +256,9 @@ fun StorageSettingsScreen(navController: NavController) {
                     title = "Clear artwork cache",
                     onClick = { confirmClearImageCache = true },
                     enabled = imageCacheSize > 0,
-                    divider = false,
                 )
-            }
-        }
-
-        item(key = "limits") {
-            SettingsSection(title = "Cache limits") {
-                SettingsChoiceRow(
-                    title = "Song cache",
-                    options = SongCacheSizes,
-                    selected = SongCacheSizes.firstOrNull { it == maxSongCacheSize } ?: 1024,
-                    label = { cacheLabel(it) },
-                    onSelect = { maxSongCacheSize = it },
-                )
-                SettingsChoiceRow(
-                    title = "Artwork cache",
-                    options = ImageCacheSizes,
-                    selected = ImageCacheSizes.firstOrNull { it == maxImageCacheSize } ?: App.DEFAULT_IMAGE_CACHE_MB,
-                    label = { cacheLabel(it) },
-                    onSelect = { maxImageCacheSize = it },
-                    divider = false,
-                )
-            }
-        }
-
-        item(key = "management") {
-            SettingsSection(title = "Download management") {
                 SettingsActionRow(
                     title = "Remove all downloads",
-                    subtitle = if (inCurrentFolder > 0) "Includes your download folder" else null,
                     onClick = { confirmClearDownloads = true },
                     destructive = true,
                     enabled = completedIds.isNotEmpty() || downloadBytes > 0,

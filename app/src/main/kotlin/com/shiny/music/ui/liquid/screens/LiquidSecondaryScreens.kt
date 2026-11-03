@@ -1,5 +1,15 @@
 package com.shiny.music.ui.liquid.screens
 
+import androidx.compose.runtime.remember
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.semantics.contentDescription
+import com.shiny.music.ui.liquid.Liquid
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Icon
+import com.shiny.music.ui.theme.pressScale
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.background
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -129,8 +139,6 @@ fun LiquidHistoryScreen(
 ) {
     val actions = rememberLiquidActions(navController) ?: return
     val events by viewModel.events.collectAsState()
-    val remote by viewModel.historyPage.collectAsState()
-    val source by viewModel.historySource.collectAsState()
     val mediaMetadata by actions.playerConnection.mediaMetadata.collectAsState()
     val isPlaying by actions.playerConnection.isPlaying.collectAsState()
     val monthFormat = DateTimeFormatter.ofPattern("MMMM yyyy")
@@ -145,81 +153,62 @@ fun LiquidHistoryScreen(
     LargeTitlePage(
         title = stringResource(R.string.history),
         navigationButton = { LiquidBackButton(onClick = { navController.navigateUp() }) },
+        hideBarOnScroll = true,
+        titleAccessory = if (allSongs.isEmpty()) null else {
+            {
+                HistoryIconButton(Icons.Rounded.PlayArrow, stringResource(R.string.liquid_play)) { actions.playSongs(null, allSongs) }
+                HistoryIconButton(Icons.Rounded.Shuffle, stringResource(R.string.liquid_shuffle)) { actions.playSongs(null, allSongs, shuffle = true) }
+            }
+        },
     ) {
-        item(key = "source") {
-            LiquidSegmentedControl(
-                items = listOf(stringResource(R.string.liquid_library), "YouTube Music"),
-                selectedIndex = if (source == HistorySource.LOCAL) 0 else 1,
-                onSelect = { viewModel.historySource.value = if (it == 0) HistorySource.LOCAL else HistorySource.REMOTE },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = PageMargin, vertical = 8.dp),
-            )
+        if (allSongs.isEmpty()) {
+            item(key = "empty") { EmptyState(icon = Icons.Rounded.History, title = stringResource(R.string.history)) }
         }
-        if (source == HistorySource.LOCAL) {
-            if (allSongs.isNotEmpty()) {
-                item(key = "play_row") {
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = PageMargin, vertical = 6.dp),
-                        horizontalArrangement = Arrangement.spacedBy(14.dp),
-                    ) {
-                        LiquidButton(stringResource(R.string.liquid_play), onClick = { actions.playSongs(null, allSongs) }, icon = Icons.Rounded.PlayArrow, tone = ButtonTone.Tinted, modifier = Modifier.weight(1f))
-                        LiquidButton(stringResource(R.string.liquid_shuffle), onClick = { actions.playSongs(null, allSongs, shuffle = true) }, icon = Icons.Rounded.Shuffle, tone = ButtonTone.Tinted, modifier = Modifier.weight(1f))
-                    }
-                }
-            } else {
-                item(key = "empty") { EmptyState(icon = Icons.Rounded.History, title = stringResource(R.string.history)) }
+        events.forEach { (date, list) ->
+            val label = when (date) {
+                DateAgo.Today -> labels["today"]!!
+                DateAgo.Yesterday -> labels["yesterday"]!!
+                DateAgo.ThisWeek -> labels["this_week"]!!
+                DateAgo.LastWeek -> labels["last_week"]!!
+                is DateAgo.Other -> date.date.format(monthFormat)
             }
-            events.forEach { (date, list) ->
-                val label = when (date) {
-                    DateAgo.Today -> labels["today"]!!
-                    DateAgo.Yesterday -> labels["yesterday"]!!
-                    DateAgo.ThisWeek -> labels["this_week"]!!
-                    DateAgo.LastWeek -> labels["last_week"]!!
-                    is DateAgo.Other -> date.date.format(monthFormat)
-                }
-                item(key = "h_header_$label") { SectionHeader(title = label) }
-                items(list, key = { "h_${label}_${it.event.id}" }) { event ->
-                    SongRow(
-                        songId = event.song.id,
-                        title = event.song.title,
-                        subtitle = event.song.artists.joinToString { it.name },
-                        artwork = event.song.thumbnailUrl,
-                        isActive = event.song.id == mediaMetadata?.id,
-                        isPlaying = isPlaying,
-                        explicit = event.song.song.explicit,
-                        onClick = { actions.open(event.song) },
-                        onLongClick = { actions.menu(event.song) },
-                        onMore = { actions.menu(event.song) },
-                    )
-                }
-            }
-        } else {
-            val sections = remote?.sections
-            if (sections == null) {
-                item(key = "remote_loading") { LoadingItem() }
-            } else {
-                sections.forEachIndexed { index, section ->
-                    item(key = "r_header_$index") { SectionHeader(title = section.title) }
-                    items(section.songs, key = { "r_${index}_${it.id}" }) { song ->
-                        SongRow(
-                            songId = song.id,
-                            title = song.title,
-                            subtitle = song.artists.joinToString { it.name },
-                            artwork = song.thumbnail,
-                            isActive = song.id == mediaMetadata?.id,
-                            isPlaying = isPlaying,
-                            explicit = song.explicit,
-                            onClick = { actions.open(song) },
-                            onLongClick = { actions.menu(song) },
-                            onMore = { actions.menu(song) },
-                        )
-                    }
-                }
+            item(key = "h_header_$label") { SectionHeader(title = label) }
+            items(list, key = { "h_${label}_${it.event.id}" }) { event ->
+                SongRow(
+                    songId = event.song.id,
+                    title = event.song.title,
+                    subtitle = event.song.artists.joinToString { it.name },
+                    artwork = event.song.thumbnailUrl,
+                    isActive = event.song.id == mediaMetadata?.id,
+                    isPlaying = isPlaying,
+                    explicit = event.song.song.explicit,
+                    onClick = { actions.open(event.song) },
+                    onLongClick = { actions.menu(event.song) },
+                    onMore = { actions.menu(event.song) },
+                )
             }
         }
+    }
+}
+
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+private fun HistoryIconButton(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
+    val interaction = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    Box(
+        Modifier
+            .size(44.dp)
+            .pressScale(interaction, 0.88f)
+            .combinedClickable(interactionSource = interaction, indication = null, onClick = onClick)
+            .semantics { contentDescription = label },
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            Modifier
+                .size(32.dp)
+                .background(Liquid.colors.gray5, CircleShape),
+        )
+        Icon(icon, null, tint = Liquid.colors.label, modifier = Modifier.size(18.dp))
     }
 }
 

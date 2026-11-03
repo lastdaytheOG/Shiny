@@ -73,11 +73,13 @@ fun LargeTitlePage(
     scrollToTopSignal: NavController? = null,
     bottomPadding: Dp = liquidBottomPadding(),
     behind: @Composable BoxScope.() -> Unit = {},
+    hideBarOnScroll: Boolean = false,
     content: LazyListScope.() -> Unit,
 ) {
     val colors = Liquid.colors
     val density = LocalDensity.current
     val topInset = statusBarHeight()
+    val away = if (hideBarOnScroll) rememberScrollAway(state) else null
     val backdrop = rememberLiquidBackdrop(background)
     val collapseDistancePx = with(density) { 34.dp.toPx() }
 
@@ -132,8 +134,9 @@ fun LargeTitlePage(
                 .fillMaxWidth()
                 .height(topInset + NavBarHeight + 18.dp),
             alpha = {
-                if (state.firstVisibleItemIndex > 0) 1f
+                val edge = if (state.firstVisibleItemIndex > 0) 1f
                 else (state.firstVisibleItemScrollOffset / (collapseDistancePx * 0.6f)).coerceIn(0f, 1f)
+                edge * (1f - (away?.value ?: 0f) * 0.7f)
             },
         )
 
@@ -143,6 +146,17 @@ fun LargeTitlePage(
                     .fillMaxWidth()
                     .padding(top = topInset)
                     .height(NavBarHeight)
+                    .then(
+                        if (away != null) {
+                            Modifier.graphicsLayer {
+                                val h = away.value
+                                translationY = -(NavBarHeight.toPx() * 0.6f) * h
+                                alpha = 1f - h
+                            }
+                        } else {
+                            Modifier
+                        }
+                    )
                     .padding(horizontal = 14.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -150,7 +164,7 @@ fun LargeTitlePage(
                     navigationButton?.invoke()
                 }
                 Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                    Text(
+                    if (!hideBarOnScroll) Text(
                         text = title,
                         style = LiquidTypography.headline,
                         color = colors.label,

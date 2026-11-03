@@ -1,5 +1,7 @@
 package com.shiny.music.ui.liquid.home
 
+import com.shiny.music.ui.liquid.rememberScrollAway
+
 import androidx.compose.foundation.lazy.itemsIndexed
 import com.shiny.music.home.ArtistGroup
 import com.shiny.music.home.SimilarPicks
@@ -132,11 +134,7 @@ internal fun HomePage(
             else (state.firstVisibleItemScrollOffset / heroHeightPx.coerceAtLeast(1f)).coerceIn(0f, 1f)
         }
     }
-    val bar by animateFloatAsState(
-        targetValue = if (progress > 0.5f) 1f else 0f,
-        animationSpec = tween(600, easing = FastOutSlowInEasing),
-        label = "homeBar",
-    )
+    val away = rememberScrollAway(state)
     Box(
         Modifier
             .fillMaxSize()
@@ -167,50 +165,24 @@ internal fun HomePage(
         Row(
             Modifier
                 .fillMaxWidth()
-                .padding(top = topInset + 14.dp, bottom = 16.dp, start = HomeInset, end = 30.dp),
+                .padding(top = topInset + 14.dp, bottom = 16.dp, start = HomeInset, end = 30.dp)
+                .graphicsLayer {
+                    val h = away.value
+                    translationY = -(topInset + 64.dp).toPx() * 0.45f * h
+                    alpha = 1f - h
+                },
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(contentAlignment = Alignment.CenterStart) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_launcher_nobg),
-                    contentDescription = null,
-                    tint = colors.label,
-                    modifier = Modifier
-                        .offset(x = (-8).dp)
-                        .size(34.dp)
-                        .graphicsLayer {
-                            alpha = 1f - bar
-                            val scale = 1f - bar * 0.25f
-                            scaleX = scale
-                            scaleY = scale
-                            transformOrigin = TransformOrigin(0f, 0.5f)
-                            renderEffect = blur(bar * 15f)
-                        },
-                )
-                Text(
-                    text = stringResource(R.string.liquid_home),
-                    color = colors.label,
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = HomeTracking,
-                    maxLines = 1,
-                    modifier = Modifier
-                        .semantics { heading() }
-                        .graphicsLayer {
-                            alpha = bar
-                            renderEffect = blur((1f - bar) * 15f)
-                        },
-                )
-            }
-            Box(
-                Modifier.graphicsLayer {
-                    val scale = 1f - bar * 0.1f
-                    scaleX = scale
-                    scaleY = scale
-                    transformOrigin = TransformOrigin(1f, 0.5f)
-                },
-            ) { avatar() }
+            Icon(
+                painter = painterResource(R.drawable.ic_launcher_nobg),
+                contentDescription = stringResource(R.string.liquid_home),
+                tint = colors.label,
+                modifier = Modifier
+                    .offset(x = (-8).dp)
+                    .size(34.dp),
+            )
+            avatar()
         }
     }
 }
