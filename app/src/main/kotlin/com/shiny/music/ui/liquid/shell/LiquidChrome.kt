@@ -2,6 +2,13 @@ package com.shiny.music.ui.liquid.shell
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -211,11 +218,15 @@ fun LiquidTabBar(
                         )
                     }
                 }
-                if (showAccessory) {
+                AnimatedVisibility(
+                    visible = showAccessory,
+                    enter = fadeIn() + scaleIn(initialScale = 0.94f) + slideInVertically { it / 3 },
+                    exit = fadeOut() + scaleOut(targetScale = 0.94f) + slideOutVertically { it / 3 },
+                    modifier = Modifier.layoutId("accessory"),
+                ) {
                     MiniPlayerAccessory(
                         onClick = onAccessoryClick,
                         compact = { if (showTabs) chromeState.progress else 0f },
-                        modifier = Modifier.layoutId("accessory"),
                     )
                 }
             },
@@ -540,17 +551,33 @@ fun MiniPlayerAccessory(
                 .padding(start = 8.dp, end = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Artwork(
-                model = metadata?.thumbnailUrl,
-                shape = RoundedCornerShape(8.dp),
-                modifier = Modifier
-                    .size(40.dp)
-                    .playerArtworkAnchor(
-                        anchor = ArtworkAnchor.Mini,
-                        model = metadata?.thumbnailUrl,
-                        cornerRadius = 8.dp,
-                    ),
-            )
+            Box(Modifier.size(40.dp)) {
+                Artwork(
+                    model = metadata?.thumbnailUrl,
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .playerArtworkAnchor(
+                            anchor = ArtworkAnchor.Mini,
+                            model = metadata?.thumbnailUrl,
+                            cornerRadius = 8.dp,
+                        ),
+                )
+                if (com.shiny.music.ui.liquid.player.SongVideoState.view != com.shiny.music.ui.liquid.player.VideoView.Off) {
+                    // lowest claim: it only shows the picture while Now Playing is not
+                    val track = com.shiny.music.ui.liquid.player.rememberVideoTrack(
+                        com.shiny.music.ui.liquid.player.rememberSongVideo(metadata),
+                    )
+                    if (track != null) {
+                        com.shiny.music.ui.liquid.player.SongVideoSurface(
+                            track = track,
+                            slot = com.shiny.music.ui.liquid.player.VideoSlot.Mini,
+                            leader = { playerConnection.player },
+                            modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(8.dp)),
+                        )
+                    }
+                }
+            }
             Column(
                 modifier = Modifier
                     .weight(1f)

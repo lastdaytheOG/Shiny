@@ -8,6 +8,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -25,6 +26,9 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -50,6 +54,7 @@ import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -63,6 +68,7 @@ import androidx.compose.runtime.withFrameMillis
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
@@ -113,6 +119,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.lerp
 import androidx.core.view.WindowCompat
 import androidx.navigation.NavController
@@ -321,11 +328,16 @@ private fun NowPlaying(
     }
 
     val liked = currentSong?.song?.liked == true
+    val songVideo = rememberSongVideo(metadata)
+    val videoTrack = rememberVideoTrack(songVideo)
+    BackHandler(enabled = sheet.isExpanded && SongVideoState.view == VideoView.Full) { SongVideoState.view = VideoView.Inline }
     val haptic = LocalHapticFeedback.current
     val artUrl = metadata?.thumbnailUrl
     val appearance = LocalShinyAppearance.current
 
-    val posterChosen = appearance.artwork == ArtworkPresentation.Poster
+    // This alternate player treats ordinary square covers as full-stage artwork while
+    // the richer artwork loads.
+    val posterChosen = appearance.artwork == ArtworkPresentation.Poster || appearance.softPlayer
     val screenPx = remember(context) {
         context.resources.displayMetrics.let { minOf(it.widthPixels, it.heightPixels) }
     }
@@ -358,7 +370,7 @@ private fun NowPlaying(
     val portrait = LocalConfiguration.current.let { it.screenWidthDp <= it.screenHeightDp }
     val stageMotion = rememberMotionArtwork(
         metadata,
-        enabled = posterChosen && portrait && !dataSaver && (motionVideoPref || appleCoversPref),
+        enabled = posterChosen && !appearance.softPlayer && portrait && !dataSaver && (motionVideoPref || appleCoversPref),
     )
     val tallReady = rememberTallPoster(stageMotion, enabled = posterChosen && portrait, widthPx = screenPx)
     var tallPoster by remember(metadata?.id) { mutableStateOf(tallReady) }
@@ -392,7 +404,7 @@ private fun NowPlaying(
     val glowColor = rememberArtworkGlowColor(artworkBackdrop, appearance.glow)
 
     // The poster is the album's portrait artwork; without it the stage is the card.
-    val wantsPoster = posterChosen && tallPoster != null
+    val wantsPoster = appearance.softPlayer || (posterChosen && tallPoster != null)
     // Light spilling past the cover's edge only means anything while the cover has an edge.
     val glowStrength = if (wantsPoster) 0f else appearance.glow.strength
 
@@ -416,12 +428,21 @@ private fun NowPlaying(
         val width = maxWidth
         val height = maxHeight
         val stageSize = minOf(width - 56.dp, height * 0.43f)
+        val controlsBlockHeight = if (appearance.softPlayer) AlternateControlsBlockHeight else ControlsBlockHeight
 
         var stageRect by remember { mutableStateOf<Rect?>(null) }
         var compactRect by remember { mutableStateOf<Rect?>(null) }
         var controlsTop by remember { mutableFloatStateOf(0f) }
         var paneControlsTop by remember { mutableFloatStateOf(0f) }
+        // where the soft look's lyrics preview sits, so the full lyrics can rise out of it
+        var softDockTop by remember { mutableFloatStateOf(0f) }
         val queueCompact = animateFloatAsState(if (mode == NowPlayingMode.Queue) 1f else 0f, PlayerMotion.queue(), label = "queueCompact")
+        // the queue's top section scrolls away with its list; it is always whole outside the queue
+        val queueCollapse = rememberQueueHeaderCollapse()
+        LaunchedEffect(mode) { if (mode != NowPlayingMode.Queue) queueCollapse.animateTo(0f) }
+        val queueHeaderAlpha = remember(queueCollapse) {
+            { (1f - queueCollapse.offset / queueCollapse.headerBlock.coerceAtLeast(1f)).coerceIn(0f, 1f) }
+        }
 
         // ---- Poster: portrait artwork at the head of the player, its foot going out of focus
         // into its own colours. Portrait only: landscape already gives the cover a whole half
@@ -430,7 +451,9 @@ private fun NowPlaying(
         // given, so the rect is the entire change of shape: no second artwork, no second
         // flight, no change to the transition into lyrics or the queue.
         val poster = wantsPoster && width <= height
-        val posterAspect = tallPoster?.aspect ?: 1f
+        // The alternate cover has a cinematic 4:5 header; an actual portrait cover keeps
+        // its natural aspect in Shiny's Poster look.
+        val posterAspect = if (appearance.softPlayer) 0.8f else tallPoster?.aspect ?: 1f
         val posterRect = remember(width, height, posterAspect, density) {
             with(density) { Rect(0f, 0f, width.toPx(), posterCoverHeight(width.toPx(), height.toPx(), posterAspect)) }
         }
@@ -443,7 +466,7 @@ private fun NowPlaying(
                 posterTitleTop
             } else {
                 with(density) {
-                    val controls = if (controlsTop > 0f) controlsTop else heightPx - (ControlsBlockHeight + bottomInset + 14.dp).toPx()
+                    val controls = if (controlsTop > 0f) controlsTop else heightPx - (controlsBlockHeight + bottomInset + 14.dp).toPx()
                     controls - (6.dp + PosterTitleHeight).toPx()
                 }
             }
@@ -512,7 +535,8 @@ private fun NowPlaying(
         Box(
             Modifier
                 .fillMaxSize()
-                .drawBehind { drawRect(Color.Black, alpha = 0.9f * queueCompact.value) }
+                // the soft look keeps its artwork colours under the queue
+                .drawBehind { drawRect(Color.Black, alpha = (if (appearance.softPlayer) 0.55f else 0.9f) * queueCompact.value) }
         )
 
         if (width > height) {
@@ -626,7 +650,9 @@ private fun NowPlaying(
                                 )
                             }
                         },
+                        onQueue = { mode = if (mode == NowPlayingMode.Queue) NowPlayingMode.Stage else NowPlayingMode.Queue },
                         playing = isPlaying && !reducedMotion,
+                        hasVideo = songVideo != null,
                         onArtist = {
                             metadata?.artists?.firstOrNull()?.id?.let { id ->
                                 sheet.collapseSoft()
@@ -644,13 +670,16 @@ private fun NowPlaying(
                     Spacer(Modifier.weight(0.6f))
                     // The controls block reserves its space here; the real one is drawn on top
                     // so it can also sit over the lyrics and queue.
-                    val reserved = if (controlsTop > 0f) (height - with(density) { controlsTop.toDp() }) else ControlsBlockHeight + bottomInset + 14.dp
+                    val reserved = if (controlsTop > 0f) (height - with(density) { controlsTop.toDp() }) else controlsBlockHeight + bottomInset + 14.dp
                     Spacer(Modifier.height(reserved.coerceAtLeast(0.dp)))
                 }
             }
 
             val headerTop = topInset + 26.dp + 8.dp
             val contentTop = headerTop + 60.dp
+            // collapsed, the list stops just under the grabber
+            val headerBlockPx = with(density) { (contentTop - topInset - 32.dp).toPx() }
+            SideEffect { queueCollapse.headerBlock = headerBlockPx }
             Box(
                 Modifier
                     .fillMaxSize()
@@ -660,14 +689,21 @@ private fun NowPlaying(
                     },
             ) {
                 if (modeProgress.value > 0.001f || mode != NowPlayingMode.Stage) {
-                    val paneBottom = (height - with(density) { paneControlsTop.toDp() }).coerceAtLeast(0.dp)
+                    // the queue has no row under it: it runs to the foot of the screen, its last song above the system bar
+                    val paneBottom = (height - with(density) { paneControlsTop.toDp() }).coerceAtLeast(0.dp) * (1f - queueCompact.value)
                     val listPadding = PaddingValues(top = 18.dp, bottom = 56.dp)
                     Box(
                         Modifier
                             .fillMaxSize()
                             .padding(top = contentTop, bottom = paneBottom)
                             .graphicsLayer {
-                                translationY = 60.dp.toPx() * (1f - modeProgress.value)
+                                val rise = if (appearance.softPlayer && mode == NowPlayingMode.Lyrics && softDockTop > 0f) {
+                                    // soft look: the page comes up from the preview line that was tapped
+                                    ((softDockTop - contentTop.toPx()) * 0.45f).coerceAtLeast(60.dp.toPx())
+                                } else {
+                                    60.dp.toPx()
+                                }
+                                translationY = rise * (1f - modeProgress.value)
                             },
                     ) {
                         // Each pane keeps its own saved state — chiefly its scroll position
@@ -691,10 +727,11 @@ private fun NowPlaying(
                                 // The lyrics fade their own lines at the edges; the queue, which
                                 // only moves when it is scrolled, keeps the mask.
                                 NowPlayingMode.Queue -> LiquidQueuePane(
-                                    contentPadding = PaddingValues(top = 4.dp, bottom = 40.dp),
+                                    contentPadding = PaddingValues(top = 4.dp, bottom = bottomInset + 24.dp),
                                     nestedScrollConnection = sheet.preUpPostDownNestedScrollConnection,
                                     backdrop = playerBackdrop,
                                     enabled = controlsEnabled,
+                                    collapse = queueCollapse,
                                 )
 
                                 NowPlayingMode.Stage -> Box(Modifier.fillMaxSize())
@@ -722,10 +759,15 @@ private fun NowPlaying(
                     onArtworkSlot = { c -> compactRect = c.rectIn(containerCoords[0]) },
                     onClick = { mode = NowPlayingMode.Stage },
                     isPlaying = isPlaying,
-                    onPlayPause = if (mode == NowPlayingMode.Queue && controlsEnabled) ({ playerConnection.togglePlayPause() }) else null,
+                    // the soft look's full lyrics hide the transport, so the header carries play/pause there too
+                    onPlayPause = if ((mode == NowPlayingMode.Queue || (appearance.softPlayer && mode == NowPlayingMode.Lyrics)) && controlsEnabled) ({ playerConnection.togglePlayPause() }) else null,
                     modifier = Modifier
                         .padding(top = headerTop)
-                        .padding(horizontal = 20.dp),
+                        .padding(horizontal = 20.dp)
+                        .graphicsLayer {
+                            translationY = -queueCollapse.offset
+                            alpha = queueHeaderAlpha()
+                        },
                 )
             }
 
@@ -735,6 +777,7 @@ private fun NowPlaying(
                 thumbModel = stageCover?.large ?: artUrl,
                 stageRect = if (poster) posterRect else stageRect,
                 compactRect = compactRect,
+                compactLift = { queueCollapse.offset },
                 progress = { modeProgress.value },
                 playing = isPlaying || !breathePref,
                 metadata = metadata,
@@ -758,7 +801,7 @@ private fun NowPlaying(
                 },
                 // The picture changing to Apple's sharper cover eases from the one it replaces.
                 dissolve = poster || appleCover != null,
-                coverAlpha = { stageDip.value },
+                coverAlpha = { stageDip.value * queueHeaderAlpha() },
                 onTap = { if (mode != NowPlayingMode.Stage) mode = NowPlayingMode.Stage },
                 swipe = coverSwipe,
                 onSwipeLeft = if (mode == NowPlayingMode.Stage && controlsEnabled && canSkipPrevious) ({
@@ -775,6 +818,25 @@ private fun NowPlaying(
                     }
                 }) else null,
             )
+
+            val inlineRect = if (poster) posterRect else stageRect
+            // the video takes the artwork's exact place and crops to cover it; until its first
+            // frame arrives the artwork underneath stays in view
+            if (videoTrack != null && sheet.isExpanded && SongVideoState.view == VideoView.Inline && mode == NowPlayingMode.Stage && inlineRect != null) {
+                val r = inlineRect
+                Box(
+                    Modifier
+                        .offset { IntOffset(r.left.roundToInt(), r.top.roundToInt()) }
+                        .size(with(density) { r.width.toDp() }, with(density) { r.height.toDp() })
+                        .graphicsLayer {
+                            translationX = coverSwipe.value
+                            alpha = stageDip.value * queueHeaderAlpha()
+                        }
+                        .clip(RoundedCornerShape(if (poster) 0.dp else 12.dp))
+                ) {
+                    SongVideoSurface(track = videoTrack, slot = VideoSlot.Inline, leader = { playerConnection.player }, modifier = Modifier.fillMaxSize())
+                }
+            }
 
             // ---- Poster: the veil over the picture's foot, then the title -----------------
             //
@@ -818,7 +880,7 @@ private fun NowPlaying(
                 val controlsHeight = if (controlsTop > 0f) {
                     (height - with(density) { controlsTop.toDp() }).coerceAtLeast(0.dp)
                 } else {
-                    ControlsBlockHeight + bottomInset + 14.dp
+                    controlsBlockHeight + bottomInset + 14.dp
                 }
                 // The poster's dissolve is laid out against where the title actually begins,
                 // so this box reports it. The fade and the lift on the way to the lyrics are
@@ -854,7 +916,9 @@ private fun NowPlaying(
                                 )
                             }
                         },
+                        onQueue = { mode = if (mode == NowPlayingMode.Queue) NowPlayingMode.Stage else NowPlayingMode.Queue },
                         playing = isPlaying && !reducedMotion,
+                        hasVideo = songVideo != null,
                         onArtist = {
                             metadata?.artists?.firstOrNull()?.id?.let { id ->
                                 sheet.collapseSoft()
@@ -875,16 +939,21 @@ private fun NowPlaying(
                 Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
+                    .then(if (appearance.softPlayer) Modifier.height(AlternateControlsBlockHeight) else Modifier)
                     .onGloballyPositioned { c ->
                         val top = c.rectIn(containerCoords[0]).top
-                        paneControlsTop = top
+                        // the soft look's panes reach down to its button row instead, reported by the dock
+                        if (!appearance.softPlayer) paneControlsTop = top
                         if (queueCompact.value == 0f || controlsTop == 0f) controlsTop = top
                     }
                     .padding(horizontal = 28.dp)
                     .padding(bottom = bottomInset + 14.dp),
+                verticalArrangement = if (appearance.softPlayer) Arrangement.Bottom else Arrangement.Top,
             ) {
                 AnimatedVisibility(
-                    visible = mode != NowPlayingMode.Queue,
+                    // the soft look's lyrics and queue both take the whole screen down to the dock's row
+                    visible = if (appearance.softPlayer) mode == NowPlayingMode.Stage else mode != NowPlayingMode.Queue,
+                    modifier = if (appearance.softPlayer) Modifier.weight(1f) else Modifier,
                     enter = fadeIn(PlayerMotion.queue()) + expandVertically(PlayerMotion.queue()),
                     exit = fadeOut(PlayerMotion.small()) + shrinkVertically(PlayerMotion.queue()),
                 ) {
@@ -895,7 +964,8 @@ private fun NowPlaying(
                             onSeek = onSeek,
                             enabled = controlsEnabled,
                         )
-                        Spacer(Modifier.height(20.dp))
+                        Spacer(Modifier.height(if (appearance.softPlayer) 16.dp else 20.dp))
+                        if (appearance.softPlayer) Spacer(Modifier.weight(1f))
                         LiquidTransport(
                             isPlaying = isPlaying,
                             canSkipPrevious = canSkipPrevious,
@@ -905,24 +975,59 @@ private fun NowPlaying(
                             onNext = { playerConnection.seekToNext() },
                             enabled = controlsEnabled,
                         )
-                        if (showVolume) {
+                        if (showVolume && !appearance.softPlayer) {
                             Spacer(Modifier.height(18.dp))
                             LiquidVolumeSlider()
                         }
-                        Spacer(Modifier.height(20.dp))
+                        Spacer(Modifier.height(if (appearance.softPlayer) 6.dp else 20.dp))
                     }
                 }
-                NowPlayingUtilityRow(
-                    lyricsActive = mode == NowPlayingMode.Lyrics,
-                    queueActive = mode == NowPlayingMode.Queue,
-                    onLyrics = { mode = if (mode == NowPlayingMode.Lyrics) NowPlayingMode.Stage else NowPlayingMode.Lyrics },
-                    onOutput = { showOutputSheet = true },
-                    onQueue = { mode = if (mode == NowPlayingMode.Queue) NowPlayingMode.Stage else NowPlayingMode.Queue },
-                )
+                // the queue keeps no row of buttons under it
+                if (appearance.softPlayer) AnimatedVisibility(
+                    visible = mode != NowPlayingMode.Queue,
+                    enter = fadeIn(PlayerMotion.queue()) + expandVertically(PlayerMotion.queue()),
+                    exit = fadeOut(PlayerMotion.small()) + shrinkVertically(PlayerMotion.queue()),
+                ) {
+                    SoftLyricsDock(
+                        metadata = metadata,
+                        positionProvider = positionProvider,
+                        mode = mode,
+                        onLyrics = { mode = if (mode == NowPlayingMode.Lyrics) NowPlayingMode.Stage else NowPlayingMode.Lyrics },
+                        onOutput = { showOutputSheet = true },
+                        onQueue = { mode = if (mode == NowPlayingMode.Queue) NowPlayingMode.Stage else NowPlayingMode.Queue },
+                        onRowPlaced = { c ->
+                            val top = c.rectIn(containerCoords[0]).top
+                            if (kotlin.math.abs(top - paneControlsTop) > 0.5f) paneControlsTop = top
+                            if (mode == NowPlayingMode.Stage) softDockTop = top
+                        },
+                    )
+                } else AnimatedVisibility(
+                    visible = mode != NowPlayingMode.Queue,
+                    enter = fadeIn(PlayerMotion.queue()) + expandVertically(PlayerMotion.queue()),
+                    exit = fadeOut(PlayerMotion.small()) + shrinkVertically(PlayerMotion.queue()),
+                ) {
+                    NowPlayingUtilityRow(
+                        lyricsActive = mode == NowPlayingMode.Lyrics,
+                        queueActive = mode == NowPlayingMode.Queue,
+                        onLyrics = { mode = if (mode == NowPlayingMode.Lyrics) NowPlayingMode.Stage else NowPlayingMode.Lyrics },
+                        onOutput = { showOutputSheet = true },
+                        onQueue = { mode = if (mode == NowPlayingMode.Queue) NowPlayingMode.Stage else NowPlayingMode.Queue },
+                    )
+                }
             }
 
             if (togetherState.isLive && floatReactions && together != null) {
                 TogetherReactionsLayer(session = together, modifier = Modifier.fillMaxSize())
+            }
+
+            androidx.compose.animation.AnimatedVisibility(
+                visible = videoTrack != null && SongVideoState.view == VideoView.Full,
+                enter = fadeIn(tween(320)) + androidx.compose.animation.scaleIn(tween(320), initialScale = 0.96f),
+                exit = fadeOut(tween(240)) + androidx.compose.animation.scaleOut(tween(240), targetScale = 0.96f),
+            ) {
+                val shown = remember { mutableStateOf(videoTrack) }
+                videoTrack?.let { shown.value = it }
+                FullVideo(track = shown.value ?: return@AnimatedVisibility, leader = { playerConnection.player }, onClose = { SongVideoState.view = VideoView.Inline })
             }
         }
     }
@@ -931,8 +1036,17 @@ private fun NowPlaying(
 /** How far the stage artwork settles back while paused. */
 private const val PausedArtworkScale = 0.82f
 
+// The alternate poster stays nearly still when paused; it settles instead of springing back.
+private const val SoftPausedArtworkScale = 0.96f
+
+private val SoftTitleStyle = PlayerType.stageTitle.copy(fontSize = 29.sp, lineHeight = 34.sp, fontWeight = FontWeight.Bold)
+private val SoftArtistStyle = PlayerType.stageArtist.copy(fontSize = 20.sp, lineHeight = 26.sp, fontWeight = FontWeight.SemiBold)
+
 /** The height the controls block occupies, used to reserve room for it on the stage. */
 private val ControlsBlockHeight: Dp = 30.dp + 18.dp + 14.dp + 104.dp + 12.dp + 30.dp + 16.dp + 48.dp
+
+/** The expanded space below the alternate timeline: flat transport, then the queue peek. */
+private val AlternateControlsBlockHeight: Dp = 384.dp
 
 /** About how tall the title row is, for laying out the poster before the row has been measured. */
 private val PosterTitleHeight: Dp = 56.dp
@@ -944,10 +1058,14 @@ private fun StageTitleRow(
     liked: Boolean,
     onLike: () -> Unit,
     onMore: () -> Unit,
+    onQueue: () -> Unit,
     onArtist: () -> Unit,
     playing: Boolean = true,
+    hasVideo: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
+    val soft = LocalShinyAppearance.current.softPlayer
+    var moreOpen by remember { mutableStateOf(false) }
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Crossfade(
             targetState = title to artist,
@@ -958,8 +1076,8 @@ private fun StageTitleRow(
             Column {
                 Text(
                     text = shownTitle,
-                    style = PlayerType.stageTitle,
-                    color = NowPlayingInk.primary,
+                    style = if (soft) SoftTitleStyle else PlayerType.stageTitle,
+                    color = if (soft) SoftInk.title else NowPlayingInk.primary,
                     maxLines = 1,
                     overflow = if (playing) TextOverflow.Clip else TextOverflow.Ellipsis,
                     modifier = if (playing) Modifier.basicMarquee(iterations = Int.MAX_VALUE, initialDelayMillis = 2600, repeatDelayMillis = 2600) else Modifier,
@@ -967,8 +1085,8 @@ private fun StageTitleRow(
                 val interaction = remember { MutableInteractionSource() }
                 Text(
                     text = shownArtist,
-                    style = PlayerType.stageArtist,
-                    color = NowPlayingInk.secondary,
+                    style = if (soft) SoftArtistStyle else PlayerType.stageArtist,
+                    color = if (soft) SoftInk.artist else NowPlayingInk.secondary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.combinedClickable(interactionSource = interaction, indication = null, onClick = onArtist),
@@ -982,17 +1100,24 @@ private fun StageTitleRow(
             iconSize = 20.dp,
             onClick = onLike,
         )
-        StageGlassButton(
-            icon = Icons.Rounded.MoreHoriz,
-            label = stringResource(R.string.liquid_more_options),
-            iconSize = 22.dp,
-            onClick = onMore,
-        )
+        Box {
+            StageGlassButton(
+                icon = Icons.Rounded.MoreHoriz,
+                label = stringResource(R.string.liquid_more_options),
+                iconSize = 22.dp,
+                onClick = { moreOpen = !moreOpen },
+            )
+            PlayerMoreMenu(expanded = moreOpen, onDismiss = { moreOpen = false }, hasVideo = hasVideo, onOtherMenu = onMore)
+        }
     }
 }
 
 @Composable
 internal fun StageGlassButton(icon: ImageVector, label: String, iconSize: Dp, onClick: () -> Unit) {
+    if (LocalShinyAppearance.current.softPlayer) {
+        FrostIconButton(icon = icon, label = label, iconSize = iconSize, onClick = onClick)
+        return
+    }
     Box(Modifier.size(QueueMetrics.target), contentAlignment = Alignment.Center) {
         GlassIconButton(
             icon = icon,
@@ -1106,6 +1231,8 @@ private fun FlyingArtwork(
     stageRect: Rect?,
     compactRect: Rect?,
     progress: () -> Float,
+    /** How far the compact header has scrolled up with the queue, in px. */
+    compactLift: () -> Float = { 0f },
     playing: Boolean,
     onTap: () -> Unit,
     metadata: com.shiny.music.models.MediaMetadata?,
@@ -1128,11 +1255,14 @@ private fun FlyingArtwork(
 ) {
     val density = LocalDensity.current
     val expansion = LocalPlayerExpansion.current
+    val soft = LocalShinyAppearance.current.softPlayer
+    val pausedScale = if (soft) SoftPausedArtworkScale else PausedArtworkScale
+    val cardCorner = if (soft) 10.dp else 12.dp
     // A full-poster cover does not settle back on pause: there is nothing behind it to reveal,
     // so the breathe would only show a band of background around the edges.
     val restScale by animateFloatAsState(
-        targetValue = if (bleed || playing) 1f else PausedArtworkScale,
-        animationSpec = spring(dampingRatio = 0.62f, stiffness = 210f),
+        targetValue = if (bleed || playing) 1f else pausedScale,
+        animationSpec = if (soft) tween(400, easing = FastOutSlowInEasing) else spring(dampingRatio = 0.62f, stiffness = 210f),
         label = "artRest",
     )
     val interaction = remember { MutableInteractionSource() }
@@ -1165,7 +1295,7 @@ private fun FlyingArtwork(
                                 color = glowColor,
                                 strength = {
                                     (if (expansion?.isFlying() == true) 0f else glowStrength) *
-                                        glowPauseFactor(restScale, PausedArtworkScale) *
+                                        glowPauseFactor(restScale, pausedScale) *
                                         (1f - progress() * 2.5f).coerceAtLeast(0f) *
                                         (1f - (swipe?.progress() ?: 0f) * 1.6f).coerceAtLeast(0f)
                                 },
@@ -1190,11 +1320,12 @@ private fun FlyingArtwork(
                         // rounding arrive as the cover shrinks into the lyrics header, not before.
                         val restElevation = when {
                             bleed -> 0f
+                            soft -> if (playing) 16.dp.toPx() else 10.dp.toPx()
                             playing -> 30.dp.toPx()
                             else -> 14.dp.toPx()
                         }
                         shadowElevation = if (expansion?.isFlying() == true) 0f else with(density) { lerp(restElevation, 6.dp.toPx(), t) }
-                        val restCorner = if (bleed) 0f else 12.dp.toPx()
+                        val restCorner = if (bleed) 0f else cardCorner.toPx()
                         val corner = with(density) { lerp(restCorner, 8.dp.toPx(), t) }
                         shape = RoundedCornerShape(corner)
                         clip = true
@@ -1204,7 +1335,7 @@ private fun FlyingArtwork(
                     .playerArtworkAnchor(
                         anchor = ArtworkAnchor.Full,
                         model = thumbModel,
-                        cornerRadius = if (bleed) 0.dp else 12.dp,
+                        cornerRadius = if (bleed) 0.dp else cardCorner,
                         followsSheet = true,
                     )
                     // Without onDoubleClick a tap fires at once; with it, only on the stage,
@@ -1239,7 +1370,7 @@ private fun FlyingArtwork(
             return@Layout layout(constraints.maxWidth, constraints.maxHeight) { p.place(0, 0) }
         }
         val t = if (c == null) 0f else progress()
-        val target = c ?: s
+        val target = c?.translate(0f, -compactLift()) ?: s
         val left = lerp(s.left, target.left, t)
         val top = lerp(s.top, target.top, t)
         val w = lerp(s.width, target.width, t).roundToInt().coerceAtLeast(1)
@@ -1297,6 +1428,10 @@ internal fun NowPlayingBackground(
     modifier: Modifier = Modifier,
 ) {
     val appearance = LocalShinyAppearance.current
+    if (appearance.softPlayer) {
+        SoftBackground(backdrop = backdrop, playing = playing, modifier = modifier)
+        return
+    }
     val atmosphere = appearance.atmosphere
     val showField = atmosphere != Atmosphere.Off
     val current = backdrop.value

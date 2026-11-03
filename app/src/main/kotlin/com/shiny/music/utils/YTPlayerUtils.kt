@@ -1265,6 +1265,109 @@ object YTPlayerUtils {
             ?.apply()
     }
 
+    data class VideoStream(
+        val videoId: String,
+        val url: String,
+        val width: Int,
+        val height: Int,
+        val durationMs: Long,
+        val userAgent: String,
+        val expiresAtMs: Long,
+        // the video's own soundtrack at its lowest bitrate, only for lining it up with the song
+        val audioUrl: String? = null,
+    ) {
+        val isExpired: Boolean get() = System.currentTimeMillis() > expiresAtMs - 60_000L
+    }
+
+    private val VIDEO_CLIENTS: Array<YouTubeClient> = arrayOf(VISIONOS, ANDROID_VR_1_65_10, TVHTML5)
+
+    // h264 picture-only formats, largest first
+    private val NEWPIPE_VIDEO_ITAGS = listOf(136 to (1280 to 720), 135 to (854 to 480), 134 to (640 to 360), 133 to (426 to 240))
+    private const val NEWPIPE_VIDEO_USER_AGENT =
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+
+    // h264 decodes in hardware on every phone, so it is preferred over vp9 and av1
+    private val VIDEO_CODECS = listOf("avc1", "vp09", "vp9", "av01")
+
+    /** The picture-only stream of [videoId], at most [maxShortSide] on its short side, from a client that serves the whole file. */
+    suspend fun resolveVideoStream(videoId: String, maxShortSide: Int = 720): Result<VideoStream> = runCatching {
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            if (YouTube.cookie == null && YouTube.visitorData.isNullOrEmpty()) YouTube.refreshVisitorData()
+            for (client in VIDEO_CLIENTS) {
+                val sts = if (client.useSignatureTimestamp) getSignatureTimestampOrNull(videoId).timestamp else null
+                val response = YouTube.player(videoId, null, client, sts, null).getOrNull() ?: continue
+                if (response.playabilityStatus.status != "OK") continue
+                val streaming = response.streamingData ?: continue
+                val pictures = streaming.adaptiveFormats.filter { !it.isAudio && (it.width ?: 0) > 0 && (it.height ?: 0) > 0 }
+                val family = VIDEO_CODECS.firstNotNullOfOrNull { codec ->
+                    pictures.filter { it.mimeType.contains("codecs=\"$codec") }.takeIf { it.isNotEmpty() }
+                } ?: continue
+                fun shortSide(f: PlayerResponse.StreamingData.Format) = minOf(f.width ?: 0, f.height ?: 0)
+                val format = family.filter { shortSide(it) <= maxShortSide }
+                    .maxWithOrNull(compareBy({ shortSide(it) }, { -(it.fps ?: 30) }))
+                    ?: family.minBy { shortSide(it) }
+                var url = runCatching { findUrlOrNull(format, videoId, response) }.getOrNull() ?: continue
+                if (client === TVHTML5) url = runCatching { CipherDeobfuscator.transformNParamInUrl(url) }.getOrDefault(url)
+                if (!validateStatus(url, format.contentLength, Fix403.kv("video" to client.clientName))) continue
+                val audioUrl = listeningAudio(streaming.adaptiveFormats)?.let { audio ->
+                    runCatching { findUrlOrNull(audio, videoId, response) }.getOrNull()
+                        ?.let { if (client === TVHTML5) runCatching { CipherDeobfuscator.transformNParamInUrl(it) }.getOrDefault(it) else it }
+                }
+                return@withContext VideoStream(
+                    videoId = videoId,
+                    url = url,
+                    width = format.width ?: 0,
+                    height = format.height ?: 0,
+                    durationMs = format.approxDurationMs?.toLongOrNull()
+                        ?: response.videoDetails?.lengthSeconds?.toLongOrNull()?.times(1000L) ?: 0L,
+                    userAgent = client.userAgent,
+                    expiresAtMs = System.currentTimeMillis() + streaming.expiresInSeconds * 1000L,
+                    audioUrl = audioUrl,
+                )
+            }
+            // the same last resort the music uses when no client's links last the whole file
+            val newPipe = runCatching { YouTube.getNewPipeStreamUrls(videoId) }.getOrDefault(emptyList()).toMap()
+            for ((itag, size) in NEWPIPE_VIDEO_ITAGS) {
+                if (minOf(size.first, size.second) > maxShortSide) continue
+                val url = newPipe[itag] ?: continue
+                if (!validateStatus(url, null, Fix403.kv("video" to "NEWPIPE"))) continue
+                return@withContext VideoStream(
+                    videoId = videoId,
+                    url = url,
+                    width = size.first,
+                    height = size.second,
+                    durationMs = 0L,
+                    userAgent = NEWPIPE_VIDEO_USER_AGENT,
+                    expiresAtMs = System.currentTimeMillis() + 5 * 60 * 60 * 1000L,
+                    audioUrl = newPipe[249] ?: newPipe[139] ?: newPipe[250],
+                )
+            }
+            error("no playable video stream for $videoId")
+        }
+    }
+
+    private fun listeningAudio(formats: List<PlayerResponse.StreamingData.Format>) =
+        formats.filter { it.isAudio && it.isOriginal }.minByOrNull { it.bitrate }
+
+    /** The smallest audio stream of [videoId] and the user agent it wants: what the video aligner listens to. */
+    suspend fun resolveListeningAudio(videoId: String): Result<Pair<String, String>> = runCatching {
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            if (YouTube.cookie == null && YouTube.visitorData.isNullOrEmpty()) YouTube.refreshVisitorData()
+            for (client in VIDEO_CLIENTS) {
+                val sts = if (client.useSignatureTimestamp) getSignatureTimestampOrNull(videoId).timestamp else null
+                val response = YouTube.player(videoId, null, client, sts, null).getOrNull() ?: continue
+                if (response.playabilityStatus.status != "OK") continue
+                val format = listeningAudio(response.streamingData?.adaptiveFormats ?: continue) ?: continue
+                var url = runCatching { findUrlOrNull(format, videoId, response) }.getOrNull() ?: continue
+                if (client === TVHTML5) url = runCatching { CipherDeobfuscator.transformNParamInUrl(url) }.getOrDefault(url)
+                return@withContext url to client.userAgent
+            }
+            val newPipe = runCatching { YouTube.getNewPipeStreamUrls(videoId) }.getOrDefault(emptyList()).toMap()
+            val url = newPipe[249] ?: newPipe[139] ?: newPipe[250] ?: error("no audio stream for $videoId")
+            url to NEWPIPE_VIDEO_USER_AGENT
+        }
+    }
+
     data class SignatureTimestampResult(
         val timestamp: Int?,
         val isAgeRestricted: Boolean
