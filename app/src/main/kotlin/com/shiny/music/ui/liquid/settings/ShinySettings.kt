@@ -91,7 +91,43 @@ val SettingsGutter = PageMargin
 /** Where hairlines begin: flush with the text column, never the screen edge. */
 private val SeparatorIndent = PageMargin
 
-private val RowMinHeight = 52.dp
+private val RowMinHeight = 60.dp
+
+// rows sit in one rounded card per section on a black page, the way the rest of home's
+// pages now read
+internal val SettingsCardMargin = 20.dp
+private val SettingsCardShape = RoundedCornerShape(26.dp)
+private val RowInset = 20.dp
+
+@Composable
+internal fun settingsGround(): Color = if (Liquid.colors.isDark) Color.Black else Liquid.colors.groupedBackground
+
+@Composable
+internal fun settingsCard(): Color = if (Liquid.colors.isDark) Color(0xFF151515) else Color.White
+
+/** The search pill every settings page opens with; on a page it takes you to the index's search. */
+object SettingsSearchRequest {
+    var pending: Boolean = false
+}
+
+@Composable
+internal fun SettingsSearchPill(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val colors = Liquid.colors
+    val interaction = remember { MutableInteractionSource() }
+    Box(
+        modifier
+            .padding(horizontal = SettingsCardMargin)
+            .fillMaxWidth()
+            .height(56.dp)
+            .clip(CircleShape)
+            .background(if (colors.isDark) Color(0xFF1C1C1E) else colors.quaternaryFill)
+            .combinedClickable(interactionSource = interaction, indication = null, onClick = onClick)
+            .padding(horizontal = 20.dp),
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        Text("Search settings", fontSize = 17.sp, fontWeight = FontWeight.Medium, color = colors.secondaryLabel, maxLines = 1)
+    }
+}
 
 /** A settings destination: large title, back button, page ground. */
 @Composable
@@ -99,7 +135,8 @@ fun SettingsPage(
     title: String,
     navController: NavController,
     state: LazyListState = rememberLazyListState(),
-    background: Color = Liquid.colors.background,
+    background: Color = settingsGround(),
+    search: Boolean = true,
     content: LazyListScope.() -> Unit,
 ) {
     LargeTitlePage(
@@ -107,7 +144,20 @@ fun SettingsPage(
         state = state,
         background = background,
         navigationButton = { LiquidBackButton(onClick = { navController.navigateUp() }) },
-        content = content,
+        content = {
+            if (search) {
+                item(key = "settings_search") {
+                    SettingsSearchPill(
+                        onClick = {
+                            SettingsSearchRequest.pending = true
+                            if (!navController.popBackStack("settings", inclusive = false)) navController.navigate("settings")
+                        },
+                        modifier = Modifier.padding(top = 6.dp, bottom = 4.dp),
+                    )
+                }
+            }
+            content()
+        },
     )
 }
 
@@ -128,18 +178,26 @@ fun SettingsSection(
         if (title != null) {
             SettingsSectionLabel(
                 title = title,
-                modifier = Modifier.padding(start = SettingsGutter, end = SettingsGutter, top = 30.dp, bottom = 9.dp),
+                modifier = Modifier.padding(start = SettingsCardMargin + 6.dp, end = SettingsGutter, top = 26.dp, bottom = 12.dp),
             )
         } else {
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(20.dp))
         }
-        content()
+        Column(
+            Modifier
+                .padding(horizontal = SettingsCardMargin)
+                .fillMaxWidth()
+                .clip(SettingsCardShape)
+                .background(settingsCard())
+                .padding(vertical = 8.dp),
+            content = content,
+        )
         if (footer != null) {
             Text(
                 text = footer,
                 style = LiquidTypography.footnote,
                 color = Liquid.colors.secondaryLabel,
-                modifier = Modifier.padding(start = SettingsGutter, end = SettingsGutter, top = 9.dp),
+                modifier = Modifier.padding(start = SettingsCardMargin + 6.dp, end = SettingsGutter, top = 9.dp),
             )
         }
     }
@@ -149,10 +207,11 @@ fun SettingsSection(
 @Composable
 fun SettingsSectionLabel(title: String, modifier: Modifier = Modifier) {
     Text(
-        text = title.uppercase(),
-        style = LiquidTypography.caption1.copy(fontWeight = FontWeight.SemiBold),
-        letterSpacing = 0.9.sp,
-        color = Liquid.colors.secondaryLabel,
+        text = title,
+        fontSize = 17.sp,
+        fontWeight = FontWeight.Bold,
+        letterSpacing = (-0.3).sp,
+        color = Liquid.colors.label,
         modifier = modifier,
     )
 }
@@ -204,16 +263,29 @@ fun SettingsRow(
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = RowMinHeight)
-                .padding(horizontal = SettingsGutter, vertical = 11.dp),
+                .padding(horizontal = RowInset, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (glyph != null) {
-                Box(Modifier.width(30.dp), contentAlignment = Alignment.CenterStart) { glyph() }
+                // a round light plate behind each glyph
+                Box(
+                    Modifier
+                        .size(42.dp)
+                        .clip(CircleShape)
+                        .background(if (colors.isDark) Color(0xFFE9E9EB) else colors.quaternaryFill),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    androidx.compose.runtime.CompositionLocalProvider(androidx.compose.material3.LocalContentColor provides Color(0xFF1C1C1E)) { glyph() }
+                }
+                Spacer(Modifier.width(14.dp))
             }
             Column(Modifier.weight(1f)) {
                 Text(
                     text = title,
-                    style = LiquidTypography.body,
+                    fontSize = 16.sp,
+                    lineHeight = 20.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = (-0.2).sp,
                     color = titleColor,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
@@ -221,8 +293,12 @@ fun SettingsRow(
                 if (!subtitle.isNullOrBlank()) {
                     Text(
                         text = subtitle,
-                        style = LiquidTypography.footnote,
+                        fontSize = 13.sp,
+                        lineHeight = 17.sp,
+                        fontWeight = FontWeight.Medium,
                         color = if (enabled) colors.secondaryLabel else colors.tertiaryLabel,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.padding(top = 2.dp),
                     )
                 }
@@ -253,9 +329,6 @@ fun SettingsRow(
                     modifier = Modifier.size(20.dp),
                 )
             }
-        }
-        if (divider) {
-            Hairline(Modifier.align(Alignment.BottomStart), startIndent = SeparatorIndent)
         }
     }
 }
@@ -312,7 +385,7 @@ fun SettingsToggleRow(
         enabled = enabled,
         divider = divider,
         trailing = {
-            LiquidSwitch(
+            SettingsSwitch(
                 checked = checked,
                 onCheckedChange = if (enabled) onCheckedChange else null,
                 enabled = enabled,
@@ -418,13 +491,14 @@ fun SettingsSliderRow(
         Column(
             Modifier
                 .fillMaxWidth()
-                .padding(horizontal = SettingsGutter)
+                .padding(horizontal = RowInset)
                 .padding(top = 12.dp, bottom = 14.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = title,
-                    style = LiquidTypography.body,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
                     color = colors.label,
                     modifier = Modifier.weight(1f),
                 )
@@ -452,9 +526,6 @@ fun SettingsSliderRow(
                 steps = steps,
                 onValueChangeFinished = onValueChangeFinished,
             )
-        }
-        if (divider) {
-            Hairline(Modifier.align(Alignment.BottomStart), startIndent = SeparatorIndent)
         }
     }
 }
@@ -540,13 +611,13 @@ fun SettingsSlider(
                 cornerRadius = CornerRadius(trackHeight / 2f),
             )
             drawRoundRect(
-                color = colors.accent,
+                color = if (colors.isDark) Color.White else colors.accent,
                 topLeft = Offset(0f, centerY - trackHeight / 2f),
                 size = Size(knobX, trackHeight),
                 cornerRadius = CornerRadius(trackHeight / 2f),
             )
             drawCircle(
-                color = colors.accent,
+                color = if (colors.isDark) Color.White else colors.accent,
                 radius = knobPx / 2f,
                 center = Offset(knobX, centerY),
             )
@@ -623,7 +694,7 @@ fun SettingsNote(text: String, modifier: Modifier = Modifier) {
         text = text,
         style = LiquidTypography.footnote,
         color = Liquid.colors.secondaryLabel,
-        modifier = modifier.padding(horizontal = SettingsGutter, vertical = 8.dp),
+        modifier = modifier.padding(horizontal = RowInset, vertical = 8.dp),
     )
 }
 
@@ -660,10 +731,10 @@ fun <T> SettingsSegmentedRow(
         Column(
             Modifier
                 .fillMaxWidth()
-                .padding(horizontal = SettingsGutter)
+                .padding(horizontal = RowInset)
                 .padding(top = 12.dp, bottom = 14.dp),
         ) {
-            Text(text = title, style = LiquidTypography.body, color = colors.label)
+            Text(text = title, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = colors.label)
             if (!subtitle.isNullOrBlank()) {
                 Text(
                     text = subtitle,
@@ -689,7 +760,7 @@ fun <T> SettingsSegmentedRow(
                             .weight(1f)
                             .height(34.dp)
                             .clip(RoundedCornerShape(9.dp))
-                            .background(if (isSelected) colors.accent else Color.Transparent)
+                            .background(if (isSelected) (if (colors.isDark) Color.White else colors.accent) else Color.Transparent)
                             .combinedClickable(
                                 interactionSource = interaction,
                                 indication = null,
@@ -702,7 +773,7 @@ fun <T> SettingsSegmentedRow(
                             style = LiquidTypography.subheadline.copy(
                                 fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
                             ),
-                            color = if (isSelected) colors.onAccent else colors.label,
+                            color = if (isSelected) (if (colors.isDark) Color.Black else colors.onAccent) else colors.label,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -710,12 +781,44 @@ fun <T> SettingsSegmentedRow(
                 }
             }
         }
-        if (divider) {
-            Hairline(Modifier.align(Alignment.BottomStart), startIndent = SeparatorIndent)
-        }
     }
 }
 
 /** Space between the last section and the bottom of a page. */
 @Composable
 fun SettingsTailSpace(height: Dp = 28.dp) = Spacer(Modifier.height(height))
+
+// the switch on every settings row: a grey track with a round thumb that slides across; on it
+// goes light with a white thumb, off it stays dark with a dim one
+@Composable
+fun SettingsSwitch(checked: Boolean, onCheckedChange: ((Boolean) -> Unit)?, modifier: Modifier = Modifier, enabled: Boolean = true) {
+    val colors = Liquid.colors
+    val travel by animateFloatAsState(if (checked) 1f else 0f, spring(dampingRatio = 0.72f, stiffness = 520f), label = "switch")
+    val trackOff = if (colors.isDark) Color(0xFF2C2C2E) else Color(0xFFE5E5EA)
+    val trackOn = if (colors.isDark) Color(0xFF8E8E93) else colors.accent
+    val rimOff = if (colors.isDark) Color(0xFF48484A) else Color(0xFFD1D1D6)
+    val thumbOff = if (colors.isDark) Color(0xFF6E6E73) else Color.White
+    val interaction = remember { MutableInteractionSource() }
+    androidx.compose.foundation.Canvas(
+        modifier
+            .size(width = 54.dp, height = 32.dp)
+            .graphicsLayer { alpha = if (enabled) 1f else 0.45f }
+            .then(
+                if (onCheckedChange != null) {
+                    Modifier.combinedClickable(interactionSource = interaction, indication = null, role = androidx.compose.ui.semantics.Role.Switch) { onCheckedChange(!checked) }
+                } else {
+                    Modifier
+                },
+            ),
+    ) {
+        val r = size.height / 2f
+        drawRoundRect(androidx.compose.ui.graphics.lerp(trackOff, trackOn, travel), cornerRadius = CornerRadius(r))
+        if (travel < 1f) {
+            drawRoundRect(rimOff.copy(alpha = 1f - travel), cornerRadius = CornerRadius(r), style = androidx.compose.ui.graphics.drawscope.Stroke(1.dp.toPx()))
+        }
+        val pad = 3.dp.toPx()
+        val thumbR = r - pad
+        val x = pad + thumbR + (size.width - 2 * (pad + thumbR)) * travel
+        drawCircle(androidx.compose.ui.graphics.lerp(thumbOff, Color.White, travel), radius = thumbR, center = Offset(x, r))
+    }
+}
