@@ -437,6 +437,26 @@ fun NavGraphBuilder.navigationBuilder(
     screen("settings/privacy") {
         PrivacySettingsScreen(navController)
     }
+    screen("settings/behaviour") {
+        com.shiny.music.ui.liquid.settings.BehaviourSettingsScreen(navController)
+    }
+
+    screen("settings/youtube") {
+        AccountSettingsScreen(navController, scrollBehavior, youtubeOnly = true)
+    }
+
+    screen(
+        route = "settings/scrobble/{site}",
+        arguments = listOf(navArgument("site") { type = NavType.StringType }),
+    ) { entry ->
+        val site = runCatching { com.shiny.music.playback.scrobble.ScrobbleSite.valueOf(entry.arguments?.getString("site").orEmpty()) }.getOrNull()
+        if (site != null) com.shiny.music.ui.liquid.settings.ScrobbleServiceScreen(navController, site)
+    }
+
+    screen("settings/integrations") {
+        com.shiny.music.ui.liquid.settings.IntegrationsSettingsScreen(navController)
+    }
+
     screen("settings/supported_links") {
         com.shiny.music.ui.liquid.settings.SupportedLinksScreen(navController)
     }

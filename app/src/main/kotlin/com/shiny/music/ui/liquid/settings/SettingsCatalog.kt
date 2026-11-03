@@ -63,6 +63,7 @@ fun settingsCatalog(): List<SettingsEntry> = listOf(
     // Now Playing
     SettingsEntry("Animated covers", "Now Playing", "settings/now_playing", "canvas motion video artwork"),
     SettingsEntry("Volume slider", "Now Playing", "settings/now_playing", "volume"),
+    SettingsEntry("Keep screen on while playing", "App Behaviour", "settings/behaviour", "awake display screen"),
     SettingsEntry("Keep the screen on", "Now Playing", "settings/now_playing", "screen awake"),
 
     // Library & Home

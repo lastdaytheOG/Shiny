@@ -65,14 +65,12 @@ private data class Category(val title: String, val route: String, val glyph: Pai
 fun SettingsHomeScreen(navController: NavController) {
     val context = LocalContext.current
     val colors = Liquid.colors
-    val database = LocalDatabase.current
     var query by rememberSaveable { mutableStateOf("") }
     val accountName by rememberPreference(AccountNameKey, "")
     val accountEmail by rememberPreference(AccountEmailKey, "")
     val updateAvailable = remember { getUpdateAvailableState(context) && getAutoUpdateCheckSetting(context) }
-    val catalog = remember { settingsCatalog() }
+    val catalog = remember { visibleCatalog(settingsCatalog()) }
     val matches = remember(query) { catalog.search(query) }
-    val totalMs by remember { database.getTotalPlayTimeInRange(0, Long.MAX_VALUE) }.collectAsState(initial = 0L)
     val recommendedIndex = rememberSaveable { catalog.indices.random() }
     val recommended = catalog.getOrNull(recommendedIndex)
     val focus = remember { FocusRequester() }
@@ -84,43 +82,17 @@ fun SettingsHomeScreen(navController: NavController) {
     }
 
     val categories = listOf(
-        Category("Playback", "settings/player", painterResource(R.drawable.play)),
-        Category("Now Playing", "settings/now_playing", painterResource(R.drawable.album)),
-        Category("Content", "settings/content", painterResource(R.drawable.language)),
-        Category("Appearance", "settings/appearance", painterResource(R.drawable.palette)),
-        Category("Library & Home", "settings/library", painterResource(R.drawable.grid_view)),
-        Category("Downloads & Storage", "settings/storage", painterResource(R.drawable.download)),
-        Category("Backup & Restore", "settings/backup_restore", painterResource(R.drawable.restore)),
         Category(stringResource(R.string.social_title), "settings/social", rememberVectorPainter(Icons.Rounded.People)),
+        Category("App Behaviour", "settings/behaviour", painterResource(R.drawable.tune)),
+        Category("Downloads & Storage", "settings/storage", painterResource(R.drawable.download)),
+        Category("Backup", "settings/backup_restore", painterResource(R.drawable.restore)),
+        Category("Integrations", "settings/integrations", painterResource(R.drawable.link)),
         Category(stringResource(R.string.listen_together), "settings/together", painterResource(R.drawable.group)),
-        Category(stringResource(R.string.discord_settings_title), "settings/discord", painterResource(R.drawable.discord)),
-        Category("Privacy", "settings/privacy", painterResource(R.drawable.lock)),
-    ) + listOfNotNull(
-        if (SettingsVisibility.ADVANCED) Category("Advanced", "settings/advanced", painterResource(R.drawable.tune)) else null,
-        Category("Supported links", "settings/supported_links", painterResource(R.drawable.link)),
+        Category("Supported Links", "settings/supported_links", painterResource(R.drawable.language)),
         Category(stringResource(R.string.about), "settings/about", painterResource(R.drawable.info), badge = updateAvailable),
     )
 
     SettingsPage(title = stringResource(R.string.settings), navController = navController, search = false) {
-        if (query.isBlank()) {
-            item(key = "listening") {
-                ListeningCard(totalMs = totalMs ?: 0L, onStats = { navController.navigate("stats") })
-            }
-            item(key = "version") {
-                VersionCard(version = BuildConfig.VERSION_NAME, update = updateAvailable, onAbout = { navController.navigate("settings/about") })
-            }
-            item(key = "account") {
-                PillRow(
-                    title = accountName.ifBlank { stringResource(R.string.account) },
-                    subtitle = accountEmail.ifBlank { "Sign in to sync your library" },
-                    glyph = rememberVectorPainter(Icons.Rounded.Person),
-                    onClick = { navController.navigate("settings/account") },
-                )
-            }
-            item(key = "settings_label") {
-                SettingsSectionLabel("Settings", Modifier.padding(start = SettingsCardMargin + 4.dp, top = 22.dp, bottom = 10.dp))
-            }
-        }
         item(key = "search") {
             LiquidSearchField(
                 value = query,
@@ -183,105 +155,6 @@ private fun cardModifier(): Modifier = Modifier
     .fillMaxWidth()
     .clip(RoundedCornerShape(26.dp))
     .background(settingsCard())
-
-// total listening time as one big number, and the way into the stats
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun ListeningCard(totalMs: Long, onStats: () -> Unit) {
-    val colors = Liquid.colors
-    val minutes = totalMs / 60_000L
-    val interaction = remember { MutableInteractionSource() }
-    Column(
-        cardModifier()
-            .combinedClickable(interactionSource = interaction, indication = null, onClick = onStats)
-            .padding(start = 22.dp, end = 22.dp, top = 20.dp, bottom = 16.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Row(verticalAlignment = Alignment.Bottom) {
-                Text("${minutes / 60}", fontSize = 44.sp, fontWeight = FontWeight.Bold, letterSpacing = (-1.6).sp, color = colors.label)
-                Text("h", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = colors.label, modifier = Modifier.padding(bottom = 7.dp))
-            }
-            Box(
-                Modifier
-                    .padding(horizontal = 14.dp)
-                    .width(1.dp)
-                    .height(40.dp)
-                    .background(colors.label.copy(alpha = 0.25f)),
-            )
-            Row(verticalAlignment = Alignment.Bottom) {
-                Text("${minutes % 60}", fontSize = 44.sp, fontWeight = FontWeight.Bold, letterSpacing = (-1.6).sp, color = colors.label)
-                Text("m", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = colors.label, modifier = Modifier.padding(bottom = 7.dp))
-            }
-            Spacer(Modifier.weight(1f))
-            Text("Total Listening\ntime", fontSize = 15.sp, lineHeight = 19.sp, color = colors.secondaryLabel, textAlign = TextAlign.End)
-        }
-        Box(
-            Modifier
-                .padding(top = 14.dp, bottom = 12.dp)
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(colors.label.copy(alpha = 0.12f)),
-        )
-        Text("View Stats  >", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = colors.secondaryLabel)
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun VersionCard(version: String, update: Boolean, onAbout: () -> Unit) {
-    val colors = Liquid.colors
-    val interaction = remember { MutableInteractionSource() }
-    Row(
-        cardModifier().padding(start = 22.dp, end = 22.dp, top = 18.dp, bottom = 18.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(Modifier.weight(1f)) {
-            Text(if (update) "Update available" else "Version & about app", fontSize = 15.sp, color = if (update) colors.accent else colors.secondaryLabel)
-            Text(version, fontSize = 44.sp, fontWeight = FontWeight.Bold, letterSpacing = (-1.6).sp, color = colors.label, maxLines = 1)
-        }
-        Box(
-            Modifier
-                .pressScale(interaction, 0.94f)
-                .clip(CircleShape)
-                .background(if (colors.isDark) Color(0xFF3A3A3C) else colors.quaternaryFill)
-                .combinedClickable(interactionSource = interaction, indication = null, onClick = onAbout)
-                .padding(horizontal = 18.dp, vertical = 10.dp),
-        ) {
-            Text(stringResource(R.string.about), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = colors.label)
-        }
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun PillRow(title: String, subtitle: String?, glyph: Painter, onClick: () -> Unit) {
-    val colors = Liquid.colors
-    val interaction = remember { MutableInteractionSource() }
-    Row(
-        Modifier
-            .padding(horizontal = SettingsCardMargin, vertical = 7.dp)
-            .fillMaxWidth()
-            .pressScale(interaction, 0.98f)
-            .clip(RoundedCornerShape(30.dp))
-            .background(settingsCard())
-            .combinedClickable(interactionSource = interaction, indication = null, onClick = onClick)
-            .padding(horizontal = 18.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            Modifier
-                .size(38.dp)
-                .clip(CircleShape)
-                .background(if (colors.isDark) Color(0xFF2C2C2E) else colors.quaternaryFill),
-            contentAlignment = Alignment.Center,
-        ) { Icon(glyph, null, tint = colors.label, modifier = Modifier.size(20.dp)) }
-        Spacer(Modifier.width(14.dp))
-        Column {
-            Text(title, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = colors.label, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            if (!subtitle.isNullOrBlank()) Text(subtitle, fontSize = 13.sp, color = colors.secondaryLabel, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        }
-    }
-}
 
 // a setting worth knowing about, and where it lives
 @OptIn(ExperimentalFoundationApi::class)
@@ -352,5 +225,32 @@ private fun CategoryRow(category: Category, onClick: () -> Unit) {
                     .background(colors.destructive),
             )
         }
+    }
+}
+
+// the settings that moved onto app behaviour, by their catalog names
+private val BehaviourTitles = setOf(
+    "Data Saver", "Skip silence", "Count a listen after", "Skip tracks that fail", "Stop when Shiny is swiped away",
+    "Volume slider", "Keep screen on", "Keep screen on while playing", "Content country", "App language",
+)
+
+// the names these rows carry on app behaviour
+private val BehaviourNames = mapOf("Count a listen after" to "Count songs after", "Content country" to "Default country", "Stop when Shiny is swiped away" to "Stop when SHINY is swiped away")
+
+private val VisibleRoutes = setOf(
+    "settings/social", "settings/youtube", "settings/integrations", "settings/spotify_import", "settings/storage", "settings/backup_restore", "settings/discord", "settings/together",
+    "settings/integrations/listen_together", "settings/supported_links", "settings/about", "settings/changelog", "settings/update",
+)
+
+// search and the suggestion only point at settings that are on screen: the moved ones go to
+// app behaviour, the hidden pages drop out
+private fun visibleCatalog(all: List<SettingsEntry>): List<SettingsEntry> = all.mapNotNull { e ->
+    when {
+        e.title in BehaviourTitles -> e.copy(title = BehaviourNames[e.title] ?: e.title, page = "App Behaviour", route = "settings/behaviour")
+        e.route == "settings/account" && e.title.contains("Spotify", ignoreCase = true) -> e.copy(page = "Integrations", route = "settings/spotify_import")
+        e.route == "settings/account" && !e.title.contains("ListenBrainz", ignoreCase = true) && !e.title.contains("Amazon", ignoreCase = true) ->
+            e.copy(page = "YouTube Music", route = "settings/youtube")
+        e.route in VisibleRoutes -> e
+        else -> null
     }
 }
