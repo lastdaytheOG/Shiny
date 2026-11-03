@@ -98,4 +98,6 @@
     <string name="similar_albums">New from them</string>
     <string name="similar_start_line">START OF THE LINE</string>
     <string name="similar_empty">Nothing to show here yet</string>
+    <string name="home_jump_back_in">Jump Back In</string>
+    <string name="home_hero_view">View</string>
 </resources>

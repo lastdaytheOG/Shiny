@@ -1,5 +1,8 @@
 package com.shiny.music.ui.liquid.home
 
+import coil3.imageLoader
+import coil3.request.ImageRequest
+import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import coil3.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.BlurEffect
@@ -263,6 +266,9 @@ internal fun Modifier.heroScrollAway(progress: () -> Float): Modifier = graphics
     scaleY = zoom
     transformOrigin = TransformOrigin(0.5f, 0.35f)
     alpha = 1f - smoothstep(0.2f, 0.85f, p)
+    // softens as it goes, from just past rest to a little over half way
+    val soft = 30f * smoothstep(HeroStillFrom, 0.55f, p)
+    renderEffect = if (soft > 0.5f) BlurEffect(soft, soft, androidx.compose.ui.graphics.TileMode.Clamp) else null
 }.drawWithContent {
     drawContent()
     val p = progress()
@@ -336,6 +342,7 @@ private fun artistsLine(songs: List<Song>): String =
 
 // one slide of the top of home: what it is, why it's there, and what play does
 internal class HeroCard(
+    val opensPage: Boolean = false,
     val key: String,
     val label: String,
     val labelCover: String?,
@@ -361,6 +368,7 @@ internal fun HeroCarousel(
     isPlaying: Boolean,
     reduceMotion: Boolean,
     actions: LiquidActions,
+    scrollProgress: () -> Float = { 0f },
 ) {
     val pages: List<Any> = remember(cards, gacha) {
         buildList {
@@ -382,11 +390,24 @@ internal fun HeroCarousel(
     }
     val visible by remember(n) { derivedStateOf { (0 until n).filter { abs(distance(it)) < 0.999f } } }
 
-    LaunchedEffect(n, reduceMotion) {
-        if (reduceMotion || n < 2) return@LaunchedEffect
+    val context = LocalContext.current
+    val current by remember(n) { derivedStateOf { Math.floorMod(hero.pos.value.roundToInt(), n) } }
+    LaunchedEffect(n, reduceMotion, dragging, busy) {
+        if (reduceMotion || n < 2 || dragging) return@LaunchedEffect
         while (true) {
-            delay(5500)
-            if (!dragging && !busy) hero.pos.animateTo(hero.pos.value.roundToInt() + 1f, HeroFade)
+            val onGacha = pages[current] !is HeroCard
+            // the random plays slide waits twice as long, and once it has rolled it stays until a swipe
+            if (onGacha && busy) return@LaunchedEffect
+            delay(if (onGacha) 11_000L else 5_500L)
+            // scrolled away there's nobody to show the next slide to
+            if (scrollProgress() > HeroStillFrom) continue
+            hero.pos.animateTo(hero.pos.value.roundToInt() + 1f, HeroFade)
+        }
+    }
+    // the next cover is fetched ahead so a turn never fades in from nothing
+    LaunchedEffect(current, pages) {
+        (pages[Math.floorMod(current + 1, n)] as? HeroCard)?.art?.let { url ->
+            context.imageLoader.enqueue(ImageRequest.Builder(context).data(url).build())
         }
     }
 
@@ -397,7 +418,10 @@ internal fun HeroCarousel(
             .clipToBounds()
             .pointerInput(n) {
                 detectHorizontalDragGestures(
-                    onDragStart = { dragging = true },
+                    onDragStart = {
+                        dragging = true
+                        busy = false
+                    },
                     onDragEnd = {
                         dragging = false
                         haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
@@ -447,7 +471,8 @@ internal fun HeroCarousel(
 private fun heroBlur(radius: Float) = if (radius > 0.5f) BlurEffect(radius, radius) else null
 
 internal const val HeroHeightFraction = 0.6f
-private val HeroFade = tween<Float>(900, easing = FastOutSlowInEasing)
+private val HeroFade = tween<Float>(1150, easing = CubicBezierEasing(0.32f, 0f, 0.15f, 1f))
+internal const val HeroStillFrom = 0.08f
 private val HeroSettle = tween<Float>(600, easing = FastOutSlowInEasing)
 private val HeroPillFill = Color.White.copy(alpha = 0.64f)
 private val HeroPillInk = Color(0xFF2F2F2F)
@@ -480,8 +505,9 @@ private fun HeroArtSlide(card: HeroCard, playing: Boolean, onPlay: () -> Unit) {
             labelCover = card.labelCover,
             roundCover = card.roundCover,
             title = card.title,
-            buttonText = stringResource(if (playing) R.string.pause else R.string.liquid_play),
-            buttonIcon = if (playing) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+            buttonText = stringResource(if (playing) R.string.pause else if (card.opensPage) R.string.home_hero_view else R.string.liquid_play),
+            buttonIcon = if (playing) Icons.Rounded.Pause else if (card.opensPage) null else Icons.Rounded.PlayArrow,
+            trailingArrow = card.opensPage && !playing,
             onButton = onPlay,
             modifier = Modifier.align(Alignment.BottomStart),
         )
@@ -496,9 +522,10 @@ private fun HeroInfo(
     roundCover: Boolean,
     title: String,
     buttonText: String,
-    buttonIcon: ImageVector,
+    buttonIcon: ImageVector?,
     onButton: () -> Unit,
     modifier: Modifier = Modifier,
+    trailingArrow: Boolean = false,
 ) {
     val interaction = remember { MutableInteractionSource() }
     Column(modifier.padding(start = HomeInset, end = HomeInset, bottom = 62.dp)) {
@@ -527,12 +554,18 @@ private fun HeroInfo(
                 .clip(CircleShape)
                 .background(HeroPillFill)
                 .combinedClickable(interactionSource = interaction, indication = null, role = Role.Button, onClick = onButton)
-                .padding(start = 10.dp, end = 14.dp),
+                .padding(start = if (buttonIcon != null) 10.dp else 14.dp, end = if (trailingArrow) 10.dp else 14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(buttonIcon, null, tint = HeroPillInk, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.width(5.dp))
+            if (buttonIcon != null) {
+                Icon(buttonIcon, null, tint = HeroPillInk, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(5.dp))
+            }
             Text(buttonText, style = HomeLabelStyle.copy(fontSize = 15.sp), color = HeroPillInk, maxLines = 1)
+            if (trailingArrow) {
+                Spacer(Modifier.width(4.dp))
+                Icon(Icons.AutoMirrored.Rounded.ArrowForward, null, tint = HeroPillInk, modifier = Modifier.size(16.dp))
+            }
         }
     }
 }

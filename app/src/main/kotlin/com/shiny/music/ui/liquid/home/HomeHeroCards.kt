@@ -26,6 +26,7 @@ private fun Song.card(key: String, label: String, actions: LiquidActions) = Hero
 )
 
 private fun YTItem.card(key: String, label: String, cover: String?, name: String?, round: Boolean, actions: LiquidActions) = HeroCard(
+    opensPage = this !is SongItem,
     key = key,
     label = label,
     labelCover = cover,
