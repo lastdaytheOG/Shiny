@@ -93,7 +93,7 @@ internal fun MostPlayedShelf(songs: List<Song>, activeId: String?, actions: Liqu
             subtitle = song.artistLine(),
             artwork = song.thumbnailUrl?.resize(240, 240),
             isActive = song.id == activeId,
-            onClick = { if (song.id == activeId) actions.togglePlayPause() else actions.playSongs(title, songs, index) },
+            onClick = { if (song.id == activeId) actions.togglePlayPause() else actions.playSongMix(title, songs, index) },
             onLongClick = { actions.menu(song) },
             rank = index + 1,
             modifier = modifier,
@@ -112,7 +112,7 @@ internal fun ForgottenShelf(songs: List<Song>, activeId: String?, actions: Liqui
             subtitle = song.artistLine(),
             artwork = song.thumbnailUrl?.resize(240, 240),
             isActive = song.id == activeId,
-            onClick = { if (song.id == activeId) actions.togglePlayPause() else actions.playSongs(title, songs, index) },
+            onClick = { if (song.id == activeId) actions.togglePlayPause() else actions.playSongMix(title, songs, index) },
             onLongClick = { actions.menu(song) },
             modifier = modifier,
         )

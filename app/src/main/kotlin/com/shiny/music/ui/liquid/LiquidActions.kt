@@ -119,6 +119,20 @@ class LiquidActions internal constructor(
         )
     }
 
+    /**
+     * One song tapped in a recommendation row: that song's YouTube mix, as YouTube Music plays
+     * it, rather than the rest of the row. Songs that come next are YouTube's, in its order.
+     * A file on the phone has no mix, so it plays its row.
+     */
+    fun playSongMix(title: String?, songs: List<Song>, index: Int, origin: PlaybackOrigin? = null) {
+        val song = songs.getOrNull(index) ?: return
+        if (song.song.isLocal) {
+            playSongs(title, songs, index, origin = origin)
+        } else {
+            playerConnection.playQueue(YouTubeQueue.radio(song.toMediaMetadata(), origin))
+        }
+    }
+
     /** Plays [ordered], a Smart Shuffle order, from the top; shuffle mode keeps that order. */
     fun playPreShuffled(title: String?, ordered: List<Song>) {
         if (ordered.isEmpty()) return

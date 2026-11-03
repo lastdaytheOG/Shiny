@@ -389,7 +389,7 @@ internal fun HistoryShelf(section: HistorySection, activeId: String?, actions: L
             subtitle = song.artistLine(),
             artwork = song.thumbnailUrl?.resize(240, 240),
             isActive = song.id == activeId,
-            onClick = { if (song.id == activeId) actions.togglePlayPause() else actions.playSongs(title, section.songs, index) },
+            onClick = { if (song.id == activeId) actions.togglePlayPause() else actions.playSongMix(title, section.songs, index) },
             onLongClick = { actions.menu(song) },
             modifier = modifier,
         )

@@ -27,15 +27,26 @@ class YouTubeQueue(
 
             for (attempt in 0..maxRetries) {
                 try {
-                    val nextResult = YouTube.next(endpoint, continuation).getOrThrow()
+                    var nextResult = YouTube.next(endpoint, continuation).getOrThrow()
+                    // a bare song with no account behind it often comes back as just itself, with
+                    // nothing after it: that queue would end at once, so its radio is used instead
+                    val videoId = endpoint.videoId
+                    if (endpoint.playlistId == null && videoId != null && nextResult.continuation == null && nextResult.items.size <= 1) {
+                        YouTube.next(WatchEndpoint(videoId = videoId, playlistId = "RDAMVM$videoId")).getOrNull()
+                            ?.takeIf { it.items.size > nextResult.items.size }
+                            ?.let { nextResult = it }
+                    }
                     val source = pagesAreSource
                     endpoint = nextResult.endpoint
                     continuation = nextResult.continuation
                     retryCount = 0
+                    val items = ownItems(nextResult, source)
                     return@withContext Queue.Status(
                         title = nextResult.title,
-                        items = ownItems(nextResult, source),
-                        mediaItemIndex = nextResult.currentIndex ?: 0,
+                        items = items,
+                        mediaItemIndex = nextResult.currentIndex
+                            ?: videoId?.let { id -> items.indexOfFirst { it.mediaId == id }.takeIf { it >= 0 } }
+                            ?: 0,
                     )
                 } catch (e: Exception) {
                     lastException = e

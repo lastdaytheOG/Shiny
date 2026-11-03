@@ -245,7 +245,7 @@ internal fun RecentlyPlayedShelf(section: LatelySection, actions: LiquidActions)
                 subtitle = tile.song.artistLine(),
                 artwork = tile.song.thumbnailUrl?.resize(544, 544),
                 width = RecentWidth,
-                onClick = { actions.playSongs(title, songs, songs.indexOf(tile.song)) },
+                onClick = { actions.playSongMix(title, songs, songs.indexOf(tile.song)) },
                 onLongClick = { actions.menu(tile.song) },
             )
             else -> RecentTile(tile, actions)
@@ -535,7 +535,7 @@ internal fun RotationGrid(section: RotationSection, activeId: String?, isPlaying
             artwork = song.thumbnailUrl?.resize(240, 240),
             isActive = song.id == activeId,
             onClick = {
-                if (song.id == activeId) actions.togglePlayPause() else actions.playSongs(title, songs, index, origin = RotationOrigin)
+                if (song.id == activeId) actions.togglePlayPause() else actions.playSongMix(title, songs, index, origin = RotationOrigin)
             },
             onLongClick = { actions.menu(song) },
             rank = index + 1,
@@ -561,7 +561,7 @@ internal fun ContinueShelf(section: ContinueSection, activeId: String?, actions:
             artwork = song.thumbnailUrl?.resize(544, 544),
             width = TileWidth,
             titleColor = if (song.id == activeId) Liquid.colors.accent else Liquid.colors.label,
-            onClick = { actions.playSongs(title, section.songs, section.songs.indexOf(song), origin = ContinueOrigin) },
+            onClick = { actions.playSongMix(title, section.songs, section.songs.indexOf(song), origin = ContinueOrigin) },
             onLongClick = { actions.menu(song) },
         )
     }
@@ -608,7 +608,7 @@ internal fun MoreLikeShelf(
                     actions.togglePlayPause()
                 } else {
                     onPlayed()
-                    actions.playSongs(title, songs, index, origin = origin)
+                    actions.playSongMix(title, songs, index, origin = origin)
                 }
             },
             onLongClick = { actions.menu(song) },
@@ -645,7 +645,7 @@ private fun PicksShelf(
             titleColor = if (song.id == activeId) Liquid.colors.accent else Liquid.colors.label,
             onClick = {
                 onPlayed()
-                actions.playSongs(title, songs, songs.indexOf(song), origin = origin)
+                actions.playSongMix(title, songs, songs.indexOf(song), origin = origin)
             },
             onLongClick = { actions.menu(song) },
         )
@@ -671,7 +671,7 @@ internal fun NewToYouShelf(picks: List<NewToYouPick>, actions: LiquidActions) {
     HomeRow(items = picks, key = { it.song.id }) { pick ->
         DiscoverTile(
             pick = DiscoverPick(pick.song, null, pick.recommendation.reason, pick.recommendation.source),
-            onClick = { actions.playSongs(title, songs, songs.indexOf(pick.song), origin = origin) },
+            onClick = { actions.playSongMix(title, songs, songs.indexOf(pick.song), origin = origin) },
             onLongClick = { actions.menu(pick.song) },
         )
     }
@@ -1070,7 +1070,7 @@ internal fun RecommendationShelf(section: RecommendationRowSection, activeId: St
             circular = item is ArtistItem,
             titleColor = if (item.id == activeId) Liquid.colors.accent else Liquid.colors.label,
             onClick = {
-                if (item is SongItem) actions.playSongItems(queueTitle, songs, songs.indexOf(item)) else actions.open(item)
+                actions.open(item)
             },
             onLongClick = { actions.menu(item) },
         )

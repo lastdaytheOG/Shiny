@@ -1697,6 +1697,7 @@ class MusicService :
         queuePageLoadJob?.cancel()
         queuePageLoadJob = null
         currentQueue = queue
+        autoplaySeeds.clear()
         queueSessionId.value++
         queuePageStatus.value = QueuePageStatus()
         queueUndo.value = null
@@ -1733,7 +1734,10 @@ class MusicService :
                 // Another queue was started while this one loaded. Applying this one now would replace it:
                 // a deep link was overwritten by the queue restored at launch this way.
                 if (generation != playQueueGeneration) return@launch
-                if (queue.preloadItem != null && player.playbackState == STATE_IDLE) return@launch
+                // Only if the listener has moved on from the song it started with. An idle player is
+                // not that: a first stream often fails once and retries, and dropping the list then
+                // left the queue holding that one song.
+                if (queue.preloadItem != null && player.currentMediaItem?.mediaId != queue.preloadItem?.id) return@launch
                 if (initialStatus.title != null) {
                     queueTitle = initialStatus.title
                 }
@@ -1744,17 +1748,16 @@ class MusicService :
 
                 originalQueueSize = initialStatus.items.size
                 if (queue.preloadItem != null) {
-                    val safeIndex = initialStatus.mediaItemIndex.coerceIn(0, (initialStatus.items.size - 1).coerceAtLeast(0))
-                    player.addMediaItems(
-                        0,
-                        initialStatus.items.subList(0, safeIndex)
-                    )
-                    player.addMediaItems(
-                        initialStatus.items.subList(
-                            (safeIndex + 1).coerceAtMost(initialStatus.items.size),
-                            initialStatus.items.size
-                        )
-                    )
+                    // YouTube's list around the song already playing, found by its id: the list may
+                    // not have it where it says, or at all (a radio standing in for a bare song)
+                    val items = initialStatus.items
+                    val at = items.indexOfFirst { it.mediaId == queue.preloadItem?.id }
+                    if (at >= 0) {
+                        player.addMediaItems(0, items.subList(0, at))
+                        player.addMediaItems(items.subList(at + 1, items.size))
+                    } else {
+                        player.addMediaItems(items)
+                    }
                 } else {
                     val safeIndex = initialStatus.mediaItemIndex.coerceIn(0, (initialStatus.items.size - 1).coerceAtLeast(0))
                     player.setMediaItems(
@@ -1936,6 +1939,48 @@ class MusicService :
     /** The song whose radio last had nothing new to add, so it is not asked for again. Main thread only. */
     private var autoplayFoundNothingFor: String? = null
 
+    /** Songs autoplay has already built a radio from in this queue. Main thread only. */
+    private val autoplaySeeds = HashSet<String>()
+
+    /** The newest online song in the queue that autoplay has not built a radio from yet. */
+    private fun nextAutoplaySeed(): com.shiny.music.models.MediaMetadata? {
+        for (i in player.mediaItemCount - 1 downTo 0) {
+            val metadata = player.getMediaItemAt(i).metadata ?: continue
+            if (metadata.id.isLocalMediaId() || metadata.id in autoplaySeeds) continue
+            return metadata
+        }
+        return null
+    }
+
+    private class AutoplayFind(val items: List<MediaItem>, val radio: YouTubeQueue?)
+
+    /** The seed's radio; failing that its related songs; failing that its artist's songs. */
+    private suspend fun autoplayCandidates(seed: com.shiny.music.models.MediaMetadata, hideExplicit: Boolean, hideVideos: Boolean): AutoplayFind =
+        withContext(Dispatchers.IO) {
+            val radio = YouTubeQueue(WatchEndpoint(videoId = seed.id, playlistId = "RDAMVM${seed.id}"), seed)
+            val fromRadio = runCatching { radio.getInitialStatus().items }.getOrDefault(emptyList())
+                .filter { it.mediaId != seed.id }
+                .filterExplicit(hideExplicit).filterVideoSongs(hideVideos)
+            if (fromRadio.isNotEmpty()) return@withContext AutoplayFind(fromRadio, radio)
+            val related = runCatching {
+                val endpoint = YouTube.next(WatchEndpoint(videoId = seed.id)).getOrNull()?.relatedEndpoint
+                endpoint?.let { YouTube.related(it).getOrNull()?.songs }.orEmpty().map { it.toMediaItem() }
+            }.getOrDefault(emptyList())
+                .filter { it.mediaId != seed.id }
+                .filterExplicit(hideExplicit).filterVideoSongs(hideVideos)
+            if (related.isNotEmpty()) return@withContext AutoplayFind(related, null)
+            val byArtist = runCatching {
+                val artistId = seed.artists.firstNotNullOfOrNull { it.id } ?: return@runCatching emptyList()
+                YouTube.artist(artistId).getOrNull()?.sections.orEmpty()
+                    .flatMap { it.items }
+                    .filterIsInstance<SongItem>()
+                    .map { it.toMediaItem() }
+            }.getOrDefault(emptyList())
+                .filter { it.mediaId != seed.id }
+                .filterExplicit(hideExplicit).filterVideoSongs(hideVideos)
+            AutoplayFind(byArtist, null)
+        }
+
     /** Songs still to play after the current one, in the order they will play (shuffle included), counted up to [limit]. */
     private fun upcomingInPlayOrder(limit: Int): Int {
         val timeline = player.currentTimeline
@@ -2047,25 +2092,29 @@ class MusicService :
                 if (requestIsCurrent() && upcoming() < minimum && player.currentMetadata?.id == current.id &&
                     !current.id.isLocalMediaId() && isNetworkConnected.value
                 ) {
-                    val radio = YouTubeQueue(WatchEndpoint(videoId = current.id, playlistId = "RDAMVM${current.id}"), current)
-                    val status = withContext(Dispatchers.IO) {
-                        radio.getInitialStatus().filterExplicit(hideExplicit).filterVideoSongs(hideVideos)
-                    }
-                    if (!requestIsCurrent() || generation != playQueueGeneration) return@launch
-                    val queued = queuedMediaIds()
-                    val fresh = personalise(status.items.filter { it.mediaId !in queued }, RecSurface.Autoplay, minimum + 5 - upcoming())
-                    if (!requestIsCurrent() || generation != playQueueGeneration) return@launch
-                    if (fresh.isNotEmpty()) {
+                    var added = false
+                    var tries = 0
+                    // a radio from the queue's newest song not asked yet, so the music keeps moving on
+                    while (!added && tries++ < 4 && requestIsCurrent() && generation == playQueueGeneration) {
+                        val seed = nextAutoplaySeed() ?: break
+                        autoplaySeeds += seed.id
+                        val found = autoplayCandidates(seed, hideExplicit, hideVideos)
+                        if (!requestIsCurrent() || generation != playQueueGeneration) return@launch
+                        val queued = queuedMediaIds()
+                        val fresh = personalise(found.items.filter { it.mediaId !in queued }.distinctBy { it.mediaId }, RecSurface.Autoplay, minimum + 5 - upcoming())
+                        if (!requestIsCurrent() || generation != playQueueGeneration) return@launch
+                        if (fresh.isEmpty()) continue
                         appendToQueue(fresh, ShufflePlacement.End)
-                        // Later top-ups continue from the radio once the original queue is spent.
-                        if (!currentQueue.hasNextPage()) {
+                        added = true
+                        // Later top-ups page that radio once the original queue is spent.
+                        val radio = found.radio
+                        if (radio != null && !currentQueue.hasNextPage()) {
                             currentQueue = radio
                             autoplayRadio = true
                         }
                         updateQueuePageStatus()
-                    } else {
-                        autoplayFoundNothingFor = current.id
                     }
+                    if (!added) autoplayFoundNothingFor = current.id
                 }
             } finally {
                 fillingUpNext = false
@@ -3806,9 +3855,10 @@ class MusicService :
 
     private fun upNextSurface() = if (autoplayRadio) RecSurface.Autoplay else RecSurface.Radio
 
+    // youtube's up next keeps its own order; only what the listener turned down drops out
     private suspend fun personalise(items: List<MediaItem>, surface: RecSurface, limit: Int = items.size): List<MediaItem> {
         if (items.isEmpty() || limit <= 0) return emptyList()
-        val picks = intelligence.rerankUpNext(player.currentMetadata, items, surface, limit)
+        val picks = intelligence.filterUpNext(items, surface, limit)
         picks.forEach { upNextOrigins[it.item.mediaId] = UpNextOrigin(surface, it.source?.name) }
         return picks.map { it.item }
     }
@@ -3817,7 +3867,7 @@ class MusicService :
         if ((queue as? YouTubeQueue)?.isRadio != true || status.items.size < 3) return status
         val head = status.mediaItemIndex.coerceIn(0, status.items.lastIndex)
         val tail = status.items.subList(head + 1, status.items.size)
-        val picks = intelligence.rerankUpNext(status.items[head].metadata, tail, RecSurface.Radio)
+        val picks = intelligence.filterUpNext(tail, RecSurface.Radio)
         picks.forEach { upNextOrigins[it.item.mediaId] = UpNextOrigin(RecSurface.Radio, it.source?.name) }
         return status.copy(items = status.items.subList(0, head + 1) + picks.map { it.item })
     }

@@ -432,6 +432,25 @@ class IntelligenceRepository @Inject constructor(
         CandidateAdapters.fromRows(rows, hits) to titles
     }
 
+    /**
+     * What plays next, exactly as YouTube sent it: its order, its songs. Nothing is scored or
+     * re-sorted. The only songs left out are the ones the listener explicitly turned down
+     * (blocked, not interested, a hidden artist) and repeats.
+     */
+    suspend fun filterUpNext(
+        items: List<MediaItem>,
+        surface: RecSurface,
+        limit: Int = items.size,
+    ): List<UpNextPick> {
+        if (items.isEmpty() || limit <= 0) return emptyList()
+        val taste = runCatching { snapshot() }.getOrNull()?.takeIf { it.enabled }?.taste
+        val kept = UpNextOrder.keep(items.map { it.mediaId to it.metadata?.artists.orEmpty().mapNotNull { a -> a.id } }, limit) { id, artists ->
+            taste?.isRejected(id, artists) == true
+        }.map { items[it] }
+        logImpressions(surface, kept.take(UP_NEXT_IMPRESSIONS).map { ImpressionItem(it.mediaId, CandidateSource.YouTubeRadio) })
+        return kept.map { UpNextPick(it, CandidateSource.YouTubeRadio) }
+    }
+
     suspend fun rerankUpNext(
         current: MediaMetadata?,
         items: List<MediaItem>,
