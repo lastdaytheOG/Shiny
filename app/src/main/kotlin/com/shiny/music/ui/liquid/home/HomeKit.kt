@@ -1,5 +1,6 @@
 package com.shiny.music.ui.liquid.home
 
+import androidx.compose.foundation.lazy.itemsIndexed
 import com.shiny.music.home.ArtistGroup
 import com.shiny.music.home.SimilarPicks
 import androidx.compose.ui.platform.LocalContext
@@ -279,7 +280,9 @@ internal fun <T> HomeRow(
         contentPadding = PaddingValues(horizontal = HomeInset),
         horizontalArrangement = Arrangement.spacedBy(gap),
     ) {
-        items(items, key = key) { itemContent(it) }
+        itemsIndexed(items, key = { _, it -> key(it) }) { index, item ->
+            Box(Modifier.cardReveal("card/${key(item)}", index)) { itemContent(item) }
+        }
     }
 }
 

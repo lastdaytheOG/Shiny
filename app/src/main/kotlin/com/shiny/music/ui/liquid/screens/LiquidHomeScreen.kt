@@ -1,5 +1,6 @@
 package com.shiny.music.ui.liquid.screens
 
+import com.shiny.music.ui.liquid.home.heroScrollAway
 import com.shiny.music.ui.liquid.home.MostPlayedShelf
 import com.shiny.music.ui.liquid.home.ForgottenShelf
 import com.shiny.music.ui.liquid.home.HistoryRows
@@ -239,6 +240,9 @@ fun LiquidHomeScreen(
                 item(key = "hero", contentType = "hero") {
                     HomeItem(reduceMotion, "hero", viewModel.revealed) {
                         HeroCarousel(
+                            modifier = if (reduceMotion) Modifier else Modifier.heroScrollAway {
+                                if (listState.firstVisibleItemIndex > 0) 1f else (listState.firstVisibleItemScrollOffset / heroHeightPx.coerceAtLeast(1f)).coerceIn(0f, 1f)
+                            },
                             hero = hero,
                             cards = heroCards,
                             gacha = gachaPool,

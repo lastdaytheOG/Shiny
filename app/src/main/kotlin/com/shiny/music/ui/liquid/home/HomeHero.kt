@@ -203,17 +203,75 @@ internal fun BoxScope.HomeAmbience(hero: HomeHeroState, page: LazyListState, red
 @Composable
 internal fun rememberReveal(key: String, seen: MutableSet<String>, reduceMotion: Boolean): Modifier {
     if (reduceMotion) return Modifier
-    val progress = remember(key) { Animatable(if (key in seen) 1f else 0f) }
-    val scope = rememberCoroutineScope()
-    val rise = with(LocalDensity.current) { 22.dp.toPx() }
-    return Modifier
-        .onPlaced {
-            if (seen.add(key)) scope.launch { progress.animateTo(1f, tween(620, easing = ExpoOut)) }
+    val already = remember(key) { key in seen }
+    if (already) return Modifier
+    val progress = remember(key) { Animatable(0f) }
+    LaunchedEffect(key) {
+        // marked first, so a fling that drops the row mid-reveal doesn't replay it
+        seen.add(key)
+        progress.animateTo(1f, tween(RevealMs, delayMillis = HomeReveal.burstDelay(), easing = RevealEasing))
+    }
+    val rise = with(LocalDensity.current) { 20.dp.toPx() }
+    return Modifier.graphicsLayer {
+        alpha = progress.value
+        translationY = (1f - progress.value) * rise
+    }
+}
+
+internal val RevealEasing = CubicBezierEasing(0.2f, 0f, 0f, 1f)
+internal const val RevealMs = 520
+
+// reveals that start together (a page of rows landing at once) go one after another
+internal object HomeReveal {
+    private var burstAt = 0L
+    private var burst = 0
+    val seenCards = HashSet<String>()
+
+    fun burstDelay(): Int {
+        val now = android.os.SystemClock.uptimeMillis()
+        if (now - burstAt > 120) {
+            burstAt = now
+            burst = 0
         }
-        .graphicsLayer {
-            alpha = 0.2f + 0.8f * progress.value
-            translationY = (1f - progress.value) * rise
-        }
+        return minOf(burst++, 6) * 60
+    }
+}
+
+// a card fades and rises the first time it shows, each a beat after the one before it
+@Composable
+internal fun Modifier.cardReveal(key: String, index: Int): Modifier {
+    val already = remember(key) { key in HomeReveal.seenCards }
+    if (already) return this
+    val progress = remember(key) { Animatable(0f) }
+    LaunchedEffect(key) {
+        HomeReveal.seenCards.add(key)
+        progress.animateTo(1f, tween(RevealMs, delayMillis = minOf(index, 4) * 60, easing = RevealEasing))
+    }
+    val rise = with(LocalDensity.current) { 20.dp.toPx() }
+    return graphicsLayer {
+        alpha = progress.value
+        translationY = (1f - progress.value) * rise
+    }
+}
+
+// scrolling away the hero rides up a little, zooms, dims and fades, like a playlist cover
+internal fun Modifier.heroScrollAway(progress: () -> Float): Modifier = graphicsLayer {
+    val p = progress()
+    translationY = p * size.height * 0.2f
+    val zoom = 1f + p * 0.22f
+    scaleX = zoom
+    scaleY = zoom
+    transformOrigin = TransformOrigin(0.5f, 0.35f)
+    alpha = 1f - smoothstep(0.2f, 0.85f, p)
+}.drawWithContent {
+    drawContent()
+    val p = progress()
+    if (p > 0f) drawRect(Color.Black.copy(alpha = 0.22f * p))
+}
+
+private fun smoothstep(from: Float, to: Float, x: Float): Float {
+    val t = ((x - from) / (to - from)).coerceIn(0f, 1f)
+    return t * t * (3f - 2f * t)
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -295,6 +353,7 @@ private data object GachaKey
 // random plays stack second so the first turn shows it
 @Composable
 internal fun HeroCarousel(
+    modifier: Modifier = Modifier,
     hero: HomeHeroState,
     cards: List<HeroCard>,
     gacha: List<HeroCard>,
@@ -332,7 +391,7 @@ internal fun HeroCarousel(
     }
 
     BoxWithConstraints(
-        Modifier
+        modifier
             .fillMaxWidth()
             .height(height)
             .clipToBounds()
