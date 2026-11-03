@@ -100,6 +100,7 @@ import java.net.URLEncoder
 fun AccountSettingsScreen(
     navController: NavController,
     @Suppress("UNUSED_PARAMETER") scrollBehavior: TopAppBarScrollBehavior,
+    youtubeOnly: Boolean = false,
 ) {
     val context = LocalContext.current
     val colors = Liquid.colors
@@ -165,7 +166,7 @@ fun AccountSettingsScreen(
         }
     }
 
-    SettingsPage(title = stringResource(R.string.account), navController = navController) {
+    SettingsPage(title = if (youtubeOnly) "YouTube Music" else stringResource(R.string.account), navController = navController, search = !youtubeOnly) {
         item(key = "profile") {
             ProfileHeader(
                 signedIn = isLoggedIn,
@@ -181,7 +182,7 @@ fun AccountSettingsScreen(
                 SettingsSection(title = stringResource(R.string.account_youtube_section)) {
                     SettingsToggleRow(
                         title = stringResource(R.string.more_content),
-                        subtitle = stringResource(R.string.more_content_desc),
+                        subtitle = if (youtubeOnly) null else stringResource(R.string.more_content_desc),
                         checked = useLoginForBrowse,
                         onCheckedChange = {
                             YouTube.useLoginForBrowse = it
@@ -190,7 +191,7 @@ fun AccountSettingsScreen(
                     )
                     SettingsToggleRow(
                         title = stringResource(R.string.yt_sync),
-                        subtitle = stringResource(R.string.yt_sync_desc),
+                        subtitle = if (youtubeOnly) null else stringResource(R.string.yt_sync_desc),
                         checked = ytmSync,
                         onCheckedChange = { ytmSync = it },
                         divider = false,
@@ -233,7 +234,7 @@ fun AccountSettingsScreen(
             }
         }
 
-        item(key = "services") {
+        if (!youtubeOnly) item(key = "services") {
             SettingsSection(title = stringResource(R.string.account_services_section)) {
                 SettingsNavRow(
                     title = stringResource(R.string.account_spotify),
@@ -253,7 +254,7 @@ fun AccountSettingsScreen(
             }
         }
 
-        item(key = "listenbrainz") {
+        if (!youtubeOnly) item(key = "listenbrainz") {
             SettingsSection(
                 title = "ListenBrainz",
                 footer = stringResource(R.string.account_listenbrainz_footer),
