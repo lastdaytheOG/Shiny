@@ -100,4 +100,55 @@
     <string name="similar_empty">Nothing to show here yet</string>
     <string name="home_jump_back_in">Jump Back In</string>
     <string name="home_hero_view">View</string>
+    <string name="stats_title">Stats</string>
+    <string name="stats_today">Today</string>
+    <string name="stats_week">This week</string>
+    <string name="stats_month">This month</string>
+    <string name="stats_year">This year</string>
+    <string name="stats_all">All time</string>
+    <string name="stats_in">In %1$s</string>
+    <string name="stats_listening_for">%1$s, you\'ve been listening for</string>
+    <string name="stats_every_hour">Every hour of today</string>
+    <string name="stats_every_day_week">Every day of this week</string>
+    <string name="stats_every_day_of">Every day of %1$s</string>
+    <string name="stats_every_month_of">Every month of %1$s</string>
+    <string name="stats_every_year">Every year</string>
+    <string name="stats_dominant_genre">Dominant Genre</string>
+    <string name="stats_genre_loading">Sorting your genres…</string>
+    <string name="stats_genre_unavailable">Couldn\'t name your genres right now, this needs a connection the first time.</string>
+    <string name="stats_love_artist">You really love listening to this artist</string>
+    <string name="stats_artist_detail">%1$s playtime and %2$d plays from %3$s</string>
+    <string name="stats_top_song">And without noticing, this song is your #1</string>
+    <string name="stats_song_from">%1$s from %2$s</string>
+    <string name="stats_song_detail">%1$s playtime and %2$d plays</string>
+    <string name="stats_how_often">Let\'s see how often you like to listen to music</string>
+    <string name="stats_weekday_lead">%1$s, you like to listen to music every</string>
+    <string name="stats_totaling_hours">totaling %1$s hours</string>
+    <string name="stats_hour_lead">And you love to listen in the %1$s exactly around</string>
+    <string name="stats_hour_total">totaling %1$s hours at this time!</string>
+    <string name="stats_morning">mornings</string>
+    <string name="stats_afternoon">afternoons</string>
+    <string name="stats_evening">evenings</string>
+    <string name="stats_night">nights</string>
+    <string name="stats_privacy">Everything here comes from what you play in Shiny and never leaves this phone. Genres are looked up by artist name only.</string>
+    <string name="stats_expand_all">Expand all</string>
+    <string name="stats_collapse_all">Collapse all</string>
+    <string name="stats_nothing">Nothing played %1$s yet.</string>
+    <string name="stats_nothing_hint">Play a few songs and this fills itself in.</string>
+    <plurals name="stats_n_songs">
+        <item quantity="one">%d Song</item>
+        <item quantity="other">%d Songs</item>
+    </plurals>
+    <plurals name="stats_n_artists">
+        <item quantity="one">%d Artist</item>
+        <item quantity="other">%d Artists</item>
+    </plurals>
+    <plurals name="stats_n_albums">
+        <item quantity="one">%d Album</item>
+        <item quantity="other">%d Albums</item>
+    </plurals>
+    <plurals name="stats_n_plays">
+        <item quantity="one">%d play</item>
+        <item quantity="other">%d plays</item>
+    </plurals>
 </resources>
