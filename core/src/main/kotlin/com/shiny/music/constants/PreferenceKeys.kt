@@ -749,6 +749,12 @@ val SuggestionRegionSlugToName =
 
 val ListenBrainzEnabledKey = booleanPreferencesKey("listenbrainz_enabled")
 val ListenBrainzTokenKey = stringPreferencesKey("listenbrainz_token")
+val LastFmSessionKey = stringPreferencesKey("lastfm_session")
+val LastFmUsernameKey = stringPreferencesKey("lastfm_username")
+val LastFmScrobbleKey = booleanPreferencesKey("lastfm_scrobble")
+val LibreFmSessionKey = stringPreferencesKey("librefm_session")
+val LibreFmUsernameKey = stringPreferencesKey("librefm_username")
+val LibreFmScrobbleKey = booleanPreferencesKey("librefm_scrobble")
 val UnisonLyricsEnabledKey = booleanPreferencesKey("unison_lyrics_enabled")
 val PreloadNextSongEnabledKey = booleanPreferencesKey("preload_next_song_enabled")
 val PreloadNextSongLimitKey = intPreferencesKey("preload_next_song_limit")

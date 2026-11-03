@@ -490,6 +490,7 @@ class MusicService :
 
 
     private lateinit var listenBrainz: ListenBrainzScrobbler
+    private lateinit var audioscrobbler: com.shiny.music.playback.scrobble.AudioscrobblerScrobbler
 
     // Cached playback preferences kept in sync with DataStore.
     //
@@ -761,6 +762,7 @@ class MusicService :
         sleepTimer = SleepTimer(scope, player)
         player.addListener(sleepTimer)
         listenBrainz = ListenBrainzScrobbler(this) { scope }.also { it.attach(player) }
+        audioscrobbler = com.shiny.music.playback.scrobble.AudioscrobblerScrobbler(this) { scope }.also { it.attach(player) }
         playerInitialized.value = true
         Timber.tag(TAG).d("Player successfully initialized")
         // What friends and a public profile see; sampled on the main thread, sent by the publisher.
@@ -4097,6 +4099,7 @@ class MusicService :
         player.removeListener(this)
         player.removeListener(sleepTimer)
         listenBrainz.release()
+        audioscrobbler.release()
         playerSilenceProcessors.remove(player)
         playerStatsListeners.remove(player)
         
@@ -4644,6 +4647,7 @@ class MusicService :
 
         sleepTimer.player = player
         listenBrainz.attach(player)
+        audioscrobbler.attach(player)
 
         try {
             (mediaSession as MediaSession).player = player
