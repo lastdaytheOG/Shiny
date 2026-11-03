@@ -44,6 +44,7 @@ fun settingsCatalog(): List<SettingsEntry> = listOf(
     SettingsEntry("Sound effects", "Equaliser", "settings/equalizer", "8d audio reverb slowed nightcore speed pitch effects spatial"),
 
     // Appearance
+    SettingsEntry("Player style", "Appearance", "settings/appearance", "now playing player look style edge-to-edge artwork flat controls"),
     SettingsEntry("Experience", "Appearance", "settings/appearance", "preset minimal balanced immersive style look"),
     SettingsEntry("Light or dark", "Appearance", "settings/appearance", "appearance light dark automatic theme mode"),
     SettingsEntry("AMOLED black", "Appearance", "settings/appearance", "amoled oled pure true black theme"),
@@ -56,8 +57,8 @@ fun settingsCatalog(): List<SettingsEntry> = listOf(
     SettingsEntry("Page transitions", "Appearance", "settings/appearance", "animation navigation slide fade instant motion"),
     SettingsEntry("Interface size", "Appearance", "settings/appearance", "density compact dense large comfortable size scale zoom"),
     SettingsEntry("Crop artwork to square", "Appearance", "settings/appearance", "crop cover thumbnail"),
-    SettingsEntry("High refresh rate", "Appearance", "settings/appearance", "120hz smooth display"),
-    SettingsEntry("Haptics", "Appearance", "settings/appearance", "vibration feedback"),
+    SettingsEntry("High refresh rate", "App Behaviour", "settings/behaviour", "120hz smooth display"),
+    SettingsEntry("Haptics", "App Behaviour", "settings/behaviour", "vibration feedback"),
     SettingsEntry("Reset appearance", "Appearance", "settings/appearance", "restore default original look"),
 
     // Now Playing

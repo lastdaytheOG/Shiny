@@ -46,8 +46,6 @@ import com.shiny.music.constants.DarkModeKey
 import com.shiny.music.constants.DensityScale
 import com.shiny.music.constants.DensityScaleKey
 import com.shiny.music.constants.DynamicThemeKey
-import com.shiny.music.constants.EnableHapticsKey
-import com.shiny.music.constants.EnableHighRefreshRateKey
 import com.shiny.music.constants.LiquidGlassGlobalEnabledKey
 import com.shiny.music.constants.PureBlackKey
 import com.shiny.music.constants.SelectedThemeColorKey
@@ -67,6 +65,7 @@ import com.shiny.music.ui.liquid.appearance.Experience
 import com.shiny.music.ui.liquid.appearance.ExperienceMix
 import com.shiny.music.ui.liquid.appearance.GlassFinish
 import com.shiny.music.ui.liquid.appearance.PageTransitions
+import com.shiny.music.ui.liquid.appearance.PlayerLook
 import com.shiny.music.ui.liquid.appearance.SurfaceMaterial
 import com.shiny.music.ui.liquid.appearance.accentModeOf
 import com.shiny.music.ui.liquid.appearance.artworkMotionOf
@@ -122,12 +121,11 @@ fun AppearanceSettingsScreen(navController: NavController) {
     var atmosphere by rememberEnumPreference(LiquidPrefs.Atmosphere, Atmosphere.Balanced)
     var glow by rememberEnumPreference(LiquidPrefs.ArtworkGlow, ArtworkGlow.Off)
     var artworkPresentation by rememberEnumPreference(LiquidPrefs.ArtworkPresentation, ArtworkPresentation.Card)
+    var playerLook by rememberEnumPreference(LiquidPrefs.PlayerLook, PlayerLook.Shiny)
     var transitions by rememberEnumPreference(LiquidPrefs.PageTransitions, PageTransitions.Slide)
     val backdropDrift by rememberPreference(LiquidPrefs.PlayerMotion, true)
     val breathe by rememberPreference(LiquidPrefs.ArtworkBreathe, true)
     val living by rememberPreference(LiquidPrefs.LivingArtwork, LiquidPrefs.LivingArtworkDefault)
-    var highRefresh by rememberPreference(EnableHighRefreshRateKey, true)
-    var haptics by rememberPreference(EnableHapticsKey, false)
     var cropArtwork by rememberPreference(CropAlbumArtKey, false)
 
     // Density is applied by a ContentProvider at process start, so it also lives in the
@@ -159,34 +157,43 @@ fun AppearanceSettingsScreen(navController: NavController) {
     SettingsPage(title = "Appearance", navController = navController) {
         item(key = "preview") { AppearancePreview() }
 
-        item(key = "experience") {
-            SettingsSection(
-                footer = "Sets the Now Playing atmosphere, glow, artwork motion and page transitions " +
-                    "together. Change any of them below and this becomes your own mix.",
-            ) {
+        item(key = "player_look") {
+            SettingsSection(title = "Player") {
                 SettingsSegmentedRow(
-                    title = "Experience",
-                    subtitle = when (experience) {
-                        Experience.Minimal -> "A quiet stage: soft colour, still artwork, dissolving pages"
-                        Experience.Balanced -> "Shiny as it ships"
-                        Experience.Immersive -> "The artwork fills the room, with light around the cover"
-                        Experience.Custom -> "Custom — your own mix of the settings below"
-                    },
-                    options = listOf(Experience.Minimal, Experience.Balanced, Experience.Immersive),
-                    selected = experience,
-                    label = { it.name },
+                    title = "Player style",
+                    options = PlayerLook.entries,
+                    selected = playerLook,
+                    label = { if (it == PlayerLook.Soft) "Soft" else "Shiny" },
                     onSelect = { choice ->
-                        val mix = choice.mix ?: return@SettingsSegmentedRow
-                        logAppearance("Experience = $choice")
-                        write { prefs ->
-                            prefs[LiquidPrefs.Atmosphere] = mix.atmosphere.name
-                            prefs[LiquidPrefs.ArtworkGlow] = mix.glow.name
-                            prefs[LiquidPrefs.PageTransitions] = mix.transitions.name
-                            prefs.putMotion(mix.motion)
-                        }
+                        logAppearance("Player look = $choice")
+                        playerLook = choice
                     },
                     divider = false,
                 )
+            }
+        }
+
+        if (playerLook == PlayerLook.Shiny) {
+            item(key = "experience") {
+                SettingsSection {
+                    SettingsSegmentedRow(
+                        title = "Experience",
+                        options = listOf(Experience.Minimal, Experience.Balanced, Experience.Immersive),
+                        selected = experience,
+                        label = { it.name },
+                        onSelect = { choice ->
+                            val mix = choice.mix ?: return@SettingsSegmentedRow
+                            logAppearance("Experience = $choice")
+                            write { prefs ->
+                                prefs[LiquidPrefs.Atmosphere] = mix.atmosphere.name
+                                prefs[LiquidPrefs.ArtworkGlow] = mix.glow.name
+                                prefs[LiquidPrefs.PageTransitions] = mix.transitions.name
+                                prefs.putMotion(mix.motion)
+                            }
+                        },
+                        divider = false,
+                    )
+                }
             }
         }
 
@@ -207,11 +214,6 @@ fun AppearanceSettingsScreen(navController: NavController) {
                 )
                 SettingsToggleRow(
                     title = "AMOLED black",
-                    subtitle = if (darkMode == DarkMode.OFF) {
-                        "Applies whenever Shiny is dark"
-                    } else {
-                        "True black stage and deeper panels, so dark mode lights fewer pixels"
-                    },
                     checked = amoled,
                     onCheckedChange = { amoled = it },
                     enabled = darkMode != DarkMode.OFF,
@@ -224,12 +226,6 @@ fun AppearanceSettingsScreen(navController: NavController) {
             SettingsSection(title = "Accent") {
                 SettingsSegmentedRow(
                     title = "Accent colour",
-                    subtitle = when (accent) {
-                        AccentMode.Shiny -> "Shiny Rose"
-                        AccentMode.Artwork -> "Follows the playing cover, adjusted to stay readable. Covers without colour use Shiny Rose"
-                        AccentMode.Mono -> "Graphite controls, no colour"
-                        AccentMode.Custom -> "A colour of your own"
-                    },
                     options = AccentMode.entries,
                     selected = accent,
                     label = { if (it == AccentMode.Mono) "Mono" else it.name },
@@ -262,195 +258,111 @@ fun AppearanceSettingsScreen(navController: NavController) {
             }
         }
 
-        item(key = "stage") {
-            SettingsSection(
-                title = "Now Playing",
-                footer = "Atmosphere and glow follow each song and settle over a moment when it " +
-                    "changes. Ambient Mode uses the same atmosphere. Poster shows an album's " +
-                    "portrait artwork where it has one, never enlarged; every other cover stays " +
-                    "on its card.",
-            ) {
-                SettingsChoiceRow(
-                    title = "Artwork",
-                    options = ArtworkPresentation.entries,
-                    selected = artworkPresentation,
-                    label = { it.name },
-                    optionSubtitle = {
-                        when (it) {
-                            ArtworkPresentation.Card -> "The cover on a stage of its own colour"
-                            ArtworkPresentation.Poster -> "Portrait artwork edge to edge, on albums that have it"
-                        }
-                    },
-                    onSelect = { choice ->
-                        logAppearance("Artwork presentation = $choice")
-                        artworkPresentation = choice
-                    },
-                )
-                SettingsChoiceRow(
-                    title = "Atmosphere",
-                    options = Atmosphere.entries,
-                    selected = atmosphere,
-                    label = { it.name },
-                    optionSubtitle = {
-                        when (it) {
-                            Atmosphere.Off -> "A plain dark stage — true black with AMOLED"
-                            Atmosphere.Soft -> "The cover's colour, quieted"
-                            Atmosphere.Balanced -> "Shiny's stage as it ships"
-                            Atmosphere.Immersive -> "The cover's colour, brought forward"
-                        }
-                    },
-                    onSelect = { atmosphere = it },
-                )
-                SettingsSegmentedRow(
-                    title = "Artwork glow",
-                    subtitle = "Light from the cover spills onto the stage",
-                    options = ArtworkGlow.entries,
-                    selected = glow,
-                    label = { it.name },
-                    onSelect = { glow = it },
-                    divider = false,
-                )
-            }
-        }
-
-        item(key = "material") {
-            SettingsSection(
-                title = "Surfaces",
-                footer = if (GlassSupported) {
-                    "Glass refracts what is behind the tab bar, the mini player and floating buttons. " +
-                        "Solid draws them opaque, which is cheaper on older devices."
-                } else {
-                    "Glass needs Android 12 or later, so this device draws every surface solid."
-                },
-            ) {
-                if (GlassSupported) {
+        if (playerLook == PlayerLook.Shiny) {
+            item(key = "stage") {
+                SettingsSection(title = "Now Playing") {
                     SettingsChoiceRow(
-                        title = "Material",
-                        options = SurfaceMaterial.entries,
-                        selected = material,
+                        title = "Artwork",
+                        options = ArtworkPresentation.entries,
+                        selected = artworkPresentation,
                         label = { it.name },
-                        optionSubtitle = {
-                            when (it) {
-                                SurfaceMaterial.Adaptive -> "Clear over artwork, frosted over pages"
-                                SurfaceMaterial.Clear -> "Thinner glass that shows more of what is behind"
-                                SurfaceMaterial.Frosted -> "Softer, diffused glass that quiets what is behind"
-                                SurfaceMaterial.Solid -> "Opaque surfaces, no refraction"
-                            }
-                        },
                         onSelect = { choice ->
-                            logAppearance("Material = $choice")
-                            // Solid only turns glass off; the finish is kept for when it returns.
-                            val newFinish = choice.finish
-                            write { prefs ->
-                                prefs[LiquidGlassGlobalEnabledKey] = choice != SurfaceMaterial.Solid
-                                if (newFinish != null) prefs[LiquidPrefs.GlassFinish] = newFinish.name
-                            }
+                            logAppearance("Artwork presentation = $choice")
+                            artworkPresentation = choice
                         },
+                    )
+                    SettingsChoiceRow(
+                        title = "Atmosphere",
+                        options = Atmosphere.entries,
+                        selected = atmosphere,
+                        label = { it.name },
+                        onSelect = { atmosphere = it },
+                    )
+                    SettingsSegmentedRow(
+                        title = "Artwork glow",
+                        options = ArtworkGlow.entries,
+                        selected = glow,
+                        label = { it.name },
+                        onSelect = { glow = it },
                         divider = false,
                     )
-                } else {
-                    SettingsValueRow(title = "Material", value = "Solid", divider = false)
                 }
             }
-        }
 
-        item(key = "motion") {
-            SettingsSection(
-                title = "Motion",
-                footer = "Artwork motion runs only while Now Playing is open and music is playing. " +
-                    "Animated covers are in Now Playing settings.",
-            ) {
-                SettingsChoiceRow(
-                    title = "Artwork motion",
-                    options = ArtworkMotion.entries,
-                    selected = motion,
-                    label = { it.name },
-                    optionSubtitle = {
-                        when (it) {
-                            ArtworkMotion.Off -> "A still cover on a still background"
-                            ArtworkMotion.Subtle -> "The background drifts; the cover settles when paused"
-                            ArtworkMotion.Living -> "The cover drifts and catches the light as it plays"
-                        }
-                    },
-                    onSelect = { choice -> write { prefs -> prefs.putMotion(choice) } },
-                )
-                SettingsSegmentedRow(
-                    title = "Page transitions",
-                    subtitle = when (transitions) {
-                        PageTransitions.Slide -> "Pages push in from the edge"
-                        PageTransitions.Fade -> "Pages dissolve into each other"
-                        PageTransitions.Instant -> "Pages change without animating"
-                    },
-                    options = PageTransitions.entries,
-                    selected = transitions,
-                    label = { it.name },
-                    onSelect = { transitions = it },
-                    divider = false,
-                )
+            item(key = "material") {
+                SettingsSection(title = "Surfaces") {
+                    if (GlassSupported) {
+                        SettingsChoiceRow(
+                            title = "Material",
+                            options = SurfaceMaterial.entries,
+                            selected = material,
+                            label = { it.name },
+                            onSelect = { choice ->
+                                logAppearance("Material = $choice")
+                                // Solid only turns glass off; the finish is kept for when it returns.
+                                val newFinish = choice.finish
+                                write { prefs ->
+                                    prefs[LiquidGlassGlobalEnabledKey] = choice != SurfaceMaterial.Solid
+                                    if (newFinish != null) prefs[LiquidPrefs.GlassFinish] = newFinish.name
+                                }
+                            },
+                            divider = false,
+                        )
+                    } else {
+                        SettingsValueRow(title = "Material", value = "Solid", divider = false)
+                    }
+                }
             }
-        }
 
-        item(key = "layout") {
-            SettingsSection(
-                title = "Layout",
-                footer = "Interface size scales everything on screen, and Shiny restarts to apply it. " +
-                    "On smaller screens the larger sizes are capped so Now Playing still fits.",
-            ) {
-                SettingsChoiceRow(
-                    title = "Interface size",
-                    options = DensityScale.bySize,
-                    selected = DensityScale.fromValue(density),
-                    label = { it.label },
-                    optionSubtitle = {
-                        when (it) {
-                            DensityScale.NATIVE -> "Your device's own size"
-                            DensityScale.COMFORTABLE -> "Slightly larger type and targets"
-                            DensityScale.LARGE -> "Larger type and targets"
-                            else -> null
-                        }
-                    },
-                    onSelect = { scale ->
-                        if (scale.value != density) {
-                            density = scale.value
-                            sharedPreferences.edit { putFloat(DensityPrefsKey, scale.value) }
-                            logAppearance("Interface size = ${scale.name}")
-                            pendingRestart = true
-                        }
-                    },
-                )
-                SettingsToggleRow(
-                    title = "Crop artwork to square",
-                    subtitle = "Fill the frame instead of fitting the whole cover",
-                    checked = cropArtwork,
-                    onCheckedChange = { cropArtwork = it },
-                    divider = false,
-                )
+            item(key = "motion") {
+                SettingsSection(title = "Motion") {
+                    SettingsChoiceRow(
+                        title = "Artwork motion",
+                        options = ArtworkMotion.entries,
+                        selected = motion,
+                        label = { it.name },
+                        onSelect = { choice -> write { prefs -> prefs.putMotion(choice) } },
+                    )
+                    SettingsSegmentedRow(
+                        title = "Page transitions",
+                        options = PageTransitions.entries,
+                        selected = transitions,
+                        label = { it.name },
+                        onSelect = { transitions = it },
+                        divider = false,
+                    )
+                }
             }
-        }
 
-        item(key = "feel") {
-            SettingsSection(title = "Feel") {
-                SettingsToggleRow(
-                    title = "High refresh rate",
-                    subtitle = "Ask the display for its fastest mode",
-                    checked = highRefresh,
-                    onCheckedChange = { highRefresh = it },
-                )
-                SettingsToggleRow(
-                    title = "Haptics",
-                    subtitle = "A tick under taps and scrolling",
-                    checked = haptics,
-                    onCheckedChange = { haptics = it },
-                    divider = false,
-                )
+            item(key = "layout") {
+                SettingsSection(title = "Layout") {
+                    SettingsChoiceRow(
+                        title = "Interface size",
+                        options = DensityScale.bySize,
+                        selected = DensityScale.fromValue(density),
+                        label = { it.label },
+                        onSelect = { scale ->
+                            if (scale.value != density) {
+                                density = scale.value
+                                sharedPreferences.edit { putFloat(DensityPrefsKey, scale.value) }
+                                logAppearance("Interface size = ${scale.name}")
+                                pendingRestart = true
+                            }
+                        },
+                    )
+                    SettingsToggleRow(
+                        title = "Crop artwork to square",
+                        checked = cropArtwork,
+                        onCheckedChange = { cropArtwork = it },
+                        divider = false,
+                    )
+                }
             }
+
         }
 
         item(key = "reset") {
-            SettingsSection(
-                footer = "Returns theme, accent, surfaces, the Now Playing stage, motion and size to " +
-                    "Shiny's defaults. Playback, lyrics, library, downloads and accounts are untouched.",
-            ) {
+            SettingsSection {
                 SettingsActionRow(
                     title = "Reset appearance",
                     destructive = true,

@@ -19,6 +19,8 @@ import com.shiny.music.constants.AutoSkipNextOnErrorKey
 import com.shiny.music.constants.ContentCountryKey
 import com.shiny.music.constants.CountryCodeToName
 import com.shiny.music.constants.DataSaverEnabledKey
+import com.shiny.music.constants.EnableHapticsKey
+import com.shiny.music.constants.EnableHighRefreshRateKey
 import com.shiny.music.constants.HistoryDuration
 import com.shiny.music.constants.KeepScreenOn
 import com.shiny.music.constants.LanguageCodeToName
@@ -43,6 +45,8 @@ fun BehaviourSettingsScreen(navController: NavController) {
     var keepScreenOn by rememberPreference(KeepScreenOn, false)
     var country by rememberPreference(ContentCountryKey, "system")
     var appLanguage by rememberPreference(AppLanguageKey, SYSTEM_DEFAULT)
+    var highRefresh by rememberPreference(EnableHighRefreshRateKey, true)
+    var haptics by rememberPreference(EnableHapticsKey, false)
     val systemDefault = stringResource(R.string.system_default)
 
     SettingsPage(title = "App Behaviour", navController = navController) {
@@ -127,6 +131,21 @@ fun BehaviourSettingsScreen(navController: NavController) {
                         onSelect = { appLanguage = it },
                     )
                 }
+            }
+        }
+        item(key = "feel") {
+            SettingsSection(title = "Feel") {
+                SettingsToggleRow(
+                    title = "High refresh rate",
+                    checked = highRefresh,
+                    onCheckedChange = { highRefresh = it },
+                )
+                SettingsToggleRow(
+                    title = "Haptics",
+                    checked = haptics,
+                    onCheckedChange = { haptics = it },
+                    divider = false,
+                )
             }
         }
         item(key = "tail") { SettingsTailSpace(40.dp) }
