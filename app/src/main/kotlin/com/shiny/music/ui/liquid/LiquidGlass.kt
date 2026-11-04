@@ -154,7 +154,6 @@ fun Modifier.liquidGlass(
     val density = LocalDensity.current
     val r = recipe(kind, LocalShinyAppearance.current.glassFinish)
     val surfaceTint = if (r.tint == 1f) baseTint else baseTint.copy(alpha = (baseTint.alpha * r.tint).coerceIn(0f, 1f))
-    // settings › customise: blur strength scales every recipe, low quality halves the recording
     val tuning = com.shiny.music.ui.liquid.customize.CustomizeLook.glassTuning.value
     val blur = r.blur * tuning.strength
     // Blur hides upscaling, so heavier materials record their backdrop at lower resolution.
@@ -289,9 +288,9 @@ fun ScrollEdgeEffect(
     val edgeScale = 0.33f * (if (tuning.low) 0.5f else 1f)
     val blurPx = with(density) { 18.dp.toPx() } * tuning.strength * edgeScale
     val sizeModifier = Modifier.then(modifier)
-    // progressive blur off in settings › customise: the edge is the plain fade glassless phones get
     val progressive = remember { androidx.compose.runtime.derivedStateOf { com.shiny.music.ui.liquid.customize.CustomizeLook.progressiveBlur } }.value
-    if (!GlassSupported || !progressive) {
+    val glassOn = com.shiny.music.ui.component.LocalGlassEffectConfig.current.glassAvailable
+    if (!GlassSupported || !progressive || !glassOn) {
         Box(
             sizeModifier
                 .graphicsLayer { this.alpha = alpha() }
