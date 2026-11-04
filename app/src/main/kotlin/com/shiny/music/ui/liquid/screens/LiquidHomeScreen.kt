@@ -224,7 +224,7 @@ fun LiquidHomeScreen(
             avatar = {
                 AccountAvatar(
                     imageUrl = if (isLoggedIn) accountImageUrl else null,
-                    onClick = { navController.navigate("settings") },
+                    onClick = { navController.navigate("hub") },
                 )
             },
         ) {
@@ -241,7 +241,6 @@ fun LiquidHomeScreen(
             }
 
             val activeId = mediaMetadata?.id
-            // settings › customise › home styles: the hero, or one of the two compact tops
             val shortcuts = shelves.filterIsInstance<ShortcutsSection>().firstOrNull() ?: feed?.sections.orEmpty().filterIsInstance<ShortcutsSection>().firstOrNull()
             val compactTop = when (homeStyle) {
                 com.shiny.music.ui.liquid.customize.HomeStyle.ListenNow -> (mix?.songs.orEmpty() + live.mostPlayed + live.history).isNotEmpty()

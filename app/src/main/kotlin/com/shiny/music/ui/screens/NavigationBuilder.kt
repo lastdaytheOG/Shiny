@@ -384,6 +384,14 @@ fun NavGraphBuilder.navigationBuilder(
         SettingsHomeScreen(navController)
     }
 
+    screen("hub") {
+        com.shiny.music.ui.liquid.settings.ShinyHubScreen(navController)
+    }
+
+    screen("audio") {
+        com.shiny.music.ui.liquid.settings.AudioScreen(navController)
+    }
+
     // Kept as an alias: anything that still points at the old updates page lands on About,
     // which is where the updater's settings live now.
     screen("settings/update") {

@@ -1,5 +1,7 @@
 package com.shiny.music.ui.liquid.screens
 
+import com.shiny.music.models.toMediaMetadata
+
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -255,7 +257,7 @@ fun LiquidSearchScreen(
         avatar = {
             LibraryAvatar(
                 imageUrl = if (loggedIn) accountImageUrl else null,
-                onClick = { navController.navigate("settings") },
+                onClick = { navController.navigate("hub") },
             )
         },
         fieldLeading = if (engaged) {
@@ -899,6 +901,7 @@ internal fun ResultRow(item: YTItem, actions: LiquidActions, isActive: Boolean, 
     }
     SongRow(
         songId = (item as? SongItem)?.id,
+        swipe = androidx.compose.runtime.remember(item) { (item as? SongItem)?.toMediaMetadata() },
         title = item.title,
         subtitle = listOfNotNull(kind, item.subtitleText()?.takeIf { it.isNotBlank() }).joinToString(" · "),
         artwork = item.thumbnail?.resize(240, 240),
@@ -921,6 +924,7 @@ internal fun ResultRow(item: YTItem, actions: LiquidActions, isActive: Boolean, 
 private fun LocalResultRow(item: LocalItem, actions: LiquidActions, isActive: Boolean, isPlaying: Boolean) {
     SongRow(
         songId = (item as? com.shiny.music.db.entities.Song)?.id,
+        swipe = androidx.compose.runtime.remember(item) { (item as? com.shiny.music.db.entities.Song)?.toMediaMetadata() },
         title = item.title,
         subtitle = when (item) {
             is Song -> item.artists.joinToString { it.name }
@@ -1013,7 +1017,7 @@ fun LiquidSearchResultScreen(
         avatar = {
             LibraryAvatar(
                 imageUrl = if (loggedIn) accountImageUrl else null,
-                onClick = { navController.navigate("settings") },
+                onClick = { navController.navigate("hub") },
             )
         },
         fieldLeading = {

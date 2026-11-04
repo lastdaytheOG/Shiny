@@ -84,9 +84,9 @@ fun SettingsHomeScreen(navController: NavController) {
     val categories = listOf(
         Category(stringResource(R.string.social_title), "settings/social", rememberVectorPainter(Icons.Rounded.People)),
         Category("App Behaviour", "settings/behaviour", painterResource(R.drawable.tune)),
+        Category("Appearance", "settings/appearance", painterResource(R.drawable.palette)),
         Category("Downloads & Storage", "settings/storage", painterResource(R.drawable.download)),
         Category("Backup", "settings/backup_restore", painterResource(R.drawable.restore)),
-        Category("Integrations", "settings/integrations", painterResource(R.drawable.link)),
         Category(stringResource(R.string.listen_together), "settings/together", painterResource(R.drawable.group)),
         Category("Supported Links", "settings/supported_links", painterResource(R.drawable.language)),
         Category(stringResource(R.string.about), "settings/about", painterResource(R.drawable.info), badge = updateAvailable),
@@ -145,6 +145,31 @@ fun SettingsHomeScreen(navController: NavController) {
         categories.forEach { c ->
             item(key = "cat_${c.route}") { CategoryRow(c) { navController.navigate(c.route) } }
         }
+        item(key = "tail") { SettingsTailSpace(40.dp) }
+    }
+}
+
+@Composable
+fun ShinyHubScreen(navController: NavController) {
+    val accountName by rememberPreference(AccountNameKey, "")
+    val first = accountName.trim().substringBefore(' ')
+    val places = listOf(
+        Category("Customisation", "settings/customize", painterResource(R.drawable.palette)),
+        Category(stringResource(R.string.settings), "settings", painterResource(R.drawable.settings)),
+        Category("Audio", "audio", painterResource(R.drawable.equalizer)),
+        Category("Integrations", "settings/integrations", painterResource(R.drawable.link)),
+    )
+    SettingsPage(title = if (first.isNotBlank()) "Hey, $first!" else "Hey there!", navController = navController, search = false) {
+        places.forEach { c ->
+            item(key = "hub_${c.route}") { CategoryRow(c) { navController.navigate(c.route) } }
+        }
+        item(key = "tail") { SettingsTailSpace(40.dp) }
+    }
+}
+
+@Composable
+fun AudioScreen(navController: NavController) {
+    SettingsPage(title = "Audio", navController = navController, search = false) {
         item(key = "tail") { SettingsTailSpace(40.dp) }
     }
 }
@@ -238,7 +263,7 @@ private val BehaviourTitles = setOf(
 private val BehaviourNames = mapOf("Count a listen after" to "Count songs after", "Content country" to "Default country", "Stop when Shiny is swiped away" to "Stop when SHINY is swiped away")
 
 private val VisibleRoutes = setOf(
-    "settings/social", "settings/youtube", "settings/integrations", "settings/spotify_import", "settings/storage", "settings/backup_restore", "settings/discord", "settings/together",
+    "settings/social", "settings/appearance", "settings/customize", "settings/youtube", "settings/integrations", "settings/spotify_import", "settings/storage", "settings/backup_restore", "settings/discord", "settings/together",
     "settings/integrations/listen_together", "settings/supported_links", "settings/about", "settings/changelog", "settings/update",
 )
 

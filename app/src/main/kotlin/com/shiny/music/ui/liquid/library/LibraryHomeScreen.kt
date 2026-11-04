@@ -1,5 +1,7 @@
 package com.shiny.music.ui.liquid.library
 
+import com.shiny.music.models.toMediaMetadata
+
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -154,7 +156,7 @@ fun LibraryHomeScreen(
         avatar = {
             LibraryAvatar(
                 imageUrl = if (loggedIn) accountImageUrl else null,
-                onClick = { navController.navigate("settings") },
+                onClick = { navController.navigate("hub") },
             )
         },
     ) {
@@ -364,6 +366,7 @@ private fun LazyListScope.searchHits(
             hits.forEach { hit ->
                 when (hit) {
                     is LibraryHit.SongHit -> SongRow(
+                        swipe = androidx.compose.runtime.remember(hit.song) { hit.song.toMediaMetadata() },
                         title = hit.song.title,
                         subtitle = hit.song.artists.joinToString { it.name },
                         artwork = hit.song.thumbnailUrl,
@@ -521,6 +524,7 @@ private fun LazyListScope.songListSection(
     itemsIndexed(shown, key = { _, song -> "${key}_${song.id}" }, contentType = { _, _ -> "song" }) { index, song ->
         val active = rows.activeId() == song.id
         SongRow(
+            swipe = androidx.compose.runtime.remember(song) { song.toMediaMetadata() },
             title = song.title,
             subtitle = song.artists.joinToString { it.name },
             artwork = song.thumbnailUrl,
