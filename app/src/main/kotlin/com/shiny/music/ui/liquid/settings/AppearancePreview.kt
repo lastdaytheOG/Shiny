@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -37,6 +38,7 @@ import com.shiny.music.ui.liquid.Liquid
 import com.shiny.music.ui.liquid.LiquidTypography
 import com.shiny.music.ui.liquid.appearance.LocalShinyAppearance
 import com.shiny.music.ui.liquid.appearance.strength
+import com.shiny.music.ui.liquid.player.FrostIconButton
 import com.shiny.music.ui.liquid.player.NowPlayingBackground
 import com.shiny.music.ui.liquid.player.NowPlayingInk
 import com.shiny.music.ui.liquid.player.artworkGlow
@@ -119,7 +121,18 @@ internal fun AppearancePreview(modifier: Modifier = Modifier) {
                     overflow = TextOverflow.Ellipsis,
                 )
                 Spacer(Modifier.height(14.dp))
-                GlassIconButton(
+                if (appearance.softPlayer) {
+                    Box(Modifier.offset(x = (-4).dp)) {
+                        FrostIconButton(
+                            icon = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                            label = if (isPlaying) "Pause" else "Play",
+                            iconSize = 22.dp,
+                            size = 42.dp,
+                            onClick = { playerConnection?.togglePlayPause() },
+                            enabled = metadata != null,
+                        )
+                    }
+                } else GlassIconButton(
                     icon = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
                     onClick = { playerConnection?.togglePlayPause() },
                     size = 42.dp,

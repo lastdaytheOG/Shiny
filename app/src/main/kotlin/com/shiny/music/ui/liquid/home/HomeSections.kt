@@ -1,5 +1,7 @@
 package com.shiny.music.ui.liquid.home
 
+import com.shiny.music.models.toMediaMetadata
+
 import com.music.innertube.models.SongItem
 import com.music.innertube.models.AlbumItem
 import androidx.compose.ui.text.TextStyle
@@ -597,6 +599,7 @@ internal fun MoreLikeShelf(
     SongGrid(items = songs, key = { it.id }, rows = 3) { song, index, modifier, last ->
         SongRow(
             songId = song.id,
+            swipe = androidx.compose.runtime.remember(song) { song.toMediaMetadata() },
             title = song.title,
             subtitle = song.artistLine(),
             artwork = song.thumbnailUrl,

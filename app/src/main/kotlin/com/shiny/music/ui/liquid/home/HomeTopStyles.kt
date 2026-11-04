@@ -22,16 +22,6 @@ import com.shiny.music.ui.liquid.rememberArtworkTones
 import com.shiny.music.ui.liquid.statusBarHeight
 import com.shiny.music.ui.utils.resize
 
-/*
- * The two compact tops Home can open with instead of the hero (settings › customise › home
- * styles). Only the top changes: every shelf under it is the same feed in the same order.
- */
-
-/**
- * Listen now: a few songs to start with, in rows that page sideways, under a soft wash of the
- * first songs' colours. The songs are the hero mix when there is one, so plays still count
- * for the mix, then what is played most.
- */
 @Composable
 internal fun ListenNowTop(
     title: String,
@@ -61,10 +51,6 @@ internal fun ListenNowTop(
     }
 }
 
-/**
- * Hop in: the shortcuts as tiles two to a row (Liked, playlists, Downloads, On this device),
- * each one tap from opening.
- */
 @Composable
 internal fun HopInTop(title: String, section: ShortcutsSection, glowFrom: String?, actions: LiquidActions) {
     CompactTop(glowFrom = glowFrom) {
@@ -73,7 +59,6 @@ internal fun HopInTop(title: String, section: ShortcutsSection, glowFrom: String
     }
 }
 
-// room for the bar over Home, and a glow of the artwork's colour fading into the page
 @Composable
 private fun CompactTop(glowFrom: String?, content: @Composable () -> Unit) {
     val tones = rememberArtworkTones(glowFrom?.resize(120, 120), ArtworkTones(Color.Transparent, Color.Transparent))
@@ -83,7 +68,6 @@ private fun CompactTop(glowFrom: String?, content: @Composable () -> Unit) {
             Modifier
                 .matchParentSize()
                 .drawBehind {
-                    // fades out down its whole height, so it never ends in an edge
                     drawRect(
                         Brush.verticalGradient(
                             0f to vivid.copy(alpha = vivid.alpha * 0.42f),

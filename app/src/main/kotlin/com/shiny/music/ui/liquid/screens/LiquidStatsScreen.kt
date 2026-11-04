@@ -1,5 +1,7 @@
 package com.shiny.music.ui.liquid.screens
 
+import com.shiny.music.models.toMediaMetadata
+
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -104,6 +106,7 @@ fun LiquidTopSongsScreen(
             val plays = playsById[song.id]
             SongRow(
                 songId = song.id,
+                swipe = androidx.compose.runtime.remember(song) { song.toMediaMetadata() },
                 title = song.title,
                 subtitle = listOfNotNull(plays?.let { pluralStringResource(R.plurals.liquid_plays, it, it) }, song.artists.joinToString { it.name }.takeIf { it.isNotBlank() }).joinToString(" · "),
                 artwork = song.thumbnailUrl,

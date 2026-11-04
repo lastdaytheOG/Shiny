@@ -1,5 +1,10 @@
 package com.shiny.music.ui.liquid.player
 
+import androidx.compose.material.icons.rounded.SkipPrevious
+import androidx.compose.material.icons.rounded.SkipNext
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Pause
+import androidx.compose.material.icons.Icons
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -39,6 +44,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import com.shiny.music.R
 import com.shiny.music.ui.liquid.GlassKind
+import com.shiny.music.ui.liquid.appearance.LocalShinyAppearance
+import com.shiny.music.ui.liquid.glassPressScale
 import com.shiny.music.ui.liquid.liquidGlass
 import com.shiny.music.ui.liquid.rememberGlassPress
 import kotlinx.coroutines.launch
@@ -63,19 +70,143 @@ fun LiquidTransport(
     playSize: Dp = 86.dp,
     skipSize: Dp = 66.dp,
 ) {
+    val soft = LocalShinyAppearance.current.softPlayer
+    if (soft) {
+        AlternateTransport(
+            isPlaying = isPlaying,
+            canSkipPrevious = canSkipPrevious,
+            canSkipNext = canSkipNext,
+            enabled = enabled,
+            onPrevious = onPrevious,
+            onPlayPause = onPlayPause,
+            onNext = onNext,
+            modifier = modifier,
+        )
+        return
+    }
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+            SkipDisc(forward = false, size = skipSize, enabled = enabled && canSkipPrevious, onClick = onPrevious)
+        }
+        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+            PlayDisc(isPlaying = isPlaying, size = playSize, enabled = enabled, onClick = onPlayPause)
+        }
+        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+            SkipDisc(forward = true, size = skipSize, enabled = enabled && canSkipNext, onClick = onNext)
+        }
+    }
+}
+
+/** The alternate transport is pure white glyphs with generous touch targets, not button discs. */
+@Composable
+private fun AlternateTransport(
+    isPlaying: Boolean,
+    canSkipPrevious: Boolean,
+    canSkipNext: Boolean,
+    enabled: Boolean,
+    onPrevious: () -> Unit,
+    onPlayPause: () -> Unit,
+    onNext: () -> Unit,
+    modifier: Modifier,
+) {
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        SkipDisc(forward = false, size = skipSize, enabled = enabled && canSkipPrevious, onClick = onPrevious)
-        PlayDisc(isPlaying = isPlaying, size = playSize, enabled = enabled, onClick = onPlayPause)
-        SkipDisc(forward = true, size = skipSize, enabled = enabled && canSkipNext, onClick = onNext)
+        AlternateSkipGlyph(forward = false, enabled = enabled && canSkipPrevious, onClick = onPrevious)
+        AlternatePlayGlyph(isPlaying = isPlaying, enabled = enabled, onClick = onPlayPause)
+        AlternateSkipGlyph(forward = true, enabled = enabled && canSkipNext, onClick = onNext)
     }
 }
 
 @Composable
-private fun PlayDisc(isPlaying: Boolean, size: Dp, enabled: Boolean, onClick: () -> Unit) {
+private fun AlternatePlayGlyph(isPlaying: Boolean, enabled: Boolean, onClick: () -> Unit) {
+    val interaction = remember { MutableInteractionSource() }
+    val press = rememberGlassPress(interaction)
+    val haptics = LocalHapticFeedback.current
+    val morph by animateFloatAsState(
+        targetValue = if (isPlaying) 0f else 1f,
+        animationSpec = spring(dampingRatio = 0.76f, stiffness = 640f),
+        label = "alternatePlayMorph",
+    )
+    Box(
+        Modifier
+            .size(92.dp)
+            .graphicsLayer {
+                val s = 1f - 0.10f * press.value
+                scaleX = s
+                scaleY = s
+                alpha = if (enabled) 1f else 0.32f
+            }
+            .combinedClickable(
+                interactionSource = interaction,
+                indication = null,
+                enabled = enabled,
+                onClick = {
+                    haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                    onClick()
+                },
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        androidx.compose.material3.Icon(
+            if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+            contentDescription = null,
+            tint = Color.White,
+            modifier = Modifier.size(60.dp),
+        )
+    }
+}
+
+@Composable
+private fun AlternateSkipGlyph(forward: Boolean, enabled: Boolean, onClick: () -> Unit) {
+    val interaction = remember { MutableInteractionSource() }
+    val press = rememberGlassPress(interaction)
+    val haptics = LocalHapticFeedback.current
+    val scope = rememberCoroutineScope()
+    val nudge = remember { Animatable(0f) }
+    Box(
+        Modifier
+            .size(82.dp)
+            .graphicsLayer {
+                val s = 1f - 0.10f * press.value
+                scaleX = s
+                scaleY = s
+                alpha = if (enabled) 1f else 0.32f
+            }
+            .combinedClickable(
+                interactionSource = interaction,
+                indication = null,
+                enabled = enabled,
+                onClick = {
+                    haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                    onClick()
+                    scope.launch {
+                        nudge.snapTo(0f)
+                        nudge.animateTo(if (forward) 1f else -1f, tween(120))
+                        nudge.animateTo(0f, spring(dampingRatio = 0.72f, stiffness = 460f))
+                    }
+                },
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        androidx.compose.material3.Icon(
+            if (forward) Icons.Rounded.SkipNext else Icons.Rounded.SkipPrevious,
+            contentDescription = null,
+            tint = Color.White,
+            modifier = Modifier
+                .size(50.dp)
+                .graphicsLayer { translationX = nudge.value * 7.dp.toPx() },
+        )
+    }
+}
+
+@Composable
+private fun PlayDisc(isPlaying: Boolean, size: Dp, enabled: Boolean, onClick: () -> Unit, soft: Boolean = false) {
     val interaction = remember { MutableInteractionSource() }
     val press = rememberGlassPress(interaction)
     val haptics = LocalHapticFeedback.current
@@ -91,13 +222,21 @@ private fun PlayDisc(isPlaying: Boolean, size: Dp, enabled: Boolean, onClick: ()
         Modifier
             .size(size)
             .semantics { contentDescription = playLabel }
-            .graphicsLayer {
-                val s = 1f + 0.07f * press.value
-                scaleX = s
-                scaleY = s
-            }
-            .discGlow(press = { press.value })
-            .liquidGlass(CircleShape, GlassKind.Clear, tint = Color.White.copy(alpha = 0.13f), pressProgress = { press.value })
+            .then(
+                if (soft) {
+                    // the soft look's discs sink under the finger instead of swelling
+                    Modifier.glassPressScale(press, 0.09f).frostDisc(press = { press.value }, fill = 0.14f)
+                } else {
+                    Modifier
+                        .graphicsLayer {
+                            val s = 1f + 0.07f * press.value
+                            scaleX = s
+                            scaleY = s
+                        }
+                        .discGlow(press = { press.value })
+                        .liquidGlass(CircleShape, GlassKind.Clear, tint = Color.White.copy(alpha = 0.13f), pressProgress = { press.value })
+                }
+            )
             .combinedClickable(
                 interactionSource = interaction,
                 indication = null,
@@ -109,12 +248,17 @@ private fun PlayDisc(isPlaying: Boolean, size: Dp, enabled: Boolean, onClick: ()
             ),
         contentAlignment = Alignment.Center,
     ) {
-        Canvas(Modifier.size(size * 0.40f)) { drawPlayPause(morph, ink) }
+        androidx.compose.material3.Icon(
+            if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+            contentDescription = null,
+            tint = ink,
+            modifier = Modifier.size(size * 0.56f),
+        )
     }
 }
 
 @Composable
-private fun SkipDisc(forward: Boolean, size: Dp, enabled: Boolean, onClick: () -> Unit) {
+private fun SkipDisc(forward: Boolean, size: Dp, enabled: Boolean, onClick: () -> Unit, soft: Boolean = false) {
     val interaction = remember { MutableInteractionSource() }
     val press = rememberGlassPress(interaction)
     val haptics = LocalHapticFeedback.current
@@ -126,13 +270,20 @@ private fun SkipDisc(forward: Boolean, size: Dp, enabled: Boolean, onClick: () -
         Modifier
             .size(size)
             .semantics { contentDescription = skipLabel }
-            .graphicsLayer {
-                val s = 1f + 0.08f * press.value
-                scaleX = s
-                scaleY = s
-            }
-            .discGlow(press = { press.value })
-            .liquidGlass(CircleShape, GlassKind.Clear, tint = Color.White.copy(alpha = 0.08f), pressProgress = { press.value })
+            .then(
+                if (soft) {
+                    Modifier.glassPressScale(press, 0.09f).frostDisc(press = { press.value }, fill = 0.12f)
+                } else {
+                    Modifier
+                        .graphicsLayer {
+                            val s = 1f + 0.08f * press.value
+                            scaleX = s
+                            scaleY = s
+                        }
+                        .discGlow(press = { press.value })
+                        .liquidGlass(CircleShape, GlassKind.Clear, tint = Color.White.copy(alpha = 0.08f), pressProgress = { press.value })
+                }
+            )
             .combinedClickable(
                 interactionSource = interaction,
                 indication = null,
@@ -149,14 +300,17 @@ private fun SkipDisc(forward: Boolean, size: Dp, enabled: Boolean, onClick: () -
             ),
         contentAlignment = Alignment.Center,
     ) {
-        Canvas(
-            Modifier
-                .size(size * 0.46f)
+        androidx.compose.material3.Icon(
+            if (forward) Icons.Rounded.SkipNext else Icons.Rounded.SkipPrevious,
+            contentDescription = null,
+            tint = ink,
+            modifier = Modifier
+                .size(size * 0.5f)
                 .graphicsLayer {
                     val dir = if (forward) 1f else -1f
                     translationX = dir * this.size.width * 0.16f * nudge.value
-                }
-        ) { drawSkip(forward, ink) }
+                },
+        )
     }
 }
 
@@ -173,60 +327,4 @@ private fun Modifier.discGlow(press: () -> Float): Modifier = drawBehind {
         ),
         radius = r * 1.55f,
     )
-}
-
-/**
- * Pause bars ↔ play triangle. The triangle is cut into two quads at its middle so each
- * bar has four points to travel to; drawn with rounded corners like SF Symbols' fill.
- */
-private fun DrawScope.drawPlayPause(toPlay: Float, color: Color) {
-    val w = size.width
-    val h = size.height
-    val t = toPlay.coerceIn(0f, 1.1f)
-    val bar = w * 0.30f
-    // Pause geometry.
-    val lp = listOf(Offset(w * 0.06f, 0f), Offset(w * 0.06f + bar, 0f), Offset(w * 0.06f + bar, h), Offset(w * 0.06f, h))
-    val rp = listOf(Offset(w * 0.94f - bar, 0f), Offset(w * 0.94f, 0f), Offset(w * 0.94f, h), Offset(w * 0.94f - bar, h))
-    // Play geometry (triangle pointing right, optically centred a touch to the right).
-    val x0 = w * 0.12f
-    val x1 = w * 1.0f
-    val xm = (x0 + x1) / 2f
-    val lq = listOf(Offset(x0, 0f), Offset(xm, h * 0.25f), Offset(xm, h * 0.75f), Offset(x0, h))
-    val rq = listOf(Offset(xm, h * 0.25f), Offset(x1, h * 0.5f), Offset(x1, h * 0.5f), Offset(xm, h * 0.75f))
-    fun lerp(a: Offset, b: Offset) = Offset(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t)
-    listOf(lp to lq, rp to rq).forEach { (from, to) ->
-        val path = Path().apply {
-            val pts = from.indices.map { lerp(from[it], to[it]) }
-            moveTo(pts[0].x, pts[0].y)
-            for (i in 1 until pts.size) lineTo(pts[i].x, pts[i].y)
-            close()
-        }
-        drawPath(path, color, style = Fill)
-        drawPath(path, color, style = Stroke(width = w * 0.09f, join = StrokeJoin.Round))
-    }
-}
-
-/** Two rounded triangles, iOS's forward / backward glyph. */
-private fun DrawScope.drawSkip(forward: Boolean, color: Color) {
-    val w = size.width
-    val h = size.height
-    val tri = w * 0.52f
-    fun triangle(x: Float) = Path().apply {
-        if (forward) {
-            moveTo(x, h * 0.12f)
-            lineTo(x + tri, h * 0.5f)
-            lineTo(x, h * 0.88f)
-        } else {
-            moveTo(x + tri, h * 0.12f)
-            lineTo(x, h * 0.5f)
-            lineTo(x + tri, h * 0.88f)
-        }
-        close()
-    }
-    translate(left = 0f) {
-        drawPath(triangle(0f), color, style = Fill)
-        drawPath(triangle(0f), color, style = Stroke(width = w * 0.07f, join = StrokeJoin.Round))
-        drawPath(triangle(w - tri), color, style = Fill)
-        drawPath(triangle(w - tri), color, style = Stroke(width = w * 0.07f, join = StrokeJoin.Round))
-    }
 }

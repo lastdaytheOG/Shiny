@@ -519,7 +519,7 @@ private fun NowPlaying(
         val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
         val width = maxWidth
         val height = maxHeight
-        val stageSize = minOf(width - 56.dp, height * 0.43f)
+        val stageSize = minOf(width - 56.dp, height * 0.40f)
         val controlsBlockHeight = if (appearance.softPlayer) AlternateControlsBlockHeight else ControlsBlockHeight
 
         var stageRect by remember { mutableStateOf<Rect?>(null) }
@@ -743,7 +743,6 @@ private fun NowPlaying(
                             }
                         },
                         onQueue = { mode = if (mode == NowPlayingMode.Queue) NowPlayingMode.Stage else NowPlayingMode.Queue },
-                        playing = isPlaying && !reducedMotion,
                         hasVideo = songVideo != null,
                         onArtist = {
                             metadata?.artists?.firstOrNull()?.id?.let { id ->
@@ -768,7 +767,8 @@ private fun NowPlaying(
             }
 
             val headerTop = topInset + 26.dp + 8.dp
-            val contentTop = headerTop + 60.dp
+            val compactHeaderHeight = if (appearance.softPlayer) 104.dp else 56.dp
+            val contentTop = headerTop + compactHeaderHeight
             // collapsed, the list stops just under the grabber
             val headerBlockPx = with(density) { (contentTop - topInset - 32.dp).toPx() }
             SideEffect { queueCollapse.headerBlock = headerBlockPx }
@@ -1012,7 +1012,6 @@ private fun NowPlaying(
                             }
                         },
                         onQueue = { mode = if (mode == NowPlayingMode.Queue) NowPlayingMode.Stage else NowPlayingMode.Queue },
-                        playing = isPlaying && !reducedMotion,
                         hasVideo = songVideo != null,
                         onArtist = {
                             metadata?.artists?.firstOrNull()?.id?.let { id ->
@@ -1134,8 +1133,8 @@ private const val PausedArtworkScale = 0.82f
 // The alternate poster stays nearly still when paused; it settles instead of springing back.
 private const val SoftPausedArtworkScale = 0.96f
 
-private val SoftTitleStyle = PlayerType.stageTitle.copy(fontSize = 29.sp, lineHeight = 34.sp, fontWeight = FontWeight.Bold)
-private val SoftArtistStyle = PlayerType.stageArtist.copy(fontSize = 20.sp, lineHeight = 26.sp, fontWeight = FontWeight.SemiBold)
+private val SoftTitleStyle = PlayerType.stageTitle.copy(fontSize = 24.sp, lineHeight = 29.sp, fontWeight = FontWeight.Bold)
+private val SoftArtistStyle = PlayerType.stageArtist.copy(fontSize = 17.sp, lineHeight = 22.sp, fontWeight = FontWeight.SemiBold)
 
 /** The height the controls block occupies, used to reserve room for it on the stage. */
 private val ControlsBlockHeight: Dp = 30.dp + 18.dp + 14.dp + 104.dp + 12.dp + 30.dp + 16.dp + 48.dp
@@ -1144,7 +1143,7 @@ private val ControlsBlockHeight: Dp = 30.dp + 18.dp + 14.dp + 104.dp + 12.dp + 3
 private val AlternateControlsBlockHeight: Dp = 384.dp
 
 /** About how tall the title row is, for laying out the poster before the row has been measured. */
-private val PosterTitleHeight: Dp = 56.dp
+private val PosterTitleHeight: Dp = 112.dp
 
 @Composable
 private fun StageTitleRow(
@@ -1155,17 +1154,16 @@ private fun StageTitleRow(
     onMore: () -> Unit,
     onQueue: () -> Unit,
     onArtist: () -> Unit,
-    playing: Boolean = true,
     hasVideo: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val soft = LocalShinyAppearance.current.softPlayer
     var moreOpen by remember { mutableStateOf(false) }
-    Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+    Column(modifier.fillMaxWidth()) {
         Crossfade(
             targetState = title to artist,
             animationSpec = PlayerMotion.small(),
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.fillMaxWidth(),
             label = "stageTitle",
         ) { (shownTitle, shownArtist) ->
             Column {
@@ -1173,36 +1171,43 @@ private fun StageTitleRow(
                     text = shownTitle,
                     style = if (soft) SoftTitleStyle else PlayerType.stageTitle,
                     color = if (soft) SoftInk.title else NowPlayingInk.primary,
-                    maxLines = 1,
-                    overflow = if (playing) TextOverflow.Clip else TextOverflow.Ellipsis,
-                    modifier = if (playing) Modifier.basicMarquee(iterations = Int.MAX_VALUE, initialDelayMillis = 2600, repeatDelayMillis = 2600) else Modifier,
+                    maxLines = if (soft) 1 else 2,
+                    overflow = TextOverflow.Ellipsis,
                 )
                 val interaction = remember { MutableInteractionSource() }
                 Text(
                     text = shownArtist,
                     style = if (soft) SoftArtistStyle else PlayerType.stageArtist,
                     color = if (soft) SoftInk.artist else NowPlayingInk.secondary,
-                    maxLines = 1,
+                    maxLines = if (soft) 1 else 2,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.combinedClickable(interactionSource = interaction, indication = null, onClick = onArtist),
                 )
             }
         }
-        Spacer(Modifier.width(PlayerSpace.s))
-        StageGlassButton(
-            icon = if (liked) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
-            label = stringResource(if (liked) R.string.liked else R.string.like),
-            iconSize = 20.dp,
-            onClick = onLike,
-        )
-        Box {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = PlayerSpace.s),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             StageGlassButton(
-                icon = Icons.Rounded.MoreHoriz,
-                label = stringResource(R.string.liquid_more_options),
-                iconSize = 22.dp,
-                onClick = { moreOpen = !moreOpen },
+                icon = if (liked) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                label = stringResource(if (liked) R.string.liked else R.string.like),
+                iconSize = 20.dp,
+                onClick = onLike,
             )
-            PlayerMoreMenu(expanded = moreOpen, onDismiss = { moreOpen = false }, hasVideo = hasVideo, onOtherMenu = onMore)
+            Spacer(Modifier.width(PlayerSpace.s))
+            Box {
+                StageGlassButton(
+                    icon = Icons.Rounded.MoreHoriz,
+                    label = stringResource(R.string.liquid_more_options),
+                    iconSize = 22.dp,
+                    onClick = { moreOpen = !moreOpen },
+                )
+                PlayerMoreMenu(expanded = moreOpen, onDismiss = { moreOpen = false }, hasVideo = hasVideo, onOtherMenu = onMore)
+            }
         }
     }
 }
@@ -1240,7 +1245,69 @@ private fun CompactHeader(
     onPlayPause: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
+    val soft = LocalShinyAppearance.current.softPlayer
     val interaction = remember { MutableInteractionSource() }
+    if (soft) {
+        Column(
+            modifier = modifier
+                .fillMaxWidth()
+                .height(104.dp),
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    Modifier
+                        .size(52.dp)
+                        .onGloballyPositioned { onArtworkSlot(it) },
+                )
+                Crossfade(
+                    targetState = title to artist,
+                    animationSpec = PlayerMotion.small(),
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = PlayerSpace.m)
+                        .combinedClickable(interactionSource = interaction, indication = null, onClick = onClick),
+                    label = "softCompactTitle",
+                ) { (shownTitle, shownArtist) ->
+                    Column {
+                        Text(shownTitle, style = LiquidTypography.headline, color = SoftInk.title, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(shownArtist, style = LiquidTypography.subheadline, color = SoftInk.artist, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                }
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                HeaderIcon(
+                    icon = if (liked) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                    label = stringResource(R.string.like),
+                    state = if (liked) stringResource(R.string.liked) else null,
+                    onClick = onLike,
+                )
+                if (onPlayPause != null) {
+                    HeaderIcon(
+                        icon = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                        label = stringResource(if (isPlaying) R.string.pause else R.string.play),
+                        onClick = onPlayPause,
+                    )
+                }
+                HeaderIcon(
+                    icon = Icons.Rounded.MoreHoriz,
+                    label = stringResource(R.string.liquid_more_options),
+                    onClick = onMore,
+                )
+            }
+        }
+        return
+    }
     Row(
         modifier = modifier
             .fillMaxWidth()

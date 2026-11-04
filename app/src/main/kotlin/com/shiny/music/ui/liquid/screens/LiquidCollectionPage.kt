@@ -148,7 +148,6 @@ fun LiquidCollectionPage(
         drawContent()
     }
     val topInset = statusBarHeight()
-    // settings › customise › playlist styles; classic is the page as it always was
     val style by com.shiny.music.utils.rememberEnumPreference(
         com.shiny.music.ui.liquid.customize.CustomizePrefs.PlaylistStyle,
         com.shiny.music.ui.liquid.customize.PlaylistStyle.Classic,
@@ -236,7 +235,6 @@ fun LiquidCollectionPage(
             }
         }
 
-        // where the title has gone under the bar, for each header's height
         val headerPx = with(density) {
             when {
                 flowCover -> screenWidth.toPx() + 40.dp.toPx()
@@ -336,7 +334,6 @@ private fun CollectionHeader(
             Text(
                 text = title,
                 color = ink.primary,
-                // with no cover above it the title is the page's picture, so it is set bigger
                 fontSize = if (showCover) 24.sp else 34.sp,
                 lineHeight = if (showCover) 28.sp else 38.sp,
                 fontWeight = FontWeight.Bold,
@@ -418,11 +415,6 @@ private fun CollectionHeader(
     }
 }
 
-/**
- * The Flow header: the cover edge to edge across the top of the page, asked for at the
- * screen's own pixels so it is never drawn enlarged, its foot running into the page colour
- * with the title, maker and buttons set over it. It drifts up slower than the page scrolls.
- */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun FlowHeader(
@@ -473,13 +465,11 @@ private fun FlowHeader(
                         modifier = Modifier.fillMaxSize(),
                     )
                 }
-                // the foot of the cover goes into the page's colour, so the type over it reads
                 Box(
                     Modifier
                         .fillMaxSize()
                         .background(
                             Brush.verticalGradient(
-                                // dark enough at the top for the status bar and buttons over a white cover
                                 0f to Color.Black.copy(alpha = 0.5f),
                                 0.22f to Color.Transparent,
                                 0.5f to Color.Transparent,

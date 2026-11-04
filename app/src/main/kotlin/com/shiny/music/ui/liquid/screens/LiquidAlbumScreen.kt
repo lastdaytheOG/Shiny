@@ -1,5 +1,7 @@
 package com.shiny.music.ui.liquid.screens
 
+import com.shiny.music.models.toMediaMetadata
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -143,6 +145,7 @@ fun LiquidAlbumScreen(
             val songArtists = song.artists.joinToString { it.name }
             SongRow(
                 songId = song.id,
+                swipe = androidx.compose.runtime.remember(song) { song.toMediaMetadata() },
                 title = song.title,
                 subtitle = songArtists.takeIf { it.isNotBlank() && it != artistNames },
                 artwork = null,

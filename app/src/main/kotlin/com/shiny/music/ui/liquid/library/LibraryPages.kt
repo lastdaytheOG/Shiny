@@ -1,5 +1,7 @@
 package com.shiny.music.ui.liquid.library
 
+import com.shiny.music.models.toMediaMetadata
+
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -203,11 +205,14 @@ fun LibraryTrackRow(
     placeholder: ImageVector = Icons.Rounded.MusicNote,
     leading: (@Composable () -> Unit)? = null,
     titleColor: Color = Liquid.colors.label,
+    /** The song a sideways slide acts on (Settings › Customise › Gestures); null for no swipe. */
+    swipe: com.shiny.music.models.MediaMetadata? = null,
 ) {
     val colors = Liquid.colors
     val haptics = LocalHapticFeedback.current
+    com.shiny.music.ui.liquid.customize.SongSwipeBox(song = swipe, modifier = modifier.fillMaxWidth()) {
     Row(
-        modifier
+        Modifier
             .fillMaxWidth()
             .combinedClickable(
                 interactionSource = remember { MutableInteractionSource() },
@@ -259,6 +264,7 @@ fun LibraryTrackRow(
                 )
             }
         }
+    }
     }
 }
 
@@ -408,6 +414,10 @@ fun LibrarySongsPage(
     navController: NavController,
     viewModel: LibrarySongsViewModel = hiltViewModel(),
 ) {
+    if (com.shiny.music.ui.liquid.customize.CustomizeLook.songListStyle == com.shiny.music.ui.liquid.customize.SongListStyle.Stack) {
+        LibrarySongsStack(navController, viewModel)
+        return
+    }
     val actions = rememberLiquidActions(navController) ?: return
     val songs by viewModel.everySong.collectAsState()
     var query by rememberSaveable { mutableStateOf("") }
@@ -446,6 +456,7 @@ fun LibrarySongsPage(
         indexedItems(indexed, idOf = { it.id }) { song, position ->
             val active = nowPlaying.value?.id == song.id
             LibraryTrackRow(
+                swipe = androidx.compose.runtime.remember(song) { song.toMediaMetadata() },
                 title = song.title,
                 subtitle = song.artists.joinToString { it.name },
                 artwork = song.thumbnailUrl,
@@ -557,6 +568,10 @@ fun LibraryAddedPage(
     navController: NavController,
     viewModel: LibraryHomeViewModel = hiltViewModel(),
 ) {
+    if (com.shiny.music.ui.liquid.customize.CustomizeLook.songListStyle == com.shiny.music.ui.liquid.customize.SongListStyle.Stack) {
+        LibraryAddedStack(navController, viewModel)
+        return
+    }
     val actions = rememberLiquidActions(navController) ?: return
     val songs by viewModel.recentSongs.collectAsState()
     var query by rememberSaveable { mutableStateOf("") }
@@ -699,4 +714,100 @@ private fun GlyphTile(icon: ImageVector) {
     ) {
         Icon(icon, null, tint = Liquid.colors.accent, modifier = Modifier.size(26.dp))
     }
+}
+
+
+fun songMatches(song: Song, query: String): Boolean =
+    song.title.contains(query, true) ||
+        song.artists.any { it.name.contains(query, true) } ||
+        song.song.albumName.orEmpty().contains(query, true)
+
+@Composable
+fun SongPosterStack(
+    actions: LiquidActions,
+    title: String,
+    songs: List<Song>,
+    placeholder: String,
+    subtitle: String? = null,
+    onBack: (() -> Unit)? = null,
+    stackActions: List<StackAction> = emptyList(),
+    rail: PosterRail? = null,
+    onOpen: ((List<Song>, Int) -> Unit)? = null,
+) {
+    val nowPlaying = actions.playerConnection.mediaMetadata.collectAsState()
+    PosterStackPage(
+        title = title,
+        subtitle = subtitle,
+        items = songs,
+        keyOf = { it.id },
+        titleOf = { it.title },
+        artistOf = { song -> song.artists.joinToString { it.name } },
+        artworkOf = { it.thumbnailUrl },
+        matches = ::songMatches,
+        placeholder = placeholder,
+        onOpen = onOpen ?: { list, index ->
+            val song = list[index]
+            if (nowPlaying.value?.id == song.id) actions.togglePlayPause() else actions.playSongs(title, list, startIndex = index)
+        },
+        onMenu = { actions.menu(it) },
+        onBack = onBack,
+        actions = stackActions,
+        rail = rail,
+    )
+}
+
+@Composable
+fun playShuffleActions(actions: LiquidActions, title: String?, songs: List<Song>): List<StackAction> {
+    val play = stringResource(R.string.liquid_play)
+    val shuffle = stringResource(R.string.liquid_shuffle)
+    if (songs.isEmpty()) return emptyList()
+    return listOf(
+        StackAction(play, { actions.playSongs(title, songs) }, icon = Icons.Rounded.PlayArrow),
+        StackAction(shuffle, { actions.playSongs(title, songs, shuffle = true) }, icon = Icons.Rounded.Shuffle),
+    )
+}
+
+@Composable
+private fun LibrarySongsStack(navController: NavController, viewModel: LibrarySongsViewModel) {
+    val actions = rememberLiquidActions(navController) ?: return
+    val songs by viewModel.everySong.collectAsState()
+    val grouped = remember(songs) { indexSections(songs) { it.title } }
+    val ordered = remember(grouped) { grouped.flatMap { it.second } }
+    val rail = remember(grouped) {
+        var start = 0
+        val positions = HashMap<String, Int>()
+        grouped.forEach { (section, entries) ->
+            positions[section.key] = start
+            start += entries.size
+        }
+        PosterRail(grouped.map { it.first }, positions)
+    }
+    SongPosterStack(
+        actions = actions,
+        title = stringResource(R.string.songs),
+        subtitle = stringResource(R.string.library_songs_subtitle),
+        songs = ordered,
+        placeholder = stringResource(R.string.library_find_song),
+        rail = rail,
+    )
+}
+
+@Composable
+private fun LibraryAddedStack(navController: NavController, viewModel: LibraryHomeViewModel) {
+    val actions = rememberLiquidActions(navController) ?: return
+    val songs by viewModel.recentSongs.collectAsState()
+    val title = stringResource(R.string.liquid_recently_added)
+    SongPosterStack(
+        actions = actions,
+        title = stringResource(R.string.library_added_title),
+        subtitle = stringResource(R.string.library_added_subtitle),
+        songs = songs,
+        placeholder = stringResource(R.string.library_find_added),
+        stackActions = playShuffleActions(actions, title, songs),
+        onOpen = { list, index ->
+            val song = list[index]
+            if (actions.playerConnection.mediaMetadata.value?.id == song.id) actions.togglePlayPause()
+            else actions.playSongs(title, list, startIndex = index)
+        },
+    )
 }

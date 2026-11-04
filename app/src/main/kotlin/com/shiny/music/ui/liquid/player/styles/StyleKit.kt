@@ -52,18 +52,10 @@ import com.shiny.music.ui.utils.resize
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 
-/*
- * What every alternate player style is built from: the song, the clock, the artwork's
- * colours, the song's synced lines and a few shared controls. The styles themselves only
- * lay these out.
- */
-
-/** Ink for a style's type, over its artwork-coloured ground. */
 internal val StyleInk = Color.White
 internal val StyleInkSoft = Color.White.copy(alpha = 0.64f)
 internal val StyleInkFaint = Color.White.copy(alpha = 0.32f)
 
-/** The colours a style takes from the cover: a light and a dark side of it. */
 @Immutable
 internal data class StyleTones(val light: Color, val dark: Color, val vivid: Color)
 
@@ -79,10 +71,6 @@ internal fun rememberStyleTones(artwork: String?): StyleTones {
     }
 }
 
-/**
- * Where playback is, polled from the player while the sheet is open and published as plain
- * numbers; read them in draw or layer scopes, or through [rememberPlayedSeconds].
- */
 internal class StyleClock(
     private val position: androidx.compose.runtime.MutableLongState,
     private val duration: androidx.compose.runtime.MutableLongState,
@@ -91,7 +79,6 @@ internal class StyleClock(
     val durationMs: Long get() = duration.longValue
     val fraction: Float get() = if (durationMs <= 0) 0f else (positionMs.toFloat() / durationMs).coerceIn(0f, 1f)
 
-    // a seek shows at once, before the next poll
     fun moved(to: Long) {
         position.longValue = to
     }
@@ -113,12 +100,10 @@ internal fun rememberStyleClock(expanded: Boolean, isPlaying: Boolean, metadata:
     return remember { StyleClock(position, duration) }
 }
 
-/** The played time in whole seconds, so a label recomposes once a second and nothing else does. */
 @Composable
 internal fun rememberPlayedText(clock: StyleClock): State<String> =
     remember(clock) { derivedStateOf { formatTime((clock.positionMs / 1000L) * 1000L) } }
 
-/** The song's synced lines (background vocals and blanks left out), or empty without timings. */
 @Composable
 internal fun rememberSyncedLines(metadata: MediaMetadata?): List<LyricsEntry> {
     val playerConnection = LocalPlayerConnection.current ?: return emptyList()
@@ -134,12 +119,10 @@ internal fun rememberSyncedLines(metadata: MediaMetadata?): List<LyricsEntry> {
     }
 }
 
-/** The index of the line being sung, -1 before the first; it only changes when the line does. */
 @Composable
 internal fun rememberLineIndex(lines: List<LyricsEntry>, clock: StyleClock, offsetMs: Long = 0L): State<Int> =
     remember(lines, clock, offsetMs) {
         derivedStateOf {
-            // a quarter second early, so a line is up as it begins to be sung
             val t = clock.positionMs + offsetMs + 250L
             var lo = 0
             var hi = lines.lastIndex
@@ -157,7 +140,6 @@ internal fun rememberLineIndex(lines: List<LyricsEntry>, clock: StyleClock, offs
         }
     }
 
-/** A round white glyph button, swelling under the finger. */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun StyleGlyphButton(
@@ -193,7 +175,6 @@ internal fun StyleGlyphButton(
     }
 }
 
-/** Close on the left, the song's menu on the right. */
 @Composable
 internal fun StyleTopBar(onClose: () -> Unit, onMore: () -> Unit, modifier: Modifier = Modifier) {
     Row(
@@ -203,12 +184,10 @@ internal fun StyleTopBar(onClose: () -> Unit, onMore: () -> Unit, modifier: Modi
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        StyleGlyphButton(Icons.Rounded.KeyboardArrowDown, "Close player", onClose, size = 40.dp, iconSize = 28.dp)
-        StyleGlyphButton(Icons.Rounded.MoreHoriz, "More", onMore, size = 40.dp, iconSize = 24.dp)
+        androidx.compose.foundation.layout.Spacer(Modifier.size(43.dp))
     }
 }
 
-/** Previous, play or pause, next: white glyphs in round frosted buttons. */
 @Composable
 internal fun StyleTransport(
     isPlaying: Boolean,
@@ -240,7 +219,6 @@ internal fun StyleTransport(
     }
 }
 
-/** What a style can ask the player to do. */
 @Immutable
 internal class StyleActions(
     val previous: () -> Unit,
@@ -251,7 +229,6 @@ internal class StyleActions(
     val more: () -> Unit,
 )
 
-/** Everything a style is given to draw. */
 @Immutable
 internal class StyleSong(
     val metadata: MediaMetadata?,
@@ -267,5 +244,4 @@ internal class StyleSong(
     val artwork: String? get() = metadata?.thumbnailUrl
 }
 
-/** The played and total times, as text, for the bars that show them. */
 internal fun totalText(clock: StyleClock): String = formatTime(clock.durationMs)

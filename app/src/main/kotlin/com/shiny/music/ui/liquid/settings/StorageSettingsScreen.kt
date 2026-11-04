@@ -180,7 +180,7 @@ fun StorageSettingsScreen(navController: NavController) {
     var songLimitIndex by remember(maxSongCacheSize) { mutableFloatStateOf(SongCacheSizes.indexOf(maxSongCacheSize).coerceAtLeast(0).toFloat()) }
     var imageLimitIndex by remember(maxImageCacheSize) { mutableFloatStateOf(ImageCacheSizes.indexOf(maxImageCacheSize).let { if (it < 0) ImageCacheSizes.indexOf(App.DEFAULT_IMAGE_CACHE_MB) else it }.toFloat()) }
 
-    SettingsPage(title = "Downloads & Storage", navController = navController, search = false, hideBarOnScroll = true) {
+    SettingsPage(title = "Downloads & Storage", navController = navController, hideBarOnScroll = true) {
         item(key = "downloads") {
             SettingsSection(title = "Downloads") {
                 SettingsRow(
@@ -228,18 +228,28 @@ fun StorageSettingsScreen(navController: NavController) {
                     value = songLimitIndex,
                     onValueChange = { songLimitIndex = it },
                     valueRange = 0f..(SongCacheSizes.size - 1).toFloat(),
-                    steps = SongCacheSizes.size - 2,
                     valueLabel = cacheLabel(SongCacheSizes[songLimitIndex.roundToInt().coerceIn(SongCacheSizes.indices)]),
-                    onValueChangeFinished = { maxSongCacheSize = SongCacheSizes[songLimitIndex.roundToInt().coerceIn(SongCacheSizes.indices)] },
+                    onValueChangeFinished = {
+                        val snapped = songLimitIndex.roundToInt().coerceIn(SongCacheSizes.indices)
+                        scope.launch {
+                            androidx.compose.animation.core.animate(songLimitIndex, snapped.toFloat(), animationSpec = androidx.compose.animation.core.spring(dampingRatio = 1f, stiffness = 600f)) { v, _ -> songLimitIndex = v }
+                        }
+                        maxSongCacheSize = SongCacheSizes[snapped]
+                    },
                 )
                 SettingsSliderRow(
                     title = "Artwork cache limit",
                     value = imageLimitIndex,
                     onValueChange = { imageLimitIndex = it },
                     valueRange = 0f..(ImageCacheSizes.size - 1).toFloat(),
-                    steps = ImageCacheSizes.size - 2,
                     valueLabel = cacheLabel(ImageCacheSizes[imageLimitIndex.roundToInt().coerceIn(ImageCacheSizes.indices)]),
-                    onValueChangeFinished = { maxImageCacheSize = ImageCacheSizes[imageLimitIndex.roundToInt().coerceIn(ImageCacheSizes.indices)] },
+                    onValueChangeFinished = {
+                        val snapped = imageLimitIndex.roundToInt().coerceIn(ImageCacheSizes.indices)
+                        scope.launch {
+                            androidx.compose.animation.core.animate(imageLimitIndex, snapped.toFloat(), animationSpec = androidx.compose.animation.core.spring(dampingRatio = 1f, stiffness = 600f)) { v, _ -> imageLimitIndex = v }
+                        }
+                        maxImageCacheSize = ImageCacheSizes[snapped]
+                    },
                     divider = false,
                 )
             }

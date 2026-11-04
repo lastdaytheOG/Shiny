@@ -1,5 +1,7 @@
 package com.shiny.music.ui.liquid.screens
 
+import com.shiny.music.models.toMediaMetadata
+
 import androidx.compose.runtime.remember
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.semantics.contentDescription
@@ -87,6 +89,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.itemsGrid(
         itemsIndexed(songs, key = { i, s -> "${keyPrefix}_s_${i}_${s.id}" }) { index, song ->
             SongRow(
                 songId = song.id,
+                swipe = androidx.compose.runtime.remember(song) { song.toMediaMetadata() },
                 title = song.title,
                 subtitle = song.artists.joinToString { it.name },
                 artwork = song.thumbnail,
@@ -150,6 +153,37 @@ fun LiquidHistoryScreen(
     )
     val allSongs = events.values.flatten().map { it.song }
 
+    if (com.shiny.music.ui.liquid.customize.CustomizeLook.songListStyle == com.shiny.music.ui.liquid.customize.SongListStyle.Stack) {
+        val flat = remember(events) {
+            events.flatMap { (date, list) ->
+                val label = when (date) {
+                    DateAgo.Today -> labels["today"]!!
+                    DateAgo.Yesterday -> labels["yesterday"]!!
+                    DateAgo.ThisWeek -> labels["this_week"]!!
+                    DateAgo.LastWeek -> labels["last_week"]!!
+                    is DateAgo.Other -> date.date.format(monthFormat)
+                }
+                list.map { label to it }
+            }
+        }
+        com.shiny.music.ui.liquid.library.PosterStackPage(
+            title = stringResource(R.string.history),
+            items = flat,
+            keyOf = { "h_${it.second.event.id}" },
+            titleOf = { it.second.song.title },
+            artistOf = { pair -> pair.second.song.artists.joinToString { it.name } },
+            artworkOf = { it.second.song.thumbnailUrl },
+            matches = { pair, q -> com.shiny.music.ui.liquid.library.songMatches(pair.second.song, q) },
+            placeholder = stringResource(R.string.search),
+            onOpen = { list, index -> actions.open(list[index].second.song) },
+            onMenu = { actions.menu(it.second.song) },
+            onBack = { navController.navigateUp() },
+            actions = com.shiny.music.ui.liquid.library.playShuffleActions(actions, null, allSongs),
+            captionOf = { it.first },
+        )
+        return
+    }
+
     LargeTitlePage(
         title = stringResource(R.string.history),
         navigationButton = { LiquidBackButton(onClick = { navController.navigateUp() }) },
@@ -176,6 +210,7 @@ fun LiquidHistoryScreen(
             items(list, key = { "h_${label}_${it.event.id}" }) { event ->
                 SongRow(
                     songId = event.song.id,
+                    swipe = androidx.compose.runtime.remember(event.song) { event.song.toMediaMetadata() },
                     title = event.song.title,
                     subtitle = event.song.artists.joinToString { it.name },
                     artwork = event.song.thumbnailUrl,
@@ -273,6 +308,7 @@ fun LiquidArtistSongsScreen(
         itemsIndexed(songs, key = { _, s -> "as_${s.id}" }) { index, song ->
             SongRow(
                 songId = song.id,
+                swipe = androidx.compose.runtime.remember(song) { song.toMediaMetadata() },
                 title = song.title,
                 subtitle = song.album?.title ?: song.artists.joinToString { it.name },
                 artwork = song.thumbnailUrl,
@@ -397,6 +433,7 @@ fun LiquidYouTubeBrowseScreen(
                     itemsIndexed(songs.take(8), key = { i, s -> "yb_${index}_${i}_${s.id}" }) { i, song ->
                         SongRow(
                             songId = song.id,
+                            swipe = androidx.compose.runtime.remember(song) { song.toMediaMetadata() },
                             title = song.title,
                             subtitle = song.artists.joinToString { it.name },
                             artwork = song.thumbnail,
@@ -530,6 +567,7 @@ fun LiquidChartsScreen(
                     itemsIndexed(songs.take(20), key = { i, s -> "ch_${index}_${i}_${s.id}" }) { i, song ->
                         SongRow(
                             songId = song.id,
+                            swipe = androidx.compose.runtime.remember(song) { song.toMediaMetadata() },
                             title = song.title,
                             subtitle = song.artists.joinToString { it.name },
                             artwork = song.thumbnail,

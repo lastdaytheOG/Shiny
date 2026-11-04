@@ -47,6 +47,12 @@ enum class ArtworkPresentation {
     Poster,
 }
 
+/** The whole Now Playing look: Shiny's own, or an artwork-led alternate player. */
+enum class PlayerLook {
+    Shiny,
+    Soft,
+}
+
 /**
  * Where a poster cover dissolves, measured down the player in whatever unit the cover's
  * side was given in. It is sharp to [start] and gone by [end]; what shows instead is its

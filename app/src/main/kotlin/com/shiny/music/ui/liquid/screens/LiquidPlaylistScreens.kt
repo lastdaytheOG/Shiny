@@ -210,6 +210,7 @@ fun LiquidOnlinePlaylistScreen(
         itemsIndexed(songs, key = { index, s -> "ps_${index}_${s.id}" }) { index, song ->
             SongRow(
                 songId = song.id,
+                swipe = androidx.compose.runtime.remember(song) { song.toMediaMetadata() },
                 title = song.title,
                 subtitle = song.artists.joinToString { it.name },
                 artwork = song.thumbnail,
@@ -315,6 +316,7 @@ fun LiquidSharedPlaylistScreen(
         itemsIndexed(songs, key = { index, s -> "sp_${index}_${s.id}" }) { index, song ->
             SongRow(
                 songId = song.id,
+                swipe = androidx.compose.runtime.remember(song) { song.toMediaMetadata() },
                 title = song.title,
                 subtitle = song.artists.joinToString { it.name },
                 artwork = song.thumbnail,
@@ -494,6 +496,7 @@ fun LiquidLocalPlaylistScreen(
             val songRow: @Composable (trailing: (@Composable RowScope.() -> Unit)?) -> Unit = { trailing ->
                 SongRow(
                     songId = row.song.id,
+                    swipe = androidx.compose.runtime.remember(row.song) { row.song.toMediaMetadata() },
                     title = row.song.title,
                     subtitle = row.song.artists.joinToString { it.name },
                     artwork = row.song.thumbnailUrl,
@@ -551,6 +554,7 @@ fun LiquidLocalPlaylistScreen(
             items(suggestions.take(8), key = { "sug_${it.id}" }) { song ->
                 SongRow(
                     songId = song.id,
+                    swipe = androidx.compose.runtime.remember(song) { song.toMediaMetadata() },
                     title = song.title,
                     subtitle = song.artists.joinToString { it.name },
                     artwork = song.thumbnail,
@@ -591,6 +595,29 @@ fun LiquidAutoPlaylistScreen(
     }
     LaunchedEffect(viewModel.playlist) {
         if (viewModel.playlist == "liked") viewModel.syncLikedSongs()
+    }
+    if (com.shiny.music.ui.liquid.customize.CustomizeLook.songListStyle == com.shiny.music.ui.liquid.customize.SongListStyle.Stack) {
+        val actions = rememberLiquidActions(navController) ?: return
+        val smartShuffle = rememberSmartShuffle(
+            items = songs,
+            id = { it.id },
+            artist = { it.artists.firstOrNull()?.name },
+            play = { ordered -> actions.playPreShuffled(title, ordered) },
+        )
+        val glyph = remember { com.shiny.music.ui.liquid.smartShuffleGlyph(androidx.compose.ui.graphics.Color.White) }
+        val smartPainter = androidx.compose.ui.graphics.vector.rememberVectorPainter(glyph)
+        val smartLabel = stringResource(R.string.liquid_smart_shuffle)
+        val base = com.shiny.music.ui.liquid.library.playShuffleActions(actions, title, songs)
+        com.shiny.music.ui.liquid.library.SongPosterStack(
+            actions = actions,
+            title = title,
+            subtitle = pluralStringResource(R.plurals.liquid_songs_count, songs.size, songs.size),
+            songs = songs,
+            placeholder = stringResource(R.string.search),
+            onBack = { navController.navigateUp() },
+            stackActions = if (base.isEmpty()) base else base + com.shiny.music.ui.liquid.library.StackAction(smartLabel, smartShuffle, painter = smartPainter),
+        )
+        return
     }
     SongCollection(
         navController = navController,
@@ -723,6 +750,7 @@ private fun SongCollection(
         itemsIndexed(songs, key = { _, s -> "sc_${s.id}" }) { index, song ->
             SongRow(
                 songId = song.id,
+                swipe = androidx.compose.runtime.remember(song) { song.toMediaMetadata() },
                 title = song.title,
                 subtitle = song.artists.joinToString { it.name },
                 artwork = song.thumbnailUrl,

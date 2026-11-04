@@ -264,7 +264,6 @@ private fun LyricsList(
     // did — until the Sync button, a tapped line or a seek hands it back. A new song follows.
     val following = remember(lines) { mutableStateOf(true) }
     val wordSetting by rememberPreference(com.shiny.music.ui.liquid.LiquidPrefs.WordByWord, true)
-    // settings › customise › lyrics animation: glow, rising words, word timing and the wave
     val lyricsStyle by com.shiny.music.utils.rememberEnumPreference(
         com.shiny.music.ui.liquid.customize.CustomizePrefs.LyricsStyle,
         com.shiny.music.ui.liquid.customize.LyricsStyle.Shiny,

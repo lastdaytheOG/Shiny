@@ -52,7 +52,6 @@ private val Clear = Color.White.copy(alpha = 0f)
 /** Past any glyph: the open side of a clip. */
 private const val Far = 100_000f
 
-/** How far a word rises as it is sung, in the Rise lyric style. */
 private val RiseLift = 3.dp
 
 /** How soft the glow round a sung word is. */
@@ -125,15 +124,12 @@ internal class LineInk private constructor(
         if (rowRtl[r]) RevealBrush(Clear, Sung, feather) else RevealBrush(Sung, Clear, feather)
     }
 
-    /** The line as still white text; its layer dims it. A sung line keeps the [lift] its words rose by. */
+    /** The line as still white text; its layer dims it. */
     fun drawStatic(scope: DrawScope, lift: Float = 0f) = with(scope) {
         for (r in rows.indices) translate(rowX[r], rowY[r] - lift) { drawText(rows[r], color = Sung) }
     }
 
-    /**
-     * The line being sung at [t]: sung words white, the word being sung revealed, the rest dim.
-     * With a [lift] (the Rise lyric style) each word rises by it as it is sung and stays up.
-     */
+    /** The line being sung at [t]: sung words white, the word being sung revealed, the rest dim. */
     fun drawLive(scope: DrawScope, line: LyricLineTiming, t: Double, lift: Float = 0f) = with(scope) {
         val q = line.startedAt(t) - 1
         for (r in rows.indices) {
@@ -228,7 +224,6 @@ internal class LineInk private constructor(
     companion object {
         private const val GlowFloor = 0.004f
 
-        // a word rises over the first part of its time, easing out, then holds
         private fun riseOf(p: Float): Float {
             val x = (p / 0.6f).coerceIn(0f, 1f)
             return 1f - (1f - x) * (1f - x)
@@ -389,7 +384,6 @@ private class LyricInkNode(
     /** Whether this line's ink depends on the exact time: changes a few times a line. */
     private var live: State<Boolean> = liveState()
 
-    /** Whether the line has been sung: flips once a line, and only read while words rise. */
     private var past: State<Boolean> = pastState()
 
     private var glowLift = 0f

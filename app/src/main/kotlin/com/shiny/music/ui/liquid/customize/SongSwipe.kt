@@ -74,6 +74,7 @@ import com.shiny.music.ui.component.LocalBottomSheetPageState
 import com.shiny.music.ui.menu.AddToPlaylistDialog
 import com.shiny.music.ui.utils.ShowMediaInfo
 import com.shiny.music.utils.isLocalMediaId
+import com.shiny.music.utils.rememberEnumPreference
 import com.shiny.music.utils.rememberPreference
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -85,7 +86,6 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.math.sign
 
-// library and playlist writes outlive the row that started them
 private val SwipeScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
 private val PillEdgeInset = 10.dp
@@ -99,11 +99,6 @@ private val SlabColor = Color.White.copy(alpha = 0.08f)
 private const val Resistance = 0.35f
 private const val SwipeHoldMillis = 650L
 
-/**
- * A song row that can be slid sideways. Sliding right runs the right-swipe action from
- * Settings › Customise, sliding left the left one; past the line the pill fills with the
- * action's colour and letting go does it while the row springs back.
- */
 @Composable
 fun SongSwipeBox(
     song: MediaMetadata?,
@@ -118,13 +113,11 @@ fun SongSwipeBox(
     val density = LocalDensity.current
     val haptic = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
-    val right = CustomizeLook.swipeRight
-    val left = CustomizeLook.swipeLeft
-    // a local file has no library, download or online details: those sides stay shut
-    val local = song.id.isLocalMediaId()
-    fun usable(action: SongSwipeAction) = !local || action == SongSwipeAction.Queue || action == SongSwipeAction.PlayNext || action == SongSwipeAction.AddToPlaylist
-    val startAction = right.takeIf(::usable)
-    val endAction = left.takeIf(::usable)
+    val right by rememberEnumPreference(CustomizePrefs.SwipeRight, DefaultSwipeRight)
+    val left by rememberEnumPreference(CustomizePrefs.SwipeLeft, DefaultSwipeLeft)
+
+    val startAction = right
+    val endAction = left
 
     var rowSize by remember { mutableStateOf(IntSize.Zero) }
     var offset by remember { mutableFloatStateOf(0f) }
@@ -176,7 +169,6 @@ fun SongSwipeBox(
     val showStart by remember { derivedStateOf { offset > 0.5f } }
     val showEnd by remember { derivedStateOf { offset < -0.5f } }
 
-    // a press that turns into a slide must not open the song's menu first, so holds wait longer here
     val baseConfiguration = androidx.compose.ui.platform.LocalViewConfiguration.current
     val longHold = remember(baseConfiguration) {
         object : androidx.compose.ui.platform.ViewConfiguration by baseConfiguration {
@@ -273,7 +265,6 @@ fun SongSwipeBox(
     }
 }
 
-/** Does a swipe's action for one song, and names it for the pill. */
 private class SwipeRunner(
     val run: (SongSwipeAction) -> Unit,
     val label: @Composable (SongSwipeAction) -> String,
@@ -286,14 +277,17 @@ private fun rememberSwipeRunner(song: MediaMetadata): SwipeRunner {
     val playerConnection = LocalPlayerConnection.current
     val downloadUtil = LocalDownloadUtil.current
     val sheetPage = LocalBottomSheetPageState.current
+    val local = song.id.isLocalMediaId()
     var choosePlaylist by remember { mutableStateOf(false) }
 
     AddToPlaylistDialog(
         isVisible = choosePlaylist,
         onGetSong = { playlist ->
             database.query { insert(song) }
-            SwipeScope.launch {
-                playlist.playlist.browseId?.let { YouTube.addToPlaylist(it, song.id) }
+            if (!local) {
+                SwipeScope.launch {
+                    playlist.playlist.browseId?.let { YouTube.addToPlaylist(it, song.id) }
+                }
             }
             listOf(song.id)
         },
@@ -302,7 +296,7 @@ private fun rememberSwipeRunner(song: MediaMetadata): SwipeRunner {
 
     fun toast(text: String) = Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
 
-    return remember(song, playerConnection, sheetPage) {
+    return remember(song, playerConnection, sheetPage, local) {
         SwipeRunner(
             run = { action ->
                 when (action) {
@@ -318,13 +312,21 @@ private fun rememberSwipeRunner(song: MediaMetadata): SwipeRunner {
                         val existing = database.getSongById(song.id)
                         val inLibrary = existing?.song?.inLibrary != null
                         val token = existing?.song?.let { if (inLibrary) it.libraryRemoveToken else it.libraryAddToken }
-                        token?.let { YouTube.feedback(listOf(it)) }
+                        if (!local) token?.let { YouTube.feedback(listOf(it)) }
                         database.query {
-                            if (existing == null) insert(song) { it.toggleLibrary() } else update(existing.song.toggleLibrary())
+                            if (existing == null) {
+                                insert(song) { it.toggleLibrary(syncToYouTube = !local) }
+                            } else {
+                                update(existing.song.toggleLibrary(syncToYouTube = !local))
+                            }
                         }
                         launch(Dispatchers.Main) { toast(if (inLibrary) "Removed from library" else "Added to library") }
                     }
                     SongSwipeAction.Download -> SwipeScope.launch {
+                        if (local) {
+                            launch(Dispatchers.Main) { toast("Already on this device") }
+                            return@launch
+                        }
                         val done = downloadUtil.getDownload(song.id).first()?.state == Download.STATE_COMPLETED
                         if (done) {
                             DownloadService.sendRemoveDownload(context, ExoDownloadService::class.java, song.id, false)
@@ -340,7 +342,7 @@ private fun rememberSwipeRunner(song: MediaMetadata): SwipeRunner {
                         }
                     }
                     SongSwipeAction.AddToPlaylist -> choosePlaylist = true
-                    SongSwipeAction.Details -> sheetPage.show { ShowMediaInfo(song.id) }
+                    SongSwipeAction.Details -> sheetPage.show { ShowMediaInfo(song.id, fallback = song) }
                 }
             },
             label = { action ->
@@ -395,7 +397,7 @@ private fun BoxScope.SwipePill(
             .align(if (atStart) Alignment.CenterStart else Alignment.CenterEnd)
             .padding(horizontal = PillEdgeInset)
             .layout { measurable, _ ->
-                // never wider than the gap that is open right now, so it can't run under the row
+
                 val w = minOf(width, room()).coerceAtLeast(0f)
                 val h = minOf(w, pillHeight)
                 val placeable = measurable.measure(Constraints.fixed(w.roundToInt(), h.roundToInt()))

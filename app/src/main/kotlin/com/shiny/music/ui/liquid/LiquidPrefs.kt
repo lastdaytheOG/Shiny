@@ -53,6 +53,9 @@ object LiquidPrefs {
      */
     val GlassFinish = stringPreferencesKey("appearanceGlassFinish")
 
+    /** The Now Playing look — `PlayerLook`. Absent means Shiny's own. */
+    val PlayerLook = stringPreferencesKey("appearancePlayerLook")
+
     /** How pages replace each other — `PageTransitions`. Absent means Slide. */
     val PageTransitions = stringPreferencesKey("appearancePageTransitions")
 }

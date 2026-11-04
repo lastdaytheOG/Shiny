@@ -1,5 +1,7 @@
 package com.shiny.music.ui.liquid
 
+import com.shiny.music.ui.liquid.customize.withCoverRounding
+
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
@@ -217,7 +219,11 @@ fun Artwork(
     contentDescription: String? = null,
     hairline: Boolean = true,
     dissolve: Boolean = false,
+    // false only where the caller already applied the cover rounding itself
+    scaleCorners: Boolean = true,
+    placeholderContent: (@Composable BoxScope.() -> Unit)? = null,
 ) {
+    val coverShape = if (scaleCorners) shape.withCoverRounding() else shape
     val colors = Liquid.colors
     val context = LocalContext.current
 
@@ -246,16 +252,20 @@ fun Artwork(
     }
     Box(
         modifier = modifier
-            .clip(shape)
+            .clip(coverShape)
             .background(if (colors.isDark) colors.gray5 else colors.gray5),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(
-            imageVector = placeholder,
-            contentDescription = null,
-            tint = colors.gray,
-            modifier = Modifier.fillMaxSize(0.36f),
-        )
+        if (placeholderContent != null) {
+            Box(Modifier.fillMaxSize(), content = placeholderContent)
+        } else {
+            Icon(
+                imageVector = placeholder,
+                contentDescription = null,
+                tint = colors.gray,
+                modifier = Modifier.fillMaxSize(0.36f),
+            )
+        }
         if (resolved != null) {
             AsyncImage(
                 model = request,
@@ -289,7 +299,7 @@ fun Artwork(
             Box(
                 Modifier
                     .matchParentSize()
-                    .border(0.5.dp, colors.label.copy(alpha = 0.09f), shape)
+                    .border(0.5.dp, colors.label.copy(alpha = 0.09f), coverShape)
             )
         }
     }
@@ -642,6 +652,8 @@ fun SongRow(
     leadingRankWidth: Dp = 30.dp,
     /** The song this row plays, so touching it starts the stream early; null for anything else. */
     songId: String? = null,
+    /** The song a sideways slide acts on (Settings › Customise › Gestures); null for no swipe. */
+    swipe: com.shiny.music.models.MediaMetadata? = null,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val showArtwork = trackNumber == null
@@ -652,8 +664,9 @@ fun SongRow(
     val rowArtwork = remember(artwork, artworkPx) {
         (artwork as? String)?.takeIf { "googleusercontent.com" in it }?.resize(artworkPx, artworkPx) ?: artwork
     }
+    com.shiny.music.ui.liquid.customize.SongSwipeBox(song = swipe.takeIf { enabled }, modifier = modifier.fillMaxWidth()) {
     Box(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxWidth()
             .then(if (enabled) Modifier.prewarmOnTouch(songId) else Modifier)
             .combinedClickable(
@@ -696,7 +709,7 @@ fun SongRow(
                         Box(
                             Modifier
                                 .matchParentSize()
-                                .clip(if (circularArtwork) CircleShape else RoundedCornerShape(artworkSize * 0.2f))
+                                .clip(if (circularArtwork) CircleShape else RoundedCornerShape(artworkSize * 0.2f).withCoverRounding())
                                 .background(Color.Black.copy(alpha = 0.42f)),
                             contentAlignment = Alignment.Center,
                         ) {
@@ -759,6 +772,7 @@ fun SongRow(
             // no dots on rows any more, holding the row opens the same menu
             Spacer(Modifier.width(PageMargin - 4.dp))
         }
+    }
     }
 }
 

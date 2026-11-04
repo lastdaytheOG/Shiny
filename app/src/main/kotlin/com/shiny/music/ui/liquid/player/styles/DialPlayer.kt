@@ -29,7 +29,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
@@ -161,12 +160,8 @@ private fun DialHead(song: StyleSong, modifier: Modifier) {
 @Composable
 private fun DialLyricsCard(song: StyleSong, modifier: Modifier) {
     val lines = rememberSyncedLines(song.metadata)
-    val shape = RoundedCornerShape(30.dp)
     Box(
-        modifier
-            .clip(shape)
-            .background(Color.White.copy(alpha = 0.035f))
-            .border(1.dp, Color.White.copy(alpha = 0.06f), shape),
+        modifier,
         contentAlignment = Alignment.Center,
     ) {
         if (lines.isEmpty()) {
@@ -263,38 +258,43 @@ private fun DialLines(song: StyleSong, lines: List<com.shiny.music.lyrics.Lyrics
 private fun DialTransport(song: StyleSong, accent: Color, modifier: Modifier) {
     val glyph = if (accent.luminance() > 0.6f) Color.Black else Color.White
     Row(
-        modifier,
-        horizontalArrangement = Arrangement.spacedBy(18.dp),
+        modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        StyleGlyphButton(
-            Icons.Rounded.SkipPrevious,
-            "Previous",
-            song.actions.previous,
-            size = 50.dp,
-            iconSize = 24.dp,
-            fill = Color.White.copy(alpha = 0.06f),
-            modifier = Modifier.border(1.dp, Color.White.copy(alpha = 0.08f), CircleShape),
-        )
-        StyleGlyphButton(
-            if (song.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-            if (song.isPlaying) "Pause" else "Play",
-            song.actions.playPause,
-            size = 74.dp,
-            iconSize = 34.dp,
-            fill = accent,
-            tint = glyph,
-        )
-        StyleGlyphButton(
-            Icons.Rounded.SkipNext,
-            "Next",
-            song.actions.next,
-            size = 50.dp,
-            iconSize = 24.dp,
-            fill = Color.White.copy(alpha = 0.06f),
-            enabled = song.canNext,
-            modifier = Modifier.border(1.dp, Color.White.copy(alpha = 0.08f), CircleShape),
-        )
+        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+            StyleGlyphButton(
+                Icons.Rounded.SkipPrevious,
+                "Previous",
+                song.actions.previous,
+                size = 50.dp,
+                iconSize = 24.dp,
+                fill = Color.White.copy(alpha = 0.06f),
+                modifier = Modifier.border(1.dp, Color.White.copy(alpha = 0.08f), CircleShape),
+            )
+        }
+        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+            StyleGlyphButton(
+                if (song.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                if (song.isPlaying) "Pause" else "Play",
+                song.actions.playPause,
+                size = 74.dp,
+                iconSize = 34.dp,
+                fill = accent,
+                tint = glyph,
+            )
+        }
+        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+            StyleGlyphButton(
+                Icons.Rounded.SkipNext,
+                "Next",
+                song.actions.next,
+                size = 50.dp,
+                iconSize = 24.dp,
+                fill = Color.White.copy(alpha = 0.06f),
+                enabled = song.canNext,
+                modifier = Modifier.border(1.dp, Color.White.copy(alpha = 0.08f), CircleShape),
+            )
+        }
     }
 }
 
@@ -306,17 +306,19 @@ private fun Dial(song: StyleSong, diameter: Dp, modifier: Modifier) {
     val density = LocalDensity.current
     val px = with(density) { diameter.roundToPx() }
     val model = remember(song.artwork, px) { song.artwork?.resize(px, px) }
-    val side = 40.dp
+    val side = 48.dp
 
     Box(modifier.size(width = diameter, height = diameter)) {
-        Artwork(
-            model = model,
-            shape = CircleShape,
-            hairline = false,
-            scaleCorners = false,
-            modifier = Modifier.fillMaxSize(),
-        )
-        DialRing(song, Modifier.fillMaxSize())
+        Box(Modifier.fillMaxSize().clip(CircleShape)) {
+            Artwork(
+                model = model,
+                shape = CircleShape,
+                hairline = false,
+                scaleCorners = false,
+                modifier = Modifier.fillMaxSize(),
+            )
+            DialRing(song, Modifier.fillMaxSize())
+        }
         StyleGlyphButton(
             if (repeat == Player.REPEAT_MODE_ONE) Icons.Rounded.RepeatOne else Icons.Rounded.Repeat,
             when (repeat) {
@@ -338,7 +340,7 @@ private fun Dial(song: StyleSong, diameter: Dp, modifier: Modifier) {
             tint = if (repeat != Player.REPEAT_MODE_OFF) Color.Black else StyleInk,
             modifier = Modifier
                 .align(Alignment.TopStart)
-                .padding(start = 2.dp, top = 2.dp),
+                .padding(start = 4.dp, top = 6.dp),
         )
         StyleGlyphButton(
             if (liked) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
@@ -349,7 +351,7 @@ private fun Dial(song: StyleSong, diameter: Dp, modifier: Modifier) {
             fill = Color.Black.copy(alpha = 0.45f),
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .padding(end = 2.dp, top = 2.dp),
+                .padding(end = 4.dp, top = 6.dp),
         )
     }
 }
@@ -412,9 +414,8 @@ private fun DialRing(song: StyleSong, modifier: Modifier) {
         val stroke = (if (held) 3.dp else 2.dp).toPx()
         val topLeft = Offset(c.x - ringR, c.y - ringR)
         val arc = Size(ringR * 2f, ringR * 2f)
-        drawCircle(Color.Black.copy(alpha = 0.18f), ringR, c, style = Stroke(10.dp.toPx()))
         drawArc(
-            Color.White.copy(alpha = 0.32f),
+            Color.White.copy(alpha = 0.34f),
             startAngle = -90f,
             sweepAngle = 360f,
             useCenter = false,
@@ -433,12 +434,12 @@ private fun DialRing(song: StyleSong, modifier: Modifier) {
         )
         val a = (-90f + 360f * fraction) * (PI.toFloat() / 180f)
         val knob = Offset(c.x + ringR * cos(a), c.y + ringR * sin(a))
-        drawCircle(Color.Black.copy(alpha = 0.25f), (if (held) 11.dp else 8.dp).toPx(), knob)
-        drawCircle(Color.White, (if (held) 9.dp else 6.5.dp).toPx(), knob)
+        drawCircle(Color.Black.copy(alpha = 0.28f), (if (held) 7.dp else 5.5.dp).toPx(), knob)
+        drawCircle(Color.White, (if (held) 5.dp else 4.dp).toPx(), knob)
     }
 }
 
-private val RingInset = 14.dp
+private val RingInset = 1.dp
 
 private fun fractionAt(p: Offset, c: Offset): Float {
     val deg = Math.toDegrees(atan2((p.y - c.y).toDouble(), (p.x - c.x).toDouble())).toFloat()

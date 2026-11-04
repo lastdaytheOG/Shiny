@@ -117,10 +117,12 @@ import com.shiny.music.db.entities.Artist
 import com.shiny.music.db.entities.Playlist
 import com.shiny.music.db.entities.Song
 import com.shiny.music.extensions.toMediaItem
+import com.shiny.music.extensions.metadata
 import com.shiny.music.models.MediaMetadata
 import com.shiny.music.playback.queues.LocalAlbumRadio
 import com.shiny.music.ui.theme.ArtworkEdgeAlpha
 import com.shiny.music.ui.theme.ArtworkShape
+import com.shiny.music.ui.liquid.customize.SongSwipeBox
 import com.shiny.music.ui.utils.resize
 import com.shiny.music.utils.isLocalMediaId
 import com.shiny.music.utils.joinByBullet
@@ -1758,104 +1760,10 @@ fun SwipeToSongBox(
     mediaItem: MediaItem,
     content: @Composable BoxScope.() -> Unit
 ) {
-    val ctx = LocalContext.current
-    val player = LocalPlayerConnection.current
-    val scope = rememberCoroutineScope()
-    val offset = remember { mutableFloatStateOf(0f) }
-    val threshold = 300f
-
-    val dragState = rememberDraggableState { delta ->
-        offset.floatValue = (offset.floatValue + delta).coerceIn(-threshold, threshold)
-    }
-
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .draggable(
-                orientation = Orientation.Horizontal,
-                state = dragState,
-                onDragStopped = {
-                    when {
-                        offset.floatValue >= threshold -> {
-                            player?.playNext(listOf(mediaItem))
-                            Toast.makeText(ctx, R.string.play_next, Toast.LENGTH_SHORT).show()
-                            reset(offset, scope)
-                        }
-
-                        offset.floatValue <= -threshold -> {
-                            player?.addToQueue(listOf(mediaItem))
-                            Toast.makeText(ctx, R.string.add_to_queue, Toast.LENGTH_SHORT).show()
-                            reset(offset, scope)
-                        }
-
-                        else -> reset(offset, scope)
-                    }
-                }
-            )
-    ) {
-        if (offset.floatValue != 0f) {
-            val (iconRes, bg, tint, align) = if (offset.floatValue > 0)
-                Quadruple(
-                    R.drawable.playlist_play,
-                    MaterialTheme.colorScheme.secondary,
-                    MaterialTheme.colorScheme.onSecondary,
-                    Alignment.CenterStart
-                ) else
-                Quadruple(
-                    R.drawable.ic_launcher_nobg,
-                    MaterialTheme.colorScheme.primary,
-                    MaterialTheme.colorScheme.onPrimary,
-                    Alignment.CenterEnd
-                )
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(60.dp)
-                    .align(Alignment.Center)
-                    .background(bg),
-                contentAlignment = align
-            ) {
-                Icon(
-                    painter = painterResource(id = iconRes),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .padding(horizontal = 24.dp)
-                        .size(30.dp)
-                        .alpha(0.9f),
-                    tint = tint
-                )
-            }
-        }
-
-        Box(
-            modifier = Modifier
-                .offset { IntOffset(offset.floatValue.roundToInt(), 0) }
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surface),
-            content = content
-        )
+    SongSwipeBox(song = mediaItem.metadata, modifier = modifier.fillMaxWidth()) {
+        Box(Modifier.fillMaxWidth(), content = content)
     }
 }
-
-
-private fun reset(offset: MutableState<Float>, scope: CoroutineScope) {
-    scope.launch {
-        animate(
-            initialValue = offset.value,
-            targetValue = 0f,
-            animationSpec = tween(durationMillis = 300)
-        ) { value, _ -> offset.value = value }
-    }
-}
-
-
-data class Quadruple<A, B, C, D>(
-    val first: A,
-    val second: B,
-    val third: C,
-    val fourth: D
-)
 
 object Icon {
     /**

@@ -29,6 +29,11 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.unit.constrainHeight
+import kotlin.math.roundToInt
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -136,6 +141,8 @@ fun LiquidQueuePane(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     compact: Boolean = false,
+    /** Scrolls the top section away with the list; null keeps it fixed (landscape). */
+    collapse: QueueHeaderCollapse? = null,
 ) {
     val playerConnection = LocalPlayerConnection.current ?: return
     val windows by playerConnection.queueWindows.collectAsState()
@@ -147,7 +154,6 @@ fun LiquidQueuePane(
     val shuffle by playerConnection.shuffleModeEnabled.collectAsState()
     val repeatMode by playerConnection.repeatMode.collectAsState()
     val (autoplay, setAutoplay) = rememberPreference(AutoLoadMoreKey, defaultValue = true)
-    val (hintSeen, setHintSeen) = rememberPreference(LiquidPrefs.QueueReorderHintSeen, defaultValue = false)
     val haptic = LocalHapticFeedback.current
 
     LaunchedEffect(currentIndex, windows.size, autoplay, enabled) {
@@ -189,7 +195,6 @@ fun LiquidQueuePane(
             val position = live.indexOfFirst { it.uid == uid }
             if (position > liveCurrent && position - liveCurrent - 1 != dragSlot) {
                 playerConnection.moveUpcoming(live[position].firstPeriodIndex, dragSlot)
-                setHintSeen(true)
             }
             draggedUid = null
             dragSlot = -1
@@ -241,6 +246,8 @@ fun LiquidQueuePane(
     }
 
     LaunchedEffect(queueSessionId) {
+        // a new queue opens with its whole header showing
+        collapse?.animateTo(0f)
         if (past.isNotEmpty()) listState.scrollToItem(past.size)
     }
 
@@ -256,12 +263,61 @@ fun LiquidQueuePane(
         playerConnection.player.playWhenReady = true
     }
 
-    Box(modifier.fillMaxSize()) {
+    // A swipe acts on the song by its identity, looked up in the live queue at the moment
+    // it lands: the rows may be a beat behind a song change or another swipe.
+    fun liveSlot(uid: Any): Pair<Int, Int>? {
+        val live = playerConnection.queueWindows.value
+        val liveCurrent = playerConnection.currentWindowIndex.value
+        val position = live.indexOfFirst { it.uid == uid }
+        if (position < 0 || position == liveCurrent) return null
+        return position to liveCurrent
+    }
+    fun removeBySwipe(uid: Any): Boolean {
+        if (!enabled) return false
+        val (position, _) = liveSlot(uid) ?: return false
+        playerConnection.removeQueueItem(playerConnection.queueWindows.value[position].firstPeriodIndex)
+        return true
+    }
+    // false when there is nothing to do, so the row only springs back
+    fun playNextBySwipe(uid: Any): Boolean {
+        if (!enabled) return false
+        val (position, liveCurrent) = liveSlot(uid) ?: return false
+        if (position == liveCurrent + 1) return false
+        playerConnection.playQueueItemNext(playerConnection.queueWindows.value[position].firstPeriodIndex)
+        return true
+    }
+
+    Box(
+        modifier
+            .fillMaxSize()
+            .then(
+                if (collapse != null) {
+                    // the pane rises with the region and grows by as much, so the list takes the room
+                    Modifier.layout { measurable, constraints ->
+                        val lift = collapse.offset.roundToInt()
+                        val height = if (constraints.hasBoundedHeight) constraints.maxHeight + lift else constraints.maxHeight
+                        val placeable = measurable.measure(constraints.copy(minHeight = height, maxHeight = height))
+                        layout(placeable.width, constraints.constrainHeight(placeable.height - lift)) {
+                            placeable.place(0, -lift)
+                        }
+                    }
+                } else {
+                    Modifier
+                }
+            ),
+    ) {
         Column(
             Modifier
                 .fillMaxSize()
                 .padding(top = contentPadding.calculateTopPadding()),
         ) {
+            Column(
+                Modifier
+                    .then(if (collapse != null) Modifier.onSizeChanged { collapse.paneHead = it.height.toFloat() } else Modifier)
+                    .graphicsLayer {
+                        if (collapse != null) alpha = (1f - collapse.fraction * 1.25f).coerceIn(0f, 1f)
+                    },
+            ) {
             QueueModes(
                 shuffle = shuffle,
                 repeatMode = repeatMode,
@@ -279,7 +335,6 @@ fun LiquidQueuePane(
                 title = stringResource(
                     if (autoplay && upcoming.isEmpty()) R.string.liquid_continue_playing else R.string.liquid_playing_next,
                 ),
-                source = queueTitle?.takeIf { it.isNotBlank() && !compact }?.let { stringResource(R.string.liquid_from, it) },
                 summary = if (summary.count > 0) {
                     listOfNotNull(
                         pluralStringResource(R.plurals.liquid_songs_count, summary.count, summary.count),
@@ -288,9 +343,9 @@ fun LiquidQueuePane(
                 } else {
                     null
                 },
-                hint = if (!hintSeen && enabled && !compact && upcoming.size >= 2) stringResource(R.string.liquid_queue_reorder_hint) else null,
                 compact = compact,
             )
+            }
             LazyColumn(
                 state = listState,
                 contentPadding = PaddingValues(
@@ -301,7 +356,8 @@ fun LiquidQueuePane(
                     .weight(1f)
                     .fillMaxWidth()
                     .fadingEdges(top = 10.dp, bottom = 28.dp)
-                    .nestedScroll(nestedScrollConnection),
+                    .nestedScroll(nestedScrollConnection)
+                    .then(if (collapse != null) Modifier.nestedScroll(collapse.connection) else Modifier),
             ) {
                 itemsIndexed(entries, key = { _, entry -> queueKey(entry.item) }) { index, entry ->
                     val window = entry.item
@@ -309,6 +365,8 @@ fun LiquidQueuePane(
                     ReorderableItem(reorderState, key = queueKey(window), enabled = enabled && movable) { lifted ->
                         val moveUp = stringResource(R.string.liquid_queue_move_up)
                         val moveDown = stringResource(R.string.liquid_queue_move_down)
+                        val playNextLabel = stringResource(R.string.liquid_queue_play_next)
+                        val removeLabel = stringResource(R.string.liquid_queue_remove)
                         fun move(by: Int): Boolean {
                             val slot = upcoming.indexOfFirst { it.uid == window.uid }
                             val target = slot + by
@@ -316,66 +374,42 @@ fun LiquidQueuePane(
                             playerConnection.moveUpcoming(window.firstPeriodIndex, target)
                             return true
                         }
-                        QueueRow(
-                            window = window,
-                            role = entry.role,
-                            lifted = lifted,
-                            divider = index < entries.lastIndex,
-                            gestures = if (movable) {
-                                Modifier
-                                    .longPressDraggableHandle(
-                                        enabled = enabled,
-                                        onDragStarted = { haptic.performHapticFeedback(HapticFeedbackType.LongPress) },
-                                    )
-                                    .semantics {
+                        val swipeable = enabled && entry.role != QueueRole.Current && !dragging
+                        QueueSwipe(
+                            enabled = swipeable,
+                            onRemove = { removeBySwipe(window.uid) },
+                            onPlayNext = { playNextBySwipe(window.uid) },
+                        ) {
+                            QueueRow(
+                                window = window,
+                                role = entry.role,
+                                lifted = lifted,
+                                divider = index < entries.lastIndex,
+                                gestures = when {
+                                    movable -> Modifier
+                                        .longPressDraggableHandle(
+                                            enabled = enabled,
+                                            onDragStarted = { haptic.performHapticFeedback(HapticFeedbackType.LongPress) },
+                                        )
+                                        .semantics {
+                                            customActions = listOf(
+                                                CustomAccessibilityAction(moveUp) { move(-1) },
+                                                CustomAccessibilityAction(moveDown) { move(1) },
+                                                CustomAccessibilityAction(playNextLabel) { playNextBySwipe(window.uid) },
+                                                CustomAccessibilityAction(removeLabel) { removeBySwipe(window.uid) },
+                                            )
+                                        }
+                                    entry.role == QueueRole.Played -> Modifier.semantics {
                                         customActions = listOf(
-                                            CustomAccessibilityAction(moveUp) { move(-1) },
-                                            CustomAccessibilityAction(moveDown) { move(1) },
+                                            CustomAccessibilityAction(playNextLabel) { playNextBySwipe(window.uid) },
+                                            CustomAccessibilityAction(removeLabel) { removeBySwipe(window.uid) },
                                         )
                                     }
-                            } else {
-                                Modifier
-                            },
-                            onClick = { play(window) },
-                            menu = when (entry.role) {
-                                QueueRole.Current -> null
-                                QueueRole.Played -> {
-                                    {
-                                        listOf(
-                                            MenuAction(
-                                                title = stringResource(R.string.liquid_queue_remove),
-                                                icon = Icons.Rounded.RemoveCircleOutline,
-                                                destructive = true,
-                                                onClick = { if (enabled) playerConnection.removeQueueItem(window.firstPeriodIndex) },
-                                            ),
-                                        )
-                                    }
-                                }
-                                QueueRole.Upcoming -> {
-                                    {
-                                        listOf(
-                                            MenuAction(
-                                                title = stringResource(R.string.liquid_queue_play_next),
-                                                icon = Icons.AutoMirrored.Rounded.PlaylistPlay,
-                                                onClick = { if (enabled) playerConnection.playQueueItemNext(window.firstPeriodIndex) },
-                                            ),
-                                            MenuAction(
-                                                title = stringResource(R.string.liquid_queue_remove),
-                                                icon = Icons.Rounded.RemoveCircleOutline,
-                                                destructive = true,
-                                                onClick = { if (enabled) playerConnection.removeQueueItem(window.firstPeriodIndex) },
-                                            ),
-                                            MenuAction(
-                                                title = stringResource(R.string.liquid_queue_clear_upcoming),
-                                                icon = Icons.Rounded.ClearAll,
-                                                destructive = true,
-                                                onClick = { if (enabled) playerConnection.clearUpcoming() },
-                                            ),
-                                        )
-                                    }
-                                }
-                            },
-                        )
+                                    else -> Modifier
+                                },
+                                onClick = { play(window) },
+                            )
+                        }
                     }
                 }
 
@@ -412,6 +446,7 @@ fun LiquidQueuePane(
             exit = fadeOut(tween(PlayerMotion.Press)) + slideOutVertically(tween(PlayerMotion.Small)) { it / 2 },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
                 .padding(bottom = PlayerSpace.m),
         ) {
             val shown = remember { mutableStateOf(undo) }
@@ -487,12 +522,10 @@ private fun QueueModes(
 @Composable
 private fun QueueHeading(
     title: String,
-    source: String?,
     summary: String?,
-    hint: String?,
     compact: Boolean,
 ) {
-    Column(
+    Row(
         Modifier
             .fillMaxWidth()
             .padding(
@@ -502,51 +535,25 @@ private fun QueueHeading(
                 bottom = if (compact) PlayerSpace.xs else PlayerSpace.s,
             ),
     ) {
-        Row(Modifier.fillMaxWidth()) {
+        Text(
+            title,
+            style = PlayerType.section,
+            color = NowPlayingInk.primary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier
+                .weight(1f)
+                .alignByBaseline(),
+        )
+        if (summary != null) {
             Text(
-                title,
-                style = PlayerType.section,
-                color = NowPlayingInk.primary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier
-                    .weight(1f)
-                    .alignByBaseline(),
-            )
-            if (summary != null) {
-                Text(
-                    summary,
-                    style = LiquidTypography.footnote.copy(fontFeatureSettings = "tnum"),
-                    color = NowPlayingInk.secondary,
-                    maxLines = 1,
-                    modifier = Modifier
-                        .padding(start = PlayerSpace.m)
-                        .alignByBaseline(),
-                )
-            }
-        }
-        if (source != null) {
-            Text(
-                source,
-                style = LiquidTypography.footnote,
+                summary,
+                style = LiquidTypography.footnote.copy(fontFeatureSettings = "tnum"),
                 color = NowPlayingInk.secondary,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(top = 2.dp),
-            )
-        }
-        AnimatedVisibility(
-            visible = hint != null,
-            enter = fadeIn(tween(PlayerMotion.Small)) + expandVertically(tween(PlayerMotion.Small)),
-            exit = fadeOut(tween(PlayerMotion.Press)) + shrinkVertically(tween(PlayerMotion.Small)),
-        ) {
-            val shown = remember { mutableStateOf(hint) }
-            hint?.let { shown.value = it }
-            Text(
-                shown.value.orEmpty(),
-                style = LiquidTypography.footnote,
-                color = NowPlayingInk.tertiary,
-                modifier = Modifier.padding(top = PlayerSpace.xs),
+                modifier = Modifier
+                    .padding(start = PlayerSpace.m)
+                    .alignByBaseline(),
             )
         }
     }
@@ -644,7 +651,6 @@ private fun QueueRow(
     window: Timeline.Window,
     role: QueueRole,
     onClick: () -> Unit,
-    menu: (@Composable () -> List<MenuAction>)?,
     lifted: Boolean = false,
     divider: Boolean = false,
     gestures: Modifier = Modifier,
@@ -653,7 +659,6 @@ private fun QueueRow(
     val accent = Liquid.colors.accent
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
-    var menuOpen by remember { mutableStateOf(false) }
     val current = role == QueueRole.Current
     val fill = animateColorAsState(
         when {
@@ -707,7 +712,7 @@ private fun QueueRow(
                 }
             )
             .then(gestures)
-            .padding(start = PlayerSpace.m, end = PlayerSpace.xs, top = PlayerSpace.s, bottom = PlayerSpace.s)
+            .padding(start = PlayerSpace.m, end = PlayerSpace.m, top = PlayerSpace.s, bottom = PlayerSpace.s)
             .graphicsLayer {
                 alpha = dim.value
                 compositingStrategy = CompositingStrategy.ModulateAlpha
@@ -742,60 +747,21 @@ private fun QueueRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    metadata.artists.joinToString { it.name },
-                    style = PlayerType.rowMeta,
-                    color = NowPlayingInk.secondary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f, fill = false),
-                )
-                if (metadata.duration > 0) {
-                    Text(
-                        " · " + makeTimeString(metadata.duration * 1000L),
-                        style = PlayerType.rowMeta.copy(fontFeatureSettings = "tnum"),
-                        color = NowPlayingInk.tertiary,
-                        maxLines = 1,
-                    )
-                }
-            }
+            Text(
+                metadata.artists.joinToString { it.name },
+                style = PlayerType.rowMeta,
+                color = NowPlayingInk.secondary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
-        if (menu == null) {
-            Spacer(Modifier.width(QueueMetrics.target))
-            return@Row
-        }
-        Box {
-            val more = stringResource(R.string.liquid_queue_more, metadata.title)
-            Box(
-                modifier = Modifier
-                    .size(QueueMetrics.target)
-                    .clip(CircleShape)
-                    .combinedClickable(onClick = { menuOpen = true })
-                    .semantics {
-                        this.role = Role.Button
-                        contentDescription = more
-                    },
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    if (lifted) Icons.Rounded.DragHandle else Icons.Rounded.MoreHoriz,
-                    null,
-                    tint = if (lifted) NowPlayingInk.primary else NowPlayingInk.secondary,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-            if (menuOpen) {
-                val colors = Liquid.colors
-                val dark = remember(colors) { if (colors.isDark) colors else liquidDarkColors() }
-                CompositionLocalProvider(LocalLiquidColors provides dark) {
-                    LiquidPullDownMenu(
-                        expanded = true,
-                        onDismiss = { menuOpen = false },
-                        entries = menu(),
-                    )
-                }
-            }
+        if (metadata.duration > 0) {
+            Text(
+                makeTimeString(metadata.duration * 1000L),
+                style = PlayerType.rowMeta.copy(fontFeatureSettings = "tnum"),
+                color = NowPlayingInk.tertiary,
+                maxLines = 1,
+            )
         }
     }
 }

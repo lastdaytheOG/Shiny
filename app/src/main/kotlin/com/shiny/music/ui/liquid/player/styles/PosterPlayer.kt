@@ -12,11 +12,11 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
-import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -36,11 +36,6 @@ import com.shiny.music.ui.liquid.player.LiquidScrubber
 import com.shiny.music.ui.utils.resize
 import com.shiny.music.utils.rememberPreference
 
-/**
- * The Poster: the cover cut into a great circle swung in from the top left corner, and under
- * it the words of the song performed big, with the title and artist set small at the foot.
- * Without synced lyrics (or with the words switched off) the title is the big type.
- */
 @Composable
 internal fun PosterPlayer(song: StyleSong) {
     val words by rememberPreference(PlayerStylePrefs.PosterWords, true)
@@ -49,7 +44,7 @@ internal fun PosterPlayer(song: StyleSong) {
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val width = maxWidth
         val diameter = width * 1.12f
-        // asked for at the pixels it is drawn at, so the circle is never an enlarged cover
+
         val px = with(density) { diameter.roundToPx() }
         val model = remember(song.artwork, px) { song.artwork?.resize(px, px) }
         Box(
@@ -75,9 +70,7 @@ internal fun PosterPlayer(song: StyleSong) {
         ) {
             Row(Modifier.fillMaxWidth().padding(top = 8.dp, end = 16.dp)) {
                 Spacer(Modifier.weight(1f))
-                StyleGlyphButton(Icons.Rounded.KeyboardArrowDown, "Close player", song.actions.close, size = 40.dp, iconSize = 28.dp)
-                Spacer(Modifier.padding(start = 10.dp))
-                StyleGlyphButton(Icons.Rounded.MoreHoriz, "More", song.actions.more, size = 40.dp, iconSize = 24.dp)
+                Spacer(Modifier.size(43.dp))
             }
             Spacer(Modifier.height(width * 0.58f))
             if (words) {
@@ -122,7 +115,7 @@ internal fun PosterPlayer(song: StyleSong) {
                 gap = 28.dp,
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
-                    .padding(top = 4.dp, bottom = 24.dp),
+                    .padding(top = 4.dp, bottom = 24.dp + LocalStyleBottomReserve.current),
             )
         }
     }

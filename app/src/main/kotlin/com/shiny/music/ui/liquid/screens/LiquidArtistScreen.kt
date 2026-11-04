@@ -1,5 +1,7 @@
 package com.shiny.music.ui.liquid.screens
 
+import com.shiny.music.models.toMediaMetadata
+
 import androidx.compose.ui.unit.sp
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -283,6 +285,7 @@ fun LiquidArtistScreen(
                         SongGrid(items = songs, key = { "ts_${it.id}" }) { song, index, modifier, last ->
                             SongRow(
                                 songId = song.id,
+                                swipe = androidx.compose.runtime.remember(song) { song.toMediaMetadata() },
                                 title = song.title,
                                 subtitle = song.album?.name ?: song.artists.joinToString { it.name },
                                 artwork = song.thumbnail,
@@ -349,6 +352,7 @@ fun LiquidArtistScreen(
                     items(librarySongs.take(6), key = { "lib_${it.id}" }) { song ->
                         SongRow(
                             songId = song.id,
+                            swipe = androidx.compose.runtime.remember(song) { song.toMediaMetadata() },
                             title = song.title,
                             subtitle = song.album?.title ?: song.artists.joinToString { it.name },
                             artwork = song.thumbnailUrl,

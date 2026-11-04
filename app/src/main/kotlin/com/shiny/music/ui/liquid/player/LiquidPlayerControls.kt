@@ -80,6 +80,7 @@ import com.shiny.music.R
 import com.shiny.music.constants.PlayerShowRemainingTimeKey
 import com.shiny.music.ui.liquid.LiquidIcons
 import com.shiny.music.ui.liquid.LiquidTypography
+import com.shiny.music.ui.liquid.appearance.LocalShinyAppearance
 import com.shiny.music.utils.rememberPreference
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -120,6 +121,7 @@ fun LiquidScrubber(
 ) {
     val haptics = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
+    val soft = LocalShinyAppearance.current.softPlayer
     var scrubFraction by remember { mutableStateOf<Float?>(null) }
     val swell = remember { Animatable(0f) }
 
@@ -170,13 +172,13 @@ fun LiquidScrubber(
                 val d = durationProvider().coerceAtLeast(1L)
                 val f = scrubFraction ?: (positionProvider().toFloat() / d).coerceIn(0f, 1f)
                 drawRoundRect(
-                    color = NowPlayingInk.track,
+                    color = if (soft) SoftInk.track else NowPlayingInk.track,
                     topLeft = Offset(0f, top),
                     size = Size(size.width, h),
                     cornerRadius = CornerRadius(h / 2f),
                 )
                 drawRoundRect(
-                    color = Color.White.copy(alpha = 0.68f + 0.32f * s),
+                    color = Color.White.copy(alpha = if (soft) 0.88f + 0.12f * s else 0.68f + 0.32f * s),
                     topLeft = Offset(0f, top),
                     size = Size((size.width * f).coerceAtLeast(h), h),
                     cornerRadius = CornerRadius(h / 2f),
@@ -184,7 +186,8 @@ fun LiquidScrubber(
             }
         }
         // Tapping the times switches the right one between the time left and the song's length.
-        var showRemaining by rememberPreference(PlayerShowRemainingTimeKey, defaultValue = true)
+        // the soft look shows the song's length on the right until the times are tapped
+        var showRemaining by rememberPreference(PlayerShowRemainingTimeKey, defaultValue = !soft)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -198,14 +201,14 @@ fun LiquidScrubber(
             val remaining = (totalSeconds - elapsedSeconds).coerceAtLeast(0L)
             Text(
                 text = formatTime(elapsedSeconds * 1000L),
-                style = TimeStyle,
-                color = NowPlayingInk.secondary,
+                style = if (soft) SoftTimeStyle else TimeStyle,
+                color = if (soft) SoftInk.time else NowPlayingInk.secondary,
                 modifier = Modifier.weight(1f),
             )
             Text(
                 text = if (showRemaining) "-" + formatTime(remaining * 1000L) else formatTime(totalSeconds * 1000L),
-                style = TimeStyle,
-                color = NowPlayingInk.secondary,
+                style = if (soft) SoftTimeStyle else TimeStyle,
+                color = if (soft) SoftInk.time else NowPlayingInk.secondary,
                 modifier = Modifier.weight(1f),
                 textAlign = androidx.compose.ui.text.style.TextAlign.End,
             )
@@ -217,6 +220,12 @@ private val TimeStyle = LiquidTypography.caption1.copy(
     fontWeight = FontWeight.SemiBold,
     fontFeatureSettings = "tnum",
     fontSize = 12.sp,
+)
+
+private val SoftTimeStyle = LiquidTypography.caption1.copy(
+    fontWeight = FontWeight.Medium,
+    fontFeatureSettings = "tnum",
+    fontSize = 13.sp,
 )
 
 /**
@@ -236,6 +245,8 @@ fun LiquidVolumeSlider(
     var dragFraction by remember { mutableStateOf<Float?>(null) }
     val swell = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
+    val soft = LocalShinyAppearance.current.softPlayer
+    val speakerTint = if (soft) SoftInk.icon else NowPlayingInk.secondary
 
     DisposableEffect(context) {
         val receiver = object : BroadcastReceiver() {
@@ -258,7 +269,7 @@ fun LiquidVolumeSlider(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(Icons.AutoMirrored.Rounded.VolumeDown, null, tint = NowPlayingInk.secondary, modifier = Modifier.size(18.dp))
+        Icon(Icons.AutoMirrored.Rounded.VolumeDown, null, tint = speakerTint, modifier = Modifier.size(18.dp))
         Box(
             modifier = Modifier
                 .weight(1f)
@@ -291,16 +302,16 @@ fun LiquidVolumeSlider(
                 val s = swell.value
                 val h = 6.dp.toPx() + 6.dp.toPx() * s
                 val top = (size.height - h) / 2f
-                drawRoundRect(NowPlayingInk.track, Offset(0f, top), Size(size.width, h), CornerRadius(h / 2f))
+                drawRoundRect(if (soft) SoftInk.track else NowPlayingInk.track, Offset(0f, top), Size(size.width, h), CornerRadius(h / 2f))
                 drawRoundRect(
-                    Color.White.copy(alpha = 0.68f + 0.32f * s),
+                    Color.White.copy(alpha = if (soft) 0.88f + 0.12f * s else 0.68f + 0.32f * s),
                     Offset(0f, top),
                     Size((size.width * shown).coerceAtLeast(h), h),
                     CornerRadius(h / 2f),
                 )
             }
         }
-        Icon(Icons.AutoMirrored.Rounded.VolumeUp, null, tint = NowPlayingInk.secondary, modifier = Modifier.size(18.dp))
+        Icon(Icons.AutoMirrored.Rounded.VolumeUp, null, tint = speakerTint, modifier = Modifier.size(18.dp))
     }
 }
 
@@ -317,17 +328,22 @@ fun NowPlayingUtilityRow(
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        UtilityButton(LiquidIcons.Lyrics, stringResource(R.string.lyrics), lyricsActive, onLyrics, onLyricsLongClick)
-        UtilityButton(LiquidIcons.Output, stringResource(R.string.liquid_audio_output), false, onOutput)
-        UtilityButton(LiquidIcons.Queue, stringResource(R.string.queue), queueActive, onQueue)
+        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+            UtilityButton(LiquidIcons.Lyrics, stringResource(R.string.lyrics), lyricsActive, onLyrics, onLyricsLongClick)
+        }
+        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+            UtilityButton(LiquidIcons.Output, stringResource(R.string.liquid_audio_output), false, onOutput)
+        }
+        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+            UtilityButton(LiquidIcons.Queue, stringResource(R.string.queue), queueActive, onQueue)
+        }
     }
 }
 
 @Composable
-private fun UtilityButton(
+internal fun UtilityButton(
     icon: ImageVector,
     label: String,
     active: Boolean,
@@ -336,6 +352,7 @@ private fun UtilityButton(
 ) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
+    val idleTint = if (LocalShinyAppearance.current.softPlayer) SoftInk.icon else NowPlayingInk.secondary
     val activeness by animateFloatAsState(
         targetValue = if (active) 1f else 0f,
         animationSpec = spring(dampingRatio = 0.7f, stiffness = 500f),
@@ -381,7 +398,7 @@ private fun UtilityButton(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = androidx.compose.ui.graphics.lerp(NowPlayingInk.secondary, Color(0xFF1C1C1E), activeness),
+            tint = androidx.compose.ui.graphics.lerp(idleTint, Color(0xFF1C1C1E), activeness),
             modifier = Modifier.size(22.dp),
         )
     }
@@ -389,11 +406,12 @@ private fun UtilityButton(
 
 @Composable
 internal fun Grabber(modifier: Modifier = Modifier) {
+    val alternate = LocalShinyAppearance.current.softPlayer
     Box(
         modifier
-            .width(38.dp)
-            .height(5.dp)
-            .background(Color.White.copy(alpha = 0.38f), CircleShape)
+            .width(if (alternate) 100.dp else 38.dp)
+            .height(if (alternate) 8.dp else 5.dp)
+            .background(Color.White.copy(alpha = if (alternate) 0.62f else 0.38f), CircleShape)
     )
 }
 

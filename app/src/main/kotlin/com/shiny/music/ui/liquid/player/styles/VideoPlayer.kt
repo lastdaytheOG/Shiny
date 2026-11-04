@@ -49,18 +49,11 @@ import com.shiny.music.ui.utils.resize
 import com.shiny.music.utils.rememberPreference
 import kotlinx.coroutines.delay
 
-/**
- * Full video: the song's own video across the screen, fitted whole (never cropped), with the
- * line being sung at its foot. A tap brings the controls up for a few seconds. A song with no
- * video shows its cover at its own size in the same place.
- */
 @Composable
 internal fun VideoPlayer(song: StyleSong, expanded: Boolean) {
     val playerConnection = LocalPlayerConnection.current ?: return
     val wordsPref by rememberPreference(PlayerStylePrefs.VideoWords, true)
 
-    // the video only plays while it is asked for; this style asks while it is open, and gives
-    // the choice back as it was when it closes
     DisposableEffect(expanded) {
         val before = SongVideoState.view
         if (expanded && before != VideoView.Full) SongVideoState.view = VideoView.Full
@@ -104,7 +97,6 @@ internal fun VideoPlayer(song: StyleSong, expanded: Boolean) {
             )
         }
 
-        // a shade at the foot so white words read over any picture
         Box(
             Modifier
                 .align(Alignment.BottomCenter)
@@ -139,7 +131,7 @@ internal fun VideoPlayer(song: StyleSong, expanded: Boolean) {
                 Text(song.title, color = StyleInk, fontSize = 17.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(song.artist, color = StyleInkSoft, fontSize = 15.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
-            // hidden controls are taken away, so a tap on the picture never plays or skips by accident
+
             Box(Modifier.fillMaxWidth().height(124.dp).graphicsLayer { alpha = chromeAlpha }) {
                 if (chromeAlpha > 0f) Column {
                     LiquidScrubber(
@@ -158,7 +150,7 @@ internal fun VideoPlayer(song: StyleSong, expanded: Boolean) {
                         gap = 28.dp,
                         modifier = Modifier
                             .align(Alignment.CenterHorizontally)
-                            .padding(bottom = 22.dp),
+                            .padding(bottom = 22.dp + LocalStyleBottomReserve.current),
                     )
                 }
             }

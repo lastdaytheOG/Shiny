@@ -46,12 +46,6 @@ import com.shiny.music.ui.utils.resize
 import com.shiny.music.utils.rememberPreference
 import androidx.compose.runtime.collectAsState
 
-/**
- * Timeline, and with [lyrics] the Lyrics stage. The screen is the song as time: above the
- * playhead what has been played, below it what is left, the line moving down as it plays,
- * with the elapsed and total times set huge either side of it. Tapping the split seeks.
- * The Lyrics stage keeps the top for the line being sung, set big.
- */
 @Composable
 internal fun TimelinePlayer(song: StyleSong, lyrics: Boolean) {
     val coverPref by rememberPreference(PlayerStylePrefs.TimelineCover, true)
@@ -64,9 +58,8 @@ internal fun TimelinePlayer(song: StyleSong, lyrics: Boolean) {
         val timeStyle = TextStyle(fontSize = timeSize, lineHeight = timeSize, fontWeight = FontWeight.Bold, letterSpacing = (-0.06 * timeSize.value).sp)
         val timeHeight = remember(timeStyle) { measurer.measure("0:00", timeStyle).size.height.toFloat() }
         val topReserve = if (lyrics) maxHeight * 0.36f else 132.dp
-        val bottomReserve = 150.dp
+        val bottomReserve = 150.dp + LocalStyleBottomReserve.current
 
-        // the playhead's travel: from under the header to above the controls, with room for a time either side
         val lo = with(density) { topReserve.toPx() } + timeHeight
         val hi = with(density) { (maxHeight - bottomReserve).toPx() } - timeHeight
         val lineAt = { lo + (hi - lo).coerceAtLeast(0f) * song.clock.fraction }
@@ -89,7 +82,6 @@ internal fun TimelinePlayer(song: StyleSong, lyrics: Boolean) {
                 },
         )
 
-        // the elapsed time rides just above the line, the total just below it
         val played by rememberPlayedText(song.clock)
         val gap = with(density) { 4.dp.toPx() }
         val start = with(density) { 24.dp.roundToPx() }
@@ -143,7 +135,7 @@ internal fun TimelinePlayer(song: StyleSong, lyrics: Boolean) {
                 gap = 28.dp,
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
-                    .padding(bottom = 28.dp, top = 6.dp),
+                    .padding(bottom = 28.dp + LocalStyleBottomReserve.current, top = 6.dp),
             )
         }
     }
@@ -168,7 +160,6 @@ private fun SongHeader(song: StyleSong, cover: Boolean, modifier: Modifier = Mod
     }
 }
 
-/** The line being sung, set big; the title when the song has no synced lines. */
 @Composable
 internal fun StageWords(song: StyleSong, modifier: Modifier = Modifier, size: Float = 40f) {
     val playerConnection = LocalPlayerConnection.current

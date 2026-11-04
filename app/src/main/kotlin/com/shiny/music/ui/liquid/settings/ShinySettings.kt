@@ -1,5 +1,6 @@
 package com.shiny.music.ui.liquid.settings
 
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -136,7 +137,7 @@ fun SettingsPage(
     navController: NavController,
     state: LazyListState = rememberLazyListState(),
     background: Color = settingsGround(),
-    search: Boolean = true,
+    search: Boolean = false,
     hideBarOnScroll: Boolean = false,
     content: LazyListScope.() -> Unit,
 ) {
@@ -570,19 +571,17 @@ fun SettingsSlider(
         modifier
             .fillMaxWidth()
             .height(28.dp)
+            // a tap or a sideways drag sets it; a scroll that only starts here leaves it alone
             .pointerInput(valueRange, steps) {
                 detectTapGestures(
-                    onPress = { offset ->
-                        dragging = true
+                    onTap = { offset ->
                         emit(offset.x / size.width)
-                        tryAwaitRelease()
-                        dragging = false
                         onValueChangeFinished?.invoke()
                     },
                 )
             }
             .pointerInput(valueRange, steps) {
-                detectDragGestures(
+                detectHorizontalDragGestures(
                     onDragStart = { offset ->
                         dragging = true
                         emit(offset.x / size.width)
@@ -591,7 +590,10 @@ fun SettingsSlider(
                         dragging = false
                         onValueChangeFinished?.invoke()
                     },
-                    onDragCancel = { dragging = false },
+                    onDragCancel = {
+                        dragging = false
+                        onValueChangeFinished?.invoke()
+                    },
                 ) { change, _ ->
                     change.consume()
                     emit(change.position.x / size.width)

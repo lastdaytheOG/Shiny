@@ -205,6 +205,7 @@ internal fun AlternatePlayer(style: PlayerStyle, sheet: BottomSheetState, navCon
             edge = statusTop + 6.dp,
             buttonSize = 43.dp,
             pill = true,
+            showRepeat = style != PlayerStyle.Dial,
         )
     }
 

@@ -1,5 +1,7 @@
 package com.shiny.music.ui.liquid.screens
 
+import com.shiny.music.models.toMediaMetadata
+
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
@@ -338,6 +340,7 @@ fun LiquidLocalSongsScreen(
                     SelectionCircle(selected = selected, modifier = Modifier.padding(start = PageMargin))
                 }
                 SongRow(
+                    swipe = androidx.compose.runtime.remember(song) { song.toMediaMetadata() }.takeUnless { selecting },
                     title = song.title,
                     subtitle = listOfNotNull(
                         song.artists.joinToString { it.name }.takeIf { it.isNotBlank() },

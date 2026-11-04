@@ -43,7 +43,10 @@ data class ShinyAppearance(
     val transitions: PageTransitions = PageTransitions.Slide,
     /** AMOLED chosen *and* the dark theme showing. */
     val amoled: Boolean = false,
+    val playerLook: PlayerLook = PlayerLook.Shiny,
 ) {
+    val softPlayer: Boolean get() = playerLook == PlayerLook.Soft
+
     companion object {
         /** Today's Shiny. What every reader sees when nothing has been provided. */
         val Baseline = ShinyAppearance()
@@ -70,8 +73,9 @@ fun ProvideShinyAppearance(
     val artwork by rememberEnumPreference(LiquidPrefs.ArtworkPresentation, ArtworkPresentation.Card)
     val finish by rememberEnumPreference(LiquidPrefs.GlassFinish, GlassFinish.Adaptive)
     val transitions by rememberEnumPreference(LiquidPrefs.PageTransitions, PageTransitions.Slide)
+    val playerLook by rememberEnumPreference(LiquidPrefs.PlayerLook, PlayerLook.Shiny)
 
-    val appearance = remember(atmosphere, glow, artwork, finish, transitions, amoled) {
+    val appearance = remember(atmosphere, glow, artwork, finish, transitions, amoled, playerLook) {
         ShinyAppearance(
             atmosphere = atmosphere,
             glow = glow,
@@ -79,6 +83,7 @@ fun ProvideShinyAppearance(
             glassFinish = finish,
             transitions = transitions,
             amoled = amoled,
+            playerLook = playerLook,
         )
     }
 
@@ -90,6 +95,7 @@ fun ProvideShinyAppearance(
         LaunchedEffect(finish) { Log.d(LogTag, "[Appearance] Material finish = $finish") }
         LaunchedEffect(transitions) { Log.d(LogTag, "[Appearance] Transitions = $transitions") }
         LaunchedEffect(amoled) { Log.d(LogTag, "[Appearance] AMOLED = $amoled") }
+        LaunchedEffect(playerLook) { Log.d(LogTag, "[Appearance] Player look = $playerLook") }
     }
 
     CompositionLocalProvider(LocalShinyAppearance provides appearance, content = content)
@@ -117,6 +123,7 @@ private val AppearanceKeys: List<Preferences.Key<*>> = listOf(
     LiquidPrefs.Atmosphere,
     LiquidPrefs.ArtworkGlow,
     LiquidPrefs.ArtworkPresentation,
+    LiquidPrefs.PlayerLook,
     LiquidPrefs.PageTransitions,
     LiquidPrefs.PlayerMotion,
     LiquidPrefs.ArtworkBreathe,

@@ -134,6 +134,7 @@ import com.shiny.music.ui.liquid.customize.LocalPreviewTitle
 import com.shiny.music.ui.liquid.customize.LyricsStyle
 import com.shiny.music.ui.liquid.customize.PlayerStyle
 import com.shiny.music.ui.liquid.customize.PlaylistStyle
+import com.shiny.music.ui.liquid.customize.SongListStyle
 import com.shiny.music.ui.liquid.customize.PreviewArtwork
 import com.shiny.music.ui.liquid.customize.SongSwipeAction
 import com.shiny.music.ui.liquid.customize.animationSpeedLabel
@@ -202,6 +203,7 @@ private enum class CustomiseSection(val title: String, val words: String) {
     Playlist("Playlist styles", "playlist styles flow classic minimal header"),
     Player("Player styles", "player styles shiny soft turntable poster timeline lyrics video bedside clock editor customize"),
     Home("Home styles", "home styles hero listen now hop in"),
+    SongList("Song lists", "song lists songs recently added liked history downloaded stack carousel posters cards records list rows"),
     Blur("Blur", "blur glass frosted progressive flat quality low high strength px"),
     ElementBlur("Element blur", "element blur lyrics lines cover zoom titles menus page swipes"),
     Animation("Animation", "animation speed motion transitions off faster slower"),
@@ -297,6 +299,12 @@ private fun CustomiseSectionContent(section: CustomiseSection, navController: Na
             val (style, setStyle) = rememberEnumPreference(CustomizePrefs.HomeStyle, HomeStyle.Hero)
             StylePagerSection("Home styles", HomeStyle.entries, style, { it.title }, setStyle, pagerBleed) {
                 HomeStylePreview(it, coverRadius)
+            }
+        }
+        CustomiseSection.SongList -> {
+            val (style, setStyle) = rememberEnumPreference(CustomizePrefs.SongListStyle, SongListStyle.List)
+            StylePagerSection("Song lists", SongListStyle.entries, style, { it.title }, setStyle, pagerBleed) {
+                SongListStylePreview(it, coverRadius)
             }
         }
         CustomiseSection.Blur -> BlurSection()
@@ -1406,6 +1414,73 @@ private fun HomeStylePreview(style: HomeStyle, coverRadius: Dp) {
             Spacer(Modifier.height(6.dp))
             Shelf(radius)
         }
+    }
+}
+
+@Composable
+private fun SongListStylePreview(style: SongListStyle, coverRadius: Dp) {
+    val radius = RoundedCornerShape(scaledRadius(coverRadius, 0.2f))
+    when (style) {
+        SongListStyle.List -> Column(Modifier.fillMaxSize().padding(start = 12.dp, end = 10.dp, top = 16.dp)) {
+            Bar(48.dp, 6.dp)
+            Spacer(Modifier.height(10.dp))
+            repeat(5) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                    Box(Modifier.size(20.dp).background(Bone, radius))
+                    Spacer(Modifier.width(6.dp))
+                    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                        Bar(56.dp, 4.dp)
+                        Bar(28.dp, 3.dp, BoneDim)
+                    }
+                }
+                Spacer(Modifier.height(7.dp))
+            }
+        }
+        SongListStyle.Stack -> Box(Modifier.fillMaxSize()) {
+            val cards = listOf(
+                Triple(Color(0xFF5A4A3A), 0.80f, 6.dp),
+                Triple(Color(0xFF6B4A2E), 0.87f, 22.dp),
+                Triple(Color(0xFF2E3F78), 0.94f, 38.dp),
+            )
+            cards.forEach { (fill, scale, top) ->
+                StackPreviewCard(fill, scale, top, 40.dp)
+            }
+            Box(Modifier.align(Alignment.TopCenter).padding(top = 132.dp)) {
+                StackPreviewCard(Color(0xFF6E2F2C), 0.94f, 0.dp, 36.dp)
+            }
+            StackPreviewCard(Color(0xFF6A5E1C), 1f, 56.dp, 74.dp, focused = true)
+        }
+    }
+}
+
+@Composable
+private fun StackPreviewCard(fill: Color, scale: Float, top: Dp, height: Dp, focused: Boolean = false) {
+    Box(
+        Modifier
+            .padding(top = top)
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+                transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 0f)
+            }
+            .height(height)
+            .clip(RoundedCornerShape(9.dp))
+            .background(fill),
+    ) {
+        Column(Modifier.padding(start = 8.dp, top = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Bar(if (focused) 40.dp else 32.dp, if (focused) 6.dp else 5.dp)
+            if (focused) Bar(26.dp, 3.5.dp, Color.White.copy(alpha = 0.5f))
+        }
+        Box(
+            Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = if (focused) 12.dp else 8.dp, end = 7.dp)
+                .size(if (focused) 46.dp else 40.dp)
+                .clip(RoundedCornerShape(6.dp))
+                .background(ArtLight),
+        )
     }
 }
 

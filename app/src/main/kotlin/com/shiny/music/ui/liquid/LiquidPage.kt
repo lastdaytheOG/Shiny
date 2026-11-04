@@ -116,7 +116,7 @@ fun LargeTitlePage(
                             text = title,
                             style = LiquidTypography.largeTitle,
                             color = colors.label,
-                            maxLines = 1,
+                            maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f),
                         )

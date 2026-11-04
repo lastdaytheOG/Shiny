@@ -1,5 +1,7 @@
 package com.shiny.music.ui.liquid.screens
 
+import com.shiny.music.models.toMediaMetadata
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -107,6 +109,7 @@ fun LiquidRecentlyAddedScreen(
             itemsIndexed(songs, key = { _, song -> "song_${song.id}" }) { index, song ->
                 SongRow(
                     songId = song.id,
+                    swipe = androidx.compose.runtime.remember(song) { song.toMediaMetadata() },
                     title = song.title,
                     subtitle = song.artists.joinToString { it.name },
                     artwork = song.thumbnailUrl,

@@ -35,6 +35,7 @@ import android.view.WindowManager
 import android.view.animation.LinearInterpolator
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.ui.platform.createLifecycleAwareWindowRecomposer
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.EnterExitState
 import androidx.compose.animation.AnimatedVisibility
@@ -638,7 +639,13 @@ class MainActivity : ComponentActivity() {
                 }
         }
         
-        setContent {
+        // the customise animation switch and speed reach every animation through the window's recomposer
+        com.shiny.music.ui.liquid.customize.CustomizeLook.followSystemScale(this)
+        val motionRecomposer = window.decorView.createLifecycleAwareWindowRecomposer(
+            com.shiny.music.ui.liquid.customize.CustomizeLook.durationScale,
+            lifecycle,
+        )
+        setContent(parent = motionRecomposer) {
             Box(Modifier.fillMaxSize(), propagateMinConstraints = true) {
                 // Nothing composes until the preference snapshot holds a value.
                 //

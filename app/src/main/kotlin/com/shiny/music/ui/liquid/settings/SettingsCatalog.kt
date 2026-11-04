@@ -43,6 +43,17 @@ fun settingsCatalog(): List<SettingsEntry> = listOf(
     SettingsEntry("Equaliser", "Playback", "settings/equalizer", "eq bass treble bands presets preamp"),
     SettingsEntry("Sound effects", "Equaliser", "settings/equalizer", "8d audio reverb slowed nightcore speed pitch effects spatial"),
 
+    // Customise
+    SettingsEntry("Customise", "Customise", "settings/customize", "customize customise personalise cover rounding animation gestures swipe player bars"),
+    SettingsEntry("Cover rounding", "Customise", "settings/customize", "square rounded corner radius px cover artwork thumbnail"),
+    SettingsEntry("Animations", "Customise", "settings/customize", "animation motion transitions off reduce disable"),
+    SettingsEntry("Animation speed", "Customise", "settings/customize", "faster slower duration scale motion speed"),
+    SettingsEntry("Swipe right", "Customise", "settings/customize", "gesture slide song row library queue download play next playlist details"),
+    SettingsEntry("Swipe left", "Customise", "settings/customize", "gesture slide song row library queue download play next playlist details"),
+    SettingsEntry("Swipe down anywhere to close", "Customise", "settings/customize", "player close dismiss swipe down pull gesture anywhere"),
+    SettingsEntry("Top bar on player", "Customise", "settings/customize", "status bar clock battery hide player top"),
+    SettingsEntry("Bottom bar on player", "Customise", "settings/customize", "navigation bar nav buttons gesture handle hide player bottom"),
+
     // Appearance
     SettingsEntry("Player style", "Appearance", "settings/appearance", "now playing player look style edge-to-edge artwork flat controls"),
     SettingsEntry("Experience", "Appearance", "settings/appearance", "preset minimal balanced immersive style look"),

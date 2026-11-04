@@ -53,7 +53,6 @@ private val NightInk = Color(0xFFB0322A)
 private val DayInk = Color.White.copy(alpha = 0.88f)
 private val TileFill = Color(0xFF141416)
 
-/** The time, the date, and whether it is night; changes once a second, nothing else does. */
 private data class BedsideTime(val time: String, val date: String, val night: Boolean)
 
 @Composable
@@ -78,7 +77,7 @@ private fun rememberBedsideTime(): BedsideTime {
     LaunchedEffect(h24, seconds) {
         while (true) {
             time = read()
-            // wake on the turn of the next second
+
             delay(1_000L - System.currentTimeMillis() % 1_000L)
         }
     }
@@ -91,7 +90,6 @@ private fun bedsideInk(time: BedsideTime): Color {
     return if (nightPref && time.night) NightInk else DayInk
 }
 
-// a nightstand player keeps the phone awake while it is open, if asked
 @Composable
 private fun KeepAwake(expanded: Boolean) {
     val awake by rememberPreference(PlayerStylePrefs.BedsideAwake, true)
@@ -104,10 +102,6 @@ private fun KeepAwake(expanded: Boolean) {
     }
 }
 
-/**
- * The Bedside clock: a big quiet time on black for the nightstand, the date small over it and
- * the song in one dim line under it. Swipe across for the song with its controls.
- */
 @Composable
 internal fun BedsidePlayer(song: StyleSong, expanded: Boolean) {
     KeepAwake(expanded)
@@ -157,11 +151,11 @@ internal fun BedsidePlayer(song: StyleSong, expanded: Boolean) {
             }
         }
         StyleTopBar(onClose = song.actions.close, onMore = song.actions.more, modifier = Modifier.padding(top = 8.dp))
-        // which page is up, as two dots at the foot
+
         Row(
             Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 14.dp),
+                .padding(bottom = 14.dp + LocalStyleBottomReserve.current),
             horizontalArrangement = Arrangement.spacedBy(7.dp),
         ) {
             repeat(2) { i ->
@@ -171,10 +165,6 @@ internal fun BedsidePlayer(song: StyleSong, expanded: Boolean) {
     }
 }
 
-/**
- * Bedside: the nightstand as two tiles, the music on one and a clock (or the words) on the
- * other; stacked upright, side by side when the phone is turned.
- */
 @Composable
 internal fun BedsideTilesPlayer(song: StyleSong, expanded: Boolean) {
     KeepAwake(expanded)
@@ -201,12 +191,12 @@ internal fun BedsideTilesPlayer(song: StyleSong, expanded: Boolean) {
         }
         if (landscape) {
             Row(
-                Modifier.fillMaxSize().padding(start = 12.dp, end = 12.dp, bottom = 12.dp),
+                Modifier.fillMaxSize().padding(start = 12.dp, end = 12.dp, bottom = 12.dp + LocalStyleBottomReserve.current),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) { tiles(Modifier.weight(1f).fillMaxSize(), Modifier.weight(1f).fillMaxSize()) }
         } else {
             Column(
-                Modifier.fillMaxSize().padding(start = 12.dp, end = 12.dp, bottom = 12.dp),
+                Modifier.fillMaxSize().padding(start = 12.dp, end = 12.dp, bottom = 12.dp + LocalStyleBottomReserve.current),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) { tiles(Modifier.weight(1.15f).fillMaxWidth(), Modifier.weight(0.85f).fillMaxWidth()) }
         }
@@ -235,7 +225,6 @@ private fun ClockTile(modifier: Modifier) {
     }
 }
 
-/** The song in a tile: its cover at its own size, the title, the bar and the buttons. */
 @Composable
 private fun MusicTile(song: StyleSong, ink: Color, modifier: Modifier) {
     BoxWithConstraints(modifier, contentAlignment = Alignment.Center) {

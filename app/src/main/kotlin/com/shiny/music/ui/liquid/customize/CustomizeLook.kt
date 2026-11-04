@@ -26,7 +26,6 @@ import com.shiny.music.R
 import com.shiny.music.utils.PreferencesSnapshot
 import com.shiny.music.extensions.toEnum
 
-/** Everything on Settings › Customise is stored under these keys. */
 object CustomizePrefs {
     val CoverRounding = floatPreferencesKey("customizeCoverRounding")
     val Animations = booleanPreferencesKey("customizeAnimations")
@@ -38,37 +37,38 @@ object CustomizePrefs {
     val PlayerNavBar = booleanPreferencesKey("customizePlayerNavBar")
     val PlaylistStyle = stringPreferencesKey("customizePlaylistStyle")
     val HomeStyle = stringPreferencesKey("customizeHomeStyle")
+    val SongListStyle = stringPreferencesKey("customizeSongListStyle")
     val LyricsStyle = stringPreferencesKey("customizeLyricsStyle")
     val ProgressiveBlur = booleanPreferencesKey("customizeProgressiveBlur")
     val BlurQuality = stringPreferencesKey("customizeBlurQuality")
     val BlurStrength = floatPreferencesKey("customizeBlurStrength")
     val ElementBlur = booleanPreferencesKey("customizeElementBlur")
 
-    // 25 draws every cover exactly as Shiny always has
     const val CoverRoundingDefault = 25f
     const val CoverRoundingMax = 45f
 
-    // 25 px is the glass exactly as Shiny draws it
     const val BlurStrengthDefault = 25f
     const val BlurStrengthMin = 10f
     const val BlurStrengthMax = 50f
 }
 
-/** How album and playlist pages lay out their top. The first is the page Shiny has always had. */
 enum class PlaylistStyle(val title: String, val blurb: String) {
     Classic("Classic", "The cover centred over its own colour"),
     Flow("Flow", "The cover edge to edge, the title over its foot"),
     Minimal("Minimal", "No cover, just the title over a wash of its colour"),
 }
 
-/** What Home opens with. The first is Home as it is. */
 enum class HomeStyle(val title: String, val blurb: String) {
     Hero("Hero", "Big artwork cards to swipe through"),
     ListenNow("Listen now", "A short list of songs to start with"),
     HopIn("Hop in", "Your playlists as tiles, one tap from playing"),
 }
 
-/** How a synced lyric line is sung. The first is Shiny's own. */
+enum class SongListStyle(val title: String, val blurb: String) {
+    List("List", "Rows of songs with a small cover"),
+    Stack("Stack", "Posters stacked like records, scroll to flip through them"),
+}
+
 enum class LyricsStyle(val title: String, val blurb: String, val glow: Boolean, val rise: Boolean, val words: Boolean, val cascade: Boolean) {
     Shiny("Shiny", "Words light up as they're sung and glow, lines follow in a wave", glow = true, rise = false, words = true, cascade = true),
     Rise("Rise", "Words lift into place as they're sung, with the glow", glow = true, rise = true, words = true, cascade = true),
@@ -78,13 +78,11 @@ enum class LyricsStyle(val title: String, val blurb: String, val glow: Boolean, 
 
 data class GlassTuning(val strength: Float, val low: Boolean)
 
-/** How finely glass is drawn: Low reads the page behind it at a lower resolution, which costs less. */
 enum class BlurQuality(val title: String) {
     High("High"),
     Low("Low"),
 }
 
-/** The stops the animation speed moves between, slowest to fastest. */
 val AnimationSpeeds = listOf(0.5f, 0.75f, 1f, 1.25f, 1.5f, 1.75f, 2f)
 
 fun animationSpeedLabel(speed: Float): String {
@@ -92,7 +90,6 @@ fun animationSpeedLabel(speed: Float): String {
     return "${text}x"
 }
 
-/** What sliding a song row does, picked per side. */
 enum class SongSwipeAction(val title: String, val pill: String, @DrawableRes val icon: Int, val color: Color) {
     Library("Add or remove from library", "Library", R.drawable.library_add, Color(0xFF9B72F2)),
     Queue("Add to queue", "Add to queue", R.drawable.queue_music, Color(0xFF34C759)),
@@ -105,17 +102,12 @@ enum class SongSwipeAction(val title: String, val pill: String, @DrawableRes val
 val DefaultSwipeRight = SongSwipeAction.PlayNext
 val DefaultSwipeLeft = SongSwipeAction.Queue
 
-/**
- * The customise choices that drawing code reads outside composition. Every getter reads the
- * app-wide preference snapshot, so a change shows on the next frame.
- */
 object CustomizeLook {
     private var systemScale by mutableFloatStateOf(1f)
 
     val animations: Boolean get() = PreferencesSnapshot.read(CustomizePrefs.Animations, true)
     val speed: Float get() = PreferencesSnapshot.read(CustomizePrefs.AnimationSpeed, 1f)
 
-    /** How much rounder or squarer covers are than Shiny's own: 1 is unchanged, 0 is square. */
     val coverScale: Float
         get() = PreferencesSnapshot.read(CustomizePrefs.CoverRounding, CustomizePrefs.CoverRoundingDefault)
             .coerceIn(0f, CustomizePrefs.CoverRoundingMax) / CustomizePrefs.CoverRoundingDefault
@@ -125,29 +117,22 @@ object CustomizeLook {
 
     val playlistStyle: PlaylistStyle get() = PreferencesSnapshot.readString(CustomizePrefs.PlaylistStyle).toEnum(PlaylistStyle.Classic)
     val homeStyle: HomeStyle get() = PreferencesSnapshot.readString(CustomizePrefs.HomeStyle).toEnum(HomeStyle.Hero)
+    val songListStyle: SongListStyle get() = PreferencesSnapshot.readString(CustomizePrefs.SongListStyle).toEnum(SongListStyle.List)
     val lyricsStyle: LyricsStyle get() = PreferencesSnapshot.readString(CustomizePrefs.LyricsStyle).toEnum(LyricsStyle.Shiny)
 
-    /** The scroll edge under the top bar blurs progressively; off, it is a plain fade. */
     val progressiveBlur: Boolean get() = PreferencesSnapshot.read(CustomizePrefs.ProgressiveBlur, true)
     val blurQuality: BlurQuality get() = PreferencesSnapshot.readString(CustomizePrefs.BlurQuality).toEnum(BlurQuality.High)
 
-    /** How strong glass blur is against Shiny's own: 1 is unchanged. */
     val blurScale: Float
         get() = PreferencesSnapshot.read(CustomizePrefs.BlurStrength, CustomizePrefs.BlurStrengthDefault)
             .coerceIn(CustomizePrefs.BlurStrengthMin, CustomizePrefs.BlurStrengthMax) / CustomizePrefs.BlurStrengthDefault
 
-    /**
-     * Strength and quality as one value that only changes when one of them does, so glass
-     * reading it in composition is not woken by every other preference written.
-     */
     val glassTuning: androidx.compose.runtime.State<GlassTuning> = androidx.compose.runtime.derivedStateOf {
         GlassTuning(blurScale, blurQuality == BlurQuality.Low)
     }
 
-    /** Things themselves blurring as they move: the Home hero scrolling away, Library titles. */
     val elementBlur: Boolean get() = PreferencesSnapshot.read(CustomizePrefs.ElementBlur, true)
 
-    /** Given to the window's recomposer, so every animation in the app reads it each frame. */
     val durationScale: MotionDurationScale = object : MotionDurationScale {
         override val scaleFactor: Float
             get() = if (!animations) 0f else systemScale / speed.coerceAtLeast(0.1f)
@@ -155,7 +140,6 @@ object CustomizeLook {
 
     private var observer: ContentObserver? = null
 
-    // the system's own animator scale still applies underneath, as it did before; watched once per process
     fun followSystemScale(context: Context) {
         val resolver = context.applicationContext.contentResolver
         fun read() = Settings.Global.getFloat(resolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f)
@@ -171,10 +155,6 @@ object CustomizeLook {
     }
 }
 
-/**
- * A cover's own rounded shape with its corners scaled by the cover rounding setting. Any other
- * shape (a circle for an artist) is left alone.
- */
 fun Shape.withCoverRounding(): Shape {
     if (this !is CornerBasedShape) return this
     val scale = CustomizeLook.coverScale

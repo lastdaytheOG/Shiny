@@ -51,18 +51,11 @@ import kotlin.math.cos
 import kotlin.math.hypot
 import kotlin.math.sin
 
-// 33⅓ turns a minute
 private const val DegreesPerSecond = 200f
 
-// where the needle sits on the record, as a share of its radius: the first groove and the last
 private const val OuterGroove = 0.9f
 private const val InnerGroove = 0.47f
 
-/**
- * The Turntable: the song's cover as the label of a record that turns while it plays, and an
- * arm that drops onto it on play, travels in towards the label as the song goes, and lifts off
- * on pause. The arm can be dragged across the record to seek.
- */
 @Composable
 internal fun TurntablePlayer(song: StyleSong) {
     val spinPref by rememberPreference(PlayerStylePrefs.TurntableSpin, true)
@@ -120,7 +113,7 @@ internal fun TurntablePlayer(song: StyleSong) {
             gap = 30.dp,
             modifier = Modifier
                 .align(Alignment.CenterHorizontally)
-                .padding(top = 10.dp, bottom = 26.dp),
+                .padding(top = 10.dp, bottom = 26.dp + LocalStyleBottomReserve.current),
         )
     }
 }
@@ -128,7 +121,7 @@ internal fun TurntablePlayer(song: StyleSong) {
 @Composable
 private fun Deck(song: StyleSong, spin: Boolean, armSeeks: Boolean, deck: androidx.compose.ui.unit.Dp) {
     val density = LocalDensity.current
-    // the record turns by a velocity that eases up on play and runs down on pause
+
     val turn = remember { mutableFloatStateOf(0f) }
     val velocity = remember { Animatable(0f) }
     LaunchedEffect(song.isPlaying, spin) {
@@ -145,7 +138,7 @@ private fun Deck(song: StyleSong, spin: Boolean, armSeeks: Boolean, deck: androi
             }
         }
     }
-    // 0 is lifted off to the side, 1 is down on the record
+
     val engaged = remember { Animatable(if (song.isPlaying) 1f else 0f) }
     LaunchedEffect(song.isPlaying) {
         engaged.animateTo(if (song.isPlaying) 1f else 0f, spring(dampingRatio = 0.8f, stiffness = 60f))
@@ -157,7 +150,6 @@ private fun Deck(song: StyleSong, spin: Boolean, armSeeks: Boolean, deck: androi
     val labelModel = remember(song.artwork, labelPx) { song.artwork?.resize(labelPx, labelPx) }
 
     Box(Modifier.size(deck)) {
-        // the record, its grooves and the label: drawn still, turned as one layer
         Box(
             Modifier
                 .size(record)
@@ -168,7 +160,7 @@ private fun Deck(song: StyleSong, spin: Boolean, armSeeks: Boolean, deck: androi
             Canvas(Modifier.fillMaxSize()) {
                 val r = size.minDimension / 2f
                 drawCircle(Color(0xFF0D0D0F), r)
-                // grooves: fine rings that catch a little light
+
                 var ring = r * 0.97f
                 var i = 0
                 while (ring > r * 0.42f) {
@@ -176,7 +168,7 @@ private fun Deck(song: StyleSong, spin: Boolean, armSeeks: Boolean, deck: androi
                     ring -= r * 0.018f
                     i++
                 }
-                // a sheen across the vinyl, so the turn reads
+
                 drawCircle(
                     Brush.sweepGradient(
                         0f to Color.Transparent,
@@ -201,7 +193,6 @@ private fun Deck(song: StyleSong, spin: Boolean, armSeeks: Boolean, deck: androi
             }
         }
 
-        // the arm, pivoting from the top right corner
         Canvas(
             Modifier
                 .fillMaxSize()
@@ -242,13 +233,13 @@ private fun Deck(song: StyleSong, spin: Boolean, armSeeks: Boolean, deck: androi
             val fraction = dragFraction ?: song.clock.fraction
             val angle = if (dragFraction != null) geometry.angleFor(fraction) else geometry.angleFor(fraction) * engaged.value
             val pivot = geometry.pivot
-            // the base the arm turns on
+
             drawCircle(Color(0xFF2A2A2E), geometry.baseRadius, pivot)
             drawCircle(Color(0xFF4A4A50), geometry.baseRadius * 0.55f, pivot)
             rotate(angle, pivot) {
                 val end = Offset(pivot.x, pivot.y + geometry.length)
                 drawLine(Color(0xFFC9C9CE), pivot, end, strokeWidth = 5.dp.toPx(), cap = StrokeCap.Round)
-                // the head with its needle
+
                 drawRoundRect(
                     color = Color(0xFFE6E6EA),
                     topLeft = Offset(end.x - 6.dp.toPx(), end.y - 4.dp.toPx()),
@@ -261,11 +252,6 @@ private fun Deck(song: StyleSong, spin: Boolean, armSeeks: Boolean, deck: androi
     }
 }
 
-/**
- * Where the arm is. The pivot sits at the deck's top right; an angle of 0 hangs the arm
- * straight down beside the record, and turning it moves the needle in across the grooves.
- * The angles for the first and last groove are solved from the sizes, not guessed.
- */
 private class ArmGeometry(deck: Float, record: Float) {
     val pivot = Offset(deck * 0.9f, deck * 0.08f)
     val baseRadius = deck * 0.055f
@@ -279,7 +265,6 @@ private class ArmGeometry(deck: Float, record: Float) {
     }
 
     private fun angleAtRadius(share: Float): Float {
-        // the needle's distance from the centre falls as the arm turns in; walk to the share wanted
         var best = 0f
         var bestError = Float.MAX_VALUE
         var a = 0f
