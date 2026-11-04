@@ -173,6 +173,9 @@ import kotlin.math.roundToInt
 
 enum class NowPlayingMode { Stage, Lyrics, Queue }
 
+// how much of the player, from its top, still closes it when swipe down anywhere is off
+private const val TopCloseZone = 0.45f
+
 /**
  * The full-screen player, riding [state]: a card that rises from the mini player, follows
  * the finger when pulled down, and dims the app behind it as it comes up.
@@ -185,6 +188,32 @@ fun LiquidPlayerSheet(
 ) {
     LocalPlayerConnection.current ?: return
     val density = LocalDensity.current
+
+    // settings › customise: where a swipe down may close the player, and the phone's bars over it
+    val anywhere by androidx.compose.runtime.rememberUpdatedState(
+        rememberPreference(com.shiny.music.ui.liquid.customize.CustomizePrefs.SwipeDownAnywhere, true).value,
+    )
+    val statusBarShown by rememberPreference(com.shiny.music.ui.liquid.customize.CustomizePrefs.PlayerStatusBar, true)
+    val navBarShown by rememberPreference(com.shiny.music.ui.liquid.customize.CustomizePrefs.PlayerNavBar, true)
+    val hostView = androidx.compose.ui.platform.LocalView.current
+    val hostContext = androidx.compose.ui.platform.LocalContext.current
+    val expanded = state.isExpanded
+    DisposableEffect(expanded, statusBarShown, navBarShown) {
+        val window = (hostContext as? android.app.Activity)?.window
+        val controller = window?.let { androidx.core.view.WindowCompat.getInsetsController(it, hostView) }
+        val hideTop = expanded && !statusBarShown && controller != null
+        val hideBottom = expanded && !navBarShown && controller != null
+        if (hideTop || hideBottom) {
+            controller!!.systemBarsBehavior = androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            if (hideTop) controller.hide(androidx.core.view.WindowInsetsCompat.Type.statusBars())
+            if (hideBottom) controller.hide(androidx.core.view.WindowInsetsCompat.Type.navigationBars())
+        }
+        onDispose {
+            // only what was hidden here comes back
+            if (hideTop) controller?.show(androidx.core.view.WindowInsetsCompat.Type.statusBars())
+            if (hideBottom) controller?.show(androidx.core.view.WindowInsetsCompat.Type.navigationBars())
+        }
+    }
 
     Box(modifier.fillMaxSize()) {
         if (state.isCollapsed) return@Box
@@ -208,24 +237,34 @@ fun LiquidPlayerSheet(
                     clip = true
                 }
                 .pointerInput(state) {
+                    // with swipe down anywhere off, only a drag that starts over the top part (the cover) moves the sheet
+                    var follows = true
                     detectVerticalDragGestures(
+                        onDragStart = { start -> follows = anywhere || start.y < size.height * TopCloseZone },
                         onVerticalDrag = { change, dragAmount ->
+                            if (!follows) return@detectVerticalDragGestures
                             velocityTracker.addPointerInputChange(change)
                             state.dispatchRawDelta(dragAmount)
                         },
                         onDragCancel = {
                             velocityTracker.resetTracking()
-                            state.snapTo(state.expandedBound)
+                            if (follows) state.snapTo(state.expandedBound)
                         },
                         onDragEnd = {
                             val velocity = -velocityTracker.calculateVelocity().y
                             velocityTracker.resetTracking()
-                            state.performFling(velocity, null)
+                            if (follows) state.performFling(velocity, null)
                         },
                     )
                 },
         ) {
-            NowPlaying(sheet = state, navController = navController)
+            // settings › customise › player styles: a complete player of its own, or Shiny's
+            val style by com.shiny.music.ui.liquid.customize.rememberPlayerStyle()
+            if (style.alternate) {
+                com.shiny.music.ui.liquid.player.styles.AlternatePlayer(style = style, sheet = state, navController = navController)
+            } else {
+                NowPlaying(sheet = state, navController = navController)
+            }
         }
     }
 }

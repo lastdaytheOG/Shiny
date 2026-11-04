@@ -398,6 +398,14 @@ fun NavGraphBuilder.navigationBuilder(
         AppearanceSettingsScreen(navController)
     }
 
+    screen("settings/customize") {
+        com.shiny.music.ui.liquid.settings.CustomizeSettingsScreen(navController)
+    }
+
+    screen("settings/customize/player") {
+        com.shiny.music.ui.liquid.settings.PlayerStylesScreen(navController)
+    }
+
     screen("settings/now_playing") {
         NowPlayingSettingsScreen(navController)
     }

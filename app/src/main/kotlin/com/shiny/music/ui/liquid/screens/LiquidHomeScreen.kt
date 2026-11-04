@@ -164,6 +164,10 @@ fun LiquidHomeScreen(
     val cookie by rememberPreference(InnerTubeCookieKey, "")
     val isLoggedIn = remember(cookie) { "SAPISID" in parseCookieString(cookie) }
     val reduceMotion = LocalShinyAppearance.current.transitions == PageTransitions.Instant
+    val homeStyle by com.shiny.music.utils.rememberEnumPreference(
+        com.shiny.music.ui.liquid.customize.CustomizePrefs.HomeStyle,
+        com.shiny.music.ui.liquid.customize.HomeStyle.Hero,
+    )
 
     val listState = rememberListState(viewModel.scroll)
     val pullState = rememberPullToRefreshState()
@@ -237,7 +241,35 @@ fun LiquidHomeScreen(
             }
 
             val activeId = mediaMetadata?.id
-            if (heroCards.isNotEmpty() || gachaPool.size >= 4) {
+            // settings › customise › home styles: the hero, or one of the two compact tops
+            val shortcuts = shelves.filterIsInstance<ShortcutsSection>().firstOrNull() ?: feed?.sections.orEmpty().filterIsInstance<ShortcutsSection>().firstOrNull()
+            val compactTop = when (homeStyle) {
+                com.shiny.music.ui.liquid.customize.HomeStyle.ListenNow -> (mix?.songs.orEmpty() + live.mostPlayed + live.history).isNotEmpty()
+                com.shiny.music.ui.liquid.customize.HomeStyle.HopIn -> shortcuts != null
+                com.shiny.music.ui.liquid.customize.HomeStyle.Hero -> false
+            }
+            if (compactTop) {
+                item(key = "home_top_${homeStyle.name}", contentType = "home_top") {
+                    HomeItem(reduceMotion, "home_top_${homeStyle.name}", viewModel.revealed) {
+                        if (homeStyle == com.shiny.music.ui.liquid.customize.HomeStyle.ListenNow) {
+                            com.shiny.music.ui.liquid.home.ListenNowTop(
+                                title = "Start listening",
+                                mix = mix?.songs.orEmpty(),
+                                fallback = live.mostPlayed + live.history,
+                                activeId = activeId,
+                                actions = actions,
+                            )
+                        } else if (shortcuts != null) {
+                            com.shiny.music.ui.liquid.home.HopInTop(
+                                title = "Hop in",
+                                section = shortcuts,
+                                glowFrom = mixCovers.firstOrNull() ?: mediaMetadata?.thumbnailUrl,
+                                actions = actions,
+                            )
+                        }
+                    }
+                }
+            } else if (heroCards.isNotEmpty() || gachaPool.size >= 4) {
                 item(key = "hero", contentType = "hero") {
                     HomeItem(reduceMotion, "hero", viewModel.revealed) {
                         val heroProgress = {

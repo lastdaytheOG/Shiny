@@ -120,9 +120,6 @@ fun LiquidLyricsPane(
     fadeBottom: Float = 0.12f,
 ) {
     val playerConnection = LocalPlayerConnection.current ?: return
-    val context = LocalContext.current
-    val database = LocalDatabase.current
-    val scope = rememberCoroutineScope()
     val lyricsEntity by playerConnection.currentLyrics.collectAsState()
     val currentSong by playerConnection.currentSong.collectAsState()
     val raw = remember(lyricsEntity) { lyricsEntity?.lyrics?.trim() }
@@ -132,27 +129,7 @@ fun LiquidLyricsPane(
     // this one silently did not, so a correction made there had no effect here.
     val songOffsetMs = (currentSong?.song?.lyricsOffset ?: 0).toLong()
 
-    // A safety net only: MusicService fetches lyrics when the song starts, so by the time
-    // the pane opens the row usually exists. This covers the song that was already playing
-    // when the preference was turned on. There is no debounce — the guard below is the
-    // database row, and re-entering the pane cannot start a second fetch.
-    LaunchedEffect(metadata?.id, lyricsEntity) {
-        if (metadata != null && lyricsEntity == null) {
-            scope.launch(Dispatchers.IO) {
-                runCatching {
-                    if (database.lyrics(metadata.id).firstOrNull() != null) return@launch
-                    val entryPoint = EntryPointAccessors.fromApplication(
-                        context.applicationContext,
-                        com.shiny.music.di.LyricsHelperEntryPoint::class.java,
-                    )
-                    val fetched = entryPoint.lyricsHelper().getLyrics(metadata)
-                    database.query {
-                        upsert(LyricsEntity(metadata.id, fetched.lyrics ?: "", fetched.providerName))
-                    }
-                }
-            }
-        }
-    }
+    RequestLyricsIfMissing(metadata, lyricsEntity)
 
     Box(modifier.fillMaxSize()) {
         when {
@@ -196,6 +173,36 @@ fun LiquidLyricsPane(
                     fadeTop = fadeTop,
                     fadeBottom = fadeBottom,
                 )
+            }
+        }
+    }
+}
+
+/**
+ * A safety net only: MusicService fetches lyrics when the song starts, so by the time
+ * lyrics are shown the row usually exists. This covers the song that was already playing
+ * when the preference was turned on. There is no debounce — the guard below is the
+ * database row, and showing the lyrics again cannot start a second fetch.
+ */
+@Composable
+internal fun RequestLyricsIfMissing(metadata: MediaMetadata?, lyricsEntity: LyricsEntity?) {
+    val context = LocalContext.current
+    val database = LocalDatabase.current
+    val scope = rememberCoroutineScope()
+    LaunchedEffect(metadata?.id, lyricsEntity) {
+        if (metadata != null && lyricsEntity == null) {
+            scope.launch(Dispatchers.IO) {
+                runCatching {
+                    if (database.lyrics(metadata.id).firstOrNull() != null) return@launch
+                    val entryPoint = EntryPointAccessors.fromApplication(
+                        context.applicationContext,
+                        com.shiny.music.di.LyricsHelperEntryPoint::class.java,
+                    )
+                    val fetched = entryPoint.lyricsHelper().getLyrics(metadata)
+                    database.query {
+                        upsert(LyricsEntity(metadata.id, fetched.lyrics ?: "", fetched.providerName))
+                    }
+                }
             }
         }
     }
@@ -256,7 +263,13 @@ private fun LyricsList(
     // and it stays where it is put — no timer pulls it back mid-read, and a paused song never
     // did — until the Sync button, a tapped line or a seek hands it back. A new song follows.
     val following = remember(lines) { mutableStateOf(true) }
-    val wordPref by rememberPreference(com.shiny.music.ui.liquid.LiquidPrefs.WordByWord, true)
+    val wordSetting by rememberPreference(com.shiny.music.ui.liquid.LiquidPrefs.WordByWord, true)
+    // settings › customise › lyrics animation: glow, rising words, word timing and the wave
+    val lyricsStyle by com.shiny.music.utils.rememberEnumPreference(
+        com.shiny.music.ui.liquid.customize.CustomizePrefs.LyricsStyle,
+        com.shiny.music.ui.liquid.customize.LyricsStyle.Shiny,
+    )
+    val wordPref = wordSetting && lyricsStyle.words
     val timeline = remember(lines) { buildTimeline(lines) }
     // Resolved on every frame rather than once: crossfade swaps the service's player for a
     // new instance, and a clock holding the old one would read a player that has stopped.
@@ -285,7 +298,7 @@ private fun LyricsList(
         label = "lyricsBrowse",
     )
     val measurer = rememberTextMeasurer(cacheSize = 96)
-    val glow = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    val glow = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && lyricsStyle.glow
     // Where the line begins, undoing the per-song offset, so tapping a line lands exactly on
     // its first word rather than somewhere inside it (the line lead makes it current a beat
     // before that, never after).
@@ -334,6 +347,8 @@ private fun LyricsList(
                     motion = motion,
                     measurer = measurer,
                     glow = glow,
+                    rise = lyricsStyle.rise,
+                    cascade = lyricsStyle.cascade,
                     browse = browse,
                     romanization = romanization,
                     horizontalPadding = horizontalPadding,
@@ -446,6 +461,8 @@ private fun SyncedLyricLine(
     motion: LyricsMotion,
     measurer: TextMeasurer,
     glow: Boolean,
+    rise: Boolean,
+    cascade: Boolean,
     browse: State<Float>,
     romanization: RomanizationSettings,
     horizontalPadding: Dp,
@@ -467,7 +484,7 @@ private fun SyncedLyricLine(
                 // Only a line stepping back before an interlude needs the exact time here.
                 val t = if (live && line.interlude) motion.time else motion.timeNow
                 alpha = lineAlpha(line, index, cursor, live, t, motion.words, browse.value) * edgeFade(index)
-                translationY = motion.velocity * waveLag(index - cursor)
+                translationY = if (cascade) motion.velocity * waveLag(index - cursor) else 0f
                 // Alpha applied to each drawing rather than to a buffer: the line is plain
                 // text, so the look is the same and no offscreen pass is made per line.
                 compositingStrategy = CompositingStrategy.ModulateAlpha
@@ -475,7 +492,7 @@ private fun SyncedLyricLine(
     ) {
         Spacer(
             Modifier
-                .lyricInk(line, index, motion, measurer, LiquidTypography.lyrics, glow)
+                .lyricInk(line, index, motion, measurer, LiquidTypography.lyrics, glow, rise)
                 .clearAndSetSemantics { contentDescription = line.text },
         )
         val sub = romanized

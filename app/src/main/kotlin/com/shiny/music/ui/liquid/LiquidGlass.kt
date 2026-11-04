@@ -154,13 +154,16 @@ fun Modifier.liquidGlass(
     val density = LocalDensity.current
     val r = recipe(kind, LocalShinyAppearance.current.glassFinish)
     val surfaceTint = if (r.tint == 1f) baseTint else baseTint.copy(alpha = (baseTint.alpha * r.tint).coerceIn(0f, 1f))
+    // settings › customise: blur strength scales every recipe, low quality halves the recording
+    val tuning = com.shiny.music.ui.liquid.customize.CustomizeLook.glassTuning.value
+    val blur = r.blur * tuning.strength
     // Blur hides upscaling, so heavier materials record their backdrop at lower resolution.
     val scale = when {
-        r.blur >= 16.dp -> 0.33f
-        r.blur >= 8.dp -> 0.5f
+        blur >= 16.dp -> 0.33f
+        blur >= 8.dp -> 0.5f
         else -> 1f
-    }
-    val blurPx = with(density) { r.blur.toPx() } * scale
+    } * (if (tuning.low) 0.5f else 1f)
+    val blurPx = with(density) { blur.toPx() } * scale
     val lensHeightPx = with(density) { r.lensHeight.toPx() } * scale
     val lensAmountPx = with(density) { r.lensAmount.toPx() } * scale
     val highlight = remember(colors.isDark, kind) {
@@ -282,9 +285,13 @@ fun ScrollEdgeEffect(
     alpha: () -> Float = { 1f },
 ) {
     val density = LocalDensity.current
-    val blurPx = with(density) { 18.dp.toPx() } * 0.33f
+    val tuning = com.shiny.music.ui.liquid.customize.CustomizeLook.glassTuning.value
+    val edgeScale = 0.33f * (if (tuning.low) 0.5f else 1f)
+    val blurPx = with(density) { 18.dp.toPx() } * tuning.strength * edgeScale
     val sizeModifier = Modifier.then(modifier)
-    if (!GlassSupported) {
+    // progressive blur off in settings › customise: the edge is the plain fade glassless phones get
+    val progressive = remember { androidx.compose.runtime.derivedStateOf { com.shiny.music.ui.liquid.customize.CustomizeLook.progressiveBlur } }.value
+    if (!GlassSupported || !progressive) {
         Box(
             sizeModifier
                 .graphicsLayer { this.alpha = alpha() }
@@ -310,7 +317,7 @@ fun ScrollEdgeEffect(
                 },
                 highlight = null,
                 shadow = null,
-                backdropScale = 0.33f,
+                backdropScale = edgeScale,
                 onDrawSurface = {
                     drawRect(
                         Brush.verticalGradient(

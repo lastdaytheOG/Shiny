@@ -227,7 +227,7 @@ fun LibraryScaffold(
                     // blur goes up in steps and each step is cached, a new RenderEffect every frame was wasteful
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                         val step = ((p * 14f) / 3f).toInt() * 3
-                        renderEffect = if (step > 0) {
+                        renderEffect = if (step > 0 && com.shiny.music.ui.liquid.customize.CustomizeLook.elementBlur) {
                             blurs.getOrPut(step) {
                                 android.graphics.RenderEffect
                                     .createBlurEffect(step.toFloat(), step.toFloat(), android.graphics.Shader.TileMode.CLAMP)

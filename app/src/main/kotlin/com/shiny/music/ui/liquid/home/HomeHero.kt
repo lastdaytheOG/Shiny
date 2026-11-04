@@ -268,7 +268,7 @@ internal fun Modifier.heroScrollAway(progress: () -> Float): Modifier = graphics
     alpha = 1f - smoothstep(0.2f, 0.85f, p)
     // softens as it goes, from just past rest to a little over half way
     val soft = 30f * smoothstep(HeroStillFrom, 0.55f, p)
-    renderEffect = if (soft > 0.5f) BlurEffect(soft, soft, androidx.compose.ui.graphics.TileMode.Clamp) else null
+    renderEffect = if (soft > 0.5f && com.shiny.music.ui.liquid.customize.CustomizeLook.elementBlur) BlurEffect(soft, soft, androidx.compose.ui.graphics.TileMode.Clamp) else null
 }.drawWithContent {
     drawContent()
     val p = progress()
@@ -468,7 +468,7 @@ internal fun HeroCarousel(
     }
 }
 
-private fun heroBlur(radius: Float) = if (radius > 0.5f) BlurEffect(radius, radius) else null
+private fun heroBlur(radius: Float) = if (radius > 0.5f && com.shiny.music.ui.liquid.customize.CustomizeLook.elementBlur) BlurEffect(radius, radius) else null
 
 internal const val HeroHeightFraction = 0.6f
 private val HeroFade = tween<Float>(1150, easing = CubicBezierEasing(0.32f, 0f, 0.15f, 1f))

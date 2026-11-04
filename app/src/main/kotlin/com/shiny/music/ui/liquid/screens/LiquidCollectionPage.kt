@@ -148,6 +148,14 @@ fun LiquidCollectionPage(
         drawContent()
     }
     val topInset = statusBarHeight()
+    // settings › customise › playlist styles; classic is the page as it always was
+    val style by com.shiny.music.utils.rememberEnumPreference(
+        com.shiny.music.ui.liquid.customize.CustomizePrefs.PlaylistStyle,
+        com.shiny.music.ui.liquid.customize.PlaylistStyle.Classic,
+    )
+    val flowCover = style == com.shiny.music.ui.liquid.customize.PlaylistStyle.Flow && (artwork != null || !collage.isNullOrEmpty())
+    val minimal = style == com.shiny.music.ui.liquid.customize.PlaylistStyle.Minimal
+    val screenWidth = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp.dp
 
     Box(
         modifier
@@ -158,7 +166,7 @@ fun LiquidCollectionPage(
         Box(
             Modifier
                 .fillMaxWidth()
-                .height(560.dp)
+                .height(if (minimal) 420.dp else 560.dp)
                 .graphicsLayer {
                     val offset = if (listState.firstVisibleItemIndex == 0) listState.firstVisibleItemScrollOffset.toFloat() else size.height
                     translationY = -offset * 0.5f
@@ -166,8 +174,8 @@ fun LiquidCollectionPage(
                 }
                 .background(
                     Brush.verticalGradient(
-                        0f to tones.vivid.copy(alpha = 0.55f),
-                        0.55f to tones.vivid.copy(alpha = 0.18f),
+                        0f to tones.vivid.copy(alpha = if (minimal) 0.8f else 0.55f),
+                        0.55f to tones.vivid.copy(alpha = if (minimal) 0.26f else 0.18f),
                         1f to Color.Transparent,
                     )
                 )
@@ -182,6 +190,29 @@ fun LiquidCollectionPage(
                 contentPadding = PaddingValues(bottom = liquidBottomPadding()),
             ) {
                 item(key = "collection_header") {
+                    if (flowCover) {
+                        FlowHeader(
+                            title = title,
+                            subtitle = subtitle,
+                            meta = meta,
+                            artwork = artwork,
+                            collage = collage,
+                            placeholder = placeholder,
+                            description = description,
+                            pageColor = pageColor,
+                            onSubtitleClick = onSubtitleClick,
+                            playEnabled = playEnabled,
+                            onPlay = onPlay,
+                            onShuffle = onShuffle,
+                            onSmartShuffle = onSmartShuffle,
+                            ink = ink,
+                            extra = headerExtra,
+                            scrollOffset = {
+                                if (listState.firstVisibleItemIndex == 0) listState.firstVisibleItemScrollOffset else 0
+                            },
+                        )
+                        return@item
+                    }
                     CollectionHeader(
                         title = title,
                         subtitle = subtitle,
@@ -198,13 +229,21 @@ fun LiquidCollectionPage(
                         topInset = topInset,
                         ink = ink,
                         extra = headerExtra,
+                        showCover = !minimal,
                     )
                 }
                 content(ink)
             }
         }
 
-        val headerPx = with(density) { 380.dp.toPx() }
+        // where the title has gone under the bar, for each header's height
+        val headerPx = with(density) {
+            when {
+                flowCover -> screenWidth.toPx() + 40.dp.toPx()
+                minimal -> 150.dp.toPx()
+                else -> 380.dp.toPx()
+            }
+        }
         DetailTopBar(
             backdrop = pageBackdrop,
             edgeBackdrop = pageBackdrop,
@@ -265,6 +304,7 @@ private fun CollectionHeader(
     topInset: Dp,
     ink: CollectionInk,
     extra: (@Composable () -> Unit)?,
+    showCover: Boolean = true,
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
     BoxWithConstraints(Modifier.fillMaxWidth()) {
@@ -274,7 +314,7 @@ private fun CollectionHeader(
                 .fillMaxWidth()
                 .padding(top = topInset + 58.dp),
         ) {
-            Box(
+            if (showCover) Box(
                 Modifier
                     .align(Alignment.CenterHorizontally)
                     .size(coverSize)
@@ -292,12 +332,13 @@ private fun CollectionHeader(
                     )
                 }
             }
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(if (showCover) 24.dp else 30.dp))
             Text(
                 text = title,
                 color = ink.primary,
-                fontSize = 24.sp,
-                lineHeight = 28.sp,
+                // with no cover above it the title is the page's picture, so it is set bigger
+                fontSize = if (showCover) 24.sp else 34.sp,
+                lineHeight = if (showCover) 28.sp else 38.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = (-1.2).sp,
                 maxLines = 2,
@@ -374,6 +415,167 @@ private fun CollectionHeader(
             }
             Spacer(Modifier.height(18.dp))
         }
+    }
+}
+
+/**
+ * The Flow header: the cover edge to edge across the top of the page, asked for at the
+ * screen's own pixels so it is never drawn enlarged, its foot running into the page colour
+ * with the title, maker and buttons set over it. It drifts up slower than the page scrolls.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun FlowHeader(
+    title: String,
+    subtitle: String?,
+    meta: String?,
+    artwork: Any?,
+    collage: List<String>?,
+    placeholder: ImageVector?,
+    description: String?,
+    pageColor: Color,
+    onSubtitleClick: (() -> Unit)?,
+    playEnabled: Boolean,
+    onPlay: () -> Unit,
+    onShuffle: () -> Unit,
+    onSmartShuffle: (() -> Unit)?,
+    ink: CollectionInk,
+    extra: (@Composable () -> Unit)?,
+    scrollOffset: () -> Int,
+) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    val widthPx = with(LocalDensity.current) { androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp.dp.roundToPx() }
+    val sharp = remember(artwork, widthPx) { (artwork as? String)?.resize(widthPx, widthPx) ?: artwork }
+    Column(Modifier.fillMaxWidth()) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .aspectRatio(1f),
+        ) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .graphicsLayer {
+                        val y = scrollOffset().toFloat()
+                        translationY = y * 0.45f
+                        alpha = (1f - y / size.height).coerceIn(0f, 1f)
+                    },
+            ) {
+                if (!collage.isNullOrEmpty() && collage.size >= 4 && artwork == null) {
+                    CollageCover(collage.take(4), Modifier.fillMaxSize())
+                } else {
+                    Artwork(
+                        model = sharp ?: collage?.firstOrNull(),
+                        shape = RoundedCornerShape(0.dp),
+                        hairline = false,
+                        scaleCorners = false,
+                        placeholder = placeholder ?: Icons.Rounded.PlayArrow,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
+                // the foot of the cover goes into the page's colour, so the type over it reads
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                // dark enough at the top for the status bar and buttons over a white cover
+                                0f to Color.Black.copy(alpha = 0.5f),
+                                0.22f to Color.Transparent,
+                                0.5f to Color.Transparent,
+                                0.86f to pageColor.copy(alpha = 0.86f),
+                                1f to pageColor,
+                            )
+                        )
+                )
+            }
+            Column(
+                Modifier
+                    .align(Alignment.BottomStart)
+                    .fillMaxWidth()
+                    .padding(horizontal = HeaderInset),
+            ) {
+                Text(
+                    text = title,
+                    color = ink.primary,
+                    fontSize = 32.sp,
+                    lineHeight = 36.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = (-1.4).sp,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                if (!subtitle.isNullOrBlank()) {
+                    val interaction = remember { MutableInteractionSource() }
+                    Text(
+                        text = subtitle,
+                        color = ink.primary.copy(alpha = 0.86f),
+                        fontSize = 15.sp,
+                        lineHeight = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = (-0.5).sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .padding(vertical = 3.dp)
+                            .then(
+                                if (onSubtitleClick != null) {
+                                    Modifier.combinedClickable(interactionSource = interaction, indication = null, onClick = onSubtitleClick)
+                                } else {
+                                    Modifier
+                                }
+                            ),
+                    )
+                }
+                if (!meta.isNullOrBlank()) {
+                    Text(
+                        text = meta,
+                        color = ink.secondary,
+                        fontSize = 11.sp,
+                        lineHeight = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        modifier = Modifier.padding(vertical = 2.dp),
+                    )
+                }
+            }
+        }
+        Spacer(Modifier.height(14.dp))
+        Row(
+            modifier = Modifier.padding(horizontal = HeaderInset),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            CollectionButton(
+                text = stringResource(R.string.liquid_play),
+                icon = Icons.Rounded.PlayArrow,
+                onClick = onPlay,
+                enabled = playEnabled,
+                filled = true,
+            )
+            Spacer(Modifier.width(9.dp))
+            ShuffleCircle(onClick = onShuffle, enabled = playEnabled)
+            if (onSmartShuffle != null) {
+                Spacer(Modifier.width(6.dp))
+                SmartShuffleButton(onClick = onSmartShuffle, enabled = playEnabled)
+            }
+        }
+        extra?.invoke()
+        if (!description.isNullOrBlank()) {
+            val interaction = remember { MutableInteractionSource() }
+            Text(
+                text = description,
+                style = LiquidTypography.subheadline,
+                color = ink.secondary,
+                maxLines = if (expanded) Int.MAX_VALUE else 3,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = PageMargin)
+                    .padding(top = 18.dp)
+                    .combinedClickable(interactionSource = interaction, indication = null) { expanded = !expanded },
+            )
+        }
+        Spacer(Modifier.height(18.dp))
     }
 }
 

@@ -52,6 +52,9 @@ private val Clear = Color.White.copy(alpha = 0f)
 /** Past any glyph: the open side of a clip. */
 private const val Far = 100_000f
 
+/** How far a word rises as it is sung, in the Rise lyric style. */
+private val RiseLift = 3.dp
+
 /** How soft the glow round a sung word is. */
 private val GlowRadius = 5.dp
 
@@ -122,13 +125,16 @@ internal class LineInk private constructor(
         if (rowRtl[r]) RevealBrush(Clear, Sung, feather) else RevealBrush(Sung, Clear, feather)
     }
 
-    /** The line as still white text; its layer dims it. */
-    fun drawStatic(scope: DrawScope) = with(scope) {
-        for (r in rows.indices) translate(rowX[r], rowY[r]) { drawText(rows[r], color = Sung) }
+    /** The line as still white text; its layer dims it. A sung line keeps the [lift] its words rose by. */
+    fun drawStatic(scope: DrawScope, lift: Float = 0f) = with(scope) {
+        for (r in rows.indices) translate(rowX[r], rowY[r] - lift) { drawText(rows[r], color = Sung) }
     }
 
-    /** The line being sung at [t]: sung words white, the word being sung revealed, the rest dim. */
-    fun drawLive(scope: DrawScope, line: LyricLineTiming, t: Double) = with(scope) {
+    /**
+     * The line being sung at [t]: sung words white, the word being sung revealed, the rest dim.
+     * With a [lift] (the Rise lyric style) each word rises by it as it is sung and stays up.
+     */
+    fun drawLive(scope: DrawScope, line: LyricLineTiming, t: Double, lift: Float = 0f) = with(scope) {
         val q = line.startedAt(t) - 1
         for (r in rows.indices) {
             val first = rowFirst[r]
@@ -139,33 +145,37 @@ internal class LineInk private constructor(
                     first == end -> {
                         val before = first - 1
                         val sung = before >= 0 && (before < q || (before == q && line.progress(q, t) >= 1f))
-                        drawText(rows[r], color = if (sung) Sung else Unsung)
+                        translate(0f, if (sung) -lift else 0f) { drawText(rows[r], color = if (sung) Sung else Unsung) }
                     }
                     q < first -> drawText(rows[r], color = Unsung)
-                    q >= end -> drawText(rows[r], color = Sung)
-                    else -> drawRowPartWay(r, first, end, q, line.progress(q, t))
+                    q >= end -> translate(0f, -lift) { drawText(rows[r], color = Sung) }
+                    else -> drawRowPartWay(r, first, end, q, line.progress(q, t), lift)
                 }
             }
         }
     }
 
-    private fun DrawScope.drawRowPartWay(r: Int, first: Int, end: Int, q: Int, p: Float) {
+    private fun DrawScope.drawRowPartWay(r: Int, first: Int, end: Int, q: Int, p: Float, lift: Float) {
         val row = rows[r]
         val rtl = rowRtl[r]
         val lo = clipLo[q]
         val hi = clipHi[q]
         if (q > first) {
-            if (rtl) clipRect(hi, -Far, Far, Far) { drawText(row, color = Sung) }
-            else clipRect(-Far, -Far, lo, Far) { drawText(row, color = Sung) }
+            translate(0f, -lift) {
+                if (rtl) clipRect(hi, -Far, Far, Far) { drawText(row, color = Sung) }
+                else clipRect(-Far, -Far, lo, Far) { drawText(row, color = Sung) }
+            }
         }
-        clipRect(lo, -Far, hi, Far) {
-            when {
-                p >= 1f -> drawText(row, color = Sung)
-                p <= 0f -> drawText(row, color = Unsung)
-                else -> {
-                    val brush = fill[r]
-                    brush.edge = revealEdge(q, rtl, p)
-                    drawText(row, brush, alpha = 1f)
+        translate(0f, -lift * riseOf(p)) {
+            clipRect(lo, -Far, hi, Far) {
+                when {
+                    p >= 1f -> drawText(row, color = Sung)
+                    p <= 0f -> drawText(row, color = Unsung)
+                    else -> {
+                        val brush = fill[r]
+                        brush.edge = revealEdge(q, rtl, p)
+                        drawText(row, brush, alpha = 1f)
+                    }
                 }
             }
         }
@@ -194,14 +204,14 @@ internal class LineInk private constructor(
      * The glow's source: the lit part of each glowing word at its glow strength, for the
      * caller to blur. Nothing round letters not yet sung.
      */
-    fun drawGlow(scope: DrawScope, line: LyricLineTiming, t: Double) = with(scope) {
+    fun drawGlow(scope: DrawScope, line: LyricLineTiming, t: Double, lift: Float = 0f) = with(scope) {
         val started = line.startedAt(t)
         for (i in 0 until started) {
             val g = line.glow(i, t)
             if (g <= GlowFloor) continue
             val r = pieceRow[i]
             val p = line.progress(i, t)
-            translate(rowX[r], rowY[r]) {
+            translate(rowX[r], rowY[r] - lift * riseOf(p)) {
                 clipRect(clipLo[i], -Far, clipHi[i], Far) {
                     if (p >= 1f) {
                         drawText(rows[r], color = Sung.copy(alpha = g))
@@ -217,6 +227,12 @@ internal class LineInk private constructor(
 
     companion object {
         private const val GlowFloor = 0.004f
+
+        // a word rises over the first part of its time, easing out, then holds
+        private fun riseOf(p: Float): Float {
+            val x = (p / 0.6f).coerceIn(0f, 1f)
+            return 1f - (1f - x) * (1f - x)
+        }
 
         fun build(measurer: TextMeasurer, line: LyricLineTiming, style: TextStyle, width: Int): LineInk {
             val text = line.text
@@ -341,7 +357,8 @@ internal fun Modifier.lyricInk(
     measurer: TextMeasurer,
     style: TextStyle,
     glow: Boolean,
-): Modifier = this then LyricInkElement(line, index, motion, measurer, style, glow)
+    rise: Boolean = false,
+): Modifier = this then LyricInkElement(line, index, motion, measurer, style, glow, rise)
 
 private data class LyricInkElement(
     val line: LyricLineTiming,
@@ -350,10 +367,11 @@ private data class LyricInkElement(
     val measurer: TextMeasurer,
     val style: TextStyle,
     val glow: Boolean,
+    val rise: Boolean,
 ) : ModifierNodeElement<LyricInkNode>() {
-    override fun create() = LyricInkNode(line, index, motion, measurer, style, glow)
+    override fun create() = LyricInkNode(line, index, motion, measurer, style, glow, rise)
 
-    override fun update(node: LyricInkNode) = node.update(line, index, motion, measurer, style, glow)
+    override fun update(node: LyricInkNode) = node.update(line, index, motion, measurer, style, glow, rise)
 }
 
 private class LyricInkNode(
@@ -363,12 +381,18 @@ private class LyricInkNode(
     private var measurer: TextMeasurer,
     private var style: TextStyle,
     private var glow: Boolean,
+    private var rise: Boolean,
 ) : Modifier.Node(), LayoutModifierNode, DrawModifierNode {
 
     private var ink: LineInk? = null
 
     /** Whether this line's ink depends on the exact time: changes a few times a line. */
     private var live: State<Boolean> = liveState()
+
+    /** Whether the line has been sung: flips once a line, and only read while words rise. */
+    private var past: State<Boolean> = pastState()
+
+    private var glowLift = 0f
 
     private var glowLayer: GraphicsLayer? = null
     private var glowEffect: RenderEffect? = null
@@ -381,7 +405,7 @@ private class LyricInkNode(
         val current = ink
         if (current != null) {
             val m = glowMargin.toFloat()
-            translate(m, m) { current.drawGlow(this, line, glowTime) }
+            translate(m, m) { current.drawGlow(this, line, glowTime, glowLift) }
         }
     }
 
@@ -391,6 +415,12 @@ private class LyricInkNode(
         return derivedStateOf { m.isLive(i) }
     }
 
+    private fun pastState(): State<Boolean> {
+        val m = motion
+        val i = index
+        return derivedStateOf { m.cursor >= i + 0.5f }
+    }
+
     fun update(
         line: LyricLineTiming,
         index: Int,
@@ -398,6 +428,7 @@ private class LyricInkNode(
         measurer: TextMeasurer,
         style: TextStyle,
         glow: Boolean,
+        rise: Boolean,
     ) {
         val relayout = line !== this.line || measurer !== this.measurer || style != this.style
         val reread = index != this.index || motion !== this.motion
@@ -407,7 +438,11 @@ private class LyricInkNode(
         this.measurer = measurer
         this.style = style
         this.glow = glow
-        if (reread) live = liveState()
+        this.rise = rise
+        if (reread) {
+            live = liveState()
+            past = pastState()
+        }
         if (relayout) {
             ink = null
             invalidateMeasurement()
@@ -430,14 +465,16 @@ private class LyricInkNode(
     override fun ContentDrawScope.draw() {
         val current = ink
         if (current != null) {
+            val lift = if (rise) RiseLift.toPx() else 0f
             if (!live.value) {
-                current.drawStatic(this)
+                current.drawStatic(this, if (rise && past.value) lift else 0f)
             } else {
                 val t = motion.time
                 if (glow && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && current.hasGlow(line, t)) {
+                    glowLift = lift
                     drawGlowLayer(current, t)
                 }
-                current.drawLive(this, line, t)
+                current.drawLive(this, line, t, lift)
             }
         }
         drawContent()
