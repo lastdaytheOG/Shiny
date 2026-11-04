@@ -6,6 +6,14 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.media3.common.C
+import com.shiny.music.extensions.metadata
+import com.shiny.music.ui.utils.resize
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -22,7 +30,10 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.math.abs
 import kotlin.math.max
 
@@ -31,12 +42,25 @@ private const val CommitFraction = 0.24f
 private const val BlockedResistance = 0.28f
 private const val ExitFraction = 1.15f
 
+@Immutable
+internal data class CarouselCover(val id: String, val model: Any?)
+
 @Stable
 internal class CoverSwipe(private val scope: CoroutineScope) {
     private val offset = mutableFloatStateOf(0f)
     private var settle: Job? = null
     private var leaving = false
     internal var travel = 0f
+
+    internal var landing: () -> Float = { 0f }
+    private var ghostJob: Job? = null
+    internal var revealedByRight: CarouselCover? = null
+    internal var revealedByLeft: CarouselCover? = null
+    internal var songKey by mutableStateOf<Any?>(null)
+    var ghost by mutableStateOf<CarouselCover?>(null)
+        private set
+    private val ghostShown = mutableFloatStateOf(0f)
+    val ghostAlpha: Float get() = ghostShown.floatValue
 
     val value: Float get() = offset.floatValue
 
@@ -82,6 +106,12 @@ internal class CoverSwipe(private val scope: CoroutineScope) {
             return false
         }
         val direction = if (x < 0f) -1f else 1f
+        val cover = if (direction > 0f) revealedByRight else revealedByLeft
+        val distance = landing()
+        if (distance > 0f && cover != null) {
+            land(direction * distance, velocity, cover, change)
+            return true
+        }
         val exit = direction * travel * ExitFraction
         val speed = max(abs(velocity), travel * 3.2f)
         leaving = true
@@ -101,6 +131,38 @@ internal class CoverSwipe(private val scope: CoroutineScope) {
             }
         }
         return true
+    }
+
+    private fun land(target: Float, velocity: Float, cover: CarouselCover, change: () -> Unit) {
+        val x = offset.floatValue
+        leaving = true
+        settle = scope.launch {
+            try {
+                animate(x, target, velocity, spring(dampingRatio = 1f, stiffness = 420f, visibilityThreshold = 0.5f)) { v, _ ->
+                    offset.floatValue = v
+                }
+            } finally {
+                val before = songKey
+                ghostJob?.cancel()
+                ghost = cover
+                ghostShown.floatValue = 1f
+                offset.floatValue = 0f
+                leaving = false
+                change()
+                ghostJob = scope.launch {
+                    try {
+                        withTimeoutOrNull(1_500L) { snapshotFlow { songKey }.first { it != before } }
+                        delay(220L)
+                        animate(1f, 0f, animationSpec = tween(240)) { v, _ -> ghostShown.floatValue = v }
+                    } finally {
+                        if (ghost === cover) {
+                            ghost = null
+                            ghostShown.floatValue = 0f
+                        }
+                    }
+                }
+            }
+        }
     }
 
     internal fun reset() {
@@ -161,5 +223,25 @@ internal fun Modifier.coverSwipe(
         } finally {
             if (tracking) swipe.reset()
         }
+    }
+}
+
+@Composable
+internal fun rememberQueueNeighbours(connection: com.shiny.music.playback.PlayerConnection): Pair<CarouselCover?, CarouselCover?> {
+    val index by connection.currentMediaItemIndex.collectAsState()
+    val windows by connection.queueWindows.collectAsState()
+    val shuffle by connection.shuffleModeEnabled.collectAsState()
+    val repeat by connection.repeatMode.collectAsState()
+    val metadata by connection.mediaMetadata.collectAsState()
+    return remember(index, windows, shuffle, repeat, metadata?.id) {
+        runCatching {
+            val player = connection.player
+            fun at(i: Int): CarouselCover? {
+                if (i == C.INDEX_UNSET || i < 0 || i >= player.mediaItemCount) return null
+                val m = player.getMediaItemAt(i).metadata ?: return null
+                return CarouselCover(m.id, m.thumbnailUrl?.resize(1080, 1080))
+            }
+            at(player.previousMediaItemIndex) to at(player.nextMediaItemIndex)
+        }.getOrDefault(null to null)
     }
 }

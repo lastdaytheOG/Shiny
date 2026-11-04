@@ -375,6 +375,32 @@ class PlayerConnection(
         }
     }
 
+    fun seekToNextItem(keepPaused: Boolean) {
+        if (!keepPaused || player.playWhenReady) return seekToNext()
+        if (gate?.interceptTransport(TransportAction.Next) == true) return
+        try {
+            player.seekToNext()
+            if (player.playbackState == Player.STATE_IDLE || player.playbackState == Player.STATE_ENDED) {
+                player.prepare()
+            }
+        } catch (e: Exception) {
+            Timber.tag(TAG).e(e, "Error in seekToNextItem")
+        }
+    }
+
+    fun seekToPreviousItem(keepPaused: Boolean) {
+        if (gate?.interceptTransport(TransportAction.Previous) == true) return
+        try {
+            if (player.hasPreviousMediaItem()) player.seekToPreviousMediaItem() else player.seekTo(0)
+            if (player.playbackState == Player.STATE_IDLE || player.playbackState == Player.STATE_ENDED) {
+                player.prepare()
+            }
+            if (!keepPaused) player.playWhenReady = true
+        } catch (e: Exception) {
+            Timber.tag(TAG).e(e, "Error in seekToPreviousItem")
+        }
+    }
+
     override fun onPlaybackStateChanged(state: Int) {
         playbackState.value = state
         error.value = player.playerError

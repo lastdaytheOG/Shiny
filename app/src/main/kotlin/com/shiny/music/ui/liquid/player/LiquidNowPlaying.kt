@@ -69,6 +69,8 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.key
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
@@ -121,6 +123,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.lerp
+import kotlin.math.abs
 import androidx.core.view.WindowCompat
 import androidx.navigation.NavController
 import com.shiny.music.constants.TogetherPlayerReactionsKey
@@ -350,6 +353,7 @@ private fun NowPlaying(
     var mode by rememberSaveable { mutableStateOf(NowPlayingMode.Stage) }
     val modeProgress = remember { Animatable(if (mode == NowPlayingMode.Stage) 0f else 1f) }
     val coverSwipe = rememberCoverSwipe()
+    val neighbours = rememberQueueNeighbours(playerConnection)
     LaunchedEffect(mode) {
         modeProgress.animateTo(
             if (mode == NowPlayingMode.Stage) 0f else 1f,
@@ -859,6 +863,7 @@ private fun NowPlaying(
                 )
             }
 
+            val carouselOn = !poster && !appearance.softPlayer
             FlyingArtwork(
                 model = hiRes ?: artUrl,
                 // The copy that flies up from the mini player lands on this same picture.
@@ -892,11 +897,13 @@ private fun NowPlaying(
                 coverAlpha = { stageDip.value * queueHeaderAlpha() },
                 onTap = { if (mode != NowPlayingMode.Stage) mode = NowPlayingMode.Stage },
                 swipe = coverSwipe,
+                revealedByRight = if (carouselOn) neighbours.second else null,
+                revealedByLeft = if (carouselOn) neighbours.first else null,
                 onSwipeLeft = if (mode == NowPlayingMode.Stage && controlsEnabled && canSkipPrevious) ({
-                    playerConnection.seekToPrevious()
+                    if (carouselOn && neighbours.first != null) playerConnection.seekToPreviousItem(keepPaused = true) else playerConnection.seekToPrevious()
                 }) else null,
                 onSwipeRight = if (mode == NowPlayingMode.Stage && controlsEnabled && canSkipNext) ({
-                    playerConnection.seekToNext()
+                    if (carouselOn && neighbours.second != null) playerConnection.seekToNextItem(keepPaused = true) else playerConnection.seekToNext()
                 }) else null,
                 onDoubleTap = if (mode == NowPlayingMode.Stage) ({
                     // Likes, never un-likes: a double tap is a gesture of approval.
@@ -1340,12 +1347,16 @@ private fun FlyingArtwork(
     onSwipeLeft: (() -> Unit)? = null,
     onSwipeRight: (() -> Unit)? = null,
     onDoubleTap: (() -> Unit)? = null,
+    revealedByRight: CarouselCover? = null,
+    revealedByLeft: CarouselCover? = null,
 ) {
     val density = LocalDensity.current
     val expansion = LocalPlayerExpansion.current
     val soft = LocalShinyAppearance.current.softPlayer
     val pausedScale = if (soft) SoftPausedArtworkScale else PausedArtworkScale
     val cardCorner = if (soft) 10.dp else 12.dp
+    val carousel = swipe != null && !bleed && !soft
+    val geometry = remember { CarouselGeometry() }
     // A full-poster cover does not settle back on pause: there is nothing behind it to reveal,
     // so the breathe would only show a band of background around the edges.
     val restScale by animateFloatAsState(
@@ -1354,6 +1365,18 @@ private fun FlyingArtwork(
         label = "artRest",
     )
     val interaction = remember { MutableInteractionSource() }
+    val restState = rememberUpdatedState(restScale)
+    if (swipe != null) {
+        SideEffect {
+            swipe.songKey = metadata?.id
+            swipe.revealedByRight = if (carousel) revealedByRight else null
+            swipe.revealedByLeft = if (carousel) revealedByLeft else null
+            swipe.landing = if (carousel) ({ geometry.distance(restState.value, pausedScale) }) else ({ 0f })
+        }
+    }
+    val sideVisible = {
+        if (expansion?.isFlying() == true) 0f else (1f - progress() * 4f).coerceIn(0f, 1f) * coverAlpha()
+    }
     Layout(
         content = {
             Box(
@@ -1364,7 +1387,12 @@ private fun FlyingArtwork(
                                 .coverSwipe(swipe, onSwipeLeft, onSwipeRight)
                                 .graphicsLayer {
                                     translationX = swipe.value
-                                    if (!bleed) {
+                                    if (carousel) {
+                                        val d = geometry.distance(restScale, pausedScale)
+                                        val s = if (d > 0f) lerp(1f, CarouselSideScale, (abs(swipe.value) / d).coerceIn(0f, 1f)) else 1f
+                                        scaleX = s
+                                        scaleY = s
+                                    } else if (!bleed) {
                                         val s = 1f - swipe.progress() * 0.07f
                                         scaleX = s
                                         scaleY = s
@@ -1448,6 +1476,28 @@ private fun FlyingArtwork(
                     sharpPx = sharpPx,
                 )
             }
+            if (carousel && swipe != null) {
+                val ghost = swipe.ghost
+                val slots = buildList {
+                    if (ghost != null) add(ghost to SlotRole.Ghost)
+                    revealedByRight?.let { add(it to SlotRole.Left) }
+                    revealedByLeft?.let { add(it to SlotRole.Right) }
+                }
+                for ((cover, role) in slots) {
+                    key(cover.id) {
+                        CarouselPoster(
+                            cover = cover,
+                            role = role,
+                            swipe = swipe,
+                            geometry = geometry,
+                            rest = { restState.value },
+                            pausedScale = pausedScale,
+                            corner = cardCorner,
+                            visible = sideVisible,
+                        )
+                    }
+                }
+            }
         },
     ) { measurables, constraints ->
         swipe?.travel = constraints.maxWidth.toFloat()
@@ -1464,9 +1514,95 @@ private fun FlyingArtwork(
         val w = lerp(s.width, target.width, t).roundToInt().coerceAtLeast(1)
         val h = lerp(s.height, target.height, t).roundToInt().coerceAtLeast(1)
         val placeable = measurables.first().measure(Constraints.fixed(w, h))
+        val fixed = Constraints.fixed(s.width.roundToInt().coerceAtLeast(1), s.height.roundToInt().coerceAtLeast(1))
+        val slots = if (measurables.size > 1) measurables.drop(1).map { it.measure(fixed) } else emptyList()
+        geometry.width = s.width
+        geometry.edge = maxOf(s.center.x, constraints.maxWidth - s.center.x)
+        geometry.gap = CarouselGap.toPx()
         layout(constraints.maxWidth, constraints.maxHeight) {
             placeable.place(left.roundToInt(), top.roundToInt())
+            slots.forEach { it.place(s.left.roundToInt(), s.top.roundToInt()) }
         }
+    }
+}
+
+private val CarouselGap = 16.dp
+
+internal const val CarouselSideScale = 0.86f
+
+private class CarouselGeometry {
+    var width = 0f
+    var edge = 0f
+    var gap = 0f
+
+    fun distance(rest: Float, pausedScale: Float): Float {
+        if (width <= 0f) return 0f
+        val side = width * rest * CarouselSideScale / 2f
+        val paused = width * rest / 2f + gap + side
+        val hidden = maxOf(edge + side + gap, paused)
+        val pausedness = ((1f - rest) / (1f - pausedScale)).coerceIn(0f, 1f)
+        return lerp(hidden, paused, pausedness)
+    }
+}
+
+private enum class SlotRole { Ghost, Left, Right }
+
+@Composable
+private fun CarouselPoster(
+    cover: CarouselCover,
+    role: SlotRole,
+    swipe: CoverSwipe,
+    geometry: CarouselGeometry,
+    rest: () -> Float,
+    pausedScale: Float,
+    corner: Dp,
+    visible: () -> Float,
+) {
+    Box(
+        Modifier.graphicsLayer {
+            val r = rest()
+            val d = geometry.distance(r, pausedScale)
+            val x = swipe.value
+            val shown = visible()
+            if (d <= 0f) {
+                alpha = 0f
+                return@graphicsLayer
+            }
+            val side = r * CarouselSideScale
+            when (role) {
+                SlotRole.Ghost -> {
+                    val s = r * lerp(1f, CarouselSideScale, (abs(x) / d).coerceIn(0f, 1f))
+                    translationX = x
+                    scaleX = s
+                    scaleY = s
+                    alpha = swipe.ghostAlpha * shown
+                }
+                SlotRole.Left, SlotRole.Right -> {
+                    val toward = if (role == SlotRole.Left) x else -x
+                    val t = (toward / d).coerceIn(0f, 1f)
+                    val s = lerp(side, r, t)
+                    translationX = if (role == SlotRole.Left) x - d else x + d
+                    scaleX = s
+                    scaleY = s
+                    val pausedness = ((1f - r) / (1f - pausedScale)).coerceIn(0f, 1f)
+                    val idle = pausedness < 0.002f && abs(x) < 0.5f
+                    alpha = if (idle) 0f else shown * (1f - swipe.ghostAlpha)
+                    shadowElevation = 10.dp.toPx()
+                }
+            }
+            shape = RoundedCornerShape(corner)
+            clip = true
+            ambientShadowColor = Color.Black
+            spotShadowColor = Color.Black
+        }
+    ) {
+        Artwork(
+            model = cover.model,
+            shape = RoundedCornerShape(0),
+            hairline = false,
+            scaleCorners = false,
+            modifier = Modifier.fillMaxSize(),
+        )
     }
 }
 
