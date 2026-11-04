@@ -1292,6 +1292,17 @@ private fun PlayerStylePreview(style: PlayerStyle) {
                 Box(Modifier.weight(0.6f).height(14.dp).background(BoneDim, RoundedCornerShape(3.dp)))
             }
         }
+        PlayerStyle.Dial -> Column(Modifier.fillMaxSize().padding(horizontal = 12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Spacer(Modifier.height(10.dp))
+            Box(Modifier.fillMaxWidth().height(34.dp).background(BoneDim, RoundedCornerShape(10.dp)))
+            Spacer(Modifier.height(8.dp))
+            Box(Modifier.size(20.dp).background(Bone, CircleShape))
+            Spacer(Modifier.height(8.dp))
+            Box(contentAlignment = Alignment.Center) {
+                Box(Modifier.size(78.dp).background(ArtFill, CircleShape))
+                Box(Modifier.size(66.dp).border(1.5.dp, Bone, CircleShape))
+            }
+        }
         PlayerStyle.Poster, PlayerStyle.PosterRing -> Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
             Spacer(Modifier.height(14.dp))
             Box(contentAlignment = Alignment.Center) {

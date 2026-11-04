@@ -99,6 +99,7 @@ import com.shiny.music.ui.liquid.player.NowPlayingBackground
 import com.shiny.music.ui.liquid.player.NowPlayingUtilityRow
 import com.shiny.music.ui.liquid.player.styles.BedsidePlayer
 import com.shiny.music.ui.liquid.player.styles.BedsideTilesPlayer
+import com.shiny.music.ui.liquid.player.styles.DialPlayer
 import com.shiny.music.ui.liquid.player.styles.LocalStyleBottomReserve
 import com.shiny.music.ui.liquid.player.styles.PosterPlayer
 import com.shiny.music.ui.liquid.player.styles.StyleActions
@@ -141,6 +142,7 @@ internal val StudioColumns: List<List<PlayerStyle>> = listOf(
     listOf(PlayerStyle.Soft),
     listOf(PlayerStyle.Turntable),
     listOf(PlayerStyle.Poster, PlayerStyle.PosterRing),
+    listOf(PlayerStyle.Dial),
     listOf(PlayerStyle.Timeline),
     listOf(PlayerStyle.Lyrics),
     listOf(PlayerStyle.Video),
@@ -648,7 +650,7 @@ fun PlayerSelectorOverlay(
                         .padding(horizontal = 30.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    val editable = style != null && style != PlayerStyle.PosterRing
+                    val editable = style != null && style != PlayerStyle.PosterRing && style != PlayerStyle.Dial
                     CardButton("Edit", enabled = active && editable, dimmed = !editable, onClick = { style?.let(onEdit) }, modifier = Modifier.weight(1f))
                     CardButton("Set", enabled = active, onClick = { style?.let { currentOnSet(it, 0f) } }, modifier = Modifier.weight(1f))
                 }
@@ -718,6 +720,7 @@ private fun StylePreviewCard(style: PlayerStyle, song: StyleSong) {
                         val sung = remember(lines) { lines.filter { !it.isBackground } }
                         RingPosterPlayer(metadata = song.metadata, lines = sung, showing = { true })
                     }
+                    PlayerStyle.Dial -> DialPlayer(song)
                     PlayerStyle.Timeline -> TimelinePlayer(song, lyrics = false)
                     PlayerStyle.Lyrics -> TimelinePlayer(song, lyrics = true)
                     PlayerStyle.Video -> VideoPreview(song)

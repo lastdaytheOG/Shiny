@@ -1,65 +1,75 @@
 package com.shiny.music.ui.liquid.settings
 
-import androidx.compose.animation.Crossfade
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.shiny.music.LocalPlayerConnection
 import com.shiny.music.ui.liquid.LiquidPrefs
+import com.shiny.music.ui.liquid.customize.CustomizePrefs
 import com.shiny.music.ui.liquid.customize.PlayerStyle
-import com.shiny.music.ui.liquid.customize.PlayerStylePreview
 import com.shiny.music.ui.liquid.customize.PlayerStylePrefs
 import com.shiny.music.ui.liquid.customize.PlayerStyleTiles
+import com.shiny.music.ui.liquid.customize.LocalPreviewArtwork
+import com.shiny.music.ui.liquid.customize.LocalPreviewArtist
+import com.shiny.music.ui.liquid.customize.LocalPreviewTitle
 import com.shiny.music.ui.liquid.customize.rememberPlayerStyle
 import com.shiny.music.utils.rememberPreference
 
-/**
- * Settings › Customise › Player styles: every style large enough to judge, and under it the
- * chosen style's own options. Changing anything here changes the open player at once.
- */
 @Composable
 fun PlayerStylesScreen(navController: NavController) {
     val style by rememberPlayerStyle()
+    val rounding by rememberPreference(CustomizePrefs.CoverRounding, CustomizePrefs.CoverRoundingDefault)
+    val playerConnection = LocalPlayerConnection.current
+    val metadata = playerConnection?.mediaMetadata?.collectAsState()?.value
 
+    CompositionLocalProvider(
+        LocalPreviewArtwork provides metadata?.thumbnailUrl,
+        LocalPreviewTitle provides (metadata?.title?.takeIf { it.isNotBlank() } ?: "Shiny Music"),
+        LocalPreviewArtist provides (metadata?.artists?.joinToString { it.name }.orEmpty()),
+    ) {
     SettingsPage(title = "Player styles", navController = navController) {
         item(key = "preview") {
-            Box(Modifier.fillMaxWidth().padding(top = 8.dp), contentAlignment = Alignment.Center) {
-                Crossfade(targetState = style, animationSpec = tween(220), label = "playerStylePreview") { shown ->
-                    Box(
-                        Modifier
-                            .width(176.dp)
-                            .aspectRatio(0.5f)
-                            .clip(RoundedCornerShape(26.dp))
-                            .background(Color(0xFF232325))
-                    ) { PlayerStylePreview(shown) }
-                }
-            }
+            AnimatedContent(
+                targetState = style,
+                transitionSpec = {
+                    val direction = if (targetState.ordinal >= initialState.ordinal) 1 else -1
+                    (slideInHorizontally(spring(dampingRatio = 0.88f, stiffness = 430f)) { direction * it / 8 } + fadeIn(tween(140)))
+                        .togetherWith(slideOutHorizontally(tween(110)) { -direction * it / 10 } + fadeOut(tween(80)))
+                },
+                label = "playerStyleShowcase",
+            ) { shown -> PlayerStyleShowcase(shown, rounding, metadata) }
         }
 
         item(key = "styles") {
-            SettingsSection(title = "Style", footer = style.blurb) {
+            SettingsSection(title = "Choose a player") {
                 PlayerStyleTiles(selected = style)
             }
         }
 
         item(key = "options_${style.name}") {
-            StyleOptions(style, navController)
+            AnimatedContent(
+                targetState = style,
+                transitionSpec = {
+                    (fadeIn(tween(180)) + androidx.compose.animation.scaleIn(spring(dampingRatio = 0.9f, stiffness = 500f), initialScale = 0.985f))
+                        .togetherWith(fadeOut(tween(120)))
+                },
+                label = "playerStyleOptions",
+            ) { shown -> StyleOptions(shown, navController) }
         }
 
         item(key = "tail") { SettingsTailSpace() }
+    }
     }
 }
 
@@ -73,20 +83,17 @@ private fun StyleOptions(style: PlayerStyle, navController: NavController) {
                 if (style == PlayerStyle.Shiny) {
                     SettingsToggleRow(
                         title = "Volume slider",
-                        subtitle = "The phone's volume under the buttons",
                         checked = volume,
                         onCheckedChange = { volume = it },
                     )
                 }
                 SettingsToggleRow(
                     title = "Cover breathes",
-                    subtitle = "The cover settles back when paused and swells when playing",
                     checked = breathe,
                     onCheckedChange = { breathe = it },
                 )
                 SettingsNavRow(
                     title = "More in Appearance",
-                    subtitle = "Colour, glow and the Poster artwork",
                     onClick = { navController.navigate("settings/appearance") },
                     divider = false,
                 )
@@ -98,25 +105,23 @@ private fun StyleOptions(style: PlayerStyle, navController: NavController) {
             SettingsSection(title = "Turntable options") {
                 SettingsToggleRow(
                     title = "Record spins",
-                    subtitle = "The record turns while the song plays and slows to a stop on pause",
                     checked = spin,
                     onCheckedChange = { spin = it },
                 )
                 SettingsToggleRow(
                     title = "Drag the arm to seek",
-                    subtitle = "Move the arm across the record to jump in the song",
                     checked = armSeeks,
                     onCheckedChange = { armSeeks = it },
                     divider = false,
                 )
             }
         }
+        PlayerStyle.PosterRing, PlayerStyle.Dial -> Unit
         PlayerStyle.Poster -> {
             var words by rememberPreference(PlayerStylePrefs.PosterWords, true)
             SettingsSection(title = "Poster options") {
                 SettingsToggleRow(
                     title = "Sing the words",
-                    subtitle = if (words) "Synced lyrics are set big under the cover" else "The title is set big under the cover",
                     checked = words,
                     onCheckedChange = { words = it },
                     divider = false,
@@ -128,7 +133,6 @@ private fun StyleOptions(style: PlayerStyle, navController: NavController) {
             SettingsSection(title = "${style.title} options") {
                 SettingsToggleRow(
                     title = "Cover in the corner",
-                    subtitle = "The song's cover beside its title at the top",
                     checked = cover,
                     onCheckedChange = { cover = it },
                     divider = false,
@@ -137,10 +141,9 @@ private fun StyleOptions(style: PlayerStyle, navController: NavController) {
         }
         PlayerStyle.Video -> {
             var words by rememberPreference(PlayerStylePrefs.VideoWords, true)
-            SettingsSection(title = "Full video options", footer = "A song without a video shows its cover instead") {
+            SettingsSection(title = "Full video options") {
                 SettingsToggleRow(
                     title = "Words over the video",
-                    subtitle = "The line being sung, at the foot of the video",
                     checked = words,
                     onCheckedChange = { words = it },
                     divider = false,
@@ -166,21 +169,18 @@ private fun StyleOptions(style: PlayerStyle, navController: NavController) {
                 )
                 SettingsToggleRow(
                     title = "Night colours",
-                    subtitle = "A dim red clock from 10 pm to 6 am, easy on eyes in the dark",
                     checked = night,
                     onCheckedChange = { night = it },
                 )
                 if (style == PlayerStyle.BedsideTiles) {
                     SettingsToggleRow(
                         title = "Clock tile",
-                        subtitle = if (clockTile) "The second tile is a clock" else "The second tile is the lyrics",
                         checked = clockTile,
                         onCheckedChange = { clockTile = it },
                     )
                 }
                 SettingsToggleRow(
                     title = "Keep the screen on",
-                    subtitle = "While this player is open",
                     checked = awake,
                     onCheckedChange = { awake = it },
                     divider = false,
