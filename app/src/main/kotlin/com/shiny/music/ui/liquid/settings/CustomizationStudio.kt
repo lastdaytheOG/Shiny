@@ -283,7 +283,15 @@ private fun CustomiseSectionContent(section: CustomiseSection, navController: Na
         }
         CustomiseSection.Player -> {
             val style by rememberPlayerStyle()
-            PlayerStyleCard(style) { navController.navigate("settings/customize/player") }
+            val context = androidx.compose.ui.platform.LocalContext.current
+            val connection = LocalPlayerConnection.current
+            PlayerStyleCard(style) {
+                if (connection?.player?.currentMediaItem != null) {
+                    com.shiny.music.ui.liquid.player.studio.PlayerStudioRequests.request()
+                } else {
+                    android.widget.Toast.makeText(context, "Play a song first to open player customisation", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
         }
         CustomiseSection.Home -> {
             val (style, setStyle) = rememberEnumPreference(CustomizePrefs.HomeStyle, HomeStyle.Hero)

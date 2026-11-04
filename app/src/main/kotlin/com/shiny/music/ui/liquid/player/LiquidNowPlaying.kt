@@ -169,11 +169,15 @@ import com.shiny.music.ui.utils.resize
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
+import androidx.datastore.preferences.core.edit
+import com.shiny.music.utils.dataStore
+import com.shiny.music.ui.liquid.customize.choosePlayerStyle
+import com.shiny.music.ui.liquid.player.studio.studioSheetLayer
 import kotlin.math.roundToInt
 
 enum class NowPlayingMode { Stage, Lyrics, Queue }
 
-// how much of the player, from its top, still closes it when swipe down anywhere is off
 private const val TopCloseZone = 0.45f
 
 /**
@@ -189,7 +193,6 @@ fun LiquidPlayerSheet(
     LocalPlayerConnection.current ?: return
     val density = LocalDensity.current
 
-    // settings › customise: where a swipe down may close the player, and the phone's bars over it
     val anywhere by androidx.compose.runtime.rememberUpdatedState(
         rememberPreference(com.shiny.music.ui.liquid.customize.CustomizePrefs.SwipeDownAnywhere, true).value,
     )
@@ -209,11 +212,24 @@ fun LiquidPlayerSheet(
             if (hideBottom) controller.hide(androidx.core.view.WindowInsetsCompat.Type.navigationBars())
         }
         onDispose {
-            // only what was hidden here comes back
             if (hideTop) controller?.show(androidx.core.view.WindowInsetsCompat.Type.statusBars())
             if (hideBottom) controller?.show(androidx.core.view.WindowInsetsCompat.Type.navigationBars())
         }
     }
+
+    val studio = com.shiny.music.ui.liquid.player.studio.rememberPlayerStudioState()
+    val studioConnection = LocalPlayerConnection.current
+    LaunchedEffect(state, studio) {
+        val seen = com.shiny.music.ui.liquid.player.studio.PlayerStudioRequests.requests.value
+        com.shiny.music.ui.liquid.player.studio.PlayerStudioRequests.requests.collect { request ->
+            if (request <= seen || request == 0L) return@collect
+            if (studioConnection?.player?.currentMediaItem == null) return@collect
+            if (!state.isExpanded) state.expandSoft()
+            androidx.compose.runtime.snapshotFlow { state.isExpanded }.first { it }
+            studio.open(com.shiny.music.ui.liquid.customize.currentPlayerStyle())
+        }
+    }
+    LaunchedEffect(state.isCollapsed) { if (state.isCollapsed) studio.reset() }
 
     Box(modifier.fillMaxSize()) {
         if (state.isCollapsed) return@Box
@@ -237,10 +253,9 @@ fun LiquidPlayerSheet(
                     clip = true
                 }
                 .pointerInput(state) {
-                    // with swipe down anywhere off, only a drag that starts over the top part (the cover) moves the sheet
                     var follows = true
                     detectVerticalDragGestures(
-                        onDragStart = { start -> follows = anywhere || start.y < size.height * TopCloseZone },
+                        onDragStart = { start -> follows = !studio.engaged && (anywhere || start.y < size.height * TopCloseZone) },
                         onVerticalDrag = { change, dragAmount ->
                             if (!follows) return@detectVerticalDragGestures
                             velocityTracker.addPointerInputChange(change)
@@ -258,12 +273,46 @@ fun LiquidPlayerSheet(
                     )
                 },
         ) {
-            // settings › customise › player styles: a complete player of its own, or Shiny's
             val style by com.shiny.music.ui.liquid.customize.rememberPlayerStyle()
-            if (style.alternate) {
-                com.shiny.music.ui.liquid.player.styles.AlternatePlayer(style = style, sheet = state, navController = navController)
-            } else {
-                NowPlaying(sheet = state, navController = navController)
+            val studioScope = rememberCoroutineScope()
+            val studioContext = androidx.compose.ui.platform.LocalContext.current
+            val editPlayer = remember(studio) { { studio.open(com.shiny.music.ui.liquid.customize.currentPlayerStyle()) } }
+            val chooseStyle: suspend (com.shiny.music.ui.liquid.customize.PlayerStyle) -> Unit = { picked ->
+                studioContext.dataStore.edit { it.choosePlayerStyle(picked) }
+                kotlinx.coroutines.withTimeoutOrNull(800) {
+                    androidx.compose.runtime.snapshotFlow { com.shiny.music.ui.liquid.customize.currentPlayerStyle() }.first { it == picked }
+                }
+            }
+            Box(Modifier.fillMaxSize().background(Color.Black)) {
+                Box(Modifier.fillMaxSize().studioSheetLayer(studio)) {
+                    androidx.compose.runtime.CompositionLocalProvider(com.shiny.music.ui.liquid.player.styles.LocalEditPlayer provides editPlayer) {
+                        if (style.alternate) {
+                            com.shiny.music.ui.liquid.player.styles.AlternatePlayer(style = style, sheet = state, navController = navController)
+                        } else {
+                            NowPlaying(sheet = state, navController = navController)
+                        }
+                    }
+                }
+                com.shiny.music.ui.liquid.player.studio.PlayerSelectorOverlay(
+                    studio = studio,
+                    onSet = { picked, velocity ->
+                        val restyled = picked != com.shiny.music.ui.liquid.customize.currentPlayerStyle()
+                        studio.settleOn(
+                            index = com.shiny.music.ui.liquid.player.studio.StudioStyles.indexOf(picked),
+                            restyled = restyled,
+                            velocity = velocity,
+                            ready = { if (restyled) chooseStyle(picked) },
+                        )
+                    },
+                    onEdit = { picked ->
+                        studioScope.launch {
+                            if (picked != com.shiny.music.ui.liquid.customize.currentPlayerStyle()) chooseStyle(picked)
+                            studio.reset()
+                            state.collapseSoft()
+                            navController.navigate("settings/customize/player")
+                        }
+                    },
+                )
             }
         }
     }
