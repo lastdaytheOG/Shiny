@@ -211,6 +211,8 @@ android {
             excludes += "META-INF/INDEX.LIST"
             excludes += "META-INF/io.netty.versions.properties"
             excludes += "META-INF/DEPENDENCIES"
+            excludes += "com/atilika/kuromoji/ipadic/*.bin"
+            excludes += "org/bouncycastle/pqc/legacy/picnic/*.properties"
         }
     }
 }
