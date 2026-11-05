@@ -33,6 +33,7 @@ dependencies {
     implementation(project(":youtube"))
     
     implementation(libs.kuromoji.ipadic)
+    implementation("org.tukaani:xz:1.10")
     implementation(libs.tinypinyin)
     implementation("androidx.core:core-ktx:1.13.1")
     implementation(libs.hilt)

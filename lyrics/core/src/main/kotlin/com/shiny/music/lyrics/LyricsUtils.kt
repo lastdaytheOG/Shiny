@@ -331,7 +331,23 @@ object LyricsUtils {
 
     
     private val kuromojiTokenizer: Tokenizer by lazy {
-        Tokenizer()
+        object : Tokenizer.Builder() {
+            override fun loadDictionaries() {
+                penalties = arrayListOf(2, 3000, 7, 1700)
+                val xz = com.atilika.kuromoji.util.ResourceResolver { name ->
+                    val stream = LyricsUtils::class.java.classLoader!!.getResourceAsStream("kuromoji-xz/$name.xz")
+                        ?: throw java.io.IOException(name)
+                    org.tukaani.xz.XZInputStream(java.io.BufferedInputStream(stream, 65536))
+                }
+                resolver = xz
+                doubleArrayTrie = com.atilika.kuromoji.trie.DoubleArrayTrie.newInstance(xz)
+                connectionCosts = com.atilika.kuromoji.dict.ConnectionCosts.newInstance(xz)
+                tokenInfoDictionary = com.atilika.kuromoji.dict.TokenInfoDictionary.newInstance(xz)
+                characterDefinitions = com.atilika.kuromoji.dict.CharacterDefinitions.newInstance(xz)
+                unknownDictionary = com.atilika.kuromoji.dict.UnknownDictionary.newInstance(xz, characterDefinitions, totalFeatures)
+                insertedDictionary = com.atilika.kuromoji.dict.InsertedDictionary(totalFeatures)
+            }
+        }.build()
     }
 
     private val HEX_ENTITY_REGEX = "&#x([0-9a-fA-F]+);".toRegex()
