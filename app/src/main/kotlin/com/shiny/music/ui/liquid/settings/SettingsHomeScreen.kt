@@ -60,7 +60,6 @@ import com.shiny.music.utils.rememberPreference
 
 private data class Category(val title: String, val route: String, val glyph: Painter, val badge: Boolean = false)
 
-// who you are and how much you've listened, then a search, one suggestion, and the places to go
 @Composable
 fun SettingsHomeScreen(navController: NavController) {
     val context = LocalContext.current
@@ -71,8 +70,6 @@ fun SettingsHomeScreen(navController: NavController) {
     val updateAvailable = remember { getUpdateAvailableState(context) && getAutoUpdateCheckSetting(context) }
     val catalog = remember { visibleCatalog(settingsCatalog()) }
     val matches = remember(query) { catalog.search(query) }
-    val recommendedIndex = rememberSaveable { catalog.indices.random() }
-    val recommended = catalog.getOrNull(recommendedIndex)
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) {
         if (SettingsSearchRequest.pending) {
@@ -121,27 +118,14 @@ fun SettingsHomeScreen(navController: NavController) {
             } else {
                 matches.forEachIndexed { i, entry ->
                     item(key = "result_$i") {
-                        SuggestionCard(label = null, title = entry.title, crumb = "Settings › ${entry.page}", onClick = { navController.navigate(entry.route) })
+                        SuggestionCard(title = entry.title, crumb = "Settings › ${entry.page}", onClick = { navController.navigate(entry.route) })
                     }
                 }
             }
             item(key = "tail") { SettingsTailSpace() }
             return@SettingsPage
         }
-        recommended?.let { entry ->
-            item(key = "recommended") {
-                SuggestionCard(label = "Recommended item", title = entry.title, crumb = "Settings › ${entry.page}", onClick = { navController.navigate(entry.route) })
-            }
-        }
-        item(key = "rule") {
-            Box(
-                Modifier
-                    .padding(horizontal = SettingsCardMargin, vertical = 10.dp)
-                    .fillMaxWidth()
-                    .height(1.dp)
-                    .background(colors.label.copy(alpha = 0.08f)),
-            )
-        }
+        item(key = "gap") { Spacer(Modifier.height(6.dp)) }
         categories.forEach { c ->
             item(key = "cat_${c.route}") { CategoryRow(c) { navController.navigate(c.route) } }
         }
@@ -181,22 +165,17 @@ private fun cardModifier(): Modifier = Modifier
     .clip(RoundedCornerShape(26.dp))
     .background(settingsCard())
 
-// a setting worth knowing about, and where it lives
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun SuggestionCard(label: String?, title: String, crumb: String, onClick: () -> Unit) {
+private fun SuggestionCard(title: String, crumb: String, onClick: () -> Unit) {
     val colors = Liquid.colors
     val interaction = remember { MutableInteractionSource() }
     Column(
         cardModifier()
             .pressScale(interaction, 0.98f)
             .combinedClickable(interactionSource = interaction, indication = null, onClick = onClick)
-            .padding(start = 20.dp, end = 20.dp, top = if (label != null) 18.dp else 14.dp, bottom = 16.dp),
+            .padding(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 16.dp),
     ) {
-        if (label != null) {
-            Text(label, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = colors.secondaryLabel)
-            Spacer(Modifier.height(14.dp))
-        }
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 Modifier
