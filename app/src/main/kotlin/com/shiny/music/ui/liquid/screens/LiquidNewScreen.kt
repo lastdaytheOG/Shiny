@@ -108,7 +108,6 @@ fun LiquidNewScreen(
     val isPlaying by actions.playerConnection.isPlaying.collectAsState()
 
     val charts by discover.charts.collectAsState()
-    val newToYou by discover.newToYou.collectAsState()
     val busy by discover.busy.collectAsState()
     val notice by discover.notice.collectAsState()
     val artistItems by discover.artistItems.collectAsState()
@@ -152,15 +151,6 @@ fun LiquidNewScreen(
             state = listState,
             scrollToTopSignal = navController,
         ) {
-            if (newToYou.isNotEmpty()) {
-                item(key = "new_to_you", contentType = "new_to_you") {
-                    androidx.compose.runtime.LaunchedEffect(newToYou) {
-                        kotlinx.coroutines.delay(1_000)
-                        discover.noteNewToYouShown(newToYou)
-                    }
-                    com.shiny.music.ui.liquid.home.NewToYouShelf(newToYou, actions)
-                }
-            }
             discoverCharts(
                 charts = charts,
                 ui = ui,

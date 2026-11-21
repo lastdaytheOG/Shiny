@@ -30,7 +30,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
-import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.DownloadDone
 import androidx.compose.material.icons.rounded.Favorite
@@ -99,7 +98,6 @@ import com.shiny.music.home.YouTubeSection
 import com.shiny.music.home.RecommendationRowSection
 import com.shiny.music.home.RecRowKind
 import com.shiny.music.home.combineDeviceTiles
-import com.shiny.music.intelligence.NewToYouPick
 import com.shiny.music.playback.queues.PlaybackOrigin
 import com.shiny.music.spotifyimport.SpotifyImportRepository
 import com.shiny.music.ui.liquid.Artwork
@@ -652,65 +650,6 @@ private fun PicksShelf(
             },
             onLongClick = { actions.menu(song) },
         )
-    }
-}
-
-@Composable
-internal fun NewToYouShelf(picks: List<NewToYouPick>, actions: LiquidActions) {
-    val title = stringResource(R.string.new_to_you)
-    val songs = remember(picks) { picks.map { it.song } }
-    val origin = remember(picks) {
-        PlaybackOrigin(
-            RecSurface.Discover,
-            picks.mapNotNull { pick -> pick.recommendation.source?.let { pick.song.id to it.name } }.toMap(),
-        )
-    }
-    SectionHeader(
-        title = title,
-        subtitle = stringResource(R.string.new_to_you_subtitle),
-        trailing = { HeaderPlay(label = stringResource(R.string.home_play_all), onClick = { actions.playSongs(title, songs, origin = origin) }) },
-        modifier = Modifier.semantics { heading() },
-    )
-    HomeRow(items = picks, key = { it.song.id }) { pick ->
-        DiscoverTile(
-            pick = DiscoverPick(pick.song, null, pick.recommendation.reason, pick.recommendation.source),
-            onClick = { actions.playSongMix(title, songs, songs.indexOf(pick.song), origin = origin) },
-            onLongClick = { actions.menu(pick.song) },
-        )
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun DiscoverTile(pick: DiscoverPick, onClick: () -> Unit, onLongClick: () -> Unit) {
-    val colors = Liquid.colors
-    val interaction = remember { MutableInteractionSource() }
-    val because = pick.reason?.let { reasonLine(it) } ?: pick.because?.let { stringResource(R.string.home_because, it.title) }
-    val width = 148.dp
-    Column(
-        Modifier
-            .width(width)
-            .pressScale(interaction, 0.965f)
-            .combinedClickable(interactionSource = interaction, indication = null, onClick = onClick, onLongClick = onLongClick)
-            .semantics(mergeDescendants = true) {},
-    ) {
-        Artwork(
-            model = pick.song.thumbnailUrl?.resize(544, 544),
-            shape = RoundedCornerShape(artworkRadius(width)),
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(1f),
-        )
-        Spacer(Modifier.height(7.dp))
-        Text(pick.song.title, style = LiquidTypography.footnote.copy(fontWeight = FontWeight.Medium), color = colors.label, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Text(pick.song.artistLine(), style = LiquidTypography.footnote, color = colors.secondaryLabel, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        if (because != null) {
-            Row(Modifier.padding(top = 3.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Rounded.AutoAwesome, null, tint = colors.tertiaryLabel, modifier = Modifier.size(11.dp))
-                Spacer(Modifier.width(4.dp))
-                Text(because, style = LiquidTypography.caption1, color = colors.tertiaryLabel, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
-        }
     }
 }
 

@@ -49,6 +49,4 @@
     <string name="feedback_saved">Done. Undo it in Settings, Recommendations.</string>
     <string name="saved_for_later_playlist">Saved for later</string>
 
-    <string name="new_to_you">New to you</string>
-    <string name="new_to_you_subtitle">Connected to artists you play</string>
 </resources>

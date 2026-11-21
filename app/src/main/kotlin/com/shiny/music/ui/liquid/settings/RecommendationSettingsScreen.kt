@@ -263,7 +263,7 @@ private fun surfaceLabel(surface: String): String = when (surface) {
     "HomeAroundNow" -> "Home, around now"
     "HomeRediscover" -> "Home, rediscover"
     "HomeContinue" -> "Home, keep listening"
-    "Discover" -> "New to you"
+    "Discover" -> "Discover"
     "Radio" -> "Radio"
     "Autoplay" -> "Autoplay"
     "SmartShuffle" -> "Smart Shuffle"

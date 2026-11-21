@@ -21,11 +21,6 @@ import com.shiny.music.discover.ChartRegion
 import com.shiny.music.discover.ChartRegions
 import com.shiny.music.discover.ChartResolver
 import com.shiny.music.discover.Resolution
-import com.shiny.music.db.entities.RecSurface
-import com.shiny.music.home.HomeImpressions
-import com.shiny.music.intelligence.ImpressionItem
-import com.shiny.music.intelligence.IntelligenceRepository
-import com.shiny.music.intelligence.NewToYouPick
 import com.shiny.music.playback.queues.Queue
 import com.shiny.music.utils.dataStore
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -52,7 +47,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-private const val NEW_TO_YOU = 12
 
 @Immutable
 data class ChartSlot(
@@ -107,7 +101,6 @@ class DiscoverViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val repository: AppleChartsRepository,
     private val resolver: ChartResolver,
-    private val intelligence: IntelligenceRepository,
 ) : ViewModel() {
     private val detected: String? by lazy { ChartRegions.detect(ChartRegions.candidates(context)) }
 
@@ -149,30 +142,11 @@ class DiscoverViewModel @Inject constructor(
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    private val _newToYou = MutableStateFlow<List<NewToYouPick>>(emptyList())
-    val newToYou: StateFlow<List<NewToYouPick>> = _newToYou.asStateFlow()
-
-    private fun loadNewToYou() {
-        viewModelScope.launch {
-            _newToYou.value = runCatching { intelligence.newToYou(NEW_TO_YOU) }.getOrDefault(emptyList())
-        }
-    }
-
-    fun noteNewToYouShown(picks: List<NewToYouPick>) {
-        intelligence.logImpressions(
-            RecSurface.Discover,
-            picks.take(HomeImpressions.VISIBLE_ON_A_SHELF).map {
-                ImpressionItem(it.song.id, it.recommendation.source, it.recommendation.reason)
-            },
-        )
-    }
-
     private var resolveJob: Job? = null
     private val requestedArtists = HashSet<String>()
     private var noticeId = 0L
 
     init {
-        loadNewToYou()
         viewModelScope.launch {
             combine(region.filterNotNull(), visible) { r, v -> r to v }
                 .distinctUntilChanged()
@@ -191,7 +165,6 @@ class DiscoverViewModel @Inject constructor(
         val r = region.value ?: return
         if (isRefreshing.value) return
         requestedArtists.clear()
-        loadNewToYou()
         viewModelScope.launch {
             isRefreshing.value = true
             try {
