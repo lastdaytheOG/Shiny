@@ -47,7 +47,6 @@ import com.shiny.music.models.toMediaMetadata
 import com.shiny.music.together.TogetherSession
 import com.shiny.music.ui.liquid.ActivityIndicator
 import com.shiny.music.ui.liquid.Artwork
-import com.shiny.music.ui.liquid.Hairline
 import com.shiny.music.ui.liquid.Liquid
 import com.shiny.music.ui.liquid.LiquidSearchField
 import com.shiny.music.ui.liquid.LiquidSegmentedControl
@@ -245,6 +244,5 @@ private fun AddRow(song: MediaMetadata, added: Boolean, playing: Boolean, onAdd:
             }
             Spacer(Modifier.width(4.dp))
         }
-        Hairline(Modifier.align(Alignment.BottomStart), startIndent = PageMargin + 56.dp)
     }
 }

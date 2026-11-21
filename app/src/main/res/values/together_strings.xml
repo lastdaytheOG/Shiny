@@ -2,12 +2,9 @@
 <!-- Listen Together (Shiny Together): sessions, the shared queue, sync, reactions. -->
 <resources>
     <!-- Lobby -->
-    <string name="together_headline">Listen together, in sync</string>
-    <string name="together_pitch">Start a session and friends join with a code, a link or a QR code. Everyone hears the same moment — on their own phone, or all through yours.</string>
     <string name="together_start">Start a Session</string>
     <string name="together_join">Join with a Code</string>
     <string name="together_join_now">Join Session</string>
-    <string name="together_code_hint">Enter the 6-character code</string>
     <string name="together_code_looking">Looking for that session…</string>
     <string name="together_code_not_found">No session has that code. Check it, or ask for a new one.</string>
     <string name="together_paste">Paste</string>
@@ -15,17 +12,6 @@
     <string name="together_nothing_playing">Nothing playing yet</string>
     <string name="together_listening_count">%1$d listening</string>
     <string name="together_host_lets_you_in">the host lets you in</string>
-    <string name="together_how_title">What you can do</string>
-    <string name="together_how_queue_title">One queue for everyone</string>
-    <string name="together_how_queue_text">Anyone can add songs. Each one shows who picked it.</string>
-    <string name="together_how_vote_title">Vote songs up</string>
-    <string name="together_how_vote_text">The most wanted songs play first, and the room can vote to skip.</string>
-    <string name="together_how_listen_title">Listen your way</string>
-    <string name="together_how_listen_text">In sync on your own phone, or use it as a remote while the host\'s speaker plays.</string>
-    <string name="together_how_react_title">React and chat live</string>
-    <string name="together_how_react_text">Reactions float across everyone\'s player, and the session has its own messages.</string>
-    <string name="together_you_appear_as">You appear as %1$s · Change</string>
-    <string name="together_no_server">Listen Together needs its server address before it can start or join sessions.</string>
     <string name="together_set_up_server">Set Up Server</string>
     <string name="together_unreachable_title">Couldn\'t reach Listen Together</string>
     <string name="together_unreachable_message">The Listen Together server (%1$s) didn\'t answer. Check your connection, or the address in Settings → Listen Together → Server.</string>
@@ -35,7 +21,6 @@
     <string name="together_joining">Joining %1$s…</string>
     <string name="together_waiting">Waiting for the host to let you in</string>
     <string name="together_waiting_for">Waiting for %1$s to let you in</string>
-    <string name="together_waiting_hint">They\'ll see your name and can let you in from anywhere, even their notifications.</string>
 
     <!-- Endings -->
     <string name="together_ended_host">The host ended the session.</string>
@@ -48,7 +33,6 @@
     <!-- Live -->
     <string name="together_invite">Invite</string>
     <string name="together_invite_title">Invite to Listen Together</string>
-    <string name="together_invite_text">Scan with any phone camera, or share the code.</string>
     <string name="together_send_invite">Send Invite</string>
     <string name="together_copy_code">Copy Code</string>
     <string name="together_code_copied">Code copied</string>
@@ -69,10 +53,7 @@
     <string name="together_sync_paused">Paused on this phone — the room plays on. Tap Catch Up to rejoin.</string>
     <string name="together_sync_remote">Only %1$s\'s phone plays. Yours adds songs and reacts.</string>
     <string name="together_up_next">Up Next</string>
-    <string name="together_votes_hint">Vote for what you want next — votes move songs up.</string>
     <string name="together_add_songs">Add</string>
-    <string name="together_queue_empty">Nothing queued. Add songs — everyone\'s picks play in turn.</string>
-    <string name="together_queue_empty_locked">Nothing queued yet.</string>
     <string name="together_adding">Adding…</string>
     <string name="together_show_all">Show All %1$d</string>
     <string name="together_show_less">Show Less</string>
@@ -92,13 +73,9 @@
     <string name="together_messages">Messages</string>
     <string name="together_rules">House rules</string>
     <string name="together_rule_approval">Ask before people join</string>
-    <string name="together_rule_approval_desc">Off: anyone with the code walks straight in.</string>
     <string name="together_rule_add">Guests can add songs</string>
-    <string name="together_rule_add_desc">Their picks go into Up Next with their name on them.</string>
     <string name="together_rule_control">Guests can control playback</string>
-    <string name="together_rule_control_desc">Play, pause, skip and scrub for everyone. Off: guests vote to skip.</string>
     <string name="together_rule_votes">Votes move songs up</string>
-    <string name="together_rule_votes_desc">The most wanted songs in Up Next play first.</string>
     <string name="together_leave">Leave Session</string>
     <string name="together_leave_title">Leave the session?</string>
     <string name="together_leave_host_message">The session keeps going: whoever has been here longest becomes the host.</string>

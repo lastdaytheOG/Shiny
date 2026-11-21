@@ -110,7 +110,6 @@ import com.shiny.music.ui.liquid.ActivityIndicator
 import com.shiny.music.ui.liquid.Artwork
 import com.shiny.music.ui.liquid.ArtworkTones
 import com.shiny.music.ui.liquid.ButtonTone
-import com.shiny.music.ui.liquid.Hairline
 import com.shiny.music.ui.liquid.LargeTitlePage
 import com.shiny.music.ui.liquid.Liquid
 import com.shiny.music.ui.liquid.LiquidAlert
@@ -226,13 +225,6 @@ private fun Lobby(
         item(key = "doors") {
             Column(Modifier.padding(horizontal = PageMargin)) {
                 if (!configured) {
-                    Text(
-                        text = stringResource(R.string.together_no_server),
-                        style = LiquidTypography.subheadline,
-                        color = colors.secondaryLabel,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp),
-                    )
                     LiquidButton(
                         text = stringResource(R.string.together_set_up_server),
                         tone = ButtonTone.Tinted,
@@ -277,7 +269,7 @@ private fun Lobby(
                             text = when {
                                 notFound -> stringResource(R.string.together_code_not_found)
                                 looking -> stringResource(R.string.together_code_looking)
-                                else -> stringResource(R.string.together_code_hint)
+                                else -> ""
                             },
                             style = LiquidTypography.footnote,
                             color = if (notFound) colors.destructive else colors.secondaryLabel,
@@ -302,113 +294,28 @@ private fun Lobby(
             }
         }
 
-        item(key = "how_title") {
-            Text(
-                text = stringResource(R.string.together_how_title),
-                style = LiquidTypography.title2,
-                color = colors.label,
-                modifier = Modifier.padding(start = PageMargin, end = PageMargin, top = 36.dp, bottom = 6.dp),
-            )
-        }
-        item(key = "how") {
-            Column {
-                HowRow(Icons.AutoMirrored.Rounded.QueueMusic, R.string.together_how_queue_title, R.string.together_how_queue_text)
-                HowRow(Icons.Rounded.HowToVote, R.string.together_how_vote_title, R.string.together_how_vote_text)
-                HowRow(Icons.Rounded.PhoneAndroid, R.string.together_how_listen_title, R.string.together_how_listen_text)
-                HowRow(Icons.Rounded.ChatBubble, R.string.together_how_react_title, R.string.together_how_react_text, last = true)
-            }
-        }
-        item(key = "who") {
-            Text(
-                text = stringResource(R.string.together_you_appear_as, session.displayName),
-                style = LiquidTypography.footnote,
-                color = colors.secondaryLabel,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = PageMargin, vertical = 22.dp)
-                    .combinedClickableNoRipple { navController.navigate("settings/together") },
-            )
-        }
     }
 }
 
-/** Two friends and you, with the sound between you: the idea of the feature, drawn once. */
 @Composable
 private fun LobbyHero() {
     val colors = Liquid.colors
-    Column(
+    Box(
         Modifier
             .fillMaxWidth()
-            .padding(top = 10.dp, bottom = 22.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+            .padding(top = 18.dp, bottom = 34.dp),
+        contentAlignment = Alignment.Center,
     ) {
-        Box(Modifier.size(width = 260.dp, height = 150.dp), contentAlignment = Alignment.Center) {
-            Canvas(Modifier.matchParentSize()) {
-                val center = Offset(size.width / 2f, size.height / 2f)
-                listOf(0.16f, 0.10f, 0.06f).forEachIndexed { i, alpha ->
-                    drawCircle(
-                        color = colors.accent.copy(alpha = alpha),
-                        radius = 52.dp.toPx() + i * 22.dp.toPx(),
-                        center = center,
-                        style = Stroke(width = 2.dp.toPx()),
-                    )
-                }
-            }
-            Monogram("Ana", size = 50.dp, modifier = Modifier.offset(x = (-84).dp, y = 10.dp), ring = colors.background)
-            Monogram("Jo", size = 50.dp, modifier = Modifier.offset(x = 84.dp, y = 10.dp), ring = colors.background)
-            Box(
-                Modifier
-                    .size(78.dp)
-                    .shadow(18.dp, CircleShape, ambientColor = colors.accent, spotColor = colors.accent)
-                    .clip(CircleShape)
-                    .background(Brush.linearGradient(listOf(colors.accent, lerp(colors.accent, Color(0xFF5E0B23), 0.55f)))),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(Icons.Rounded.Headphones, null, tint = Color.White, modifier = Modifier.size(38.dp))
-            }
-            Text("🔥", fontSize = 22.sp, modifier = Modifier.offset(x = (-44).dp, y = (-50).dp))
-            Text("❤️", fontSize = 20.sp, modifier = Modifier.offset(x = 52.dp, y = (-54).dp))
-        }
-        Text(
-            text = stringResource(R.string.together_headline),
-            style = LiquidTypography.title2,
-            color = colors.label,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = PageMargin, vertical = 6.dp),
-        )
-        Text(
-            text = stringResource(R.string.together_pitch),
-            style = LiquidTypography.subheadline,
-            color = colors.secondaryLabel,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = PageMargin + 8.dp),
-        )
-    }
-}
-
-@Composable
-private fun HowRow(icon: ImageVector, title: Int, text: Int, last: Boolean = false) {
-    val colors = Liquid.colors
-    Box {
-        Row(
+        Box(
             Modifier
-                .fillMaxWidth()
-                .padding(horizontal = PageMargin, vertical = 12.dp),
-            verticalAlignment = Alignment.Top,
+                .size(96.dp)
+                .shadow(22.dp, CircleShape, ambientColor = colors.accent, spotColor = colors.accent)
+                .clip(CircleShape)
+                .background(Brush.linearGradient(listOf(colors.accent, lerp(colors.accent, Color(0xFF5E0B23), 0.55f)))),
+            contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, null, tint = colors.accent, modifier = Modifier.padding(top = 1.dp).size(24.dp))
-            Column(Modifier.padding(start = 16.dp)) {
-                Text(stringResource(title), style = LiquidTypography.headline, color = colors.label)
-                Text(
-                    stringResource(text),
-                    style = LiquidTypography.subheadline,
-                    color = colors.secondaryLabel,
-                    modifier = Modifier.padding(top = 2.dp),
-                )
-            }
+            Icon(Icons.Rounded.Headphones, null, tint = Color.White, modifier = Modifier.size(46.dp))
         }
-        if (!last) Hairline(Modifier.align(Alignment.BottomStart), startIndent = PageMargin + 40.dp)
     }
 }
 
@@ -500,15 +407,6 @@ private fun Arriving(
                     color = colors.label,
                     textAlign = TextAlign.Center,
                 )
-                if (state.phase == TogetherSession.Phase.Waiting) {
-                    Text(
-                        text = stringResource(R.string.together_waiting_hint),
-                        style = LiquidTypography.subheadline,
-                        color = colors.secondaryLabel,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(top = 8.dp),
-                    )
-                }
                 Spacer(Modifier.height(28.dp))
                 LiquidButton(text = stringResource(android.R.string.cancel), onClick = session::cancelJoin)
             }
@@ -627,12 +525,7 @@ private fun LiveSession(
                     .padding(start = PageMargin, end = PageMargin - 4.dp, top = 30.dp, bottom = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.together_up_next), style = LiquidTypography.title2, color = colors.label)
-                    if (room.settings.votesReorder && room.queue.isNotEmpty()) {
-                        Text(stringResource(R.string.together_votes_hint), style = LiquidTypography.footnote, color = colors.secondaryLabel)
-                    }
-                }
+                Text(stringResource(R.string.together_up_next), style = LiquidTypography.title2, color = colors.label, modifier = Modifier.weight(1f))
                 if (state.canAdd) {
                     LiquidButton(
                         text = stringResource(R.string.together_add_songs),
@@ -647,16 +540,6 @@ private fun LiveSession(
                 }
             }
         }
-        if (room.queue.isEmpty()) {
-            item(key = "queue_empty") {
-                Text(
-                    text = stringResource(if (state.canAdd) R.string.together_queue_empty else R.string.together_queue_empty_locked),
-                    style = LiquidTypography.subheadline,
-                    color = colors.secondaryLabel,
-                    modifier = Modifier.padding(horizontal = PageMargin, vertical = 10.dp),
-                )
-            }
-        }
         val shownQueue = if (showWholeQueue) room.queue.take(100) else room.queue.take(QueuePreview)
         shownQueue.forEachIndexed { index, item ->
             item(key = "q_${item.uid}") {
@@ -669,7 +552,6 @@ private fun LiveSession(
                         voted = state.meId in voters,
                         onVote = { session.vote(item.track.id, on = state.meId !in voters) },
                         onMore = if (canRemove) ({ queueMenu = item.uid }) else null,
-                        last = index == shownQueue.lastIndex,
                     )
                     Box(Modifier.align(Alignment.CenterEnd).padding(end = 16.dp)) {
                         LiquidPullDownMenu(
@@ -716,7 +598,6 @@ private fun LiveSession(
                         isHost = person.id == room.hostId,
                         hostName = state.host?.name.orEmpty(),
                         onMore = if (manageable) ({ personMenu = person.id }) else null,
-                        last = index == people.lastIndex,
                     )
                     Box(Modifier.align(Alignment.CenterEnd).padding(end = 16.dp)) {
                         LiquidPullDownMenu(
@@ -762,25 +643,24 @@ private fun LiveSession(
                 )
                 SettingsToggleRow(
                     title = stringResource(R.string.together_rule_approval),
-                    subtitle = stringResource(R.string.together_rule_approval_desc),
                     checked = room.settings.approval == "ask",
                     onCheckedChange = { session.updateSettings(approval = if (it) "ask" else "open") },
+                    divider = false,
                 )
                 SettingsToggleRow(
                     title = stringResource(R.string.together_rule_add),
-                    subtitle = stringResource(R.string.together_rule_add_desc),
                     checked = room.settings.guestsCanAdd,
                     onCheckedChange = { session.updateSettings(guestsCanAdd = it) },
+                    divider = false,
                 )
                 SettingsToggleRow(
                     title = stringResource(R.string.together_rule_control),
-                    subtitle = stringResource(R.string.together_rule_control_desc),
                     checked = room.settings.guestsCanControl,
                     onCheckedChange = { session.updateSettings(guestsCanControl = it) },
+                    divider = false,
                 )
                 SettingsToggleRow(
                     title = stringResource(R.string.together_rule_votes),
-                    subtitle = stringResource(R.string.together_rule_votes_desc),
                     checked = room.settings.votesReorder,
                     onCheckedChange = { session.updateSettings(votesReorder = it) },
                     divider = false,
@@ -1101,7 +981,6 @@ private fun QueueRow(
     voted: Boolean,
     onVote: () -> Unit,
     onMore: (() -> Unit)?,
-    last: Boolean,
 ) {
     val colors = Liquid.colors
     Box {
@@ -1141,7 +1020,6 @@ private fun QueueRow(
                 ) { Icon(Icons.Rounded.MoreHoriz, null, tint = colors.secondaryLabel, modifier = Modifier.size(20.dp)) }
             }
         }
-        if (!last) Hairline(Modifier.align(Alignment.BottomStart), startIndent = PageMargin + 60.dp)
     }
 }
 
@@ -1172,7 +1050,6 @@ private fun PersonRow(
     isHost: Boolean,
     hostName: String,
     onMore: (() -> Unit)?,
-    last: Boolean,
 ) {
     val colors = Liquid.colors
     Box {
@@ -1227,7 +1104,6 @@ private fun PersonRow(
                 ) { Icon(Icons.Rounded.MoreHoriz, null, tint = colors.secondaryLabel, modifier = Modifier.size(20.dp)) }
             }
         }
-        if (!last) Hairline(Modifier.align(Alignment.BottomStart), startIndent = PageMargin + 52.dp)
     }
 }
 
@@ -1271,13 +1147,7 @@ private fun InviteDialog(code: String, link: String, onDismiss: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(stringResource(R.string.together_invite_title), style = LiquidTypography.title3, color = colors.label)
-            Text(
-                stringResource(R.string.together_invite_text),
-                style = LiquidTypography.subheadline,
-                color = colors.secondaryLabel,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = 4.dp, bottom = 18.dp),
-            )
+            Spacer(Modifier.height(18.dp))
             if (link.isNotEmpty()) {
                 InviteQrCode(text = link, modifier = Modifier.fillMaxWidth(0.78f))
             }
