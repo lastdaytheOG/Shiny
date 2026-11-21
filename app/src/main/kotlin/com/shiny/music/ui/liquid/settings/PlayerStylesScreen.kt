@@ -128,28 +128,6 @@ private fun StyleOptions(style: PlayerStyle, navController: NavController) {
                 )
             }
         }
-        PlayerStyle.Timeline, PlayerStyle.Lyrics -> {
-            var cover by rememberPreference(PlayerStylePrefs.TimelineCover, true)
-            SettingsSection(title = "${style.title} options") {
-                SettingsToggleRow(
-                    title = "Cover in the corner",
-                    checked = cover,
-                    onCheckedChange = { cover = it },
-                    divider = false,
-                )
-            }
-        }
-        PlayerStyle.Video -> {
-            var words by rememberPreference(PlayerStylePrefs.VideoWords, true)
-            SettingsSection(title = "Full video options") {
-                SettingsToggleRow(
-                    title = "Words over the video",
-                    checked = words,
-                    onCheckedChange = { words = it },
-                    divider = false,
-                )
-            }
-        }
         PlayerStyle.Bedside, PlayerStyle.BedsideTiles -> {
             var h24 by rememberPreference(PlayerStylePrefs.Bedside24h, false)
             var seconds by rememberPreference(PlayerStylePrefs.BedsideSeconds, false)

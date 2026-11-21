@@ -132,35 +132,6 @@ internal fun PlayerStylePreview(style: PlayerStyle) {
                 }
             }
         }
-        PlayerStyle.Timeline -> Column(Modifier.fillMaxSize().background(Color(0xFF101012))) {
-            Box(Modifier.fillMaxWidth().weight(0.58f)) {
-                PreviewArtwork(Modifier.fillMaxSize())
-                Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.02f), Color.Black.copy(alpha = 0.68f)))))
-                PreviewTrack(title, artist, Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(7.dp))
-            }
-            Column(Modifier.fillMaxWidth().weight(0.42f).padding(7.dp), verticalArrangement = Arrangement.Center) {
-                PreviewProgress(Modifier.fillMaxWidth())
-                PreviewTransport(Modifier.fillMaxWidth().padding(top = 8.dp))
-            }
-        }
-        PlayerStyle.Lyrics -> Column(Modifier.fillMaxSize().background(TileGround)) {
-            Box(Modifier.fillMaxWidth().weight(0.62f)) {
-                PreviewArtwork(Modifier.fillMaxSize())
-                Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.42f)))
-                PreviewTrack(title, artist, Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(7.dp))
-            }
-            Box(Modifier.fillMaxWidth().weight(0.38f).padding(horizontal = 8.dp), contentAlignment = Alignment.CenterStart) {
-                Text(title, color = Ink, fontSize = 9.sp, lineHeight = 11.sp, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            }
-        }
-        PlayerStyle.Video -> Box(Modifier.fillMaxSize().background(Color.Black)) {
-            PreviewArtwork(Modifier.fillMaxSize())
-            Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.3f to Color.Black.copy(alpha = 0.04f), 1f to Color.Black.copy(alpha = 0.9f))))
-            Column(Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                PreviewTrack(title, artist, Modifier.fillMaxWidth())
-                PreviewProgress(Modifier.fillMaxWidth())
-            }
-        }
         PlayerStyle.BedsideTiles -> Column(Modifier.fillMaxSize().background(Color.Black).padding(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Box(Modifier.fillMaxWidth().weight(1f).clip(RoundedCornerShape(6.dp))) {
                 PreviewArtwork(Modifier.fillMaxSize())

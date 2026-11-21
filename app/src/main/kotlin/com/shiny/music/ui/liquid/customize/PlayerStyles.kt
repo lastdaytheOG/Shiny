@@ -19,9 +19,6 @@ enum class PlayerStyle(val title: String, val blurb: String) {
     Poster("Poster", "The cover as a great circle, the words sung big underneath"),
     PosterRing("Poster 2", "The cover swung in as a great circle with a seek ring on its rim, the words performed big, the controls in pills"),
     Dial("Dial", "The words in a card, the cover as a dial at the foot: drag its rim to seek"),
-    Timeline("Timeline", "The song as time: what's played and what's left, split by the playhead"),
-    Lyrics("Lyrics stage", "The line being sung, huge, over the timeline"),
-    Video("Full video", "The song's video across the whole screen, its words over it"),
     BedsideTiles("Bedside", "Two tiles for the nightstand: the music on one, a clock on the other"),
     Bedside("Bedside clock", "A big quiet clock for the nightstand, the song a swipe away");
 
@@ -36,8 +33,6 @@ object PlayerStylePrefs {
     val TurntableSpin = booleanPreferencesKey("customizeTurntableSpin")
     val TurntableArmSeeks = booleanPreferencesKey("customizeTurntableArmSeeks")
     val PosterWords = booleanPreferencesKey("customizePosterWords")
-    val TimelineCover = booleanPreferencesKey("customizeTimelineCover")
-    val VideoWords = booleanPreferencesKey("customizeVideoWords")
     val Bedside24h = booleanPreferencesKey("customizeBedside24h")
     val BedsideSeconds = booleanPreferencesKey("customizeBedsideSeconds")
     val BedsideNight = booleanPreferencesKey("customizeBedsideNight")

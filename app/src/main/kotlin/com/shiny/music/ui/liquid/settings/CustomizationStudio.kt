@@ -1240,14 +1240,6 @@ private fun PlaylistStylePreview(style: PlaylistStyle, coverRadius: Dp) {
 @Composable
 private fun PlayerStylePreview(style: PlayerStyle) {
     when (style) {
-        PlayerStyle.Video -> Box(Modifier.fillMaxSize().background(ArtFill)) {
-            Column(Modifier.align(Alignment.BottomStart).padding(start = 12.dp, bottom = 22.dp)) {
-                Bar(54.dp, 6.dp, BoneDim)
-                Spacer(Modifier.height(5.dp))
-                Bar(92.dp, 9.dp)
-            }
-            Box(Modifier.align(Alignment.BottomEnd).padding(end = 14.dp, bottom = 8.dp)) { Bar(40.dp, 3.dp, BoneDim) }
-        }
         PlayerStyle.Bedside -> Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
@@ -1276,28 +1268,6 @@ private fun PlayerStylePreview(style: PlayerStyle) {
                 Bar(24.dp, 4.dp, BoneDim)
                 Bar(40.dp, 22.dp, Bone)
                 Bar(40.dp, 22.dp, Bone)
-            }
-        }
-        PlayerStyle.Lyrics -> Column(
-            verticalArrangement = Arrangement.spacedBy(7.dp),
-            modifier = Modifier.fillMaxSize().padding(start = 12.dp, top = 18.dp),
-        ) {
-            Bar(70.dp, 7.dp, BoneDim)
-            Bar(100.dp, 9.dp)
-            Bar(86.dp, 9.dp)
-            Bar(64.dp, 7.dp, BoneDim)
-            Bar(92.dp, 7.dp, BoneDim)
-        }
-        PlayerStyle.Timeline -> Column(Modifier.fillMaxSize().padding(12.dp)) {
-            Spacer(Modifier.height(8.dp))
-            Box(Modifier.fillMaxWidth().height(54.dp).background(ArtFill, RoundedCornerShape(8.dp)))
-            Spacer(Modifier.height(12.dp))
-            TitleBars()
-            Spacer(Modifier.height(10.dp))
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.weight(0.4f).height(14.dp).background(Ink, RoundedCornerShape(3.dp)))
-                Box(Modifier.width(2.dp).height(22.dp).background(Color.White))
-                Box(Modifier.weight(0.6f).height(14.dp).background(BoneDim, RoundedCornerShape(3.dp)))
             }
         }
         PlayerStyle.Dial -> Column(Modifier.fillMaxSize().padding(horizontal = 12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -1804,7 +1774,7 @@ private fun PlayerStage(style: PlayerStyle, rounding: Float, metadata: com.shiny
     val title = metadata?.title?.takeIf { it.isNotBlank() } ?: "SHINY"
     val artist = metadata?.artists?.joinToString { it.name }?.takeIf { it.isNotBlank() } ?: style.title
     val radius = (14f * rounding / CustomizePrefs.CoverRoundingDefault).coerceIn(0f, 24f).dp
-    val immersive = style in setOf(PlayerStyle.Soft, PlayerStyle.Poster, PlayerStyle.PosterRing, PlayerStyle.Video)
+    val immersive = style in setOf(PlayerStyle.Soft, PlayerStyle.Poster, PlayerStyle.PosterRing)
     Box(Modifier.fillMaxSize()) {
         if (immersive) {
             Artwork(

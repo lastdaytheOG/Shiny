@@ -106,7 +106,6 @@ import com.shiny.music.ui.liquid.player.styles.StyleActions
 import com.shiny.music.ui.liquid.player.styles.StyleClock
 import com.shiny.music.ui.liquid.player.styles.StyleRowHeight
 import com.shiny.music.ui.liquid.player.styles.StyleSong
-import com.shiny.music.ui.liquid.player.styles.TimelinePlayer
 import com.shiny.music.ui.liquid.player.styles.TurntablePlayer
 import com.shiny.music.ui.liquid.player.styles.rememberStyleTones
 import com.shiny.music.ui.liquid.player.styles.rememberSyncedLines
@@ -143,9 +142,6 @@ internal val StudioColumns: List<List<PlayerStyle>> = listOf(
     listOf(PlayerStyle.Turntable),
     listOf(PlayerStyle.Poster, PlayerStyle.PosterRing),
     listOf(PlayerStyle.Dial),
-    listOf(PlayerStyle.Timeline),
-    listOf(PlayerStyle.Lyrics),
-    listOf(PlayerStyle.Video),
     listOf(PlayerStyle.BedsideTiles, PlayerStyle.Bedside),
 )
 
@@ -721,9 +717,6 @@ private fun StylePreviewCard(style: PlayerStyle, song: StyleSong) {
                         RingPosterPlayer(metadata = song.metadata, lines = sung, showing = { true })
                     }
                     PlayerStyle.Dial -> DialPlayer(song)
-                    PlayerStyle.Timeline -> TimelinePlayer(song, lyrics = false)
-                    PlayerStyle.Lyrics -> TimelinePlayer(song, lyrics = true)
-                    PlayerStyle.Video -> VideoPreview(song)
                     PlayerStyle.Bedside -> BedsidePlayer(song, expanded = false)
                     PlayerStyle.BedsideTiles -> BedsideTilesPlayer(song, expanded = false)
                     else -> Unit
@@ -742,33 +735,6 @@ private fun StylePreviewCard(style: PlayerStyle, song: StyleSong) {
                         .padding(start = 44.dp, end = 44.dp, bottom = navBottom + 8.dp),
                 )
             }
-        }
-    }
-}
-
-@Composable
-private fun VideoPreview(song: StyleSong) {
-    BoxWithConstraints(Modifier.fillMaxSize().background(Color.Black)) {
-        val side = minOf(maxWidth - 48.dp, maxHeight * 0.5f)
-        Artwork(
-            model = song.artwork,
-            shape = RoundedCornerShape(14.dp),
-            modifier = Modifier.align(Alignment.Center).size(side),
-        )
-        Box(
-            Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .height(maxHeight * 0.4f)
-                .background(Brush.verticalGradient(0f to Color.Transparent, 1f to Color.Black.copy(alpha = 0.72f))),
-        )
-        Column(
-            Modifier
-                .align(Alignment.BottomStart)
-                .padding(start = 24.dp, end = 24.dp, bottom = maxHeight * 0.2f),
-        ) {
-            Text(song.title, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(song.artist, color = Color.White.copy(alpha = 0.64f), fontSize = 15.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }

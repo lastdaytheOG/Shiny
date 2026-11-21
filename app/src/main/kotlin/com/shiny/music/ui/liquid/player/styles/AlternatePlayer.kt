@@ -79,7 +79,7 @@ internal fun AlternatePlayer(style: PlayerStyle, sheet: BottomSheetState, navCon
         }
     }
 
-    val wordsLed = style == PlayerStyle.Lyrics || style == PlayerStyle.Dial || style == PlayerStyle.Poster || style == PlayerStyle.PosterRing || style == PlayerStyle.Video || style.bedside
+    val wordsLed = style == PlayerStyle.Dial || style == PlayerStyle.Poster || style == PlayerStyle.PosterRing || style.bedside
     val clock = rememberStyleClock(sheet.isExpanded, isPlaying, metadata, fast = wordsLed || mode == StyleMode.Lyrics)
     val tones = rememberStyleTones(metadata?.thumbnailUrl)
     val actions = remember(playerConnection, sheet, metadata, navController) {
@@ -140,9 +140,6 @@ internal fun AlternatePlayer(style: PlayerStyle, sheet: BottomSheetState, navCon
                         )
                     }
                     PlayerStyle.Dial -> DialPlayer(song)
-                    PlayerStyle.Timeline -> TimelinePlayer(song, lyrics = false)
-                    PlayerStyle.Lyrics -> TimelinePlayer(song, lyrics = true)
-                    PlayerStyle.Video -> VideoPlayer(song, expanded = sheet.isExpanded)
                     PlayerStyle.Bedside -> BedsidePlayer(song, expanded = sheet.isExpanded)
                     PlayerStyle.BedsideTiles -> BedsideTilesPlayer(song, expanded = sheet.isExpanded)
                     PlayerStyle.Shiny, PlayerStyle.Soft -> Unit
