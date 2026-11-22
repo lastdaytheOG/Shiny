@@ -59,9 +59,9 @@ enum class PlaylistStyle(val title: String, val blurb: String) {
 }
 
 enum class HomeStyle(val title: String, val blurb: String) {
-    Hero("Hero", "Big artwork cards to swipe through"),
-    ListenNow("Listen now", "A short list of songs to start with"),
-    HopIn("Hop in", "Your playlists as tiles, one tap from playing"),
+    Hero("Showcase", "Big artwork cards to swipe through"),
+    ListenNow("Quick Play", "A short list of songs to start with"),
+    HopIn("Shortcuts", "Your playlists as tiles, one tap from playing"),
 }
 
 enum class SongListStyle(val title: String, val blurb: String) {

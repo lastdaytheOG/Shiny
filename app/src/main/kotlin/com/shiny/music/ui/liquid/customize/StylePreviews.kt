@@ -343,7 +343,7 @@ internal fun HomeStylePreview(style: HomeStyle) {
             ArtworkShelf()
         }
         HomeStyle.ListenNow -> Column(Modifier.fillMaxSize().padding(top = 18.dp)) {
-            Text("Listen now", color = Ink, fontSize = 8.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 9.dp))
+            Text(style.title, color = Ink, fontSize = 8.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 9.dp))
             Spacer(Modifier.height(7.dp))
             PreviewSongRow(title, artist)
             PreviewSongRow("A song for the drive", "Shiny Music")
@@ -354,7 +354,7 @@ internal fun HomeStylePreview(style: HomeStyle) {
             ArtworkShelf()
         }
         HomeStyle.HopIn -> Column(Modifier.fillMaxSize().padding(top = 18.dp, start = 7.dp, end = 7.dp)) {
-            Text("Your library", color = Ink, fontSize = 8.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 2.dp))
+            Text(style.title, color = Ink, fontSize = 8.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 2.dp))
             Spacer(Modifier.height(7.dp))
             repeat(3) {
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
