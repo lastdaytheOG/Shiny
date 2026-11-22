@@ -54,8 +54,6 @@ import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlaybackException
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.analytics.AnalyticsListener
-import androidx.media3.exoplayer.analytics.PlaybackStats
-import androidx.media3.exoplayer.analytics.PlaybackStatsListener
 import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.audio.SilenceSkippingAudioProcessor
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
@@ -248,8 +246,7 @@ class QueueUndo internal constructor(
 @AndroidEntryPoint
 class MusicService :
     MediaLibraryService(),
-    Player.Listener,
-    PlaybackStatsListener.Callback {
+    Player.Listener {
     @Inject
     lateinit var database: MusicDatabase
 
@@ -449,16 +446,7 @@ class MusicService :
 
     private val playerSilenceProcessors = HashMap<Player, SilenceDetectorAudioProcessor>()
 
-    /** Each player's stats listener, so a finished queue's last song can be counted at once. */
-    private val playerStatsListeners = HashMap<Player, PlaybackStatsListener>()
-
-    /**
-     * Play time already counted for a song whose queue ended, by media id. Media3 only closes a
-     * playback session when the next one starts, so the last song of a queue (an album you
-     * played to the end, a single local file) stayed uncounted until you played something
-     * else, and was lost if the app was closed first. Main thread only.
-     */
-    private val listenCountedAtEnd = HashMap<String, Long>()
+    private val listenRecorders = HashMap<Player, ListenRecorder>()
 
     private data class UpNextOrigin(val surface: RecSurface, val source: String?)
 
@@ -680,6 +668,7 @@ class MusicService :
             cachedPersistShuffleAcrossQueues = read(PersistentShuffleAcrossQueuesKey, false)
             cachedHistoryDuration = read(HistoryDuration, 30f)
             cachedPauseListenHistory = read(PauseListenHistoryKey, false)
+            listenRecorders.values.forEach { it.setAllowed(!cachedPauseListenHistory) }
             cachedStopOnTaskClear = read(StopMusicOnTaskClearKey, false)
         }
     }
@@ -1287,8 +1276,12 @@ class MusicService :
                 else cachedAudioOffload
             )
             skipSilenceEnabled = cachedSkipSilence
-            addAnalyticsListener(
-                PlaybackStatsListener(false, this@MusicService).also { playerStatsListeners[this] = it }
+            listenRecorders[this] = ListenRecorder(
+                player = this,
+                database = database,
+                thresholdMs = { (cachedHistoryDuration * 1000f).toLong() },
+                allowed = !cachedPauseListenHistory,
+                onFinished = ::registerListen,
             )
         }
 
@@ -2675,7 +2668,6 @@ class MusicService :
                 player.prepare()
                 player.play()
             } else {
-                countListenAtQueueEnd()
                 listenTracker.end(EndReason.Finished)
             }
         }
@@ -3872,65 +3864,9 @@ class MusicService :
         return status.copy(items = status.items.subList(0, head + 1) + picks.map { it.item })
     }
 
-    /** Counts the song a queue just finished on, without waiting for its session to close. */
-    private fun countListenAtQueueEnd() {
-        val mediaId = player.currentMediaItem?.mediaId ?: return
-        val stats = playerStatsListeners[player]?.playbackStats ?: return
-        val playTimeMs = stats.totalPlayTimeMs
-        if (playTimeMs < cachedHistoryDuration * 1000f || mediaId in listenCountedAtEnd) return
-        listenCountedAtEnd[mediaId] = playTimeMs
-        recordListen(mediaId, playTimeMs)
-    }
-
-    override fun onPlaybackStatsReady(
-        eventTime: AnalyticsListener.EventTime,
-        playbackStats: PlaybackStats,
-    ) {
-        val mediaItem = eventTime.timeline.getWindow(eventTime.windowIndex, Timeline.Window()).mediaItem
-        // Part of this session may already be counted, when its queue ended. Only what was
-        // played after that (the song started again, say) is a new listen.
-        val alreadyCounted = listenCountedAtEnd.remove(mediaItem.mediaId) ?: 0L
-        recordListen(mediaItem.mediaId, playbackStats.totalPlayTimeMs - alreadyCounted)
-    }
-
-    private fun recordListen(mediaId: String, playTimeMs: Long) {
-        val historyDurationMs = cachedHistoryDuration * 1000f
-
-        if (playTimeMs >= historyDurationMs &&
-            !cachedPauseListenHistory
-        ) {
-            database.query {
-                incrementTotalPlayTime(mediaId, playTimeMs)
-                // The per-month play count. This table was defined, queried (the "N plays"
-                // line on Home reads it through getLifetimePlayCount) and never written,
-                // so every count in the app read zero.
-                //
-                // Counted here rather than anywhere closer to the UI on purpose. This
-                // callback comes from Media3's PlaybackStatsListener and fires once per
-                // completed playback session with the time actually spent playing —
-                // paused time excluded, a seek within the track not a new session, and
-                // nothing at all emitted for a recomposition or a screen being reopened.
-                // A song only counts once it has genuinely been listened to for the
-                // history threshold, which is the same bar the listen history uses.
-                try {
-                    incrementPlayCount(mediaId)
-                } catch (_: SQLException) {
-                }
-                try {
-                    insert(
-                        Event(
-                            songId = mediaId,
-                            timestamp = LocalDateTime.now(),
-                            playTime = playTimeMs,
-                        ),
-                    )
-                } catch (_: SQLException) {
-                }
-            }
-        }
-
+    private fun registerListen(mediaId: String) {
         // Local files have no YouTube history to add to; asking only failed.
-        if (playTimeMs >= historyDurationMs && !mediaId.isLocalMediaId() && !cachedPauseListenHistory) {
+        if (!mediaId.isLocalMediaId() && !cachedPauseListenHistory) {
             CoroutineScope(Dispatchers.IO).launch {
                 val playbackUrl = database.format(mediaId).first()?.playbackUrl
                     ?: YTPlayerUtils.playerResponseForMetadata(mediaId, null)
@@ -4151,7 +4087,8 @@ class MusicService :
         listenBrainz.release()
         audioscrobbler.release()
         playerSilenceProcessors.remove(player)
-        playerStatsListeners.remove(player)
+        listenRecorders.values.forEach { it.release() }
+        listenRecorders.clear()
         
         
         
@@ -4532,7 +4469,7 @@ class MusicService :
         val pb = prebuffered ?: return
         prebuffered = null
         playerSilenceProcessors.remove(pb.player)
-        playerStatsListeners.remove(pb.player)
+        listenRecorders.remove(pb.player)?.release()
         try {
             pb.player.removeListener(secondaryPlayerListener)
             pb.player.stop()
@@ -4633,6 +4570,7 @@ class MusicService :
         val nextPlayer = secondaryPlayer ?: return
         val currentPlayer = player
 
+        listenRecorders.remove(currentPlayer)?.release()
         fadingPlayer = currentPlayer
         player = nextPlayer
         _playerFlow.value = player

@@ -1,8 +1,10 @@
 package com.shiny.music.db.daos
 
 import androidx.room.Dao
+import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Transaction
+import com.shiny.music.db.entities.Event
 import com.shiny.music.db.entities.EventWithSong
 import com.shiny.music.db.entities.Song
 import kotlinx.coroutines.flow.Flow
@@ -16,6 +18,15 @@ private const val EVERY_SONG =
 
 @Dao
 interface LibraryDao {
+    @Insert
+    fun insertListen(event: Event): Long
+
+    @Query("SELECT playTime FROM event WHERE id = :id")
+    fun listenPlayTime(id: Long): Long?
+
+    @Query("UPDATE event SET playTime = :playTime WHERE id = :id")
+    fun setListenPlayTime(id: Long, playTime: Long)
+
     @Transaction
     @Query("SELECT * FROM event WHERE timestamp >= :since ORDER BY timestamp DESC LIMIT 3000")
     suspend fun eventsSince(since: Long): List<EventWithSong>

@@ -5,9 +5,12 @@ import com.shiny.music.db.entities.EventWithSong
 import com.shiny.music.db.entities.Song
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.conflate
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.map
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.TemporalAdjusters
@@ -31,10 +34,20 @@ class ListeningSummary(val totals: List<PeriodTotal>, val days: List<HistoryDay>
 }
 
 object StatsReport {
-    fun summary(database: MusicDatabase): Flow<ListeningSummary> =
-        database.events().conflate().map { summarise(it, LocalDate.now()) }.flowOn(Dispatchers.Default)
+    private const val REFRESH_MS = 5_000L
 
-    fun summarise(events: List<EventWithSong>, today: LocalDate): ListeningSummary {
+    fun summary(database: MusicDatabase): Flow<ListeningSummary> =
+        combine(database.events().conflate(), clock()) { events, (today, live) -> summarise(events, today, live) }
+            .flowOn(Dispatchers.Default)
+
+    private fun clock(): Flow<Pair<LocalDate, Map<Long, Long>>> = flow {
+        while (true) {
+            emit(LocalDate.now() to LiveListens.heard())
+            delay(REFRESH_MS)
+        }
+    }.distinctUntilChanged()
+
+    fun summarise(events: List<EventWithSong>, today: LocalDate, live: Map<Long, Long> = emptyMap()): ListeningSummary {
         val weekStart = today.with(TemporalAdjusters.previousOrSame(WeekFields.of(Locale.getDefault()).firstDayOfWeek))
         val starts = mapOf(
             StatsPeriod.Today to today,
@@ -49,9 +62,9 @@ object StatsReport {
 
         events.sortedByDescending { it.event.timestamp }.forEach { e ->
             val date = e.event.timestamp.toLocalDate()
-            val played = e.event.playTime.coerceAtLeast(0)
+            val played = maxOf(e.event.playTime, live[e.event.id] ?: 0L, 0L)
             starts.forEach { (period, start) ->
-                if (!date.isBefore(start) && !date.isAfter(today)) {
+                if (period == StatsPeriod.All || (!date.isBefore(start) && !date.isAfter(today))) {
                     ms.merge(period, played, Long::plus)
                     songs.getOrPut(period) { HashSet() }.add(e.song.id)
                 }
