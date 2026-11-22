@@ -45,6 +45,7 @@ fun settingsCatalog(): List<SettingsEntry> = listOf(
 
     // Customise
     SettingsEntry("Customise", "Customise", "settings/customize", "customize customise personalise cover rounding animation gestures swipe player bars"),
+    SettingsEntry("Home screen", "Customise", "settings/customize", "home screen sections shelves rows show hide choose what appears"),
     SettingsEntry("Cover rounding", "Customise", "settings/customize", "square rounded corner radius px cover artwork thumbnail"),
     SettingsEntry("Animations", "Customise", "settings/customize", "animation motion transitions off reduce disable"),
     SettingsEntry("Animation speed", "Customise", "settings/customize", "faster slower duration scale motion speed"),

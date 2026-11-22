@@ -249,6 +249,7 @@
     <string name="home_tile_liked">Liked Songs</string>
     <string name="home_tile_downloads">Downloads</string>
     <string name="home_tile_device">On This Device</string>
+    <string name="home_shelf_empty">No songs yet</string>
     <plurals name="home_songs">
         <item quantity="one">%d song</item>
         <item quantity="other">%d songs</item>

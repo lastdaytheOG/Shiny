@@ -1723,6 +1723,22 @@ interface DatabaseDao {
     @Query("SELECT * FROM song WHERE isLocal = 1 ORDER BY title COLLATE NOCASE, id")
     fun localSongs(): Flow<List<Song>>
 
+    @Transaction
+    @Query("SELECT * FROM song WHERE liked ORDER BY likedDate DESC LIMIT :limit")
+    fun latestLikedSongs(limit: Int): Flow<List<Song>>
+
+    @Transaction
+    @Query("SELECT * FROM song WHERE isDownloaded = 1 ORDER BY dateDownload DESC LIMIT :limit")
+    fun latestDownloadedSongs(limit: Int): Flow<List<Song>>
+
+    @Transaction
+    @Query("SELECT * FROM song WHERE isLocal = 1 ORDER BY rowId DESC LIMIT :limit")
+    fun latestLocalSongs(limit: Int): Flow<List<Song>>
+
+    @Transaction
+    @Query("SELECT * FROM song WHERE inLibrary IS NOT NULL ORDER BY inLibrary DESC LIMIT :limit")
+    fun latestLibrarySongs(limit: Int): Flow<List<Song>>
+
     @Query("SELECT id FROM song WHERE isLocal = 1")
     suspend fun localSongIds(): List<String>
 

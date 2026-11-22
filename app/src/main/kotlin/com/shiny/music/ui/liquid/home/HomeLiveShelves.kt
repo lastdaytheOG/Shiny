@@ -102,6 +102,61 @@ internal fun MostPlayedShelf(songs: List<Song>, activeId: String?, actions: Liqu
 }
 
 @Composable
+internal fun LibrarySongShelf(
+    title: String,
+    songs: List<Song>,
+    route: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    activeId: String?,
+    actions: LiquidActions,
+) {
+    HomeSectionTitle(title, onClick = { actions.navController.navigate(route) })
+    if (songs.isEmpty()) {
+        EmptyLibraryCard(icon) { actions.navController.navigate(route) }
+        return
+    }
+    HomeRow(items = songs, key = { it.id }) { song ->
+        HomeCard(
+            songId = song.id,
+            title = song.title,
+            subtitle = song.artistLine(),
+            artwork = song.thumbnailUrl?.resize(544, 544),
+            onClick = {
+                if (song.id == activeId) actions.togglePlayPause() else actions.playSongMix(title, songs, songs.indexOf(song))
+            },
+            onLongClick = { actions.menu(song) },
+            titleColor = if (song.id == activeId) Liquid.colors.accent else Liquid.colors.label,
+        )
+    }
+}
+
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+private fun EmptyLibraryCard(icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
+    val colors = Liquid.colors
+    val interaction = androidx.compose.runtime.remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    Column(
+        Modifier
+            .padding(start = HomeInset)
+            .width(HomeCardSize)
+            .pressScale(interaction, 0.96f)
+            .combinedClickable(interactionSource = interaction, indication = null, onClick = onClick),
+    ) {
+        Box(
+            Modifier
+                .size(HomeCardSize)
+                .clip(RoundedCornerShape(HomeCardRadius))
+                .background(colors.label.copy(alpha = if (colors.isDark) 0.07f else 0.05f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, null, tint = colors.tertiaryLabel, modifier = Modifier.size(44.dp))
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(stringResource(R.string.home_shelf_empty), style = com.shiny.music.ui.liquid.LiquidTypography.subheadline, color = colors.secondaryLabel)
+    }
+}
+
+@Composable
 internal fun ForgottenShelf(songs: List<Song>, activeId: String?, actions: LiquidActions) {
     val title = stringResource(R.string.home_dont_forget)
     HomeSectionTitle(title)

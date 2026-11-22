@@ -1,7 +1,10 @@
 package com.shiny.music.ui.liquid.settings
 
 import android.os.Build
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.togetherWith
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
@@ -127,6 +130,8 @@ import com.shiny.music.ui.liquid.customize.BlurQuality
 import com.shiny.music.ui.liquid.customize.CustomizePrefs
 import com.shiny.music.ui.liquid.customize.DefaultSwipeLeft
 import com.shiny.music.ui.liquid.customize.DefaultSwipeRight
+import com.shiny.music.ui.liquid.customize.HomeLayoutPrefs
+import com.shiny.music.ui.liquid.customize.HomePart
 import com.shiny.music.ui.liquid.customize.HomeStyle
 import com.shiny.music.ui.liquid.customize.LocalPreviewArtist
 import com.shiny.music.ui.liquid.customize.LocalPreviewArtwork
@@ -144,7 +149,9 @@ import com.shiny.music.ui.liquid.liquidBottomPadding
 import com.shiny.music.ui.liquid.rememberGlassPress
 import com.shiny.music.ui.liquid.statusBarHeight
 import com.shiny.music.utils.rememberEnumPreference
+import com.shiny.music.utils.dataStore
 import com.shiny.music.utils.rememberPreference
+import androidx.datastore.preferences.core.edit
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -202,7 +209,7 @@ private enum class CustomiseSection(val title: String, val words: String) {
     Rounding("Cover rounding", "cover rounding corner radius square rounded art"),
     Playlist("Playlist styles", "playlist styles flow classic minimal header"),
     Player("Player styles", "player styles shiny soft turntable poster timeline lyrics video bedside clock editor customize"),
-    Home("Home styles", "home styles hero listen now hop in"),
+    Home("Home styles", "home styles showcase quick play shortcuts custom home screen sections shelves show hide liked songs downloads on this device recently added recently played most played frequently listened recommendations community jump back in history live shows artists playlists forget music videos youtube hits"),
     SongList("Song lists", "song lists songs recently added liked history downloaded stack carousel posters cards records list rows"),
     Blur("Blur", "blur glass frosted progressive flat quality low high strength px"),
     ElementBlur("Element blur", "element blur lyrics lines cover zoom titles menus page swipes"),
@@ -297,8 +304,13 @@ private fun CustomiseSectionContent(section: CustomiseSection, navController: Na
         }
         CustomiseSection.Home -> {
             val (style, setStyle) = rememberEnumPreference(CustomizePrefs.HomeStyle, HomeStyle.Hero)
-            StylePagerSection("Home styles", HomeStyle.entries, style, { it.title }, setStyle, pagerBleed) {
-                HomeStylePreview(it, coverRadius)
+            var viewing by remember { mutableStateOf(style) }
+            Column {
+                StylePagerSection("Home styles", HomeStyle.entries, style, { it.title }, setStyle, pagerBleed, onPage = { viewing = it }) {
+                    HomePreview(it, coverRadius)
+                }
+                Spacer(Modifier.height(26.dp))
+                HomeScreenSection(viewing, inUse = viewing == style)
             }
         }
         CustomiseSection.SongList -> {
@@ -553,9 +565,15 @@ private fun <T> StylePagerSection(
     nameOf: (T) -> String,
     onSelect: (T) -> Unit,
     modifier: Modifier = Modifier,
+    onPage: ((T) -> Unit)? = null,
     preview: @Composable BoxScope.(T) -> Unit,
 ) {
     val pagerState = rememberPagerState(initialPage = styles.indexOf(selected).coerceAtLeast(0)) { styles.size }
+    if (onPage != null) {
+        LaunchedEffect(pagerState) {
+            snapshotFlow { pagerState.currentPage }.collect { onPage(styles[it]) }
+        }
+    }
     val haptic = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
     Column(modifier = modifier.fillMaxWidth()) {
@@ -896,6 +914,76 @@ private fun MiniSegmented(options: List<String>, selectedIndex: Int, onSelect: (
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun HomeScreenSection(style: HomeStyle, inUse: Boolean) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val scope = rememberCoroutineScope()
+    val key = HomeLayoutPrefs.changed(style)
+    val changed by rememberPreference(key, emptySet())
+    fun write(change: (Set<String>) -> Set<String>) {
+        scope.launch { context.dataStore.edit { it[key] = change(it[key].orEmpty()) } }
+    }
+    Column {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().height(34.dp)) {
+            Text(text = "Home screen", style = SectionTitleStyle, color = Color.White, modifier = Modifier.weight(1f))
+            AnimatedVisibility(visible = changed.isNotEmpty(), enter = fadeIn(), exit = fadeOut()) {
+                Text(
+                    text = "Reset",
+                    style = PillTextStyle.copy(fontSize = 13.sp),
+                    color = Color.Black,
+                    modifier = Modifier
+                        .clip(PillShape)
+                        .background(Color.White)
+                        .clickable { write { emptySet() } }
+                        .padding(horizontal = 14.dp, vertical = 7.dp),
+                )
+            }
+        }
+        AnimatedContent(
+            targetState = style to inUse,
+            transitionSpec = { fadeIn(tween(220, delayMillis = 60)) togetherWith fadeOut(tween(120)) },
+            label = "homeScreenStyle",
+        ) { (shownStyle, used) ->
+            Text(
+                text = if (used) "For ${shownStyle.title} · in use" else "For ${shownStyle.title}",
+                style = SwipeSubtitleStyle,
+                color = Color.White.copy(alpha = 0.5f),
+                modifier = Modifier.padding(top = 2.dp, bottom = 14.dp),
+            )
+        }
+        LabCard {
+            HomePart.entries.forEach { part ->
+                HomePartRow(
+                    title = part.label(style),
+                    shown = part.shownWith(changed, style),
+                    onShownChange = { _ -> write { if (part.name in it) it - part.name else it + part.name } },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun HomePartRow(title: String, shown: Boolean, onShownChange: (Boolean) -> Unit) {
+    val fade by animateFloatAsState(if (shown) 1f else 0.42f, tween(220), label = "homePart")
+    val interaction = remember { MutableInteractionSource() }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(interaction, indication = null) { onShownChange(!shown) }
+            .padding(vertical = 9.dp),
+    ) {
+        Text(
+            text = title,
+            style = SwipeSubtitleStyle.copy(fontSize = 16.sp, fontWeight = FontWeight.SemiBold),
+            color = Color.White,
+            modifier = Modifier.weight(1f).graphicsLayer { alpha = fade },
+        )
+        SettingsSwitch(checked = shown, onCheckedChange = onShownChange)
     }
 }
 
@@ -1328,7 +1416,7 @@ private fun NowPlayingBars() {
 }
 
 @Composable
-private fun HomeStylePreview(style: HomeStyle, coverRadius: Dp) {
+private fun HomePreview(style: HomeStyle, coverRadius: Dp) {
     val radius = RoundedCornerShape(scaledRadius(coverRadius, 0.2f))
     when (style) {
         HomeStyle.Hero -> Column(Modifier.fillMaxSize()) {

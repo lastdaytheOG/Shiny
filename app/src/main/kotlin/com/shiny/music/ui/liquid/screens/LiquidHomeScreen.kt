@@ -2,6 +2,12 @@ package com.shiny.music.ui.liquid.screens
 
 import com.shiny.music.ui.liquid.home.JumpBackInShelf
 import com.shiny.music.ui.liquid.home.heroScrollAway
+import com.shiny.music.LocalDatabase
+import androidx.compose.material.icons.rounded.DownloadDone
+import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.LibraryAdd
+import androidx.compose.material.icons.rounded.PhoneAndroid
+import com.shiny.music.ui.liquid.home.LibrarySongShelf
 import com.shiny.music.ui.liquid.home.MostPlayedShelf
 import com.shiny.music.ui.liquid.home.ForgottenShelf
 import com.shiny.music.ui.liquid.home.HistoryRows
@@ -131,6 +137,8 @@ import com.shiny.music.ui.liquid.subtitleText
 import com.shiny.music.ui.theme.pressScale
 import com.shiny.music.ui.utils.resize
 import com.shiny.music.utils.PerfTrace
+import com.shiny.music.ui.liquid.customize.HomeLayoutPrefs
+import com.shiny.music.ui.liquid.customize.HomePart
 import com.shiny.music.utils.rememberPreference
 import com.shiny.music.viewmodels.HomeViewModel
 import kotlinx.coroutines.delay
@@ -169,6 +177,14 @@ fun LiquidHomeScreen(
         com.shiny.music.ui.liquid.customize.HomeStyle.Hero,
     )
 
+    val changedParts by rememberPreference(HomeLayoutPrefs.changed(homeStyle), emptySet())
+    fun shows(part: HomePart) = part.shownWith(changedParts, homeStyle)
+    val asShelves = homeStyle != com.shiny.music.ui.liquid.customize.HomeStyle.HopIn
+    val database = LocalDatabase.current
+    val likedSongs = rememberShelfSongs(asShelves && shows(HomePart.LikedSongs)) { database.latestLikedSongs(ShelfSize) }
+    val downloadedSongs = rememberShelfSongs(asShelves && shows(HomePart.Downloads)) { database.latestDownloadedSongs(ShelfSize) }
+    val deviceSongs = rememberShelfSongs(asShelves && shows(HomePart.OnDevice)) { database.latestLocalSongs(ShelfSize) }
+    val addedSongs = rememberShelfSongs(asShelves && shows(HomePart.RecentlyAdded)) { database.latestLibrarySongs(ShelfSize) }
     val listState = rememberListState(viewModel.scroll)
     val pullState = rememberPullToRefreshState()
     val heroList = rememberLazyListState()
@@ -241,8 +257,10 @@ fun LiquidHomeScreen(
             }
 
             val activeId = mediaMetadata?.id
-            val shortcuts = shelves.filterIsInstance<ShortcutsSection>().firstOrNull() ?: feed?.sections.orEmpty().filterIsInstance<ShortcutsSection>().firstOrNull()
-            val compactTop = when (homeStyle) {
+            val feedShortcuts = shelves.filterIsInstance<ShortcutsSection>().firstOrNull() ?: feed?.sections.orEmpty().filterIsInstance<ShortcutsSection>().firstOrNull()
+            val shortcuts = hopInTiles(feedShortcuts?.tiles.orEmpty(), ::shows).takeIf { it.isNotEmpty() }?.let(::ShortcutsSection)
+            val showTop = shows(HomePart.Top)
+            val compactTop = showTop && when (homeStyle) {
                 com.shiny.music.ui.liquid.customize.HomeStyle.ListenNow -> (mix?.songs.orEmpty() + live.mostPlayed + live.history).isNotEmpty()
                 com.shiny.music.ui.liquid.customize.HomeStyle.HopIn -> shortcuts != null
                 com.shiny.music.ui.liquid.customize.HomeStyle.Hero -> false
@@ -252,7 +270,7 @@ fun LiquidHomeScreen(
                     HomeItem(reduceMotion, "home_top_${homeStyle.name}", viewModel.revealed) {
                         if (homeStyle == com.shiny.music.ui.liquid.customize.HomeStyle.ListenNow) {
                             com.shiny.music.ui.liquid.home.ListenNowTop(
-                                title = "Start listening",
+                                title = homeStyle.title,
                                 mix = mix?.songs.orEmpty(),
                                 fallback = live.mostPlayed + live.history,
                                 activeId = activeId,
@@ -260,7 +278,7 @@ fun LiquidHomeScreen(
                             )
                         } else if (shortcuts != null) {
                             com.shiny.music.ui.liquid.home.HopInTop(
-                                title = "Hop in",
+                                title = homeStyle.title,
                                 section = shortcuts,
                                 glowFrom = mixCovers.firstOrNull() ?: mediaMetadata?.thumbnailUrl,
                                 actions = actions,
@@ -268,7 +286,14 @@ fun LiquidHomeScreen(
                         }
                     }
                 }
-            } else if (heroCards.isNotEmpty() || gachaPool.size >= 4) {
+            }
+            val heroShown = !compactTop && showTop && (heroCards.isNotEmpty() || gachaPool.size >= 4)
+            if (!compactTop && !heroShown) {
+                item(key = "home_top_space", contentType = "home_top_space") {
+                    Spacer(Modifier.height(statusBarHeight() + 46.dp))
+                }
+            }
+            if (heroShown) {
                 item(key = "hero", contentType = "hero") {
                     HomeItem(reduceMotion, "hero", viewModel.revealed) {
                         val heroProgress = {
@@ -298,7 +323,8 @@ fun LiquidHomeScreen(
             // the picks are dealt out between home's own rows
             val cats = live.categories
             var next = 0
-            fun picks(count: Int = 1) = repeat(count) {
+            val showPicks = shows(HomePart.Picks)
+            fun picks(count: Int = 1) = repeat(if (showPicks) count else 0) {
                 val row = cats.getOrNull(next) ?: return@repeat
                 next++
                 item(key = row.key, contentType = "rec") {
@@ -309,20 +335,24 @@ fun LiquidHomeScreen(
             shelves.filterIsInstance<StartHereSection>().firstOrNull()?.takeIf { live.history.isEmpty() && live.mostPlayed.isEmpty() }?.let { start ->
                 block("start_here") { QuietStart(start.online) }
             }
-            shelves.filterIsInstance<LatelySection>().firstOrNull()?.let { lately ->
+            shelves.filterIsInstance<LatelySection>().firstOrNull()?.takeIf { shows(HomePart.RecentlyPlayed) }?.let { lately ->
                 block("recently_played") { RecentlyPlayedShelf(lately, actions) }
             }
-            if (live.mostPlayed.isNotEmpty()) block("most_played") { MostPlayedShelf(live.mostPlayed, activeId, actions) }
+            likedSongs?.let { songs -> block("lib_liked") { LibrarySongShelf(stringResource(R.string.liquid_liked_songs), songs, "auto_playlist/liked", androidx.compose.material.icons.Icons.Rounded.Favorite, activeId, actions) } }
+            addedSongs?.let { songs -> block("lib_added") { LibrarySongShelf(stringResource(R.string.liquid_recently_added), songs, "recently_added", androidx.compose.material.icons.Icons.Rounded.LibraryAdd, activeId, actions) } }
+            downloadedSongs?.let { songs -> block("lib_downloads") { LibrarySongShelf(stringResource(R.string.home_tile_downloads), songs, "auto_playlist/downloaded", androidx.compose.material.icons.Icons.Rounded.DownloadDone, activeId, actions) } }
+            deviceSongs?.let { songs -> block("lib_device") { LibrarySongShelf(stringResource(R.string.liquid_local_files), songs, "local_songs", androidx.compose.material.icons.Icons.Rounded.PhoneAndroid, activeId, actions) } }
+            if (shows(HomePart.MostPlayed) && live.mostPlayed.isNotEmpty()) block("most_played") { MostPlayedShelf(live.mostPlayed, activeId, actions) }
             picks()
-            if (live.community.isNotEmpty()) block("community") { CommunityShelf(live.community, actions) }
-            if (live.jumpBackIn.isNotEmpty()) block("jump_back_in") { JumpBackInShelf(live.jumpBackIn, activeId, actions) }
-            if (live.history.isNotEmpty()) block("history") { HistoryRows(live.history, activeId, actions) }
+            if (shows(HomePart.Community) && live.community.isNotEmpty()) block("community") { CommunityShelf(live.community, actions) }
+            if (shows(HomePart.JumpBackIn) && live.jumpBackIn.isNotEmpty()) block("jump_back_in") { JumpBackInShelf(live.jumpBackIn, activeId, actions) }
+            if (shows(HomePart.History) && live.history.isNotEmpty()) block("history") { HistoryRows(live.history, activeId, actions) }
             picks()
-            if (live.liveShows.isNotEmpty()) block("live_shows") { VideoShelf(stringResource(R.string.home_live_shows), live.liveShows, activeId, actions) }
+            if (shows(HomePart.LiveShows) && live.liveShows.isNotEmpty()) block("live_shows") { VideoShelf(stringResource(R.string.home_live_shows), live.liveShows, activeId, actions) }
             picks()
-            if (live.artistGroups.isNotEmpty()) block("artist_list") { ArtistListShelf(live.artistGroups, actions) }
+            if (shows(HomePart.Artists) && live.artistGroups.isNotEmpty()) block("artist_list") { ArtistListShelf(live.artistGroups, actions) }
             picks()
-            if (live.accountPlaylists.isNotEmpty() || live.localPlaylists.isNotEmpty()) {
+            if (shows(HomePart.Playlists) && (live.accountPlaylists.isNotEmpty() || live.localPlaylists.isNotEmpty())) {
                 block("your_playlists") {
                     YourPlaylistsShelf(
                         accountName = if (isLoggedIn) accountName else stringResource(R.string.home_guest),
@@ -334,17 +364,38 @@ fun LiquidHomeScreen(
                 }
             }
             picks()
-            if (live.forgotten.isNotEmpty()) block("dont_forget") { ForgottenShelf(live.forgotten, activeId, actions) }
+            if (shows(HomePart.DontForget) && live.forgotten.isNotEmpty()) block("dont_forget") { ForgottenShelf(live.forgotten, activeId, actions) }
             picks()
-            if (live.musicVideos.isNotEmpty()) block("music_videos") { VideoShelf(stringResource(R.string.home_music_videos), live.musicVideos, activeId, actions) }
+            if (shows(HomePart.MusicVideos) && live.musicVideos.isNotEmpty()) block("music_videos") { VideoShelf(stringResource(R.string.home_music_videos), live.musicVideos, activeId, actions) }
             picks(cats.size)
-            live.shelves.firstOrNull()?.let { first -> block("yt_0_${first.title}") { YouTubeShelfRow(first, activeId, actions) } }
-            if (live.hits.isNotEmpty()) block("all_time_hits") { HitsShelf(live.hits, activeId, actions) }
-            live.shelves.drop(1).forEachIndexed { index, shelf -> block("yt_${index + 1}_${shelf.title}") { YouTubeShelfRow(shelf, activeId, actions) } }
+            live.shelves.firstOrNull()?.takeIf { shows(HomePart.YouTube) }?.let { first -> block("yt_0_${first.title}") { YouTubeShelfRow(first, activeId, actions) } }
+            if (shows(HomePart.Hits) && live.hits.isNotEmpty()) block("all_time_hits") { HitsShelf(live.hits, activeId, actions) }
+            live.shelves.drop(1).takeIf { shows(HomePart.YouTube) }.orEmpty().forEachIndexed { index, shelf -> block("yt_${index + 1}_${shelf.title}") { YouTubeShelfRow(shelf, activeId, actions) } }
 
             item(key = "home_footer") { Spacer(Modifier.height(20.dp)) }
         }
     }
+}
+
+private const val ShelfSize = 20
+
+@Composable
+private fun rememberShelfSongs(enabled: Boolean, query: () -> kotlinx.coroutines.flow.Flow<List<com.shiny.music.db.entities.Song>>): List<com.shiny.music.db.entities.Song>? {
+    val flow = remember(enabled) { if (enabled) query() else kotlinx.coroutines.flow.flowOf(null) }
+    return flow.collectAsState(initial = null).value
+}
+
+private fun hopInTiles(base: List<com.shiny.music.home.LatelyTile>, shows: (HomePart) -> Boolean): List<com.shiny.music.home.LatelyTile> {
+    val library = listOf(
+        HomePart.LikedSongs to (base.firstOrNull { it is com.shiny.music.home.LikedTile } ?: com.shiny.music.home.LikedTile(0)),
+        HomePart.Downloads to (base.firstOrNull { it is com.shiny.music.home.DownloadsTile } ?: com.shiny.music.home.DownloadsTile(0)),
+        HomePart.OnDevice to (base.firstOrNull { it is com.shiny.music.home.DeviceTile } ?: com.shiny.music.home.DeviceTile(0)),
+        HomePart.RecentlyAdded to (base.firstOrNull { it is com.shiny.music.home.RecentlyAddedTile } ?: com.shiny.music.home.RecentlyAddedTile()),
+        HomePart.History to (base.firstOrNull { it is com.shiny.music.home.HistoryTile } ?: com.shiny.music.home.HistoryTile()),
+    )
+    val kept = library.filter { (part, _) -> shows(part) }.map { it.second }
+    val others = base.filter { tile -> library.none { it.second::class == tile::class } }
+    return kept + others
 }
 
 @Composable
