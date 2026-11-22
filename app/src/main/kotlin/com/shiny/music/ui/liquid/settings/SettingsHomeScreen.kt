@@ -140,20 +140,12 @@ fun ShinyHubScreen(navController: NavController) {
     val places = listOf(
         Category("Customisation", "settings/customize", painterResource(R.drawable.palette)),
         Category(stringResource(R.string.settings), "settings", painterResource(R.drawable.settings)),
-        Category("Audio", "audio", painterResource(R.drawable.equalizer)),
         Category("Integrations", "settings/integrations", painterResource(R.drawable.link)),
     )
     SettingsPage(title = if (first.isNotBlank()) "Hey, $first!" else "Hey there!", navController = navController, search = false) {
         places.forEach { c ->
             item(key = "hub_${c.route}") { CategoryRow(c) { navController.navigate(c.route) } }
         }
-        item(key = "tail") { SettingsTailSpace(40.dp) }
-    }
-}
-
-@Composable
-fun AudioScreen(navController: NavController) {
-    SettingsPage(title = "Audio", navController = navController, search = false) {
         item(key = "tail") { SettingsTailSpace(40.dp) }
     }
 }
