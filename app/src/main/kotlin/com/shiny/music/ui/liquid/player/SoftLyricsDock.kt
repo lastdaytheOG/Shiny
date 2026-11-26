@@ -31,6 +31,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -166,32 +167,36 @@ private fun LyricsPreview(
                     val plain = remember(raw) { raw.lines().filter { it.isNotBlank() }.take(2) }
                     PreviewLines(first = plain.getOrNull(0).orEmpty(), second = plain.getOrNull(1), firstSung = false)
                 } else {
-                    val timeline = remember(raw) {
-                        buildTimeline(LyricsUtils.parseLyrics(raw).filter { it.text.isNotBlank() }.sortedBy { it.time })
-                    }
-                    if (timeline.size == 0) return@Box
-                    // derived from the shared clock: recomposes only when the leading line changes
-                    val anchorState = remember(timeline, songOffsetMs) {
-                        derivedStateOf { previewAnchor(timeline, positionProvider() + songOffsetMs) }
-                    }
-                    val anchor = anchorState.value
-                    AnimatedContent(
-                        targetState = anchor.index,
-                        transitionSpec = {
-                            val forward = targetState > initialState
-                            (
-                                slideInVertically(LineMove) { if (forward) it / 2 else -it / 2 } + fadeIn(tween(320, delayMillis = 60))
-                                ) togetherWith (
-                                slideOutVertically(LineMove) { if (forward) -it / 2 else it / 2 } + fadeOut(tween(200))
-                                ) using SizeTransform(clip = false)
-                        },
-                        label = "previewLine",
-                    ) { index ->
-                        PreviewLines(
-                            first = timeline.lines[index].text,
-                            second = timeline.lines.getOrNull(index + 1)?.text,
-                            firstSung = anchor.sung && anchor.index == index,
-                        )
+                    // AnimatedContent keeps outgoing content during its transition. Re-key it when
+                    // the lyrics change so an index from the old timeline cannot address the new one.
+                    key(raw) {
+                        val timeline = remember(raw) {
+                            buildTimeline(LyricsUtils.parseLyrics(raw).filter { it.text.isNotBlank() }.sortedBy { it.time })
+                        }
+                        if (timeline.size == 0) return@key
+                        // derived from the shared clock: recomposes only when the leading line changes
+                        val anchorState = remember(timeline, songOffsetMs) {
+                            derivedStateOf { previewAnchor(timeline, positionProvider() + songOffsetMs) }
+                        }
+                        val anchor = anchorState.value
+                        AnimatedContent(
+                            targetState = anchor.index,
+                            transitionSpec = {
+                                val forward = targetState > initialState
+                                (
+                                    slideInVertically(LineMove) { if (forward) it / 2 else -it / 2 } + fadeIn(tween(320, delayMillis = 60))
+                                    ) togetherWith (
+                                    slideOutVertically(LineMove) { if (forward) -it / 2 else it / 2 } + fadeOut(tween(200))
+                                    ) using SizeTransform(clip = false)
+                            },
+                            label = "previewLine",
+                        ) { index ->
+                            PreviewLines(
+                                first = timeline.lines[index].text,
+                                second = timeline.lines.getOrNull(index + 1)?.text,
+                                firstSung = anchor.sung && anchor.index == index,
+                            )
+                        }
                     }
                 }
             }
