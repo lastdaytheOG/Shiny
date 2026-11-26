@@ -94,7 +94,9 @@ internal class LyricClockEstimator(
         jumpMs: Long = Long.MAX_VALUE,
     ): Boolean {
         val firstFrame = lastFrameNanos == NoFrame
-        val dtMs = if (firstFrame) 0.0 else (frameNanos - lastFrameNanos) / 1e6
+        // A frame timestamp can briefly go backwards when the display pipeline is recreated.
+        // Never turn that into an inverted range for the slew correction below.
+        val dtMs = if (firstFrame) 0.0 else ((frameNanos - lastFrameNanos) / 1e6).coerceAtLeast(0.0)
         var jumped = false
         if (sample != lastSample || anchorNanos == NoFrame) {
             if (sample != lastSample && anchorNanos != NoFrame) {
@@ -124,7 +126,7 @@ internal class LyricClockEstimator(
         shown = if (abs(error) > SnapMs && !stalled) {
             estimate
         } else {
-            val limit = dtMs * speed * MaxSlew
+            val limit = abs(dtMs * speed * MaxSlew)
             predicted + (error * (1.0 - exp(-dtMs / SlewMs))).coerceIn(if (stalled) 0.0 else -limit, limit)
         }
         return jumped
