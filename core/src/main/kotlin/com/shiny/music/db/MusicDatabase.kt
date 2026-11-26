@@ -52,10 +52,16 @@ import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.Date
+import java.util.concurrent.locks.ReentrantReadWriteLock
+import kotlin.concurrent.read
+import kotlin.concurrent.write
 
 class MusicDatabase(
     private val delegate: InternalDatabase,
 ) : DatabaseDao by delegate.dao {
+    private val lifecycleLock = ReentrantReadWriteLock()
+    @Volatile private var closed = false
+
     val speedDialDao: SpeedDialDao
         get() = delegate.speedDialDao
 
@@ -82,15 +88,21 @@ class MusicDatabase(
     fun query(block: MusicDatabase.() -> Unit) =
         with(delegate) {
             queryExecutor.execute {
-                block(this@MusicDatabase)
+                lifecycleLock.read {
+                    if (!closed) block(this@MusicDatabase)
+                }
             }
         }
 
     fun transaction(block: MusicDatabase.() -> Unit) =
         with(delegate) {
             transactionExecutor.execute {
-                runInTransaction {
-                    block(this@MusicDatabase)
+                lifecycleLock.read {
+                    if (!closed) {
+                        runInTransaction {
+                            block(this@MusicDatabase)
+                        }
+                    }
                 }
             }
         }
@@ -106,7 +118,15 @@ class MusicDatabase(
             }
         }
 
-    fun close() = delegate.close()
+    /**
+     * A restore replaces the database file. Let in-flight wrapper transactions finish before
+     * closing Room; otherwise Room's finally block can attempt to end a transaction already
+     * invalidated by the close.
+     */
+    fun close() = lifecycleLock.write {
+        closed = true
+        delegate.close()
+    }
 }
 
 @Database(
