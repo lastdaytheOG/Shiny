@@ -68,7 +68,6 @@ class PlaylistWidgetReceiver : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray,
     ) {
-        val pendingResult = goAsync()
         CoroutineScope(Dispatchers.Main).launch {
             try {
                 appWidgetIds.forEach { appWidgetId ->
@@ -79,34 +78,26 @@ class PlaylistWidgetReceiver : AppWidgetProvider() {
                 }
             } catch (e: Exception) {
                 Timber.tag(TAG).e(e, "Failed to refresh playlist widgets")
-            } finally {
-                pendingResult.finish()
             }
         }
     }
 
     private fun refreshIdleWidgets() {
-        val pendingResult = goAsync()
         CoroutineScope(Dispatchers.Main).launch {
             try {
                 playlistWidgetManager.updateIdleWidgets()
             } catch (e: Exception) {
                 Timber.tag(TAG).e(e, "Failed to refresh playlist widgets")
-            } finally {
-                pendingResult.finish()
             }
         }
     }
 
     private fun refreshIdleWidget(appWidgetId: Int, options: android.os.Bundle) {
-        val pendingResult = goAsync()
         CoroutineScope(Dispatchers.Main).launch {
             try {
                 playlistWidgetManager.updateIdleWidget(appWidgetId, options)
             } catch (e: Exception) {
                 Timber.tag(TAG).e(e, "Failed to refresh playlist widget")
-            } finally {
-                pendingResult.finish()
             }
         }
     }
