@@ -60,6 +60,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -1069,14 +1070,18 @@ fun LiquidSearchResultScreen(
                         TopResultCard(top, actions, active = top.id == mediaMetadata?.id, playing = isPlaying)
                         Spacer(Modifier.height(22.dp))
                     }
-                    summary.sections.forEach { section ->
+                    summary.sections.forEachIndexed { sectionIndex, section ->
                         val rows = section.items.filter { it.id != top.id }
                         if (rows.isNotEmpty()) {
-                            item(key = "sum_header_${section.shelf}") { SearchHeader(shelfTitle(section.shelf)) }
-                            items(rows, key = { "sum_${section.shelf}_${it.id.ifBlank { "t:${it.title}" }}" }) { item ->
+                            // A YouTube shelf can contain the same item more than once. Compose
+                            // requires LazyList keys to identify an occurrence, not just the item.
+                            item(key = "sum_header_${sectionIndex}_${section.shelf}") { SearchHeader(shelfTitle(section.shelf)) }
+                            itemsIndexed(rows, key = { itemIndex, item ->
+                                "sum_${sectionIndex}_${section.shelf}_${item.id.ifBlank { "t:${item.title}" }}_$itemIndex"
+                            }) { _, item ->
                                 YouTubeResultRow(item, actions, isActive = item.id == mediaMetadata?.id)
                             }
-                            item(key = "sum_gap_${section.shelf}") { Spacer(Modifier.height(18.dp)) }
+                            item(key = "sum_gap_${sectionIndex}_${section.shelf}") { Spacer(Modifier.height(18.dp)) }
                         }
                     }
                 }
