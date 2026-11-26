@@ -303,6 +303,12 @@
             </intent-filter>
         </service>
 
+        <!-- Required by Media3 PlatformScheduler when downloads are waiting for network. -->
+        <service
+            android:name="androidx.media3.exoplayer.scheduler.PlatformScheduler$PlatformSchedulerService"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
+
         <service
             android:name="androidx.work.impl.foreground.SystemForegroundService"
             android:foregroundServiceType="dataSync"
